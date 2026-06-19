@@ -1,3 +1,4 @@
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -119,35 +120,11 @@ export const signInAsProvider = createServerFn({ method: "POST" })
   });
 
 export const getCurrentPortalRole = createServerFn({ method: "GET" })
-  .handler(async (): Promise<{ role: string | null }> => {
-    // Lazy import to avoid client-bundling the auth middleware module graph here.
-    const { requireSupabaseAuth } = await import(
-      "@/integrations/supabase/auth-middleware"
-    );
-    // Re-wrap: middleware attaches per call; using it inline isn't supported,
-    // so we instead read the bearer from the request via getRequest.
-    const { getRequest } = await import("@tanstack/react-start/server");
-    const req = getRequest();
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) return { role: null };
-    const token = authHeader.slice(7);
-
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      {
-        auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      },
-    );
-
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) return { role: null };
-
-    const { data: role } = await supabase.rpc("get_user_portal", {
-      _user_id: userData.user.id,
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ role: string | null }> => {
+    const { data, error } = await context.supabase.rpc("get_user_portal", {
+      _user_id: context.userId,
     });
-
-    void requireSupabaseAuth; // keep import referenced for type parity
-    return { role: (role as string | null) ?? null };
+    if (error) return { role: null };
+    return { role: (data as string | null) ?? null };
   });
