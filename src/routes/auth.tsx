@@ -7,82 +7,152 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { signInAsProvider } from "@/lib/auth.functions";
+import {
+  sendLoginOtp,
+  signInWithPassword,
+  verifyLoginOtp,
+  type SignInResult,
+} from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Practitioner Sign In — Body Inc" },
-      { name: "description", content: "Practitioner portal sign in for Body Inc." },
+      { title: "Sign In — Body Inc" },
+      { name: "description", content: "Sign in to the Body Inc portal." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: AuthPage,
 });
 
-const schema = z.object({
+const passwordSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
+});
+
+const emailOnlySchema = z.object({
+  email: z.string().trim().email("Enter a valid email").max(255),
 });
 
 function AuthPage() {
   const navigate = useNavigate();
   const router = useRouter();
-  const signIn = useServerFn(signInAsProvider);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const signInPw = useServerFn(signInWithPassword);
+  const sendOtp = useServerFn(sendLoginOtp);
+  const verifyOtp = useServerFn(verifyLoginOtp);
+
   const [portalError, setPortalError] = useState<{
     message: string;
     redirectUrl?: string;
   } | null>(null);
 
-  async function onSubmit(e: FormEvent) {
+  // Password tab state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pwSubmitting, setPwSubmitting] = useState(false);
+  const [pwErrors, setPwErrors] = useState<{ email?: string; password?: string }>({});
+
+  // OTP tab state
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpStage, setOtpStage] = useState<"request" | "verify">("request");
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const [otpEmailError, setOtpEmailError] = useState<string | undefined>();
+
+  async function handleSession(result: SignInResult) {
+    if (!result.ok) {
+      if (result.error === "wrong_portal" || result.error === "no_access") {
+        setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
+      } else {
+        toast.error(result.message);
+      }
+      return;
+    }
+    const { error } = await supabase.auth.setSession({
+      access_token: result.session.access_token,
+      refresh_token: result.session.refresh_token,
+    });
+    if (error) {
+      toast.error("Could not start your session. Please try again.");
+      return;
+    }
+    await router.invalidate();
+    navigate({ to: result.role === "admin" ? "/admin" : "/dashboard" });
+  }
+
+  async function onPasswordSubmit(e: FormEvent) {
     e.preventDefault();
-    setFieldErrors({});
+    setPwErrors({});
     setPortalError(null);
 
-    const parsed = schema.safeParse({ email, password });
+    const parsed = passwordSchema.safeParse({ email, password });
     if (!parsed.success) {
       const errs: { email?: string; password?: string } = {};
       for (const issue of parsed.error.issues) {
         const k = issue.path[0] as "email" | "password";
         if (!errs[k]) errs[k] = issue.message;
       }
-      setFieldErrors(errs);
+      setPwErrors(errs);
       return;
     }
 
-    setSubmitting(true);
+    setPwSubmitting(true);
     try {
-      const result = await signIn({ data: parsed.data });
-      if (!result.ok) {
-        if (result.error === "wrong_portal" || result.error === "no_access") {
-          setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
-        } else {
-          toast.error(result.message);
-        }
-        return;
-      }
-
-      const { error } = await supabase.auth.setSession({
-        access_token: result.session.access_token,
-        refresh_token: result.session.refresh_token,
-      });
-      if (error) {
-        toast.error("Could not start your session. Please try again.");
-        return;
-      }
-      await router.invalidate();
-      navigate({ to: "/dashboard" });
+      const result = await signInPw({ data: parsed.data });
+      await handleSession(result);
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong. Please try again.");
     } finally {
-      setSubmitting(false);
+      setPwSubmitting(false);
+    }
+  }
+
+  async function onSendOtp(e: FormEvent) {
+    e.preventDefault();
+    setOtpEmailError(undefined);
+    setPortalError(null);
+
+    const parsed = emailOnlySchema.safeParse({ email: otpEmail });
+    if (!parsed.success) {
+      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email");
+      return;
+    }
+    setOtpSubmitting(true);
+    try {
+      await sendOtp({ data: parsed.data });
+      setOtpStage("verify");
+      toast.success("If an account exists, a 6-digit code was sent.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not send code. Please try again.");
+    } finally {
+      setOtpSubmitting(false);
+    }
+  }
+
+  async function onVerifyOtp(e: FormEvent) {
+    e.preventDefault();
+    setPortalError(null);
+    if (otpCode.length !== 6) {
+      toast.error("Enter the 6-digit code.");
+      return;
+    }
+    setOtpSubmitting(true);
+    try {
+      const result = await verifyOtp({
+        data: { email: otpEmail, token: otpCode },
+      });
+      await handleSession(result);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setOtpSubmitting(false);
     }
   }
 
@@ -90,76 +160,159 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl">Practitioner Sign In</CardTitle>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>
-            Access the Body Inc practitioner portal
+            Body Inc — Practitioner & Admin portal
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={submitting}
-                required
-              />
-              {fieldErrors.email && (
-                <p className="text-sm text-destructive">{fieldErrors.email}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={submitting}
-                required
-              />
-              {fieldErrors.password && (
-                <p className="text-sm text-destructive">{fieldErrors.password}</p>
-              )}
-            </div>
+          <Tabs defaultValue="password" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="password">Password</TabsTrigger>
+              <TabsTrigger value="otp">Email OTP</TabsTrigger>
+            </TabsList>
 
-            {portalError && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
-                <p className="text-foreground">{portalError.message}</p>
-                {portalError.redirectUrl && (
-                  <a
-                    href={portalError.redirectUrl}
-                    className="mt-2 inline-block font-medium text-destructive underline-offset-4 hover:underline"
+            <TabsContent value="password" className="mt-4">
+              <form onSubmit={onPasswordSubmit} className="space-y-4" noValidate>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={pwSubmitting}
+                    required
+                  />
+                  {pwErrors.email && (
+                    <p className="text-sm text-destructive">{pwErrors.email}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={pwSubmitting}
+                    required
+                  />
+                  {pwErrors.password && (
+                    <p className="text-sm text-destructive">{pwErrors.password}</p>
+                  )}
+                </div>
+
+                {portalError && <PortalErrorBox error={portalError} />}
+
+                <Button type="submit" className="w-full" disabled={pwSubmitting}>
+                  {pwSubmitting ? "Signing in…" : "Sign in"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="otp" className="mt-4">
+              {otpStage === "request" ? (
+                <form onSubmit={onSendOtp} className="space-y-4" noValidate>
+                  <div className="space-y-2">
+                    <Label htmlFor="otp-email">Email</Label>
+                    <Input
+                      id="otp-email"
+                      type="email"
+                      autoComplete="email"
+                      value={otpEmail}
+                      onChange={(e) => setOtpEmail(e.target.value)}
+                      disabled={otpSubmitting}
+                      required
+                    />
+                    {otpEmailError && (
+                      <p className="text-sm text-destructive">{otpEmailError}</p>
+                    )}
+                  </div>
+                  {portalError && <PortalErrorBox error={portalError} />}
+                  <Button type="submit" className="w-full" disabled={otpSubmitting}>
+                    {otpSubmitting ? "Sending…" : "Send code"}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={onVerifyOtp} className="space-y-4" noValidate>
+                  <div className="space-y-2">
+                    <Label>Enter the 6-digit code sent to {otpEmail}</Label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(v) => setOtpCode(v)}
+                        disabled={otpSubmitting}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+
+                  {portalError && <PortalErrorBox error={portalError} />}
+
+                  <Button type="submit" className="w-full" disabled={otpSubmitting}>
+                    {otpSubmitting ? "Verifying…" : "Verify & sign in"}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpStage("request");
+                      setOtpCode("");
+                      setPortalError(null);
+                    }}
+                    className="block w-full text-center text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
                   >
-                    Go to the correct portal →
-                  </a>
-                )}
-              </div>
-            )}
+                    Use a different email
+                  </button>
+                </form>
+              )}
+            </TabsContent>
+          </Tabs>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Signing in…" : "Sign in"}
-            </Button>
-
-            <p className="text-center text-xs text-muted-foreground">
-              Practitioner accounts are created by your administrator.
-            </p>
-          </form>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Accounts are created by your administrator.
+          </p>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function PortalErrorBox({
+  error,
+}: {
+  error: { message: string; redirectUrl?: string };
+}) {
+  return (
+    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+      <p className="text-foreground">{error.message}</p>
+      {error.redirectUrl && (
+        <a
+          href={error.redirectUrl}
+          className="mt-2 inline-block font-medium text-destructive underline-offset-4 hover:underline"
+        >
+          Go to the correct portal →
+        </a>
+      )}
     </div>
   );
 }
