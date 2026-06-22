@@ -12,11 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  vite: {
-    nitro: {
-      // Build for Vercel (serverless Node functions).
-      // Switch to "vercel-edge" if you want Edge runtime instead.
-      preset: "vercel",
-    },
+  // Build for Vercel (serverless Node functions) when building outside Lovable's sandbox.
+  // Inside Lovable, the preset is forced to Cloudflare automatically — this override
+  // only kicks in on Vercel/CI builds. Switch to "vercel-edge" for Edge runtime.
+  nitro: {
+    preset: "vercel",
   },
 });
