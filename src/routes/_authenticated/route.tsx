@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated")({
     const { data: role, error: roleError } = await supabase.rpc("get_user_portal", {
       _user_id: data.user.id,
     });
-    if (roleError || role !== "provider") {
+    if (roleError || (role !== "provider" && role !== "admin")) {
       await supabase.auth.signOut();
       throw redirect({ to: "/auth" });
     }
