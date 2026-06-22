@@ -1,71 +1,56 @@
+## Combined Admin + Practitioner Portal
 
-# Practitioner Portal – Login (Invite-Only)
+This portal (`provider.bodyinc.com`, also serving as the new admin login) accepts both `admin` and `provider` roles. Patients are blocked with a link to `patient.bodyinc.com`. Adds Email OTP login and a complete password reset flow alongside email/password.
 
-Build a login-only auth surface for `provider.bodyinc.com` that talks to the shared Supabase project (same one used by Admin and the future Patient project). Architected so the Patient project can reuse the exact same pattern.
+### Auth surface (`/auth`)
 
-## Shared Supabase changes (single migration)
+Single login page with two tabs:
+- **Password** – email + password
+- **OTP** – email → "Send code" → 6-digit code input → verify
 
-The existing `app_role` enum currently has `admin` (and used by `user_roles`). Extend it and add helpers all three projects will share.
+Both flows go through server functions that enforce role gating BEFORE returning a session to the browser, so a wrong-portal user never holds a session client-side.
 
-- `ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'provider';`
-- `ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'patient';`
-- Add `public.get_user_portal(_user_id uuid)` returning the user's role — SECURITY DEFINER, stable, `search_path = public`. Used by every portal to decide allow/deny.
-- Keep `user_roles` exactly as is. RLS already lets a user read their own role.
+### Server functions (`src/lib/auth.functions.ts`)
 
-No new tables. No data backfill in this migration (admins are seeded already).
+Replace the single `signInAsProvider` with role-agnostic functions allowing `['admin','provider']`:
 
-## Wrong-portal blocking (the core requirement)
+- `signInWithPassword({ email, password })` – ephemeral Supabase client, signs in, checks `get_user_portal`, signs out if role not allowed, returns `{ session }` on success or `{ error: 'wrong_portal'|'no_access'|'invalid_credentials', message, redirectUrl? }`.
+- `sendLoginOtp({ email })` – calls `signInWithOtp({ email, shouldCreateUser: false })`. Returns generic success even if user doesn't exist (don't leak account existence).
+- `verifyLoginOtp({ email, token })` – verifies 6-digit code via `verifyOtp({ type: 'email' })`, then same role check + sign-out-if-wrong pattern. Returns `{ session }` or error.
+- `getCurrentPortalRole` – unchanged.
 
-Strict server-side gate. No session is ever created on the wrong portal.
+Wrong-portal message for patients includes link to `https://patient.bodyinc.com`. Admin↔provider are both allowed in this portal, so no cross-message between them.
 
-1. User submits email + password on `/auth` (provider portal).
-2. Client calls a new server function `signInAsProvider({ email, password })`.
-3. Handler flow:
-   a. Use a server-local Supabase client (`SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`, `persistSession: false`) to call `signInWithPassword`.
-   b. On success, immediately call `get_user_portal(user.id)`.
-   c. If role !== `'provider'`: call `supabase.auth.signOut()` on that ephemeral client (kills the just-issued refresh token) and return `{ error: 'wrong_portal', actualRole, redirectUrl }` where redirectUrl maps `admin → https://admin.bodyinc.com`, `patient → https://patient.bodyinc.com`. If role is null: return `{ error: 'no_access' }`.
-   d. If role === `'provider'`: return `{ session }` (access + refresh token).
-4. Client receives the session and calls `supabase.auth.setSession(session)` only on success — so the browser never holds a session for a wrong-portal user.
-5. On `wrong_portal`, show: *"This email is registered as a {role}. Please log in at {portal-url}."* with a clickable link.
+### Routes
 
-This pattern is copy-pasted into the Patient project later by swapping the allowed role constant.
+- `src/routes/auth.tsx` – tabs for Password / OTP. Redirects already-signed-in users to `/admin` (admin) or `/dashboard` (provider).
+- `src/routes/forgot-password.tsx` – existing, kept.
+- `src/routes/reset-password.tsx` – existing, kept.
+- `src/routes/_authenticated/route.tsx` – gate accepts both `admin` and `provider`; stores role in route context.
+- `src/routes/_authenticated/dashboard.tsx` – provider landing.
+- `src/routes/_authenticated/admin.tsx` – new admin landing (placeholder; real admin UI comes later).
+- `src/routes/index.tsx` – redirect signed-in admins to `/admin`, providers to `/dashboard`, else `/auth`.
 
-## Routes & files (this project)
+Post-login navigation in `auth.tsx` calls `getCurrentPortalRole` after `setSession` and routes accordingly.
 
-- `src/routes/auth.tsx` – public login page (email, password, "Forgot password?" link). Redirects to `/dashboard` if already signed in as provider.
-- `src/routes/forgot-password.tsx` – public, sends `resetPasswordForEmail` with `redirectTo: ${origin}/reset-password`.
-- `src/routes/reset-password.tsx` – public, detects `type=recovery`, calls `updateUser({ password })`, then signs out and redirects to `/auth`.
-- `src/routes/_authenticated/route.tsx` – integration-managed gate (already present pattern). Add a secondary check: after `getUser()`, call `get_user_portal`; if not `'provider'`, sign out and redirect to `/auth` with a wrong-portal flag. Prevents access if a session somehow leaks in.
-- `src/routes/_authenticated/dashboard.tsx` – minimal placeholder ("Welcome, Practitioner") + sign-out button. Real practitioner features come later.
-- `src/lib/auth.functions.ts` – `signInAsProvider`, `getCurrentPortalRole` server fns.
+### Supabase
 
-## Signup
+No schema changes needed — `get_user_portal` and the enum already include `admin`, `provider`, `patient`. Email OTP must be enabled in Supabase Auth → Providers → Email (it is on by default).
 
-Invite-only. No signup link on `/auth`. Practitioner accounts are created from the Admin project (existing) which inserts into `auth.users` + `user_roles(role='provider')`. The login page just states: *"Practitioner accounts are created by your administrator."*
+### Reset password flow (already implemented, verifying)
 
-## Sign-out hygiene
+- `/forgot-password` → `resetPasswordForEmail({ redirectTo: origin + '/reset-password' })`
+- `/reset-password` → detect `type=recovery`, `updateUser({ password })`, sign out, redirect to `/auth`
+- Recovery emails are NOT gated by portal (a wrong-portal user requesting reset will still get the email; gating happens at next login attempt).
 
-Per the auth-guards rules: `cancelQueries → clear → supabase.auth.signOut() → navigate('/auth', replace)`.
+### Out of scope this turn
 
-## Reusability for Patient/Admin projects
+- Real admin dashboard UI
+- Inviting practitioners/admins from the admin UI
+- Email template customization (use Supabase defaults; can add Lovable auth emails later)
 
-The Admin project is done; do not change it. For the future Patient project, copy:
-- `auth.functions.ts` (change allowed role to `'patient'`, change redirect map)
-- `auth.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `_authenticated/route.tsx`
+### Files changed
 
-Shared Supabase migration above is the only DB work needed across all three.
-
-## Design (login page)
-
-Centered card, brand-neutral until you give styling direction. Email + password inputs (zod validation: email format, password min 8), submit button, inline error area for wrong-portal message (with link), "Forgot password?" link below. Toaster for generic errors.
-
-## Out of scope for this turn
-
-- Practitioner dashboard features
-- Admin UI for inviting practitioners (assumed already in your admin project — if not, flag it)
-- Social login (none requested)
-- Custom auth emails (can add later via Lovable email tools)
-
-## Open item to confirm during build
-
-Admin project should be inserting `user_roles(user_id, role='provider')` when creating a practitioner. If it doesn't yet, you'll need to add that there — practitioners won't be able to log in without a row in `user_roles`.
+- Rewrite: `src/lib/auth.functions.ts`, `src/routes/auth.tsx`, `src/routes/_authenticated/route.tsx`, `src/routes/index.tsx`
+- New: `src/routes/_authenticated/admin.tsx`
+- Unchanged: `forgot-password.tsx`, `reset-password.tsx`, `_authenticated/dashboard.tsx`, Supabase migration
