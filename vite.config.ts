@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    nitro: {
+      // Build for Vercel (serverless Node functions).
+      // Switch to "vercel-edge" if you want Edge runtime instead.
+      preset: "vercel",
+    },
+  },
 });
