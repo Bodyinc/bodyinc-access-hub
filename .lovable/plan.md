@@ -1,37 +1,72 @@
-## Fix: reset link must land on the password-change screen
+## Add Provider Feature
 
-The `/reset-password` screen already exists. What's broken is the link's landing — it currently lands on `/auth` (login) instead. Two things cause this, one in code and one in the Supabase email template.
+US-healthcare provider management for the admin portal. Admins invite providers (who set their own password via emailed reset link), edit their record later, toggle active/inactive, and soft- or hard-delete.
 
-### 1. Code — handle every recovery link shape on `/reset-password`
+### Database (one migration)
 
-Today `src/routes/reset-password.tsx` only handles `?code=…` (PKCE) and an existing session. If Supabase sends the newer `token_hash` shape or the legacy hash fragment, the page sits in "Verifying…" or the supabase-js listener fires `SIGNED_IN` and the user is bounced via the global auth listener.
+New table `public.providers` (1:1 with `auth.users`):
 
-Update `src/routes/reset-password.tsx` to:
-- Handle `?token_hash=…&type=recovery` via `supabase.auth.verifyOtp({ type: 'recovery', token_hash })`.
-- Keep existing `?code=…` PKCE branch (`exchangeCodeForSession`).
-- Keep hash-fragment branch (supabase-js auto-parses; listener flips `ready` on `PASSWORD_RECOVERY` / `SIGNED_IN`).
-- After verifying, strip the query/hash from the URL so a refresh doesn't re-consume the token.
-- Show explicit error UI with a "Request a new link" button → `/forgot-password` when the link is missing/expired/invalid.
+- `id uuid PK references auth.users(id) on delete cascade`
+- Core: `email text not null unique`, `full_name text not null`, `phone text`, `avatar_url text`, `bio text`
+- Licensing: `credentials text` (MD/DO/NP/PA/other), `specialty text`, `npi text` (10 digits), `dea text`, `license_number text`, `license_states text[]` (US state codes)
+- Practice: `years_experience int`, `languages text[]`, `consultation_types text[]` (video/phone/chat/in-person), `practice_states text[]`
+- Address: `address_line1 text`, `address_line2 text`, `city text`, `state text` (2-char), `zip text` (5 or 9 digit), `country text default 'US'`
+- Status: `is_active boolean not null default true`, `created_at`, `updated_at`
+- Trigger: `updated_at` auto-touch
+- Grants: `authenticated` full CRUD, `service_role` all
+- RLS:
+  - Admins (via `has_role(auth.uid(),'admin')`) → full CRUD
+  - A provider can `SELECT`/`UPDATE` their own row (`id = auth.uid()`)
+- Add `has_role(_user_id uuid, _role app_role)` helper if it isn't already there (current schema only has `get_user_role`).
+- Extend `_authenticated/route.tsx` gate logic later if needed — not in this change.
 
-Also guard the global `onAuthStateChange` listener in `src/routes/__root.tsx` so a `PASSWORD_RECOVERY` event on `/reset-password` does NOT call `router.invalidate()` (which is what sends the user to `/auth` mid-flow). Skip invalidation when `window.location.pathname === '/reset-password'`.
+### Server functions (`src/lib/providers.functions.ts`)
 
-### 2. Supabase dashboard — email template + URL config (you do this once)
+All gated with `requireSupabaseAuth` + admin check via `has_role` RPC. Privileged ops dynamically import `client.server`'s `supabaseAdmin`.
 
-This is why the link currently dumps you on login: the recovery email is using the magic-link template, so its URL points to Site URL (`/auth`) instead of `/reset-password`.
+- `listProviders({ search?, status? })` — joins `providers` + `user_roles`; returns rows for the table view.
+- `getProvider({ id })` — single record for the edit screen.
+- `createProvider({ ...providerFields })`:
+  1. `supabaseAdmin.auth.admin.createUser({ email, email_confirm: true })`
+  2. Insert `user_roles` row with role `'provider'`
+  3. Insert `providers` row keyed by the new user id
+  4. `supabaseAdmin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: '<origin>/reset-password' } })` and let Supabase email it (Brevo SMTP already configured)
+- `updateProvider({ id, ...fields })` — admin RLS allows the update.
+- `resendInvite({ id })` — re-issues the recovery link.
+- `setProviderActive({ id, is_active })` — flips flag; when false, also call `supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: '876000h' })` to block login. Re-activating clears the ban.
+- `deleteProvider({ id })` — `supabaseAdmin.auth.admin.deleteUser(id)`; cascades remove `providers` + `user_roles`.
 
-- **Auth → URL Configuration**
-  - Site URL: your production origin (e.g. `https://provider.bodyinc.com`)
-  - Redirect URLs: add `https://provider.bodyinc.com/reset-password`, your Lovable preview origin + `/reset-password`, and `http://localhost:*/reset-password` for dev.
-- **Auth → Email Templates → Reset Password**: body must use `{{ .ConfirmationURL }}` (NOT `{{ .Token }}`). Recommended body:
-  ```html
-  <h2>Reset your password</h2>
-  <p><a href="{{ .ConfirmationURL }}">Click here to set a new password</a>. This link expires in 1 hour.</p>
-  ```
-  `{{ .ConfirmationURL }}` automatically resolves to `<SiteURL>/reset-password?...` because our code passes `redirectTo: <origin>/reset-password`.
+Validation: zod schema (NPI = 10 digits, DEA = 2 letters + 7 digits, ZIP 5 or 9, US state code in enum list, email format). Shared between client form and server handler.
+
+### Routes / UI
+
+Replace placeholder `src/routes/_authenticated/admin.providers.tsx` with a list view, and add two more files:
+
+- `admin.providers.tsx` — table with search (name/email/specialty), status filter (All/Active/Inactive), "Add Provider" button → `/admin/providers/new`. Row actions: Edit, Resend invite, Activate/Deactivate, Delete (confirm dialog).
+- `admin.providers.new.tsx` — full form, on submit calls `createProvider`, toasts "Invite link sent", redirects to list.
+- `admin.providers.$providerId.tsx` — edit form pre-filled via `getProvider`; save calls `updateProvider`.
+
+Form is split into shared component `src/components/admin/provider-form.tsx` with sections: Identity, Licensing & Credentials, Practice, Address, Status. Uses react-hook-form + zod, shadcn `Form`, `Input`, `Select`, `Textarea`, `MultiSelect` (build a small Combobox for state/language multi-select), `Switch` for active.
+
+Data fetching: TanStack Query — `useSuspenseQuery` in routes, mutations via `useMutation` + `queryClient.invalidateQueries(['providers'])`.
 
 ### Files
-- `src/routes/reset-password.tsx` — add `token_hash` branch + URL cleanup + clearer error state with "Request a new link" CTA.
-- `src/routes/__root.tsx` — skip router invalidation while on `/reset-password`.
+
+Create:
+- `src/lib/providers.functions.ts`
+- `src/lib/providers.schema.ts` (zod + US states/credentials constants shared client+server)
+- `src/components/admin/provider-form.tsx`
+- `src/routes/_authenticated/admin.providers.new.tsx`
+- `src/routes/_authenticated/admin.providers.$providerId.tsx`
+
+Edit:
+- `src/routes/_authenticated/admin.providers.tsx` (replace placeholder with list view)
+
+Migration: `providers` table + `has_role` function (if missing) + RLS + grants + updated_at trigger.
 
 ### Out of scope
-No changes to `forgot-password.tsx`, `auth.functions.ts`, or login UX. No DB migrations.
+
+- Bulk import
+- Provider availability / scheduling (separate Slots feature)
+- File upload for avatar (URL field only for now — storage bucket can come later if you want)
+- Audit log
