@@ -21,7 +21,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const items = [
+type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
+const items: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
   { title: "Intake Questions", url: "/admin/questions", icon: HelpCircle },
   { title: "Available Slots", url: "/admin/slots", icon: CalendarClock },
@@ -30,7 +31,7 @@ const items = [
   { title: "Packages", url: "/admin/packages", icon: Package },
   { title: "Patients", url: "/admin/patients", icon: Users },
   { title: "Intake Form", url: "/admin/intake-form", icon: ClipboardList },
-] as const;
+];
 
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
