@@ -16,24 +16,30 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           dob: string | null
+          email: string
           full_name: string
           id: string
           phone: string | null
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           dob?: string | null
+          email: string
           full_name: string
           id: string
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           dob?: string | null
+          email?: string
           full_name?: string
           id?: string
           phone?: string | null
@@ -45,7 +51,6 @@ export type Database = {
         Row: {
           address_line1: string | null
           address_line2: string | null
-          avatar_url: string | null
           bio: string | null
           city: string | null
           consultation_types: string[]
@@ -53,15 +58,12 @@ export type Database = {
           created_at: string
           credentials: string | null
           dea: string | null
-          email: string
-          full_name: string
           id: string
           is_active: boolean
           languages: string[]
           license_number: string | null
           license_states: string[]
           npi: string | null
-          phone: string | null
           practice_states: string[]
           specialty: string | null
           state: string | null
@@ -72,7 +74,6 @@ export type Database = {
         Insert: {
           address_line1?: string | null
           address_line2?: string | null
-          avatar_url?: string | null
           bio?: string | null
           city?: string | null
           consultation_types?: string[]
@@ -80,15 +81,12 @@ export type Database = {
           created_at?: string
           credentials?: string | null
           dea?: string | null
-          email: string
-          full_name: string
           id: string
           is_active?: boolean
           languages?: string[]
           license_number?: string | null
           license_states?: string[]
           npi?: string | null
-          phone?: string | null
           practice_states?: string[]
           specialty?: string | null
           state?: string | null
@@ -99,7 +97,6 @@ export type Database = {
         Update: {
           address_line1?: string | null
           address_line2?: string | null
-          avatar_url?: string | null
           bio?: string | null
           city?: string | null
           consultation_types?: string[]
@@ -107,15 +104,12 @@ export type Database = {
           created_at?: string
           credentials?: string | null
           dea?: string | null
-          email?: string
-          full_name?: string
           id?: string
           is_active?: boolean
           languages?: string[]
           license_number?: string | null
           license_states?: string[]
           npi?: string | null
-          phone?: string | null
           practice_states?: string[]
           specialty?: string | null
           state?: string | null
@@ -145,7 +139,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      provider_directory: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          credentials: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          is_active: boolean | null
+          phone: string | null
+          specialty: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_my_role: {
