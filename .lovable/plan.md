@@ -1,72 +1,47 @@
-## Add Provider Feature
+## Normalize user data — single source of truth
 
-US-healthcare provider management for the admin portal. Admins invite providers (who set their own password via emailed reset link), edit their record later, toggle active/inactive, and soft- or hard-delete.
+Make `profiles` the only place common user info lives (admins, providers, patients). `providers` holds only provider-specific fields. `user_roles` keeps roles. `auth.users` is auth only.
 
-### Database (one migration)
+### Schema migration
 
-New table `public.providers` (1:1 with `auth.users`):
+1. Extend `public.profiles`:
+   - Add `email text` (synced from `auth.users`), `avatar_url text`, `updated_at` already present.
+   - Backfill `email` from `auth.users.email` for existing rows.
+   - Add `UNIQUE (email)`.
+   - Update `handle_new_user()` trigger to also write `email` and `avatar_url` from `auth.users` / `raw_user_meta_data`.
+   - Add trigger on `auth.users` UPDATE (email change) to sync `profiles.email`.
+   - RLS: keep "users view/insert/update own profile"; add admin full-access policy via `has_role(auth.uid(),'admin')` so admin lists work.
 
-- `id uuid PK references auth.users(id) on delete cascade`
-- Core: `email text not null unique`, `full_name text not null`, `phone text`, `avatar_url text`, `bio text`
-- Licensing: `credentials text` (MD/DO/NP/PA/other), `specialty text`, `npi text` (10 digits), `dea text`, `license_number text`, `license_states text[]` (US state codes)
-- Practice: `years_experience int`, `languages text[]`, `consultation_types text[]` (video/phone/chat/in-person), `practice_states text[]`
-- Address: `address_line1 text`, `address_line2 text`, `city text`, `state text` (2-char), `zip text` (5 or 9 digit), `country text default 'US'`
-- Status: `is_active boolean not null default true`, `created_at`, `updated_at`
-- Trigger: `updated_at` auto-touch
-- Grants: `authenticated` full CRUD, `service_role` all
-- RLS:
-  - Admins (via `has_role(auth.uid(),'admin')`) → full CRUD
-  - A provider can `SELECT`/`UPDATE` their own row (`id = auth.uid()`)
-- Add `has_role(_user_id uuid, _role app_role)` helper if it isn't already there (current schema only has `get_user_role`).
-- Extend `_authenticated/route.tsx` gate logic later if needed — not in this change.
+2. Refactor `public.providers`:
+   - Backfill `profiles` rows for any provider whose profile is missing (copy `full_name`, `phone`, `email`, `avatar_url`).
+   - Drop columns: `email`, `full_name`, `phone`, `avatar_url`.
+   - Drop indexes on those columns; add `providers_specialty_idx` on `lower(specialty)` for search.
+   - Keep all provider-specific columns (bio, credentials, specialty, npi, dea, license_*, years_experience, languages, consultation_types, practice_states, address_*, country, is_active).
 
-### Server functions (`src/lib/providers.functions.ts`)
+3. `user_roles`: unchanged. Add grants if missing (already granted).
 
-All gated with `requireSupabaseAuth` + admin check via `has_role` RPC. Privileged ops dynamically import `client.server`'s `supabaseAdmin`.
+4. Helper view `public.provider_directory` (security_invoker) joining `providers` + `profiles` for admin list queries — keeps server code simple and respects RLS:
+   ```
+   SELECT p.id, pr.full_name, pr.email, pr.phone, pr.avatar_url,
+          p.specialty, p.credentials, p.is_active, p.created_at
+   FROM public.providers p
+   JOIN public.profiles pr ON pr.id = p.id;
+   ```
 
-- `listProviders({ search?, status? })` — joins `providers` + `user_roles`; returns rows for the table view.
-- `getProvider({ id })` — single record for the edit screen.
-- `createProvider({ ...providerFields })`:
-  1. `supabaseAdmin.auth.admin.createUser({ email, email_confirm: true })`
-  2. Insert `user_roles` row with role `'provider'`
-  3. Insert `providers` row keyed by the new user id
-  4. `supabaseAdmin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: '<origin>/reset-password' } })` and let Supabase email it (Brevo SMTP already configured)
-- `updateProvider({ id, ...fields })` — admin RLS allows the update.
-- `resendInvite({ id })` — re-issues the recovery link.
-- `setProviderActive({ id, is_active })` — flips flag; when false, also call `supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: '876000h' })` to block login. Re-activating clears the ban.
-- `deleteProvider({ id })` — `supabaseAdmin.auth.admin.deleteUser(id)`; cascades remove `providers` + `user_roles`.
+### Code updates (after migration approval + types regen)
 
-Validation: zod schema (NPI = 10 digits, DEA = 2 letters + 7 digits, ZIP 5 or 9, US state code in enum list, email format). Shared between client form and server handler.
-
-### Routes / UI
-
-Replace placeholder `src/routes/_authenticated/admin.providers.tsx` with a list view, and add two more files:
-
-- `admin.providers.tsx` — table with search (name/email/specialty), status filter (All/Active/Inactive), "Add Provider" button → `/admin/providers/new`. Row actions: Edit, Resend invite, Activate/Deactivate, Delete (confirm dialog).
-- `admin.providers.new.tsx` — full form, on submit calls `createProvider`, toasts "Invite link sent", redirects to list.
-- `admin.providers.$providerId.tsx` — edit form pre-filled via `getProvider`; save calls `updateProvider`.
-
-Form is split into shared component `src/components/admin/provider-form.tsx` with sections: Identity, Licensing & Credentials, Practice, Address, Status. Uses react-hook-form + zod, shadcn `Form`, `Input`, `Select`, `Textarea`, `MultiSelect` (build a small Combobox for state/language multi-select), `Switch` for active.
-
-Data fetching: TanStack Query — `useSuspenseQuery` in routes, mutations via `useMutation` + `queryClient.invalidateQueries(['providers'])`.
-
-### Files
-
-Create:
-- `src/lib/providers.functions.ts`
-- `src/lib/providers.schema.ts` (zod + US states/credentials constants shared client+server)
-- `src/components/admin/provider-form.tsx`
-- `src/routes/_authenticated/admin.providers.new.tsx`
-- `src/routes/_authenticated/admin.providers.$providerId.tsx`
-
-Edit:
-- `src/routes/_authenticated/admin.providers.tsx` (replace placeholder with list view)
-
-Migration: `providers` table + `has_role` function (if missing) + RLS + grants + updated_at trigger.
+- `src/lib/providers.schema.ts`: split into two zod schemas — `profileFieldsSchema` (full_name, phone, email, avatar_url) and `providerFieldsSchema` (provider-only). Combine for the form.
+- `src/lib/providers.functions.ts`:
+  - `createProvider`: createUser → insert `profiles` (id, email, full_name, phone, avatar_url) → insert `user_roles` → insert `providers` (provider-only fields) → send reset link.
+  - `updateProvider`: split payload — write profile fields to `profiles`, provider fields to `providers`.
+  - `listProviders`: query `provider_directory` view (or join in code).
+  - `getProvider`: select `providers.*` and join `profiles` (`profiles!inner(full_name, email, phone, avatar_url)`); flatten before returning.
+  - `resendInvite`: read email from `profiles` instead of `providers`.
+- `src/components/admin/provider-form.tsx`: no UX change — form still shows identity + provider sections; the submit payload is split server-side.
+- `src/routes/_authenticated/admin.providers.index.tsx` & `admin.providers.$providerId.tsx`: adjust to new shape returned by list/get.
 
 ### Out of scope
 
-- Bulk import
-- Provider availability / scheduling (separate Slots feature)
-- File upload for avatar (URL field only for now — storage bucket can come later if you want)
-- Audit log
+- Patients table (will come with patient feature).
+- Avatar storage bucket.
+- Migrating admin self-edit UI.
