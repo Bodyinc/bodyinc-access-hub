@@ -126,7 +126,7 @@ function AuthPage() {
     try {
       await sendOtp({ data: parsed.data });
       setOtpStage("verify");
-      toast.success("If an account exists, a 6-digit code was sent.");
+      toast.success("If an account exists, an 8-digit code was sent.");
     } catch (err) {
       console.error(err);
       toast.error("Could not send code. Please try again.");
