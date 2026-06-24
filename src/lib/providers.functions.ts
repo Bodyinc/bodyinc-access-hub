@@ -100,7 +100,7 @@ export const createProvider = createServerFn({ method: "POST" })
     const { error: profileErr } = await supabaseAdmin
       .from("profiles")
       .upsert(
-        { id: userId, email, ...profileFields },
+        { id: userId, email, full_name: profileFields.full_name ?? "", ...profileFields } as any,
         { onConflict: "id" },
       );
     if (profileErr) {
@@ -150,7 +150,7 @@ export const updateProvider = createServerFn({ method: "POST" })
     if (Object.keys(profileFields).length > 0) {
       const { error } = await context.supabase
         .from("profiles")
-        .update(profileFields)
+        .update(profileFields as any)
         .eq("id", id);
       if (error) throw new Error(error.message);
     }
@@ -165,7 +165,7 @@ export const updateProvider = createServerFn({ method: "POST" })
     if (Object.keys(providerFields).length > 0) {
       const { error } = await context.supabase
         .from("providers")
-        .update(providerFields)
+        .update(providerFields as any)
         .eq("id", id);
       if (error) throw new Error(error.message);
     }
