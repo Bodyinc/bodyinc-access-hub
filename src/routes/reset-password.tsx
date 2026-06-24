@@ -36,16 +36,46 @@ function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
 
   useEffect(() => {
+    let cancelled = false;
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
+
+    (async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      const errorDesc = url.searchParams.get("error_description") || url.hash.match(/error_description=([^&]+)/)?.[1];
+
+      if (errorDesc) {
+        if (!cancelled) setLinkError(decodeURIComponent(errorDesc));
+        return;
+      }
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!cancelled) {
+          if (error) setLinkError("This reset link is invalid or has expired. Please request a new one.");
+          else {
+            setReady(true);
+            // Clean ?code from the URL
+            window.history.replaceState({}, "", url.pathname);
+          }
+        }
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!cancelled && data.session) setReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function onSubmit(e: FormEvent) {
@@ -82,7 +112,9 @@ function ResetPasswordPage() {
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl">Set a new password</CardTitle>
           <CardDescription>
-            {ready
+            {linkError
+              ? linkError
+              : ready
               ? "Choose a new password for your practitioner account."
               : "Verifying your reset link…"}
           </CardDescription>

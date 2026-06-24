@@ -4,13 +4,23 @@ export const Route = createFileRoute("/")({
   ssr: false,
   beforeLoad: async () => {
     const { supabase } = await import("@/integrations/supabase/client");
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (!user) {
       throw redirect({ to: "/auth" });
     }
-    const { data: role } = await supabase.rpc("get_user_portal", {
-      _user_id: data.user.id,
-    });
+    const cacheKey = `bi_portal_role:${user.id}`;
+    let role: string | null = null;
+    try { role = sessionStorage.getItem(cacheKey); } catch {}
+    if (!role) {
+      const { data: fetched } = await supabase.rpc("get_user_portal", {
+        _user_id: user.id,
+      });
+      role = (fetched as string | null) ?? null;
+      if (role) {
+        try { sessionStorage.setItem(cacheKey, role); } catch {}
+      }
+    }
     if (role === "admin") throw redirect({ to: "/admin" });
     if (role === "provider") throw redirect({ to: "/dashboard" });
     await supabase.auth.signOut();
