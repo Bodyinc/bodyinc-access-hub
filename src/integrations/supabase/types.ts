@@ -41,6 +41,90 @@ export type Database = {
         }
         Relationships: []
       }
+      providers: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          consultation_types: string[]
+          country: string
+          created_at: string
+          credentials: string | null
+          dea: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          languages: string[]
+          license_number: string | null
+          license_states: string[]
+          npi: string | null
+          phone: string | null
+          practice_states: string[]
+          specialty: string | null
+          state: string | null
+          updated_at: string
+          years_experience: number | null
+          zip: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          consultation_types?: string[]
+          country?: string
+          created_at?: string
+          credentials?: string | null
+          dea?: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active?: boolean
+          languages?: string[]
+          license_number?: string | null
+          license_states?: string[]
+          npi?: string | null
+          phone?: string | null
+          practice_states?: string[]
+          specialty?: string | null
+          state?: string | null
+          updated_at?: string
+          years_experience?: number | null
+          zip?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          consultation_types?: string[]
+          country?: string
+          created_at?: string
+          credentials?: string | null
+          dea?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          languages?: string[]
+          license_number?: string | null
+          license_states?: string[]
+          npi?: string | null
+          phone?: string | null
+          practice_states?: string[]
+          specialty?: string | null
+          state?: string | null
+          updated_at?: string
+          years_experience?: number | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -75,6 +159,13 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
