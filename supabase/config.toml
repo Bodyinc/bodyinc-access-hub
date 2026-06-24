@@ -1,1 +1,8 @@
 project_id = "gedtaeganzrbtxviltpo"
+
+[auth.email]
+# Length of the email OTP code sent for passwordless sign-in.
+# Must also be set in the Supabase dashboard (Auth → Providers → Email)
+# for the hosted project — config.toml only affects local dev.
+otp_length = 8
+otp_expiry = 600
