@@ -122,6 +122,15 @@ function RootComponent() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      // Don't invalidate while user is in the middle of the password-reset flow,
+      // otherwise the recovery session bounces them to /auth before they can set a new password.
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname === "/reset-password" &&
+        event !== "SIGNED_OUT"
+      ) {
+        return;
+      }
       if (event === "SIGNED_OUT") {
         try {
           for (const k of Object.keys(sessionStorage)) {
