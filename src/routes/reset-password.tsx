@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
@@ -48,10 +48,30 @@ function ResetPasswordPage() {
     (async () => {
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
-      const errorDesc = url.searchParams.get("error_description") || url.hash.match(/error_description=([^&]+)/)?.[1];
+      const tokenHash = url.searchParams.get("token_hash");
+      const type = url.searchParams.get("type");
+      const errorDesc =
+        url.searchParams.get("error_description") ||
+        url.hash.match(/error_description=([^&]+)/)?.[1];
 
       if (errorDesc) {
         if (!cancelled) setLinkError(decodeURIComponent(errorDesc));
+        return;
+      }
+
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          type: (type as "recovery") || "recovery",
+          token_hash: tokenHash,
+        });
+        if (!cancelled) {
+          if (error) {
+            setLinkError("This reset link is invalid or has expired. Please request a new one.");
+          } else {
+            setReady(true);
+            window.history.replaceState({}, "", url.pathname);
+          }
+        }
         return;
       }
 
@@ -69,7 +89,17 @@ function ResetPasswordPage() {
       }
 
       const { data } = await supabase.auth.getSession();
-      if (!cancelled && data.session) setReady(true);
+      if (!cancelled) {
+        if (data.session) {
+          setReady(true);
+          if (window.location.hash) {
+            window.history.replaceState({}, "", url.pathname);
+          }
+        } else if (!window.location.hash) {
+          // No code, no token_hash, no hash fragment, no session → bad/missing link.
+          setLinkError("This reset link is invalid or has expired. Please request a new one.");
+        }
+      }
     })();
 
     return () => {
@@ -120,6 +150,21 @@ function ResetPasswordPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {linkError ? (
+            <div className="space-y-3 text-center">
+              <Link
+                to="/forgot-password"
+                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Request a new link
+              </Link>
+              <div>
+                <Link to="/auth" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+                  Back to sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-2">
               <Label htmlFor="password">New password</Label>
@@ -151,6 +196,7 @@ function ResetPasswordPage() {
               {submitting ? "Saving…" : "Save new password"}
             </Button>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>
