@@ -1,11 +1,35 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  getPasswordRecoveryRedirectUrl,
+  haltForPasswordRecoveryRedirect,
+  isPasswordRecoveryPending,
+} from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/")({
   ssr: false,
   beforeLoad: async () => {
+    if (typeof window !== "undefined") {
+      const recoveryRedirect = getPasswordRecoveryRedirectUrl();
+      if (recoveryRedirect) {
+        window.location.replace(recoveryRedirect);
+        await haltForPasswordRecoveryRedirect();
+      }
+    }
+
     const { supabase } = await import("@/integrations/supabase/client");
     const { data } = await supabase.auth.getSession();
     const user = data.session?.user;
+
+    if (
+      user &&
+      typeof window !== "undefined" &&
+      isPasswordRecoveryPending() &&
+      window.location.pathname !== "/reset-password"
+    ) {
+      window.location.replace("/reset-password");
+      await haltForPasswordRecoveryRedirect();
+    }
+
     if (!user) {
       throw redirect({ to: "/auth" });
     }

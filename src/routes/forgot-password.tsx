@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { markPasswordRecoveryPending } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -45,6 +46,7 @@ function ForgotPasswordPage() {
         toast.error(err.message);
         return;
       }
+      markPasswordRecoveryPending();
       setSent(true);
     } finally {
       setSubmitting(false);

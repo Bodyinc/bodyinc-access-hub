@@ -11,6 +11,11 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import {
+  clearPasswordRecoveryPending,
+  getPasswordRecoveryRedirectUrl,
+  isPasswordRecoveryPending,
+} from "@/lib/password-recovery";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -120,18 +125,44 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    const recoveryRedirect = getPasswordRecoveryRedirectUrl();
+    if (recoveryRedirect) {
+      window.location.replace(recoveryRedirect);
+      return;
+    }
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      // Don't invalidate while user is in the middle of the password-reset flow,
-      // otherwise the recovery session bounces them to /auth before they can set a new password.
-      if (
-        typeof window !== "undefined" &&
-        window.location.pathname === "/reset-password" &&
-        event !== "SIGNED_OUT"
-      ) {
+      if (event === "PASSWORD_RECOVERY") {
+        const redirectUrl = getPasswordRecoveryRedirectUrl();
+        if (redirectUrl) {
+          window.location.replace(redirectUrl);
+          return;
+        }
+        if (window.location.pathname !== "/reset-password") {
+          window.location.replace("/reset-password");
+        }
         return;
       }
+
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+
+      if (event === "SIGNED_IN") {
+        const redirectUrl = getPasswordRecoveryRedirectUrl();
+        if (redirectUrl) {
+          window.location.replace(redirectUrl);
+          return;
+        }
+        // Recovery creates a session before the new password is saved — stay on reset page.
+        if (
+          typeof window !== "undefined" &&
+          (window.location.pathname === "/reset-password" || isPasswordRecoveryPending())
+        ) {
+          return;
+        }
+      }
+
       if (event === "SIGNED_OUT") {
+        clearPasswordRecoveryPending();
         try {
           for (const k of Object.keys(sessionStorage)) {
             if (k.startsWith("bi_portal_role:")) sessionStorage.removeItem(k);

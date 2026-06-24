@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -32,6 +33,7 @@ const schema = z
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -128,8 +130,26 @@ function ResetPasswordPage() {
         toast.error(error.message);
         return;
       }
-      toast.success("Password updated. Please sign in.");
+      clearPasswordRecoveryPending();
+      toast.success("Password updated. Signing you in…");
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: role } = await supabase.rpc("get_user_portal", { _user_id: user.id });
+        if (role === "admin" || role === "provider") {
+          try {
+            sessionStorage.setItem(`bi_portal_role:${user.id}`, role);
+          } catch {}
+          await router.invalidate();
+          navigate({ to: role === "admin" ? "/admin" : "/dashboard", replace: true });
+          return;
+        }
+      }
+
       await supabase.auth.signOut();
+      toast.error("Your account does not have portal access.");
       navigate({ to: "/auth", replace: true });
     } finally {
       setSubmitting(false);

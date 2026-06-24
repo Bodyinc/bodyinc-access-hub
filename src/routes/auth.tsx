@@ -17,6 +17,7 @@ import {
   verifyLoginOtp,
   type SignInResult,
 } from "@/lib/auth.functions";
+import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -80,6 +81,7 @@ function AuthPage() {
       toast.error("Could not start your session. Please try again.");
       return;
     }
+    clearPasswordRecoveryPending();
     await router.invalidate();
     navigate({ to: result.role === "admin" ? "/admin" : "/dashboard" });
   }

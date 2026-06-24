@@ -18,4 +18,13 @@ export default defineConfig({
   nitro: {
     preset: "vercel",
   },
+  // Project lives under a path containing ":" (Admin:Provider). Vite's fs guard
+  // rejects any path with colons on non-Windows systems, so relax it for local dev.
+  vite: {
+    server: {
+      fs: {
+        strict: false,
+      },
+    },
+  },
 });
