@@ -11,6 +11,20 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden");
 }
 
+const PROFILE_KEYS = ["full_name", "phone", "avatar_url"] as const;
+type ProfileKey = (typeof PROFILE_KEYS)[number];
+
+function splitProviderPayload<T extends Record<string, any>>(input: T) {
+  const profile: Record<string, any> = {};
+  const provider: Record<string, any> = {};
+  for (const [k, v] of Object.entries(input)) {
+    if (v === undefined) continue;
+    if ((PROFILE_KEYS as readonly string[]).includes(k)) profile[k as ProfileKey] = v;
+    else provider[k] = v;
+  }
+  return { profile, provider };
+}
+
 const listInput = z
   .object({
     search: z.string().trim().max(120).optional(),
@@ -24,10 +38,8 @@ export const listProviders = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     let query = context.supabase
-      .from("providers")
-      .select(
-        "id, email, full_name, phone, specialty, credentials, is_active, created_at",
-      )
+      .from("provider_directory")
+      .select("id, full_name, email, phone, avatar_url, specialty, credentials, is_active, created_at")
       .order("created_at", { ascending: false });
 
     if (data.status === "active") query = query.eq("is_active", true);
@@ -52,12 +64,13 @@ export const getProvider = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { data: row, error } = await context.supabase
       .from("providers")
-      .select("*")
+      .select("*, profile:profiles!inner(full_name, email, phone, avatar_url)")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Provider not found");
-    return row;
+    const { profile, ...provider } = row as any;
+    return { ...provider, ...profile };
   });
 
 const createInput = providerFormSchema.extend({
@@ -70,17 +83,30 @@ export const createProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { redirect_to, ...fields } = data;
+    const { redirect_to, email, ...rest } = data;
+    const { profile: profileFields, provider: providerFields } = splitProviderPayload(rest);
 
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email: fields.email,
+      email,
       email_confirm: true,
-      user_metadata: { full_name: fields.full_name },
+      user_metadata: { full_name: profileFields.full_name },
     });
     if (createErr || !created.user) {
       throw new Error(createErr?.message ?? "Could not create user");
     }
     const userId = created.user.id;
+
+    // Upsert profile (trigger may have already inserted a base row)
+    const { error: profileErr } = await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        { id: userId, email, ...profileFields },
+        { onConflict: "id" },
+      );
+    if (profileErr) {
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      throw new Error(profileErr.message);
+    }
 
     const { error: roleErr } = await supabaseAdmin
       .from("user_roles")
@@ -92,14 +118,14 @@ export const createProvider = createServerFn({ method: "POST" })
 
     const { error: insertErr } = await supabaseAdmin
       .from("providers")
-      .insert({ id: userId, ...fields });
+      .insert({ id: userId, ...providerFields });
     if (insertErr) {
       await supabaseAdmin.auth.admin.deleteUser(userId);
       throw new Error(insertErr.message);
     }
 
     const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(
-      fields.email,
+      email,
       { redirectTo: redirect_to },
     );
     if (linkErr) {
@@ -118,12 +144,31 @@ export const updateProvider = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => updateInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { id, ...fields } = data;
-    const { error } = await context.supabase
-      .from("providers")
-      .update(fields)
-      .eq("id", id);
-    if (error) throw new Error(error.message);
+    const { id, email, ...rest } = data;
+    const { profile: profileFields, provider: providerFields } = splitProviderPayload(rest);
+
+    if (Object.keys(profileFields).length > 0) {
+      const { error } = await context.supabase
+        .from("profiles")
+        .update(profileFields)
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    }
+
+    if (email) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(id, { email });
+      if (authErr) throw new Error(authErr.message);
+      // Trigger on auth.users will sync profiles.email
+    }
+
+    if (Object.keys(providerFields).length > 0) {
+      const { error } = await context.supabase
+        .from("providers")
+        .update(providerFields)
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
 
@@ -135,11 +180,11 @@ export const resendInvite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { data: row, error } = await context.supabase
-      .from("providers")
+      .from("profiles")
       .select("email")
       .eq("id", data.id)
       .maybeSingle();
-    if (error || !row) throw new Error("Provider not found");
+    if (error || !row?.email) throw new Error("Provider not found");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(
       row.email,
