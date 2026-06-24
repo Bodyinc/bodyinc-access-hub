@@ -24,7 +24,7 @@ const emailSchema = z.object({
 
 const verifyOtpSchema = z.object({
   email: z.string().trim().email().max(255),
-  token: z.string().trim().regex(/^\d{6}$/u, "Enter the 6-digit code"),
+  token: z.string().trim().regex(/^\d{8}$/u, "Enter the 8-digit code"),
 });
 
 function serverSupabase() {

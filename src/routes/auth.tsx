@@ -138,8 +138,8 @@ function AuthPage() {
   async function onVerifyOtp(e: FormEvent) {
     e.preventDefault();
     setPortalError(null);
-    if (otpCode.length !== 6) {
-      toast.error("Enter the 6-digit code.");
+    if (otpCode.length !== 8) {
+      toast.error("Enter the 8-digit code.");
       return;
     }
     setOtpSubmitting(true);
@@ -247,10 +247,10 @@ function AuthPage() {
               ) : (
                 <form onSubmit={onVerifyOtp} className="space-y-4" noValidate>
                   <div className="space-y-2">
-                    <Label>Enter the 6-digit code sent to {otpEmail}</Label>
+                    <Label>Enter the 8-digit code sent to {otpEmail}</Label>
                     <div className="flex justify-center">
                       <InputOTP
-                        maxLength={6}
+                        maxLength={8}
                         value={otpCode}
                         onChange={(v) => setOtpCode(v)}
                         disabled={otpSubmitting}
@@ -262,6 +262,8 @@ function AuthPage() {
                           <InputOTPSlot index={3} />
                           <InputOTPSlot index={4} />
                           <InputOTPSlot index={5} />
+                          <InputOTPSlot index={6} />
+                          <InputOTPSlot index={7} />
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
