@@ -36,7 +36,10 @@ function AdminLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const title = TITLES[pathname.replace(/\/$/, "")] ?? "Admin";
+  const cleaned = pathname.replace(/\/$/, "");
+  let title = TITLES[cleaned] ?? "Admin";
+  if (cleaned === "/admin/providers/new") title = "Add Provider";
+  else if (/^\/admin\/providers\/[^/]+$/.test(cleaned)) title = "Edit Provider";
 
   async function signOut() {
     await queryClient.cancelQueries();
