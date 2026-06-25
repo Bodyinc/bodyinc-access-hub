@@ -62,15 +62,20 @@ export const getProvider = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { data: row, error } = await context.supabase
+    const { data: provider, error } = await context.supabase
       .from("providers")
-      .select("*, profile:profiles!inner(full_name, email, phone, avatar_url)")
+      .select("*")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row) throw new Error("Provider not found");
-    const { profile, ...provider } = row as any;
-    return { ...provider, ...profile };
+    if (!provider) throw new Error("Provider not found");
+    const { data: profile, error: pErr } = await context.supabase
+      .from("profiles")
+      .select("full_name, email, phone, avatar_url")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    return { ...(provider as any), ...(profile ?? {}) };
   });
 
 const createInput = providerFormSchema.extend({
