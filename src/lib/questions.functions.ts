@@ -66,18 +66,29 @@ export const getQuestion = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => idInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { data: question, error } = await context.supabase
-      .from("intake_questions")
-      .select(
-        "id, prompt, description, question_type, sort_order, is_required, is_active, created_at, intake_question_options(id, label, sort_order)",
-      )
-      .eq("id", data.id)
-      .order("sort_order", { referencedTable: "intake_question_options", ascending: true })
-      .maybeSingle();
+    const [questionResult, orderResult] = await Promise.all([
+      context.supabase
+        .from("intake_questions")
+        .select(
+          "id, prompt, description, question_type, sort_order, is_required, is_active, created_at, intake_question_options(id, label, sort_order)",
+        )
+        .eq("id", data.id)
+        .order("sort_order", { referencedTable: "intake_question_options", ascending: true })
+        .maybeSingle(),
+      context.supabase
+        .from("intake_questions")
+        .select("id")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+    ]);
 
+    const { data: question, error } = questionResult;
     if (error) throw new Error(error.message);
     if (!question) throw new Error("Question not found");
-    return question;
+
+    if (orderResult.error) throw new Error(orderResult.error.message);
+    const index = (orderResult.data ?? []).findIndex((r) => r.id === data.id);
+    return { ...question, position: index === -1 ? null : index + 1 };
   });
 
 export const getQuestionPosition = createServerFn({ method: "POST" })

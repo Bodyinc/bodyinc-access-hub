@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, MoreHorizontal, Search, ChevronUp, ChevronDown } from "lucide-react";
@@ -71,16 +72,17 @@ function QuestionsListPage() {
   const move = useServerFn(moveQuestion);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [type, setType] = useState<"all" | QuestionType>("all");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; prompt: string } | null>(null);
 
   const query = useQuery({
-    queryKey: ["questions", { search, type, status }],
+    queryKey: ["questions", { search: debouncedSearch, type, status }],
     queryFn: () =>
       list({
         data: {
-          search: search || undefined,
+          search: debouncedSearch || undefined,
           type,
           status,
         },

@@ -26,10 +26,16 @@ import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminQuestionsIndexRouteImport } from './routes/_authenticated/admin.questions.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
+import { Route as AuthenticatedAdminPackagesIndexRouteImport } from './routes/_authenticated/admin.packages.index'
+import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_authenticated/admin.medicines.index'
 import { Route as AuthenticatedAdminQuestionsNewRouteImport } from './routes/_authenticated/admin.questions.new'
 import { Route as AuthenticatedAdminQuestionsQuestionIdRouteImport } from './routes/_authenticated/admin.questions.$questionId'
 import { Route as AuthenticatedAdminProvidersNewRouteImport } from './routes/_authenticated/admin.providers.new'
 import { Route as AuthenticatedAdminProvidersProviderIdRouteImport } from './routes/_authenticated/admin.providers.$providerId'
+import { Route as AuthenticatedAdminPackagesNewRouteImport } from './routes/_authenticated/admin.packages.new'
+import { Route as AuthenticatedAdminPackagesPackageIdRouteImport } from './routes/_authenticated/admin.packages.$packageId'
+import { Route as AuthenticatedAdminMedicinesNewRouteImport } from './routes/_authenticated/admin.medicines.new'
+import { Route as AuthenticatedAdminMedicinesMedicineIdRouteImport } from './routes/_authenticated/admin.medicines.$medicineId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -123,6 +129,18 @@ const AuthenticatedAdminProvidersIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAdminProvidersRoute,
   } as any)
+const AuthenticatedAdminPackagesIndexRoute =
+  AuthenticatedAdminPackagesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminPackagesRoute,
+  } as any)
+const AuthenticatedAdminMedicinesIndexRoute =
+  AuthenticatedAdminMedicinesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
+  } as any)
 const AuthenticatedAdminQuestionsNewRoute =
   AuthenticatedAdminQuestionsNewRouteImport.update({
     id: '/new',
@@ -147,6 +165,30 @@ const AuthenticatedAdminProvidersProviderIdRoute =
     path: '/$providerId',
     getParentRoute: () => AuthenticatedAdminProvidersRoute,
   } as any)
+const AuthenticatedAdminPackagesNewRoute =
+  AuthenticatedAdminPackagesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminPackagesRoute,
+  } as any)
+const AuthenticatedAdminPackagesPackageIdRoute =
+  AuthenticatedAdminPackagesPackageIdRouteImport.update({
+    id: '/$packageId',
+    path: '/$packageId',
+    getParentRoute: () => AuthenticatedAdminPackagesRoute,
+  } as any)
+const AuthenticatedAdminMedicinesNewRoute =
+  AuthenticatedAdminMedicinesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
+  } as any)
+const AuthenticatedAdminMedicinesMedicineIdRoute =
+  AuthenticatedAdminMedicinesMedicineIdRouteImport.update({
+    id: '/$medicineId',
+    path: '/$medicineId',
+    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -156,17 +198,23 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
-  '/admin/medicines': typeof AuthenticatedAdminMedicinesRoute
-  '/admin/packages': typeof AuthenticatedAdminPackagesRoute
+  '/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
+  '/admin/packages': typeof AuthenticatedAdminPackagesRouteWithChildren
   '/admin/patients': typeof AuthenticatedAdminPatientsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/admin/questions': typeof AuthenticatedAdminQuestionsRouteWithChildren
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/medicines/$medicineId': typeof AuthenticatedAdminMedicinesMedicineIdRoute
+  '/admin/medicines/new': typeof AuthenticatedAdminMedicinesNewRoute
+  '/admin/packages/$packageId': typeof AuthenticatedAdminPackagesPackageIdRoute
+  '/admin/packages/new': typeof AuthenticatedAdminPackagesNewRoute
   '/admin/providers/$providerId': typeof AuthenticatedAdminProvidersProviderIdRoute
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
   '/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
+  '/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
+  '/admin/packages/': typeof AuthenticatedAdminPackagesIndexRoute
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questions/': typeof AuthenticatedAdminQuestionsIndexRoute
 }
@@ -177,15 +225,19 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
-  '/admin/medicines': typeof AuthenticatedAdminMedicinesRoute
-  '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/patients': typeof AuthenticatedAdminPatientsRoute
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/medicines/$medicineId': typeof AuthenticatedAdminMedicinesMedicineIdRoute
+  '/admin/medicines/new': typeof AuthenticatedAdminMedicinesNewRoute
+  '/admin/packages/$packageId': typeof AuthenticatedAdminPackagesPackageIdRoute
+  '/admin/packages/new': typeof AuthenticatedAdminPackagesNewRoute
   '/admin/providers/$providerId': typeof AuthenticatedAdminProvidersProviderIdRoute
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
   '/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
+  '/admin/medicines': typeof AuthenticatedAdminMedicinesIndexRoute
+  '/admin/packages': typeof AuthenticatedAdminPackagesIndexRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questions': typeof AuthenticatedAdminQuestionsIndexRoute
 }
@@ -199,17 +251,23 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
-  '/_authenticated/admin/medicines': typeof AuthenticatedAdminMedicinesRoute
-  '/_authenticated/admin/packages': typeof AuthenticatedAdminPackagesRoute
+  '/_authenticated/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
+  '/_authenticated/admin/packages': typeof AuthenticatedAdminPackagesRouteWithChildren
   '/_authenticated/admin/patients': typeof AuthenticatedAdminPatientsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/_authenticated/admin/questions': typeof AuthenticatedAdminQuestionsRouteWithChildren
   '/_authenticated/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/medicines/$medicineId': typeof AuthenticatedAdminMedicinesMedicineIdRoute
+  '/_authenticated/admin/medicines/new': typeof AuthenticatedAdminMedicinesNewRoute
+  '/_authenticated/admin/packages/$packageId': typeof AuthenticatedAdminPackagesPackageIdRoute
+  '/_authenticated/admin/packages/new': typeof AuthenticatedAdminPackagesNewRoute
   '/_authenticated/admin/providers/$providerId': typeof AuthenticatedAdminProvidersProviderIdRoute
   '/_authenticated/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/_authenticated/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
   '/_authenticated/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
+  '/_authenticated/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
+  '/_authenticated/admin/packages/': typeof AuthenticatedAdminPackagesIndexRoute
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/_authenticated/admin/questions/': typeof AuthenticatedAdminQuestionsIndexRoute
 }
@@ -230,10 +288,16 @@ export interface FileRouteTypes {
     | '/admin/questions'
     | '/admin/slots'
     | '/admin/'
+    | '/admin/medicines/$medicineId'
+    | '/admin/medicines/new'
+    | '/admin/packages/$packageId'
+    | '/admin/packages/new'
     | '/admin/providers/$providerId'
     | '/admin/providers/new'
     | '/admin/questions/$questionId'
     | '/admin/questions/new'
+    | '/admin/medicines/'
+    | '/admin/packages/'
     | '/admin/providers/'
     | '/admin/questions/'
   fileRoutesByTo: FileRoutesByTo
@@ -244,15 +308,19 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/admin/intake-form'
-    | '/admin/medicines'
-    | '/admin/packages'
     | '/admin/patients'
     | '/admin/slots'
     | '/admin'
+    | '/admin/medicines/$medicineId'
+    | '/admin/medicines/new'
+    | '/admin/packages/$packageId'
+    | '/admin/packages/new'
     | '/admin/providers/$providerId'
     | '/admin/providers/new'
     | '/admin/questions/$questionId'
     | '/admin/questions/new'
+    | '/admin/medicines'
+    | '/admin/packages'
     | '/admin/providers'
     | '/admin/questions'
   id:
@@ -272,10 +340,16 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/questions'
     | '/_authenticated/admin/slots'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/medicines/$medicineId'
+    | '/_authenticated/admin/medicines/new'
+    | '/_authenticated/admin/packages/$packageId'
+    | '/_authenticated/admin/packages/new'
     | '/_authenticated/admin/providers/$providerId'
     | '/_authenticated/admin/providers/new'
     | '/_authenticated/admin/questions/$questionId'
     | '/_authenticated/admin/questions/new'
+    | '/_authenticated/admin/medicines/'
+    | '/_authenticated/admin/packages/'
     | '/_authenticated/admin/providers/'
     | '/_authenticated/admin/questions/'
   fileRoutesById: FileRoutesById
@@ -409,6 +483,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProvidersIndexRouteImport
       parentRoute: typeof AuthenticatedAdminProvidersRoute
     }
+    '/_authenticated/admin/packages/': {
+      id: '/_authenticated/admin/packages/'
+      path: '/'
+      fullPath: '/admin/packages/'
+      preLoaderRoute: typeof AuthenticatedAdminPackagesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminPackagesRoute
+    }
+    '/_authenticated/admin/medicines/': {
+      id: '/_authenticated/admin/medicines/'
+      path: '/'
+      fullPath: '/admin/medicines/'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicinesRoute
+    }
     '/_authenticated/admin/questions/new': {
       id: '/_authenticated/admin/questions/new'
       path: '/new'
@@ -437,8 +525,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProvidersProviderIdRouteImport
       parentRoute: typeof AuthenticatedAdminProvidersRoute
     }
+    '/_authenticated/admin/packages/new': {
+      id: '/_authenticated/admin/packages/new'
+      path: '/new'
+      fullPath: '/admin/packages/new'
+      preLoaderRoute: typeof AuthenticatedAdminPackagesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminPackagesRoute
+    }
+    '/_authenticated/admin/packages/$packageId': {
+      id: '/_authenticated/admin/packages/$packageId'
+      path: '/$packageId'
+      fullPath: '/admin/packages/$packageId'
+      preLoaderRoute: typeof AuthenticatedAdminPackagesPackageIdRouteImport
+      parentRoute: typeof AuthenticatedAdminPackagesRoute
+    }
+    '/_authenticated/admin/medicines/new': {
+      id: '/_authenticated/admin/medicines/new'
+      path: '/new'
+      fullPath: '/admin/medicines/new'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicinesRoute
+    }
+    '/_authenticated/admin/medicines/$medicineId': {
+      id: '/_authenticated/admin/medicines/$medicineId'
+      path: '/$medicineId'
+      fullPath: '/admin/medicines/$medicineId'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesMedicineIdRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicinesRoute
+    }
   }
 }
+
+interface AuthenticatedAdminMedicinesRouteChildren {
+  AuthenticatedAdminMedicinesMedicineIdRoute: typeof AuthenticatedAdminMedicinesMedicineIdRoute
+  AuthenticatedAdminMedicinesNewRoute: typeof AuthenticatedAdminMedicinesNewRoute
+  AuthenticatedAdminMedicinesIndexRoute: typeof AuthenticatedAdminMedicinesIndexRoute
+}
+
+const AuthenticatedAdminMedicinesRouteChildren: AuthenticatedAdminMedicinesRouteChildren =
+  {
+    AuthenticatedAdminMedicinesMedicineIdRoute:
+      AuthenticatedAdminMedicinesMedicineIdRoute,
+    AuthenticatedAdminMedicinesNewRoute: AuthenticatedAdminMedicinesNewRoute,
+    AuthenticatedAdminMedicinesIndexRoute:
+      AuthenticatedAdminMedicinesIndexRoute,
+  }
+
+const AuthenticatedAdminMedicinesRouteWithChildren =
+  AuthenticatedAdminMedicinesRoute._addFileChildren(
+    AuthenticatedAdminMedicinesRouteChildren,
+  )
+
+interface AuthenticatedAdminPackagesRouteChildren {
+  AuthenticatedAdminPackagesPackageIdRoute: typeof AuthenticatedAdminPackagesPackageIdRoute
+  AuthenticatedAdminPackagesNewRoute: typeof AuthenticatedAdminPackagesNewRoute
+  AuthenticatedAdminPackagesIndexRoute: typeof AuthenticatedAdminPackagesIndexRoute
+}
+
+const AuthenticatedAdminPackagesRouteChildren: AuthenticatedAdminPackagesRouteChildren =
+  {
+    AuthenticatedAdminPackagesPackageIdRoute:
+      AuthenticatedAdminPackagesPackageIdRoute,
+    AuthenticatedAdminPackagesNewRoute: AuthenticatedAdminPackagesNewRoute,
+    AuthenticatedAdminPackagesIndexRoute: AuthenticatedAdminPackagesIndexRoute,
+  }
+
+const AuthenticatedAdminPackagesRouteWithChildren =
+  AuthenticatedAdminPackagesRoute._addFileChildren(
+    AuthenticatedAdminPackagesRouteChildren,
+  )
 
 interface AuthenticatedAdminProvidersRouteChildren {
   AuthenticatedAdminProvidersProviderIdRoute: typeof AuthenticatedAdminProvidersProviderIdRoute
@@ -482,8 +637,8 @@ const AuthenticatedAdminQuestionsRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
-  AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRoute
-  AuthenticatedAdminPackagesRoute: typeof AuthenticatedAdminPackagesRoute
+  AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRouteWithChildren
+  AuthenticatedAdminPackagesRoute: typeof AuthenticatedAdminPackagesRouteWithChildren
   AuthenticatedAdminPatientsRoute: typeof AuthenticatedAdminPatientsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRouteWithChildren
   AuthenticatedAdminQuestionsRoute: typeof AuthenticatedAdminQuestionsRouteWithChildren
@@ -493,8 +648,9 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIntakeFormRoute: AuthenticatedAdminIntakeFormRoute,
-  AuthenticatedAdminMedicinesRoute: AuthenticatedAdminMedicinesRoute,
-  AuthenticatedAdminPackagesRoute: AuthenticatedAdminPackagesRoute,
+  AuthenticatedAdminMedicinesRoute:
+    AuthenticatedAdminMedicinesRouteWithChildren,
+  AuthenticatedAdminPackagesRoute: AuthenticatedAdminPackagesRouteWithChildren,
   AuthenticatedAdminPatientsRoute: AuthenticatedAdminPatientsRoute,
   AuthenticatedAdminProvidersRoute:
     AuthenticatedAdminProvidersRouteWithChildren,

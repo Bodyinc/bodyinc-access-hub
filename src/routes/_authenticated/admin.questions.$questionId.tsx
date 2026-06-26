@@ -1,16 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
-import { QuestionForm } from "@/components/admin/question-form";
-import { QuestionPreview } from "@/components/admin/question-preview";
-import {
-  getQuestion,
-  getQuestionPosition,
-  updateQuestion,
-} from "@/lib/questions.functions";
+import { FormSkeleton } from "@/components/admin/form-skeleton";
+import { getQuestion, updateQuestion } from "@/lib/questions.functions";
 import type { QuestionFormValues, QuestionType } from "@/lib/questions.schema";
+
+const QuestionForm = lazy(() =>
+  import("@/components/admin/question-form").then((m) => ({ default: m.QuestionForm })),
+);
+const QuestionPreview = lazy(() =>
+  import("@/components/admin/question-preview").then((m) => ({ default: m.QuestionPreview })),
+);
 
 export const Route = createFileRoute("/_authenticated/admin/questions/$questionId")({
   component: EditQuestionPage,
@@ -21,19 +23,12 @@ function EditQuestionPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const get = useServerFn(getQuestion);
-  const getPosition = useServerFn(getQuestionPosition);
   const update = useServerFn(updateQuestion);
   const [previewValues, setPreviewValues] = useState<QuestionFormValues | null>(null);
 
   const query = useQuery({
     queryKey: ["questions", questionId],
     queryFn: () => get({ data: { id: questionId } }),
-  });
-
-  const position = useQuery({
-    queryKey: ["questions", questionId, "position"],
-    queryFn: () => getPosition({ data: { id: questionId } }),
-    enabled: !!query.data,
   });
 
   const mutation = useMutation({
@@ -77,23 +72,27 @@ function EditQuestionPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <QuestionForm
-          mode="edit"
-          questionPosition={position.data ?? null}
-          submitting={mutation.isPending}
-          defaultValues={defaultValues}
-          onSubmit={(values) => mutation.mutate(values)}
-          onCancel={() => navigate({ to: "/admin/questions" })}
-          onValuesChange={setPreviewValues}
-        />
-        <div className="lg:sticky lg:top-20">
-          <QuestionPreview
-            prompt={preview.prompt}
-            description={preview.description}
-            question_type={preview.question_type}
-            options={preview.options}
-            is_required={preview.is_required}
+        <Suspense fallback={<FormSkeleton />}>
+          <QuestionForm
+            mode="edit"
+            questionPosition={d.position ?? null}
+            submitting={mutation.isPending}
+            defaultValues={defaultValues}
+            onSubmit={(values) => mutation.mutate(values)}
+            onCancel={() => navigate({ to: "/admin/questions" })}
+            onValuesChange={setPreviewValues}
           />
+        </Suspense>
+        <div className="lg:sticky lg:top-20">
+          <Suspense fallback={<FormSkeleton />}>
+            <QuestionPreview
+              prompt={preview.prompt}
+              description={preview.description}
+              question_type={preview.question_type}
+              options={preview.options}
+              is_required={preview.is_required}
+            />
+          </Suspense>
         </div>
       </div>
     </div>

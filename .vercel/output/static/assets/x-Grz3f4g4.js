@@ -1,0 +1,1 @@
+import{o as e}from"./index-BLi2Qy0_.js";var t=e(`x`,[[`path`,{d:`M18 6 6 18`,key:`1bl5f8`}],[`path`,{d:`m6 6 12 12`,key:`d8bk6v`}]]);export{t};

@@ -1,12 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
-import { QuestionForm } from "@/components/admin/question-form";
-import { QuestionPreview } from "@/components/admin/question-preview";
+import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { createQuestion } from "@/lib/questions.functions";
 import type { QuestionFormValues } from "@/lib/questions.schema";
+
+const QuestionForm = lazy(() =>
+  import("@/components/admin/question-form").then((m) => ({ default: m.QuestionForm })),
+);
+const QuestionPreview = lazy(() =>
+  import("@/components/admin/question-preview").then((m) => ({ default: m.QuestionPreview })),
+);
 
 export const Route = createFileRoute("/_authenticated/admin/questions/new")({
   component: NewQuestionPage,
@@ -39,21 +45,25 @@ function NewQuestionPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <QuestionForm
-          mode="create"
-          submitting={mutation.isPending}
-          onSubmit={(values) => mutation.mutate(values)}
-          onCancel={() => navigate({ to: "/admin/questions" })}
-          onValuesChange={setPreviewValues}
-        />
-        <div className="lg:sticky lg:top-20">
-          <QuestionPreview
-            prompt={previewValues.prompt}
-            description={previewValues.description}
-            question_type={previewValues.question_type}
-            options={previewValues.options}
-            is_required={previewValues.is_required}
+        <Suspense fallback={<FormSkeleton />}>
+          <QuestionForm
+            mode="create"
+            submitting={mutation.isPending}
+            onSubmit={(values) => mutation.mutate(values)}
+            onCancel={() => navigate({ to: "/admin/questions" })}
+            onValuesChange={setPreviewValues}
           />
+        </Suspense>
+        <div className="lg:sticky lg:top-20">
+          <Suspense fallback={<FormSkeleton />}>
+            <QuestionPreview
+              prompt={previewValues.prompt}
+              description={previewValues.description}
+              question_type={previewValues.question_type}
+              options={previewValues.options}
+              is_required={previewValues.is_required}
+            />
+          </Suspense>
         </div>
       </div>
     </div>

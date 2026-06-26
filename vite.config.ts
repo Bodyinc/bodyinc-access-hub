@@ -5,6 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
   tanstackStart: {
@@ -26,5 +27,29 @@ export default defineConfig({
         strict: false,
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules/@supabase")) return "supabase";
+            if (
+              id.includes("node_modules/@tanstack/react-router") ||
+              id.includes("node_modules/@tanstack/react-query") ||
+              id.includes("node_modules/@tanstack/query-core")
+            ) {
+              return "tanstack";
+            }
+            if (id.includes("node_modules/@radix-ui")) return "radix";
+          },
+        },
+      },
+    },
+    plugins: [
+      visualizer({
+        filename: "stats.html",
+        gzipSize: true,
+        open: false,
+      }),
+    ],
   },
 });

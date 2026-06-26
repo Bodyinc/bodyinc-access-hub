@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { RoutePending } from "@/components/route-pending";
 import {
   getPasswordRecoveryRedirectUrl,
   haltForPasswordRecoveryRedirect,
@@ -8,6 +9,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  pendingComponent: () => <RoutePending />,
   beforeLoad: async () => {
     if (typeof window !== "undefined") {
       const recoveryRedirect = getPasswordRecoveryRedirectUrl();

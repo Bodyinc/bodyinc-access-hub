@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { RoutePending } from "@/components/route-pending";
 import {
   getPasswordRecoveryRedirectUrl,
   haltForPasswordRecoveryRedirect,
@@ -7,6 +8,7 @@ import {
 
 export const Route = createFileRoute("/")({
   ssr: false,
+  pendingComponent: () => <RoutePending />,
   beforeLoad: async () => {
     if (typeof window !== "undefined") {
       const recoveryRedirect = getPasswordRecoveryRedirectUrl();

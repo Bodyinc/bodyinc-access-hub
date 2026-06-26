@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Mail, MoreHorizontal, Search } from "lucide-react";
@@ -60,12 +61,13 @@ function ProvidersListPage() {
   const del = useServerFn(deleteProvider);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   const query = useQuery({
-    queryKey: ["providers", { search, status }],
-    queryFn: () => list({ data: { search: search || undefined, status } }),
+    queryKey: ["providers", { search: debouncedSearch, status }],
+    queryFn: () => list({ data: { search: debouncedSearch || undefined, status } }),
   });
 
   const resendMut = useMutation({

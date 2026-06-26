@@ -1,0 +1,1 @@
+import{lt as e}from"./radix-BFqUeYDE.js";import{t}from"./skeleton-BkeFFylf.js";var n=e();function r(){return(0,n.jsxs)(`div`,{className:`space-y-6`,children:[(0,n.jsx)(t,{className:`h-48 w-full rounded-lg`}),(0,n.jsx)(t,{className:`h-10 w-full`}),(0,n.jsx)(t,{className:`h-10 w-full`}),(0,n.jsx)(t,{className:`h-32 w-full`}),(0,n.jsx)(t,{className:`h-10 w-32`})]})}export{r as t};

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { RoutePending } from "@/components/route-pending";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -12,11 +13,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/auth" });
-    const { data: role } = await supabase.rpc("get_user_role", { _user_id: data.user.id });
-    if (role !== "admin") throw redirect({ to: "/dashboard" });
+  pendingComponent: () => <RoutePending />,
+  beforeLoad: ({ context }) => {
+    const role = (context as { role?: string }).role;
+    if (role !== "admin") {
+      throw redirect({ to: "/dashboard" });
+    }
   },
   component: AdminLayout,
 });
@@ -42,10 +44,19 @@ function AdminLayout() {
   else if (/^\/admin\/providers\/[^/]+$/.test(cleaned)) title = "Edit Provider";
   else if (cleaned === "/admin/questions/new") title = "Add Question";
   else if (/^\/admin\/questions\/[^/]+$/.test(cleaned)) title = "Edit Question";
+  else if (cleaned === "/admin/medicines/new") title = "Add Medicine";
+  else if (/^\/admin\/medicines\/[^/]+$/.test(cleaned)) title = "Edit Medicine";
+  else if (cleaned === "/admin/packages/new") title = "Add Package";
+  else if (/^\/admin\/packages\/[^/]+$/.test(cleaned)) title = "Edit Package";
 
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    try {
+      for (const k of Object.keys(sessionStorage)) {
+        if (k.startsWith("bi_portal_role:")) sessionStorage.removeItem(k);
+      }
+    } catch {}
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
