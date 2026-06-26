@@ -137,8 +137,88 @@ export type Database = {
         }
         Relationships: []
       }
+      intake_questions: {
+        Row: {
+          id: string
+          prompt: string
+          description: string | null
+          question_type: Database["public"]["Enums"]["question_type"]
+          sort_order: number
+          is_required: boolean
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          prompt: string
+          description?: string | null
+          question_type: Database["public"]["Enums"]["question_type"]
+          sort_order?: number
+          is_required?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          prompt?: string
+          description?: string | null
+          question_type?: Database["public"]["Enums"]["question_type"]
+          sort_order?: number
+          is_required?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      intake_question_options: {
+        Row: {
+          id: string
+          question_id: string
+          label: string
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          question_id: string
+          label: string
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          question_id?: string
+          label?: string
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "intake_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
+      public_intake_quiz: {
+        Row: {
+          id: string
+          prompt: string
+          description: string | null
+          question_type: Database["public"]["Enums"]["question_type"]
+          sort_order: number
+          is_required: boolean
+          options: Json
+        }
+        Relationships: []
+      }
       provider_directory: {
         Row: {
           avatar_url: string | null
@@ -177,6 +257,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "provider" | "patient"
+      question_type: "short_text" | "mcq_single" | "mcq_multi"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -305,6 +386,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "provider", "patient"],
+      question_type: ["short_text", "mcq_single", "mcq_multi"],
     },
   },
 } as const

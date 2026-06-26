@@ -24,7 +24,10 @@ import { Route as AuthenticatedAdminPatientsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminPackagesRouteImport } from './routes/_authenticated/admin.packages'
 import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authenticated/admin.medicines'
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
+import { Route as AuthenticatedAdminQuestionsIndexRouteImport } from './routes/_authenticated/admin.questions.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
+import { Route as AuthenticatedAdminQuestionsNewRouteImport } from './routes/_authenticated/admin.questions.new'
+import { Route as AuthenticatedAdminQuestionsQuestionIdRouteImport } from './routes/_authenticated/admin.questions.$questionId'
 import { Route as AuthenticatedAdminProvidersNewRouteImport } from './routes/_authenticated/admin.providers.new'
 import { Route as AuthenticatedAdminProvidersProviderIdRouteImport } from './routes/_authenticated/admin.providers.$providerId'
 
@@ -108,11 +111,29 @@ const AuthenticatedAdminIntakeFormRoute =
     path: '/intake-form',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminQuestionsIndexRoute =
+  AuthenticatedAdminQuestionsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminQuestionsRoute,
+  } as any)
 const AuthenticatedAdminProvidersIndexRoute =
   AuthenticatedAdminProvidersIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAdminProvidersRoute,
+  } as any)
+const AuthenticatedAdminQuestionsNewRoute =
+  AuthenticatedAdminQuestionsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminQuestionsRoute,
+  } as any)
+const AuthenticatedAdminQuestionsQuestionIdRoute =
+  AuthenticatedAdminQuestionsQuestionIdRouteImport.update({
+    id: '/$questionId',
+    path: '/$questionId',
+    getParentRoute: () => AuthenticatedAdminQuestionsRoute,
   } as any)
 const AuthenticatedAdminProvidersNewRoute =
   AuthenticatedAdminProvidersNewRouteImport.update({
@@ -139,12 +160,15 @@ export interface FileRoutesByFullPath {
   '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/patients': typeof AuthenticatedAdminPatientsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
-  '/admin/questions': typeof AuthenticatedAdminQuestionsRoute
+  '/admin/questions': typeof AuthenticatedAdminQuestionsRouteWithChildren
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/providers/$providerId': typeof AuthenticatedAdminProvidersProviderIdRoute
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
+  '/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
+  '/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
+  '/admin/questions/': typeof AuthenticatedAdminQuestionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -156,12 +180,14 @@ export interface FileRoutesByTo {
   '/admin/medicines': typeof AuthenticatedAdminMedicinesRoute
   '/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/admin/patients': typeof AuthenticatedAdminPatientsRoute
-  '/admin/questions': typeof AuthenticatedAdminQuestionsRoute
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/providers/$providerId': typeof AuthenticatedAdminProvidersProviderIdRoute
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
+  '/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
+  '/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
+  '/admin/questions': typeof AuthenticatedAdminQuestionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,12 +203,15 @@ export interface FileRoutesById {
   '/_authenticated/admin/packages': typeof AuthenticatedAdminPackagesRoute
   '/_authenticated/admin/patients': typeof AuthenticatedAdminPatientsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
-  '/_authenticated/admin/questions': typeof AuthenticatedAdminQuestionsRoute
+  '/_authenticated/admin/questions': typeof AuthenticatedAdminQuestionsRouteWithChildren
   '/_authenticated/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/providers/$providerId': typeof AuthenticatedAdminProvidersProviderIdRoute
   '/_authenticated/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
+  '/_authenticated/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
+  '/_authenticated/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
+  '/_authenticated/admin/questions/': typeof AuthenticatedAdminQuestionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -203,7 +232,10 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/providers/$providerId'
     | '/admin/providers/new'
+    | '/admin/questions/$questionId'
+    | '/admin/questions/new'
     | '/admin/providers/'
+    | '/admin/questions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -215,12 +247,14 @@ export interface FileRouteTypes {
     | '/admin/medicines'
     | '/admin/packages'
     | '/admin/patients'
-    | '/admin/questions'
     | '/admin/slots'
     | '/admin'
     | '/admin/providers/$providerId'
     | '/admin/providers/new'
+    | '/admin/questions/$questionId'
+    | '/admin/questions/new'
     | '/admin/providers'
+    | '/admin/questions'
   id:
     | '__root__'
     | '/'
@@ -240,7 +274,10 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/admin/providers/$providerId'
     | '/_authenticated/admin/providers/new'
+    | '/_authenticated/admin/questions/$questionId'
+    | '/_authenticated/admin/questions/new'
     | '/_authenticated/admin/providers/'
+    | '/_authenticated/admin/questions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,12 +395,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIntakeFormRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/questions/': {
+      id: '/_authenticated/admin/questions/'
+      path: '/'
+      fullPath: '/admin/questions/'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminQuestionsRoute
+    }
     '/_authenticated/admin/providers/': {
       id: '/_authenticated/admin/providers/'
       path: '/'
       fullPath: '/admin/providers/'
       preLoaderRoute: typeof AuthenticatedAdminProvidersIndexRouteImport
       parentRoute: typeof AuthenticatedAdminProvidersRoute
+    }
+    '/_authenticated/admin/questions/new': {
+      id: '/_authenticated/admin/questions/new'
+      path: '/new'
+      fullPath: '/admin/questions/new'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionsNewRouteImport
+      parentRoute: typeof AuthenticatedAdminQuestionsRoute
+    }
+    '/_authenticated/admin/questions/$questionId': {
+      id: '/_authenticated/admin/questions/$questionId'
+      path: '/$questionId'
+      fullPath: '/admin/questions/$questionId'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionsQuestionIdRouteImport
+      parentRoute: typeof AuthenticatedAdminQuestionsRoute
     }
     '/_authenticated/admin/providers/new': {
       id: '/_authenticated/admin/providers/new'
@@ -402,13 +460,33 @@ const AuthenticatedAdminProvidersRouteWithChildren =
     AuthenticatedAdminProvidersRouteChildren,
   )
 
+interface AuthenticatedAdminQuestionsRouteChildren {
+  AuthenticatedAdminQuestionsQuestionIdRoute: typeof AuthenticatedAdminQuestionsQuestionIdRoute
+  AuthenticatedAdminQuestionsNewRoute: typeof AuthenticatedAdminQuestionsNewRoute
+  AuthenticatedAdminQuestionsIndexRoute: typeof AuthenticatedAdminQuestionsIndexRoute
+}
+
+const AuthenticatedAdminQuestionsRouteChildren: AuthenticatedAdminQuestionsRouteChildren =
+  {
+    AuthenticatedAdminQuestionsQuestionIdRoute:
+      AuthenticatedAdminQuestionsQuestionIdRoute,
+    AuthenticatedAdminQuestionsNewRoute: AuthenticatedAdminQuestionsNewRoute,
+    AuthenticatedAdminQuestionsIndexRoute:
+      AuthenticatedAdminQuestionsIndexRoute,
+  }
+
+const AuthenticatedAdminQuestionsRouteWithChildren =
+  AuthenticatedAdminQuestionsRoute._addFileChildren(
+    AuthenticatedAdminQuestionsRouteChildren,
+  )
+
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
   AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRoute
   AuthenticatedAdminPackagesRoute: typeof AuthenticatedAdminPackagesRoute
   AuthenticatedAdminPatientsRoute: typeof AuthenticatedAdminPatientsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRouteWithChildren
-  AuthenticatedAdminQuestionsRoute: typeof AuthenticatedAdminQuestionsRoute
+  AuthenticatedAdminQuestionsRoute: typeof AuthenticatedAdminQuestionsRouteWithChildren
   AuthenticatedAdminSlotsRoute: typeof AuthenticatedAdminSlotsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -420,7 +498,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPatientsRoute: AuthenticatedAdminPatientsRoute,
   AuthenticatedAdminProvidersRoute:
     AuthenticatedAdminProvidersRouteWithChildren,
-  AuthenticatedAdminQuestionsRoute: AuthenticatedAdminQuestionsRoute,
+  AuthenticatedAdminQuestionsRoute:
+    AuthenticatedAdminQuestionsRouteWithChildren,
   AuthenticatedAdminSlotsRoute: AuthenticatedAdminSlotsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -451,3 +530,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

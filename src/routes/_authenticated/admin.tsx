@@ -40,6 +40,8 @@ function AdminLayout() {
   let title = TITLES[cleaned] ?? "Admin";
   if (cleaned === "/admin/providers/new") title = "Add Provider";
   else if (/^\/admin\/providers\/[^/]+$/.test(cleaned)) title = "Edit Provider";
+  else if (cleaned === "/admin/questions/new") title = "Add Question";
+  else if (/^\/admin\/questions\/[^/]+$/.test(cleaned)) title = "Edit Question";
 
   async function signOut() {
     await queryClient.cancelQueries();
