@@ -89,6 +89,66 @@ export type Database = {
         }
         Relationships: []
       }
+      intake_responses: {
+        Row: {
+          answer_labels: string[]
+          answer_option_ids: string[]
+          answer_text: string | null
+          created_at: string
+          id: string
+          question_id: string | null
+          question_prompt: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          submission_id: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer_labels?: string[]
+          answer_option_ids?: string[]
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string | null
+          question_prompt: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          submission_id?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer_labels?: string[]
+          answer_option_ids?: string[]
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string | null
+          question_prompt?: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+          submission_id?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "intake_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "public_intake_quiz"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicines: {
         Row: {
           created_at: string
