@@ -170,7 +170,7 @@ export function getMedicine(id: string): StoredMedicine | null {
   return sortMedicines(seedIfEmpty()).find((m) => m.id === id) ?? null;
 }
 
-export function createMedicine(values: MedicineFormValues): { id: string } {
+export async function createMedicine(values: MedicineFormValues): Promise<{ id: string }> {
   const all = sortMedicines(seedIfEmpty());
   const maxOrder = all.reduce((max, m) => Math.max(max, m.sort_order), -1);
   const sortOrder = values.sort_order ?? maxOrder + 1;
@@ -187,7 +187,7 @@ export function createMedicine(values: MedicineFormValues): { id: string } {
   return { id: created.id };
 }
 
-export function updateMedicine(id: string, values: MedicineFormValues): { id: string } {
+export async function updateMedicine(id: string, values: MedicineFormValues): Promise<{ id: string }> {
   const all = sortMedicines(seedIfEmpty());
   const index = all.findIndex((m) => m.id === id);
   if (index === -1) throw new Error("Medicine not found");
@@ -202,12 +202,12 @@ export function updateMedicine(id: string, values: MedicineFormValues): { id: st
   return { id };
 }
 
-export function deleteMedicine(id: string) {
+export async function deleteMedicine(id: string) {
   writeAll(readAll().filter((m) => m.id !== id));
   return { ok: true };
 }
 
-export function setMedicineActive(id: string, status: MedicineStatus) {
+export async function setMedicineActive(id: string, status: MedicineStatus) {
   const all = sortMedicines(seedIfEmpty());
   const index = all.findIndex((m) => m.id === id);
   if (index === -1) throw new Error("Medicine not found");

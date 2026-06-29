@@ -209,7 +209,7 @@ export function getPackage(id: string): StoredPackage | null {
   return sortPackages(seedIfEmpty()).find((p) => p.id === id) ?? null;
 }
 
-export function createPackage(values: PackageFormValues): { id: string } {
+export async function createPackage(values: PackageFormValues): Promise<{ id: string }> {
   const all = sortPackages(seedIfEmpty());
   const maxOrder = all
     .filter((p) => p.medicine_id === values.medicine_id)
@@ -232,7 +232,7 @@ export function createPackage(values: PackageFormValues): { id: string } {
   return { id: created.id };
 }
 
-export function updatePackage(id: string, values: PackageFormValues): { id: string } {
+export async function updatePackage(id: string, values: PackageFormValues): Promise<{ id: string }> {
   const all = sortPackages(seedIfEmpty());
   const index = all.findIndex((p) => p.id === id);
   if (index === -1) throw new Error("Package not found");
@@ -253,12 +253,12 @@ export function updatePackage(id: string, values: PackageFormValues): { id: stri
   return { id };
 }
 
-export function deletePackage(id: string) {
+export async function deletePackage(id: string) {
   writeAll(readAll().filter((p) => p.id !== id));
   return { ok: true };
 }
 
-export function setPackageActive(id: string, is_active: boolean) {
+export async function setPackageActive(id: string, is_active: boolean) {
   const all = sortPackages(seedIfEmpty());
   const index = all.findIndex((p) => p.id === id);
   if (index === -1) throw new Error("Package not found");
