@@ -7,6 +7,7 @@ import { RoutePending } from "@/components/route-pending";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Admin — Body Inc" },
@@ -14,8 +15,31 @@ export const Route = createFileRoute("/_authenticated/admin")({
     ],
   }),
   pendingComponent: () => <RoutePending />,
-  beforeLoad: ({ context }) => {
-    const role = (context as { role?: string }).role;
+  beforeLoad: async ({ context }) => {
+    let role = (context as { role?: string }).role;
+
+    if (!role) {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.user) throw redirect({ to: "/auth" });
+
+      const cacheKey = `bi_portal_role:${data.session.user.id}`;
+      try {
+        role = sessionStorage.getItem(cacheKey) ?? undefined;
+      } catch {}
+
+      if (!role) {
+        const { data: fetched } = await supabase.rpc("get_user_portal", {
+          _user_id: data.session.user.id,
+        });
+        role = (fetched as string) ?? undefined;
+        if (role) {
+          try {
+            sessionStorage.setItem(cacheKey, role);
+          } catch {}
+        }
+      }
+    }
+
     if (role !== "admin") {
       throw redirect({ to: "/dashboard" });
     }
