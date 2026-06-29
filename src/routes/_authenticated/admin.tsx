@@ -32,9 +32,13 @@ export const Route = createFileRoute("/_authenticated/admin")({
       } catch {}
 
       if (!role) {
-        const { data: fetched } = await supabase.rpc("get_user_portal", {
+        const { data: fetched, error: roleError } = await supabase.rpc("get_user_portal", {
           _user_id: data.session.user.id,
         });
+        if (roleError) {
+          console.error("[admin] get_user_portal failed:", roleError);
+          throw redirect({ to: "/auth" });
+        }
         role = (fetched as string) ?? undefined;
         if (role) {
           try {
