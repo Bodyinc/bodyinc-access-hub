@@ -1,1 +1,0 @@
-import{lt as e}from"./radix-BFqUeYDE.js";import{f as t}from"./tanstack-DLOuL0w3.js";var n=e(),r=()=>(0,n.jsx)(t,{});export{r as component};
