@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-4A5A3CIP.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-hl8FbmAg.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/__root.tsx",
@@ -10,7 +10,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/reset-password"
 		],
 		preloads: [
-			"/assets/index-RsOC4gkG.js",
+			"/assets/index-0NTq8HfW.js",
 			"/assets/rolldown-runtime-QTnfLwEv.js",
 			"/assets/radix-BFqUeYDE.js",
 			"/assets/tanstack-DLOuL0w3.js",
@@ -20,13 +20,13 @@ var tsrStartManifest = () => ({ routes: {
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-RsOC4gkG.js"
+			src: "/assets/index-0NTq8HfW.js"
 		} }]
 	},
 	"/": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/index.tsx",
 		children: void 0,
-		preloads: ["/assets/routes-SCb01er6.js"]
+		preloads: ["/assets/routes-BilSZUj1.js"]
 	},
 	"/_authenticated": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/route.tsx",
@@ -37,8 +37,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/auth.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/auth-ByMTuLv7.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/auth-CZyvj-fP.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/utils-B6KiDbIe.js",
 			"/assets/button-txWKK5yq.js",
 			"/assets/input-CaOev5Cu.js",
@@ -52,7 +52,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/forgot-password.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/forgot-password-C-OZGhY6.js",
+			"/assets/forgot-password-WUG8yS40.js",
 			"/assets/button-txWKK5yq.js",
 			"/assets/input-CaOev5Cu.js",
 			"/assets/label-CcznWKax.js",
@@ -65,7 +65,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/reset-password.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/reset-password-D4NQvs_9.js",
+			"/assets/reset-password-BJLoHmvT.js",
 			"/assets/button-txWKK5yq.js",
 			"/assets/input-CaOev5Cu.js",
 			"/assets/label-CcznWKax.js",
@@ -87,7 +87,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/_authenticated/admin/"
 		],
 		preloads: [
-			"/assets/admin-DHSPYCRp.js",
+			"/assets/admin-jG1Xgrs8.js",
 			"/assets/x-B5UScggQ.js",
 			"/assets/utils-B6KiDbIe.js",
 			"/assets/dist-C1RJhgYD.js",
@@ -99,7 +99,7 @@ var tsrStartManifest = () => ({ routes: {
 	"/_authenticated/dashboard": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/dashboard.tsx",
 		children: void 0,
-		preloads: ["/assets/dashboard-C54Ubn2o.js", "/assets/button-txWKK5yq.js"]
+		preloads: ["/assets/dashboard-INTUbFVg.js", "/assets/button-txWKK5yq.js"]
 	},
 	"/_authenticated/admin/intake-form": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.intake-form.tsx",
@@ -161,7 +161,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.medicines.$medicineId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.medicines._medicineId-NUmI0RIj.js",
+			"/assets/admin.medicines._medicineId-BJaMEapo.js",
 			"/assets/medicines-Dq9qUe1F.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js"
@@ -171,7 +171,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.medicines.new.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.medicines.new-YLwFPDNu.js",
+			"/assets/admin.medicines.new-Czrh9nBB.js",
 			"/assets/medicines-Dq9qUe1F.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js"
@@ -181,7 +181,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.packages.$packageId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.packages._packageId-DPiTxEen.js",
+			"/assets/admin.packages._packageId-ChTyZt9z.js",
 			"/assets/medicines-Dq9qUe1F.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js",
@@ -203,44 +203,44 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.providers.$providerId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.providers._providerId-BKkOwkhv.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/admin.providers._providerId-vBD-0oaO.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js",
-			"/assets/providers.functions-CIXJChQE.js"
+			"/assets/providers.functions-CSiGERd8.js"
 		]
 	},
 	"/_authenticated/admin/providers/new": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.providers.new.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.providers.new-B6SzwmL9.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/admin.providers.new-BIhdCqaN.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js",
-			"/assets/providers.functions-CIXJChQE.js"
+			"/assets/providers.functions-CSiGERd8.js"
 		]
 	},
 	"/_authenticated/admin/questions/$questionId": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.questions.$questionId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.questions._questionId-CYarSS2j.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/admin.questions._questionId-C4P9jpfT.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js",
-			"/assets/questions.functions-DGgslOV5.js"
+			"/assets/questions.functions-DiSMJJ80.js"
 		]
 	},
 	"/_authenticated/admin/questions/new": {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.questions.new.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.questions.new-wD7POLm6.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/admin.questions.new-B6fphlBT.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/form-skeleton-BKhzDF5C.js",
-			"/assets/questions.functions-DGgslOV5.js"
+			"/assets/questions.functions-DiSMJJ80.js"
 		]
 	},
 	"/_authenticated/admin/medicines/": {
@@ -280,15 +280,15 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.providers.index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.providers.index-O5TJwJwB.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/admin.providers.index-DmIgvY-1.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/alert-dialog-Drhf-2GI.js",
 			"/assets/select-CXDni9V6.js",
 			"/assets/plus-BrSqL8eR.js",
 			"/assets/card-DhXOgFjJ.js",
 			"/assets/badge-_To8LBiR.js",
 			"/assets/dist-CoSk3BNC.js",
-			"/assets/providers.functions-CIXJChQE.js",
+			"/assets/providers.functions-CSiGERd8.js",
 			"/assets/use-debounced-value-Bh4KYmNy.js"
 		]
 	},
@@ -296,8 +296,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/Users/abhisheksoni/Appsrow/bodyinc/Admin:Provider/bodyinc-access-hub/src/routes/_authenticated/admin.questions.index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin.questions.index-BvWbd0Kf.js",
-			"/assets/auth-middleware-DivUX1pS.js",
+			"/assets/admin.questions.index-DYx1eLM6.js",
+			"/assets/auth-middleware-BFTO7fw3.js",
 			"/assets/alert-dialog-Drhf-2GI.js",
 			"/assets/select-CXDni9V6.js",
 			"/assets/plus-BrSqL8eR.js",
@@ -306,7 +306,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/questions.schema-CZVEdsA2.js",
 			"/assets/dist-CoSk3BNC.js",
 			"/assets/use-debounced-value-Bh4KYmNy.js",
-			"/assets/questions.functions-DGgslOV5.js"
+			"/assets/questions.functions-DiSMJJ80.js"
 		]
 	}
 } });

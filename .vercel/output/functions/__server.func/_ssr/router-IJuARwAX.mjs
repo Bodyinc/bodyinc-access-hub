@@ -11,7 +11,7 @@ import { t as Route$26 } from "./admin.providers._providerId-BL_uMh_c.mjs";
 import { t as Route$27 } from "./admin.questions._questionId-BNKl9P90.mjs";
 import { i as isPasswordRecoveryPending, n as getPasswordRecoveryRedirectUrl, r as haltForPasswordRecoveryRedirect, t as clearPasswordRecoveryPending } from "./password-recovery-Cu2AAm3X.mjs";
 import { t as RoutePending } from "./route-pending-DpX2qEjT.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-BnInqq_a.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-IJuARwAX.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-_ieOJ1qQ.css";
@@ -237,12 +237,16 @@ var Route$20 = createFileRoute("/auth")({
 	] }),
 	component: lazyRouteComponent($$splitComponentImporter$20, "component")
 });
+/** True only in a real browser — not Node SSR (even with partial window polyfills). */
+function isBrowser() {
+	return typeof window !== "undefined" && typeof window.document !== "undefined" && typeof window.document.createElement === "function";
+}
 var $$splitComponentImporter$19 = () => import("./route-Di7iQBCH.mjs");
 var Route$19 = createFileRoute("/_authenticated")({
 	ssr: false,
 	pendingComponent: () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RoutePending, {}),
 	beforeLoad: async () => {
-		if (typeof window === "undefined") return;
+		if (!isBrowser()) return;
 		const recoveryRedirect = getPasswordRecoveryRedirectUrl();
 		if (recoveryRedirect) {
 			window.location.replace(recoveryRedirect);
@@ -279,42 +283,9 @@ var Route$19 = createFileRoute("/_authenticated")({
 	},
 	component: lazyRouteComponent($$splitComponentImporter$19, "component")
 });
-var $$splitComponentImporter$18 = () => import("./routes-C2ZNH1mh.mjs");
+var $$splitComponentImporter$18 = () => import("./routes-DnOlK7oS.mjs");
 var Route$18 = createFileRoute("/")({
 	ssr: false,
-	pendingComponent: () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RoutePending, {}),
-	beforeLoad: async () => {
-		if (typeof window === "undefined") return;
-		const recoveryRedirect = getPasswordRecoveryRedirectUrl();
-		if (recoveryRedirect) {
-			window.location.replace(recoveryRedirect);
-			await haltForPasswordRecoveryRedirect();
-		}
-		const { supabase } = await import("./client-G-x0iJHV.mjs").then((n) => n.t).then((n) => n.t);
-		const { data } = await supabase.auth.getSession();
-		const user = data.session?.user;
-		if (user && isPasswordRecoveryPending() && window.location.pathname !== "/reset-password") {
-			window.location.replace("/reset-password");
-			await haltForPasswordRecoveryRedirect();
-		}
-		if (!user) throw redirect({ to: "/auth" });
-		const cacheKey = `bi_portal_role:${user.id}`;
-		let role = null;
-		try {
-			role = sessionStorage.getItem(cacheKey);
-		} catch {}
-		if (!role) {
-			const { data: fetched } = await supabase.rpc("get_user_portal", { _user_id: user.id });
-			role = fetched ?? null;
-			if (role) try {
-				sessionStorage.setItem(cacheKey, role);
-			} catch {}
-		}
-		if (role === "admin") throw redirect({ to: "/admin" });
-		if (role === "provider") throw redirect({ to: "/dashboard" });
-		await supabase.auth.signOut();
-		throw redirect({ to: "/auth" });
-	},
 	head: () => ({ meta: [
 		{ title: "Body Inc Practitioner Portal" },
 		{
@@ -345,7 +316,7 @@ var Route$16 = createFileRoute("/_authenticated/admin")({
 	}] }),
 	pendingComponent: () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RoutePending, {}),
 	beforeLoad: async ({ context }) => {
-		if (typeof window === "undefined") return;
+		if (!isBrowser()) return;
 		let role = context.role;
 		if (!role) {
 			const { data } = await supabase.auth.getSession();
@@ -355,7 +326,11 @@ var Route$16 = createFileRoute("/_authenticated/admin")({
 				role = sessionStorage.getItem(cacheKey) ?? void 0;
 			} catch {}
 			if (!role) {
-				const { data: fetched } = await supabase.rpc("get_user_portal", { _user_id: data.session.user.id });
+				const { data: fetched, error: roleError } = await supabase.rpc("get_user_portal", { _user_id: data.session.user.id });
+				if (roleError) {
+					console.error("[admin] get_user_portal failed:", roleError);
+					throw redirect({ to: "/auth" });
+				}
 				role = fetched ?? void 0;
 				if (role) try {
 					sessionStorage.setItem(cacheKey, role);

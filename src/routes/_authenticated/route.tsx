@@ -6,20 +6,21 @@ import {
   haltForPasswordRecoveryRedirect,
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
+import { isBrowser } from "@/lib/is-browser";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   pendingComponent: () => <RoutePending />,
   beforeLoad: async () => {
-    if (typeof window === "undefined") {
+    if (!isBrowser()) {
       return;
     }
 
     const recoveryRedirect = getPasswordRecoveryRedirectUrl();
-      if (recoveryRedirect) {
-        window.location.replace(recoveryRedirect);
-        await haltForPasswordRecoveryRedirect();
-      }
+    if (recoveryRedirect) {
+      window.location.replace(recoveryRedirect);
+      await haltForPasswordRecoveryRedirect();
+    }
 
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session?.user) {

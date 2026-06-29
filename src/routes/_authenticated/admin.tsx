@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { RoutePending } from "@/components/route-pending";
+import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   }),
   pendingComponent: () => <RoutePending />,
   beforeLoad: async ({ context }) => {
-    if (typeof window === "undefined") {
+    if (!isBrowser()) {
       return;
     }
 

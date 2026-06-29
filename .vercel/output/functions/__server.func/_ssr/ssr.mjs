@@ -51,17 +51,27 @@ function renderErrorPage() {
   </body>
 </html>`;
 }
+function getRedirectHref(error) {
+	if (!(error instanceof Response)) return void 0;
+	return error.options?.href;
+}
+function redirectResponse(href, request) {
+	return Response.redirect(new URL(href, request.url).href, 302);
+}
 var serverEntryPromise;
 async function getServerEntry() {
-	if (!serverEntryPromise) serverEntryPromise = import("./server-G49B4Ng7.mjs").then((m) => m.default ?? m);
+	if (!serverEntryPromise) serverEntryPromise = import("./server-J9uctZ4Z.mjs").then((m) => m.default ?? m);
 	return serverEntryPromise;
 }
-async function normalizeCatastrophicSsrResponse(response) {
+async function normalizeCatastrophicSsrResponse(response, request) {
 	if (response.status < 500) return response;
 	if (!(response.headers.get("content-type") ?? "").includes("application/json")) return response;
 	const body = await response.clone().text();
 	if (!body.includes("\"unhandled\":true") || !body.includes("\"message\":\"HTTPError\"")) return response;
-	console.error(consumeLastCapturedError() ?? /* @__PURE__ */ new Error(`h3 swallowed SSR error: ${body}`));
+	const captured = consumeLastCapturedError();
+	const redirectHref = captured ? getRedirectHref(captured) : void 0;
+	if (redirectHref) return redirectResponse(redirectHref, request);
+	console.error(captured ?? /* @__PURE__ */ new Error(`h3 swallowed SSR error: ${body}`));
 	return new Response(renderErrorPage(), {
 		status: 500,
 		headers: { "content-type": "text/html; charset=utf-8" }
@@ -69,8 +79,10 @@ async function normalizeCatastrophicSsrResponse(response) {
 }
 var server_default = { async fetch(request, env, ctx) {
 	try {
-		return await normalizeCatastrophicSsrResponse(await (await getServerEntry()).fetch(request, env, ctx));
+		return await normalizeCatastrophicSsrResponse(await (await getServerEntry()).fetch(request, env, ctx), request);
 	} catch (error) {
+		const redirectHref = getRedirectHref(error);
+		if (redirectHref) return redirectResponse(redirectHref, request);
 		console.error(error);
 		return new Response(renderErrorPage(), {
 			status: 500,
