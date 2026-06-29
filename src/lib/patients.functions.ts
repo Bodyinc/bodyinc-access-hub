@@ -151,7 +151,7 @@ export const updatePatientProfile = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await context.supabase
       .from("profiles")
-      .update(patch)
+      .update(patch as any)
       .eq("id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
