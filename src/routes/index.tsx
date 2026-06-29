@@ -10,12 +10,15 @@ export const Route = createFileRoute("/")({
   ssr: false,
   pendingComponent: () => <RoutePending />,
   beforeLoad: async () => {
-    if (typeof window !== "undefined") {
-      const recoveryRedirect = getPasswordRecoveryRedirectUrl();
-      if (recoveryRedirect) {
-        window.location.replace(recoveryRedirect);
-        await haltForPasswordRecoveryRedirect();
-      }
+    // Auth redirects use sessionStorage/window — must not run during SSR (Vercel 500).
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const recoveryRedirect = getPasswordRecoveryRedirectUrl();
+    if (recoveryRedirect) {
+      window.location.replace(recoveryRedirect);
+      await haltForPasswordRecoveryRedirect();
     }
 
     const { supabase } = await import("@/integrations/supabase/client");
@@ -24,7 +27,6 @@ export const Route = createFileRoute("/")({
 
     if (
       user &&
-      typeof window !== "undefined" &&
       isPasswordRecoveryPending() &&
       window.location.pathname !== "/reset-password"
     ) {
@@ -59,5 +61,5 @@ export const Route = createFileRoute("/")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: () => null,
+  component: () => <RoutePending />,
 });

@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { markPasswordRecoveryPending } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/forgot-password")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Reset Password — Body Inc Practitioners" },

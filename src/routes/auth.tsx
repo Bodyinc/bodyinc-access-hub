@@ -20,6 +20,7 @@ import {
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign In — Body Inc" },

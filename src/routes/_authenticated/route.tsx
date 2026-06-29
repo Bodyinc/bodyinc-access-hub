@@ -11,13 +11,15 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   pendingComponent: () => <RoutePending />,
   beforeLoad: async () => {
-    if (typeof window !== "undefined") {
-      const recoveryRedirect = getPasswordRecoveryRedirectUrl();
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const recoveryRedirect = getPasswordRecoveryRedirectUrl();
       if (recoveryRedirect) {
         window.location.replace(recoveryRedirect);
         await haltForPasswordRecoveryRedirect();
       }
-    }
 
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session?.user) {
@@ -25,7 +27,6 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     if (
-      typeof window !== "undefined" &&
       isPasswordRecoveryPending() &&
       window.location.pathname !== "/reset-password"
     ) {

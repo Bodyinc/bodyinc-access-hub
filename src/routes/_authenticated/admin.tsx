@@ -16,6 +16,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   }),
   pendingComponent: () => <RoutePending />,
   beforeLoad: async ({ context }) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     let role = (context as { role?: string }).role;
 
     if (!role) {
