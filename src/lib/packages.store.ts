@@ -1,7 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
 import type { PackageFormValues } from "./packages.schema";
-import { listMedicines, SEED_IDS } from "./medicines.store";
-
-const STORAGE_KEY = "bi_packages";
 
 export type StoredPackage = {
   id: string;
@@ -30,117 +28,28 @@ export type ListPackageRow = StoredPackage & {
   savings: number;
 };
 
-function now() {
-  return new Date().toISOString();
+function rowToStored(row: any): StoredPackage {
+  const feat = Array.isArray(row.features) ? row.features : [];
+  return {
+    id: row.id,
+    medicine_id: row.medicine_id,
+    name: row.name,
+    duration_months: row.duration_months,
+    original_price: Number(row.original_price),
+    price: Number(row.price),
+    is_most_popular: row.is_most_popular,
+    features: feat.map((v: unknown) =>
+      typeof v === "string" ? v : typeof v === "object" && v && "text" in v ? String((v as any).text ?? "") : "",
+    ).filter(Boolean),
+    clinical_note: row.clinical_note,
+    sort_order: row.sort_order,
+    is_active: row.is_active,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
 }
 
-function readAll(): StoredPackage[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as StoredPackage[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeAll(packages: StoredPackage[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(packages));
-}
-
-function sortPackages(packages: StoredPackage[]) {
-  return [...packages].sort(
-    (a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at),
-  );
-}
-
-function seedIfEmpty() {
-  const existing = readAll();
-  if (existing.length > 0) return existing;
-
-  const ts = now();
-  const seeded: StoredPackage[] = [
-    {
-      id: crypto.randomUUID(),
-      medicine_id: SEED_IDS.glp1,
-      name: "Standard Treatment Plan",
-      duration_months: 1,
-      original_price: 199,
-      price: 167,
-      is_most_popular: false,
-      features: [
-        "Monthly medication supply",
-        "Provider check-in",
-        "Dose adjustment support",
-      ],
-      clinical_note: "Pricing includes consultation and ongoing provider access.",
-      sort_order: 0,
-      is_active: true,
-      created_at: ts,
-      updated_at: ts,
-    },
-    {
-      id: crypto.randomUUID(),
-      medicine_id: SEED_IDS.glp1,
-      name: "3-Month Value Plan",
-      duration_months: 3,
-      original_price: 591,
-      price: 447,
-      is_most_popular: true,
-      features: [
-        "3-month medication supply",
-        "Priority provider support",
-        "Free shipping",
-        "Quarterly lab review",
-      ],
-      clinical_note: "Best value for committed treatment. Savings applied at checkout.",
-      sort_order: 1,
-      is_active: true,
-      created_at: ts,
-      updated_at: ts,
-    },
-    {
-      id: crypto.randomUUID(),
-      medicine_id: SEED_IDS.multi,
-      name: "Standard Treatment Plan",
-      duration_months: 1,
-      original_price: 249,
-      price: 219,
-      is_most_popular: false,
-      features: ["Monthly supply", "Care team access", "Lifestyle coaching session"],
-      clinical_note: null,
-      sort_order: 0,
-      is_active: true,
-      created_at: ts,
-      updated_at: ts,
-    },
-    {
-      id: crypto.randomUUID(),
-      medicine_id: SEED_IDS.multi,
-      name: "3-Month Comprehensive Plan",
-      duration_months: 3,
-      original_price: 747,
-      price: 597,
-      is_most_popular: true,
-      features: [
-        "3-month medication supply",
-        "Bi-weekly coaching check-ins",
-        "Lab coordination",
-      ],
-      clinical_note: "Comprehensive plan for multi-pathway patients.",
-      sort_order: 1,
-      is_active: true,
-      created_at: ts,
-      updated_at: ts,
-    },
-  ];
-  writeAll(seeded);
-  return seeded;
-}
-
-function fromForm(values: PackageFormValues): Omit<StoredPackage, "id" | "created_at" | "updated_at"> {
+function fromForm(values: PackageFormValues) {
   return {
     medicine_id: values.medicine_id,
     name: values.name,
@@ -155,115 +64,75 @@ function fromForm(values: PackageFormValues): Omit<StoredPackage, "id" | "create
   };
 }
 
-function clearMostPopularForMedicine(
-  all: StoredPackage[],
-  medicineId: string,
-  exceptId?: string,
-) {
-  for (const pkg of all) {
-    if (pkg.medicine_id === medicineId && pkg.id !== exceptId && pkg.is_most_popular) {
-      pkg.is_most_popular = false;
-      pkg.updated_at = now();
-    }
-  }
-}
+export async function listPackages(input: ListPackagesInput = {}): Promise<ListPackageRow[]> {
+  let query = supabase
+    .from("packages")
+    .select("*, medicines(name)")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
-export function listPackages(
-  input: ListPackagesInput = {},
-  medicineMap?: Map<string, string>,
-): ListPackageRow[] {
-  const resolvedMap =
-    medicineMap ?? new Map(listMedicines().map((m) => [m.id, m.name]));
-
-  let rows = sortPackages(seedIfEmpty());
-
-  if (input.search) {
-    const q = input.search.toLowerCase();
-    rows = rows.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        (resolvedMap.get(r.medicine_id)?.toLowerCase().includes(q) ?? false),
-    );
-  }
   if (input.medicine_id && input.medicine_id !== "all") {
-    rows = rows.filter((r) => r.medicine_id === input.medicine_id);
+    query = query.eq("medicine_id", input.medicine_id);
   }
-  if (input.status === "active") {
-    rows = rows.filter((r) => r.is_active);
-  } else if (input.status === "inactive") {
-    rows = rows.filter((r) => !r.is_active);
+  if (input.status === "active") query = query.eq("is_active", true);
+  if (input.status === "inactive") query = query.eq("is_active", false);
+  if (input.search) {
+    query = query.ilike("name", `%${input.search}%`);
   }
 
-  return rows.map((r) => ({
-    ...r,
-    medicine_name: resolvedMap.get(r.medicine_id) ?? "Unknown",
-    savings: Math.max(0, r.original_price - r.price),
-  }));
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: any) => {
+    const stored = rowToStored(row);
+    return {
+      ...stored,
+      medicine_name: row.medicines?.name ?? "Unknown",
+      savings: Math.max(0, stored.original_price - stored.price),
+    };
+  });
 }
 
-export function listPackagesByMedicine(medicineId: string): StoredPackage[] {
-  return sortPackages(seedIfEmpty()).filter((p) => p.medicine_id === medicineId && p.is_active);
+export async function listPackagesByMedicine(medicineId: string): Promise<StoredPackage[]> {
+  const { data, error } = await supabase
+    .from("packages")
+    .select("*")
+    .eq("medicine_id", medicineId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(rowToStored);
 }
 
-export function getPackage(id: string): StoredPackage | null {
-  return sortPackages(seedIfEmpty()).find((p) => p.id === id) ?? null;
+export async function getPackage(id: string): Promise<StoredPackage | null> {
+  const { data, error } = await supabase.from("packages").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? rowToStored(data) : null;
 }
 
 export async function createPackage(values: PackageFormValues): Promise<{ id: string }> {
-  const all = sortPackages(seedIfEmpty());
-  const maxOrder = all
-    .filter((p) => p.medicine_id === values.medicine_id)
-    .reduce((max, p) => Math.max(max, p.sort_order), -1);
-  const sortOrder = values.sort_order ?? maxOrder + 1;
-  const ts = now();
-
-  const created: StoredPackage = {
-    id: crypto.randomUUID(),
-    ...fromForm({ ...values, sort_order: sortOrder }),
-    created_at: ts,
-    updated_at: ts,
-  };
-
-  if (created.is_most_popular) {
-    clearMostPopularForMedicine(all, created.medicine_id);
-  }
-
-  writeAll([...all, created]);
-  return { id: created.id };
+  const { data, error } = await supabase
+    .from("packages")
+    .insert(fromForm(values) as any)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return { id: data.id };
 }
 
 export async function updatePackage(id: string, values: PackageFormValues): Promise<{ id: string }> {
-  const all = sortPackages(seedIfEmpty());
-  const index = all.findIndex((p) => p.id === id);
-  if (index === -1) throw new Error("Package not found");
-
-  const updated: StoredPackage = {
-    ...all[index],
-    ...fromForm(values),
-    sort_order: values.sort_order ?? all[index].sort_order,
-    updated_at: now(),
-  };
-
-  if (updated.is_most_popular) {
-    clearMostPopularForMedicine(all, updated.medicine_id, id);
-  }
-
-  all[index] = updated;
-  writeAll(all);
+  const { error } = await supabase.from("packages").update(fromForm(values) as any).eq("id", id);
+  if (error) throw new Error(error.message);
   return { id };
 }
 
-export async function deletePackage(id: string) {
-  writeAll(readAll().filter((p) => p.id !== id));
+export async function deletePackage(id: string): Promise<{ ok: true }> {
+  const { error } = await supabase.from("packages").delete().eq("id", id);
+  if (error) throw new Error(error.message);
   return { ok: true };
 }
 
-export async function setPackageActive(id: string, is_active: boolean) {
-  const all = sortPackages(seedIfEmpty());
-  const index = all.findIndex((p) => p.id === id);
-  if (index === -1) throw new Error("Package not found");
-
-  all[index] = { ...all[index], is_active, updated_at: now() };
-  writeAll(all);
+export async function setPackageActive(id: string, is_active: boolean): Promise<{ ok: true }> {
+  const { error } = await supabase.from("packages").update({ is_active }).eq("id", id);
+  if (error) throw new Error(error.message);
   return { ok: true };
 }

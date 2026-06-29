@@ -39,7 +39,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LocalStorageBanner } from "@/components/admin/local-storage-banner";
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { packagesQueryKey, packagesQueryOptions } from "@/lib/query-options/packages";
 import {
@@ -99,8 +98,6 @@ function PackagesListPage() {
 
   return (
     <div className="space-y-4">
-      <LocalStorageBanner />
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Packages</h2>

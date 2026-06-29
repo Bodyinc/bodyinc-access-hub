@@ -1,5 +1,4 @@
 import { queryOptions } from "@tanstack/react-query";
-import { listMedicines } from "@/lib/medicines.store";
 import {
   getPackage,
   listPackages,
@@ -10,14 +9,10 @@ const LOCAL_STALE = Number.POSITIVE_INFINITY;
 
 export const packagesQueryKey = ["packages"] as const;
 
-function medicineNameMap() {
-  return new Map(listMedicines().map((m) => [m.id, m.name]));
-}
-
 export function packagesQueryOptions(input: ListPackagesInput = {}) {
   return queryOptions({
     queryKey: packagesQueryKey,
-    queryFn: () => listPackages(input, medicineNameMap()),
+    queryFn: () => listPackages(input),
     staleTime: LOCAL_STALE,
   });
 }

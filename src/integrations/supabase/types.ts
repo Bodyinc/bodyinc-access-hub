@@ -89,6 +89,110 @@ export type Database = {
         }
         Relationships: []
       }
+      medicines: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          important_info: Json
+          is_active: boolean
+          long_description: string | null
+          name: string
+          notice_text: string | null
+          price_monthly: number
+          short_description: string
+          sort_order: number
+          status: Database["public"]["Enums"]["medicine_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          important_info?: Json
+          is_active?: boolean
+          long_description?: string | null
+          name: string
+          notice_text?: string | null
+          price_monthly?: number
+          short_description: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["medicine_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          important_info?: Json
+          is_active?: boolean
+          long_description?: string | null
+          name?: string
+          notice_text?: string | null
+          price_monthly?: number
+          short_description?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["medicine_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      packages: {
+        Row: {
+          clinical_note: string | null
+          created_at: string
+          duration_months: number
+          features: Json
+          id: string
+          is_active: boolean
+          is_most_popular: boolean
+          medicine_id: string
+          name: string
+          original_price: number
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          clinical_note?: string | null
+          created_at?: string
+          duration_months: number
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_most_popular?: boolean
+          medicine_id: string
+          name: string
+          original_price?: number
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          clinical_note?: string | null
+          created_at?: string
+          duration_months?: number
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_most_popular?: boolean
+          medicine_id?: string
+          name?: string
+          original_price?: number
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -264,6 +368,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "provider" | "patient"
+      medicine_status: "active" | "inactive" | "draft"
       question_type: "short_text" | "mcq_single" | "mcq_multi"
     }
     CompositeTypes: {
@@ -393,6 +498,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "provider", "patient"],
+      medicine_status: ["active", "inactive", "draft"],
       question_type: ["short_text", "mcq_single", "mcq_multi"],
     },
   },
