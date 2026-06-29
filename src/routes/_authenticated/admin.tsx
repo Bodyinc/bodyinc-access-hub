@@ -81,6 +81,7 @@ function AdminLayout() {
   else if (/^\/admin\/medicines\/[^/]+$/.test(cleaned)) title = "Edit Medicine";
   else if (cleaned === "/admin/packages/new") title = "Add Package";
   else if (/^\/admin\/packages\/[^/]+$/.test(cleaned)) title = "Edit Package";
+  else if (/^\/admin\/patients\/[^/]+$/.test(cleaned)) title = "Patient details";
 
   async function signOut() {
     await queryClient.cancelQueries();
