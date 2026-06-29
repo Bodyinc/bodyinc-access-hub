@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      intake_question_options: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          question_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          question_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          question_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "intake_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "public_intake_quiz"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_questions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          prompt: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          prompt: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          prompt?: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -137,219 +212,8 @@ export type Database = {
         }
         Relationships: []
       }
-      intake_questions: {
-        Row: {
-          id: string
-          prompt: string
-          description: string | null
-          question_type: Database["public"]["Enums"]["question_type"]
-          sort_order: number
-          is_required: boolean
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          prompt: string
-          description?: string | null
-          question_type: Database["public"]["Enums"]["question_type"]
-          sort_order?: number
-          is_required?: boolean
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          prompt?: string
-          description?: string | null
-          question_type?: Database["public"]["Enums"]["question_type"]
-          sort_order?: number
-          is_required?: boolean
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      intake_question_options: {
-        Row: {
-          id: string
-          question_id: string
-          label: string
-          sort_order: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          question_id: string
-          label: string
-          sort_order?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          question_id?: string
-          label?: string
-          sort_order?: number
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "intake_question_options_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "intake_questions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      medicines: {
-        Row: {
-          id: string
-          name: string
-          short_description: string
-          long_description: string | null
-          image_url: string | null
-          price_monthly: number
-          status: Database["public"]["Enums"]["medicine_status"]
-          important_info: Json
-          notice_text: string | null
-          sort_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          short_description: string
-          long_description?: string | null
-          image_url?: string | null
-          price_monthly?: number
-          status?: Database["public"]["Enums"]["medicine_status"]
-          important_info?: Json
-          notice_text?: string | null
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          short_description?: string
-          long_description?: string | null
-          image_url?: string | null
-          price_monthly?: number
-          status?: Database["public"]["Enums"]["medicine_status"]
-          important_info?: Json
-          notice_text?: string | null
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      packages: {
-        Row: {
-          id: string
-          medicine_id: string
-          name: string
-          duration_months: number
-          original_price: number
-          price: number
-          is_most_popular: boolean
-          features: Json
-          clinical_note: string | null
-          sort_order: number
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          medicine_id: string
-          name: string
-          duration_months: number
-          original_price?: number
-          price?: number
-          is_most_popular?: boolean
-          features?: Json
-          clinical_note?: string | null
-          sort_order?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          medicine_id?: string
-          name?: string
-          duration_months?: number
-          original_price?: number
-          price?: number
-          is_most_popular?: boolean
-          features?: Json
-          clinical_note?: string | null
-          sort_order?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "packages_medicine_id_fkey"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
-      public_intake_quiz: {
-        Row: {
-          id: string
-          prompt: string
-          description: string | null
-          question_type: Database["public"]["Enums"]["question_type"]
-          sort_order: number
-          is_required: boolean
-          options: Json
-        }
-        Relationships: []
-      }
-      public_medicines: {
-        Row: {
-          id: string
-          name: string
-          short_description: string
-          long_description: string | null
-          image_url: string | null
-          price_monthly: number
-          important_info: Json
-          notice_text: string | null
-          sort_order: number
-        }
-        Relationships: []
-      }
-      public_medicine_packages: {
-        Row: {
-          id: string
-          medicine_id: string
-          medicine_name: string
-          name: string
-          duration_months: number
-          original_price: number
-          price: number
-          is_most_popular: boolean
-          features: Json
-          clinical_note: string | null
-          sort_order: number
-        }
-        Relationships: []
-      }
       provider_directory: {
         Row: {
           avatar_url: string | null
@@ -361,6 +225,18 @@ export type Database = {
           is_active: boolean | null
           phone: string | null
           specialty: string | null
+        }
+        Relationships: []
+      }
+      public_intake_quiz: {
+        Row: {
+          description: string | null
+          id: string | null
+          is_required: boolean | null
+          options: Json | null
+          prompt: string | null
+          question_type: Database["public"]["Enums"]["question_type"] | null
+          sort_order: number | null
         }
         Relationships: []
       }
@@ -388,7 +264,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "provider" | "patient"
-      medicine_status: "active" | "inactive" | "draft"
       question_type: "short_text" | "mcq_single" | "mcq_multi"
     }
     CompositeTypes: {
@@ -518,7 +393,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "provider", "patient"],
-      medicine_status: ["active", "inactive", "draft"],
       question_type: ["short_text", "mcq_single", "mcq_multi"],
     },
   },
