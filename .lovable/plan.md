@@ -1,68 +1,66 @@
 ## Goal
 
-Replace the localStorage-backed `medicines.store.ts` and `packages.store.ts` with real Supabase persistence so the Admin medicines/packages screens read and write to the database.
+Build out the **Patients** admin tab: list/search patient accounts, view a detail page, perform admin actions (edit profile, send password reset, deactivate), and view their submitted intake quiz answers.
 
 ## Database
 
-Two new migrations (one combined migration is fine):
+One migration:
 
-**Table `public.medicines`**
-- `id uuid pk default gen_random_uuid()`
-- `name text not null`, `short_description text not null`
-- `long_description text`, `image_url text`
-- `price_monthly numeric(10,2) not null default 0`
-- `status medicine_status not null default 'draft'` (enum: `active | inactive | draft`)
-- `important_info jsonb not null default '[]'` (array of strings)
-- `notice_text text`
-- `sort_order int not null default 0`
-- `is_active bool not null default false` (derived from status via trigger)
-- `created_at`, `updated_at` + `update_updated_at_column` trigger
+**Table `public.intake_responses`** — stores patient answers to the intake quiz (no table currently exists).
+- `id`, `user_id` (uuid, references patient), `question_id` (references `intake_questions`), `question_prompt` (text snapshot), `question_type`, `answer_text` (nullable), `answer_option_ids` (uuid[] for MCQ), `answer_labels` (text[] snapshot), `submitted_at`, timestamps.
+- GRANTs: `authenticated` can SELECT own rows; admins can SELECT all. No anon access.
+- RLS: patient can insert/select own; admin can select all via `has_role('admin')`.
 
-**Table `public.packages`**
-- `id uuid pk`
-- `medicine_id uuid not null references public.medicines(id) on delete cascade`
-- `name text not null`, `duration_months int not null`
-- `original_price numeric(10,2) not null`, `price numeric(10,2) not null`
-- `is_most_popular bool not null default false`
-- `features jsonb not null default '[]'`
-- `clinical_note text`, `sort_order int not null default 0`
-- `is_active bool not null default true`
-- timestamps + trigger
-- Trigger: when a row is inserted/updated with `is_most_popular = true`, clear flag on other packages of the same medicine.
+**Table `public.patient_status`** — tracks admin-side deactivation without touching `auth.users`.
+- `user_id` PK, `is_active bool default true`, `deactivated_at`, `deactivated_by`, `note text`, timestamps.
+- RLS: admin-only read/write; patient can read own `is_active`.
 
-**GRANTs / RLS**
-- `GRANT SELECT ON public.medicines, public.packages TO anon` (publicly readable for the marketing site).
-- `GRANT SELECT, INSERT, UPDATE, DELETE TO authenticated`, `GRANT ALL TO service_role`.
-- Enable RLS.
-- Policies: `SELECT` for `anon` and `authenticated` (only `is_active = true` for `anon`, all rows for `authenticated`); `INSERT/UPDATE/DELETE` restricted to `public.has_role(auth.uid(), 'admin')`.
+(Profile fields like name/phone/dob already live in `public.profiles` — reuse it for edits.)
 
-**Storage bucket `medicine-images`**
-- Public bucket (already referenced by `medicine-image-upload.ts`).
-- Policy: anyone can read; only admins can insert/update/delete.
+## Server functions (`src/lib/patients.functions.ts`)
 
-## Server functions
+All protected with `requireSupabaseAuth` + `has_role(userId, 'admin')`:
 
-New file `src/lib/medicines.functions.ts`:
-- `listMedicinesFn` (public, uses server publishable client) — supports `{ search, status }`.
-- `getMedicineFn({ id })` (public).
-- `createMedicineFn`, `updateMedicineFn`, `deleteMedicineFn`, `setMedicineStatusFn` — protected with `requireSupabaseAuth` + `has_role('admin')` check.
+- `listPatientsFn({ search?, status?, page?, pageSize? })` — joins `profiles` ⨝ `user_roles` (role='patient') ⨝ `patient_status`. Returns `{ rows, total }`. Search across name/email/phone.
+- `getPatientFn({ userId })` — returns profile + status + role + counts (intake responses count).
+- `listPatientIntakeResponsesFn({ userId })` — returns responses ordered by `submitted_at` desc, grouped by submission batch if applicable.
+- `updatePatientProfileFn({ userId, full_name, phone, dob })` — updates `profiles`.
+- `setPatientActiveFn({ userId, is_active, note? })` — upserts `patient_status`.
+- `sendPatientPasswordResetFn({ userId })` — loads `supabaseAdmin` inside handler, calls `auth.admin.generateLink({ type: 'recovery', email })` and emails via Supabase.
 
-New file `src/lib/packages.functions.ts` (replace the empty stub):
-- `listPackagesFn({ search, medicine_id, status })` (public, joins medicine name).
-- `getPackageFn({ id })` (public).
-- `createPackageFn`, `updatePackageFn`, `deletePackageFn`, `setPackageActiveFn` — admin-only.
+## Routes
 
-All admin mutations re-check `has_role(userId, 'admin')` server-side before the write.
+- `src/routes/_authenticated/admin.patients.tsx` → layout wrapper with `<Outlet />` (replaces current single-file route).
+- `src/routes/_authenticated/admin.patients.index.tsx` → **list page**
+  - Search box (debounced, URL-synced via `validateSearch`), status filter (All / Active / Deactivated), paginated table.
+  - Columns: Name, Email, Phone, DOB, Joined, Status, actions (View, Deactivate/Reactivate, Send password reset).
+  - Row click → detail page.
+- `src/routes/_authenticated/admin.patients.$patientId.tsx` → **detail page**
+  - Tabs: **Profile** (editable form), **Intake responses** (read-only list of question + answer), **Account** (status toggle, last sign-in, send password reset button, danger zone).
+  - Header shows avatar, name, email, status badge.
 
-## Client wiring
+Title map in `admin.tsx` updated: `/admin/patients` → "Patients", `/admin/patients/$id` → "Patient details".
 
-- Rewrite `src/lib/medicines.store.ts` and `src/lib/packages.store.ts` to be thin wrappers that call the server functions (keep the same exported names — `listMedicines`, `getMedicine`, `createMedicine`, `updateMedicine`, `deleteMedicine`, `setMedicineActive`, plus the package equivalents) so existing routes/components don't need edits.
-- `StoredMedicine` / `StoredPackage` types stay; map DB rows (`important_info`/`features` jsonb arrays of strings) into the existing shape.
-- Drop the `SEED_IDS` constant — seed data now comes from a migration (insert the 3 demo medicines + 4 demo packages so the UI isn't empty on first load).
-- Remove the `LocalStorageBanner` usage from medicines/packages admin routes.
+## Components
+
+- `src/components/admin/patient-row-actions.tsx` — dropdown for table row actions.
+- `src/components/admin/patient-profile-form.tsx` — name/phone/dob editable form (react-hook-form + zod, mirrors existing form patterns).
+- `src/components/admin/patient-intake-responses.tsx` — renders grouped Q&A list with empty state.
+- `src/components/admin/patient-account-panel.tsx` — status switch, password-reset button (confirm dialog), shows audit metadata.
+- Sidebar `Patients` link already exists — no change.
+
+## Query options
+
+`src/lib/query-options/patients.ts` exports `patientsListQuery({...})`, `patientQuery(id)`, `patientIntakeResponsesQuery(id)`. Loaders call `ensureQueryData`; components use `useSuspenseQuery`. Mutations invalidate the relevant keys.
 
 ## Out of scope
 
-- Provider/profile/intake tables — untouched.
-- Pre-existing TS errors unrelated to medicines/packages.
-- No changes to form components or route files beyond removing the local-storage banner.
+- Patient-side intake submission flow (only admin-side viewing of existing responses; if no responses exist yet, empty state is shown).
+- Orders/billing/consultation history (no such tables yet).
+- Hard-deleting accounts (deactivation only, to keep `auth.users` intact).
+- Bulk actions and CSV export.
+
+## Notes
+
+- "Deactivated" is enforced via `patient_status.is_active = false`; the `_authenticated` gate stays as-is (we don't block sign-in at the auth layer in this pass — that would require an auth hook). We can wire a redirect on the dashboard later if needed.
+- All admin mutations re-verify `has_role(admin)` server-side before writing.
