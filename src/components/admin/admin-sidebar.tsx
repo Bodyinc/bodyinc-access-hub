@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
-  HelpCircle,
   CalendarClock,
   Stethoscope,
   Pill,
@@ -34,7 +33,6 @@ const items: NavItem[] = [
   { title: "Packages", url: "/admin/packages", icon: Package },
   { title: "Providers", url: "/admin/providers", icon: Stethoscope },
   { title: "Patients", url: "/admin/patients", icon: Users },
-  { title: "Intake Questions (legacy)", url: "/admin/questions", icon: HelpCircle },
   { title: "Available Slots", url: "/admin/slots", icon: CalendarClock },
   { title: "Intake Form", url: "/admin/intake-form", icon: ClipboardList },
 ];

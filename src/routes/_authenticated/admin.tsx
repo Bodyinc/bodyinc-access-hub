@@ -61,7 +61,6 @@ const TITLES: Record<string, string> = {
   "/admin/categories": "Categories",
   "/admin/medication-rules": "Medication Rules",
   "/admin/questionnaires": "Questionnaires",
-  "/admin/questions": "Intake Questions",
   "/admin/slots": "Available Slots",
   "/admin/providers": "Providers",
   "/admin/medicines": "Medicines",
@@ -78,8 +77,6 @@ function AdminLayout() {
   let title = TITLES[cleaned] ?? "Admin";
   if (cleaned === "/admin/providers/new") title = "Add Provider";
   else if (/^\/admin\/providers\/[^/]+$/.test(cleaned)) title = "Edit Provider";
-  else if (cleaned === "/admin/questions/new") title = "Add Question";
-  else if (/^\/admin\/questions\/[^/]+$/.test(cleaned)) title = "Edit Question";
   else if (cleaned === "/admin/medicines/new") title = "Add Medicine";
   else if (/^\/admin\/medicines\/[^/]+$/.test(cleaned)) title = "Edit Medicine";
   else if (cleaned === "/admin/packages/new") title = "Add Package";
