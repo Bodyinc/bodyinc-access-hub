@@ -8,6 +8,9 @@ import {
   Package,
   Users,
   ClipboardList,
+  Target,
+  ShieldAlert,
+  FileQuestion,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,12 +27,15 @@ import {
 type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
 const items: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
-  { title: "Intake Questions", url: "/admin/questions", icon: HelpCircle },
-  { title: "Available Slots", url: "/admin/slots", icon: CalendarClock },
-  { title: "Providers", url: "/admin/providers", icon: Stethoscope },
+  { title: "Categories", url: "/admin/categories", icon: Target },
   { title: "Medicines", url: "/admin/medicines", icon: Pill },
+  { title: "Medication Rules", url: "/admin/medication-rules", icon: ShieldAlert },
+  { title: "Questionnaires", url: "/admin/questionnaires", icon: FileQuestion },
   { title: "Packages", url: "/admin/packages", icon: Package },
+  { title: "Providers", url: "/admin/providers", icon: Stethoscope },
   { title: "Patients", url: "/admin/patients", icon: Users },
+  { title: "Intake Questions (legacy)", url: "/admin/questions", icon: HelpCircle },
+  { title: "Available Slots", url: "/admin/slots", icon: CalendarClock },
   { title: "Intake Form", url: "/admin/intake-form", icon: ClipboardList },
 ];
 

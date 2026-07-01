@@ -15,6 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { uploadMedicineImage } from "@/lib/medicine-image-upload";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery } from "@tanstack/react-query";
+import { categoriesQueryOptions } from "@/lib/query-options/categories";
+import { Controller } from "react-hook-form";
 import {
   medicineFormSchema,
   MEDICINE_STATUSES,
@@ -42,6 +47,8 @@ const EMPTY: MedicineFormValues = {
   important_info: [],
   notice_text: "",
   sort_order: 0,
+  requires_questionnaire: false,
+  category_ids: [],
 };
 
 function Field({
@@ -83,6 +90,7 @@ export function MedicineForm({
   const errors = formState.errors;
   const status = watch("status");
   const imageUrl = watch("image_url");
+  const categoriesQ = useQuery(categoriesQueryOptions());
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -227,6 +235,54 @@ export function MedicineForm({
               </Select>
             </Field>
           </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <Controller
+              control={control}
+              name="requires_questionnaire"
+              render={({ field }) => (
+                <>
+                  <Switch id="req-qq" checked={!!field.value} onCheckedChange={field.onChange} />
+                  <Label htmlFor="req-qq">Requires questionnaire before checkout</Label>
+                </>
+              )}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Categories</CardTitle>
+          <CardDescription>Assign this medicine to one or more goal categories.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Controller
+            control={control}
+            name="category_ids"
+            render={({ field }) => (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(categoriesQ.data ?? []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No categories yet. Create one under Categories first.
+                  </p>
+                )}
+                {(categoriesQ.data ?? []).map((c) => {
+                  const checked = (field.value ?? []).includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                      <Checkbox checked={checked} onCheckedChange={(v) => {
+                        const set = new Set(field.value ?? []);
+                        if (v) set.add(c.id); else set.delete(c.id);
+                        field.onChange(Array.from(set));
+                      }} />
+                      {c.name}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          />
         </CardContent>
       </Card>
 

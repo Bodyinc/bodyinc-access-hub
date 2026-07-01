@@ -13,6 +13,8 @@ export type StoredMedicine = {
   notice_text?: string | null;
   sort_order: number;
   is_active: boolean;
+  requires_questionnaire: boolean;
+  category_ids: string[];
   created_at: string;
   updated_at: string;
 };
@@ -24,6 +26,9 @@ export type ListMedicinesInput = {
 
 function rowToStored(row: any): StoredMedicine {
   const info = Array.isArray(row.important_info) ? row.important_info : [];
+  const cats = Array.isArray(row.medication_category_medicines)
+    ? row.medication_category_medicines.map((r: any) => String(r.category_id))
+    : [];
   return {
     id: row.id,
     name: row.name,
@@ -38,6 +43,8 @@ function rowToStored(row: any): StoredMedicine {
     notice_text: row.notice_text,
     sort_order: row.sort_order,
     is_active: row.is_active,
+    requires_questionnaire: !!row.requires_questionnaire,
+    category_ids: cats,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -56,13 +63,27 @@ function fromForm(values: MedicineFormValues) {
       .filter(Boolean),
     notice_text: values.notice_text ?? null,
     sort_order: values.sort_order ?? 0,
+    requires_questionnaire: !!values.requires_questionnaire,
   };
+}
+
+async function syncMedicineCategories(medicineId: string, categoryIds: string[]) {
+  await supabase.from("medication_category_medicines").delete().eq("medicine_id", medicineId);
+  if (categoryIds.length > 0) {
+    const rows = categoryIds.map((cid, i) => ({
+      medicine_id: medicineId,
+      category_id: cid,
+      sort_order: i,
+    }));
+    const { error } = await supabase.from("medication_category_medicines").insert(rows as any);
+    if (error) throw new Error(error.message);
+  }
 }
 
 export async function listMedicines(input: ListMedicinesInput = {}): Promise<StoredMedicine[]> {
   let query = supabase
     .from("medicines")
-    .select("*")
+    .select("*, medication_category_medicines(category_id)")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -85,7 +106,11 @@ export async function listActiveMedicines(): Promise<StoredMedicine[]> {
 }
 
 export async function getMedicine(id: string): Promise<StoredMedicine | null> {
-  const { data, error } = await supabase.from("medicines").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase
+    .from("medicines")
+    .select("*, medication_category_medicines(category_id)")
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   return data ? rowToStored(data) : null;
 }
@@ -98,6 +123,7 @@ export async function createMedicine(values: MedicineFormValues): Promise<{ id: 
     .select("id")
     .single();
   if (error) throw new Error(error.message);
+  await syncMedicineCategories(data.id, values.category_ids ?? []);
   return { id: data.id };
 }
 
@@ -105,6 +131,7 @@ export async function updateMedicine(id: string, values: MedicineFormValues): Pr
   const payload = fromForm(values);
   const { error } = await supabase.from("medicines").update(payload as any).eq("id", id);
   if (error) throw new Error(error.message);
+  await syncMedicineCategories(id, values.category_ids ?? []);
   return { id };
 }
 

@@ -58,6 +58,9 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 const TITLES: Record<string, string> = {
   "/admin": "Dashboard",
+  "/admin/categories": "Categories",
+  "/admin/medication-rules": "Medication Rules",
+  "/admin/questionnaires": "Questionnaires",
   "/admin/questions": "Intake Questions",
   "/admin/slots": "Available Slots",
   "/admin/providers": "Providers",
@@ -82,6 +85,10 @@ function AdminLayout() {
   else if (cleaned === "/admin/packages/new") title = "Add Package";
   else if (/^\/admin\/packages\/[^/]+$/.test(cleaned)) title = "Edit Package";
   else if (/^\/admin\/patients\/[^/]+$/.test(cleaned)) title = "Patient details";
+  else if (cleaned === "/admin/categories/new") title = "Add Category";
+  else if (/^\/admin\/categories\/[^/]+$/.test(cleaned)) title = "Edit Category";
+  else if (cleaned === "/admin/questionnaires/new") title = "Add Questionnaire";
+  else if (/^\/admin\/questionnaires\/[^/]+$/.test(cleaned)) title = "Edit Questionnaire";
 
   async function signOut() {
     await queryClient.cancelQueries();
