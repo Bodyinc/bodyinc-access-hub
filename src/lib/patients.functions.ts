@@ -97,34 +97,13 @@ export const getPatient = createServerFn({ method: "POST" })
     const bannedUntil = u?.banned_until ? new Date(u.banned_until) : null;
     const isDeactivated = !!(bannedUntil && bannedUntil.getTime() > Date.now());
 
-    const { count } = await supabaseAdmin
-      .from("intake_responses")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", data.userId);
-
     return {
       ...profile,
       is_active: !isDeactivated,
       banned_until: u?.banned_until ?? null,
       last_sign_in_at: u?.last_sign_in_at ?? null,
       email_confirmed_at: u?.email_confirmed_at ?? null,
-      intake_response_count: count ?? 0,
     };
-  });
-
-export const listPatientIntakeResponses = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => idInput.parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
-      .from("intake_responses")
-      .select("*")
-      .eq("user_id", data.userId)
-      .order("submitted_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return rows ?? [];
   });
 
 const profileUpdate = z.object({

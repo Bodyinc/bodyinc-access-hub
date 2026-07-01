@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   getPatient,
-  listPatientIntakeResponses,
   sendPatientPasswordReset,
   setPatientActive,
   updatePatientProfile,
@@ -50,7 +49,6 @@ function PatientDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const get = useServerFn(getPatient);
-  const listResponses = useServerFn(listPatientIntakeResponses);
   const update = useServerFn(updatePatientProfile);
   const setActive = useServerFn(setPatientActive);
   const reset = useServerFn(sendPatientPasswordReset);
@@ -58,11 +56,6 @@ function PatientDetailPage() {
   const patient = useQuery({
     queryKey: ["patients", patientId],
     queryFn: () => get({ data: { userId: patientId } }),
-  });
-
-  const responses = useQuery({
-    queryKey: ["patient-intake", patientId],
-    queryFn: () => listResponses({ data: { userId: patientId } }),
   });
 
   const invalidate = () => {
@@ -147,12 +140,6 @@ function PatientDetailPage() {
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="intake">
-            Intake responses
-            {d.intake_response_count > 0 && (
-              <span className="ml-1.5 text-xs text-muted-foreground">({d.intake_response_count})</span>
-            )}
-          </TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -172,42 +159,6 @@ function PatientDetailPage() {
               })
             }
           />
-        </TabsContent>
-
-        <TabsContent value="intake">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Intake responses</CardTitle>
-              <CardDescription>
-                Answers submitted by this patient during onboarding.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {responses.isLoading && (
-                <div className="text-sm text-muted-foreground">Loading responses…</div>
-              )}
-              {responses.data?.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  This patient has not submitted the intake quiz yet.
-                </div>
-              )}
-              {responses.data?.map((r: any) => (
-                <div key={r.id} className="rounded-md border p-3">
-                  <div className="text-sm font-medium">{r.question_prompt}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {r.question_type === "short_text"
-                      ? r.answer_text || <em>(no answer)</em>
-                      : (r.answer_labels ?? []).length > 0
-                        ? (r.answer_labels as string[]).join(", ")
-                        : <em>(no answer)</em>}
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Submitted {formatDate(r.submitted_at)}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="account">
