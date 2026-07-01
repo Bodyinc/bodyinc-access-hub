@@ -76,8 +76,8 @@ function EditQuestionnairePage() {
         sort_order: (dataQ.data?.questions.length ?? 0),
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ questionKey: detailKey(questionnaireId) } as any);
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
+      qc.invalidateQueries({ queryKey: ["questionnaires"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
