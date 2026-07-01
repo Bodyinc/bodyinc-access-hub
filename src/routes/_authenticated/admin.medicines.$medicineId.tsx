@@ -40,6 +40,8 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
     important_info: normalizeBullets(m.important_info),
     notice_text: m.notice_text ?? "",
     sort_order: m.sort_order,
+    requires_questionnaire: m.requires_questionnaire,
+    category_ids: m.category_ids,
   };
 }
 
