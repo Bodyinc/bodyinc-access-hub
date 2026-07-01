@@ -18,7 +18,6 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminSlotsRouteImport } from './routes/_authenticated/admin.slots'
-import { Route as AuthenticatedAdminQuestionsRouteImport } from './routes/_authenticated/admin.questions'
 import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_authenticated/admin.questionnaires'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPatientsRouteImport } from './routes/_authenticated/admin.patients'
@@ -27,7 +26,6 @@ import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/_authenticated/admin.medication-rules'
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
-import { Route as AuthenticatedAdminQuestionsIndexRouteImport } from './routes/_authenticated/admin.questions.index'
 import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
 import { Route as AuthenticatedAdminPatientsIndexRouteImport } from './routes/_authenticated/admin.patients.index'
@@ -35,8 +33,6 @@ import { Route as AuthenticatedAdminPackagesIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_authenticated/admin.medicines.index'
 import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
 import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
-import { Route as AuthenticatedAdminQuestionsNewRouteImport } from './routes/_authenticated/admin.questions.new'
-import { Route as AuthenticatedAdminQuestionsQuestionIdRouteImport } from './routes/_authenticated/admin.questions.$questionId'
 import { Route as AuthenticatedAdminQuestionnairesNewRouteImport } from './routes/_authenticated/admin.questionnaires.new'
 import { Route as AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport } from './routes/_authenticated/admin.questionnaires.$questionnaireId'
 import { Route as AuthenticatedAdminProvidersNewRouteImport } from './routes/_authenticated/admin.providers.new'
@@ -93,12 +89,6 @@ const AuthenticatedAdminSlotsRoute = AuthenticatedAdminSlotsRouteImport.update({
   path: '/slots',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const AuthenticatedAdminQuestionsRoute =
-  AuthenticatedAdminQuestionsRouteImport.update({
-    id: '/questions',
-    path: '/questions',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
 const AuthenticatedAdminQuestionnairesRoute =
   AuthenticatedAdminQuestionnairesRouteImport.update({
     id: '/questionnaires',
@@ -147,12 +137,6 @@ const AuthenticatedAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminQuestionsIndexRoute =
-  AuthenticatedAdminQuestionsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminQuestionsRoute,
-  } as any)
 const AuthenticatedAdminQuestionnairesIndexRoute =
   AuthenticatedAdminQuestionnairesIndexRouteImport.update({
     id: '/',
@@ -194,18 +178,6 @@ const AuthenticatedAdminCategoriesIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAdminCategoriesRoute,
-  } as any)
-const AuthenticatedAdminQuestionsNewRoute =
-  AuthenticatedAdminQuestionsNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AuthenticatedAdminQuestionsRoute,
-  } as any)
-const AuthenticatedAdminQuestionsQuestionIdRoute =
-  AuthenticatedAdminQuestionsQuestionIdRouteImport.update({
-    id: '/$questionId',
-    path: '/$questionId',
-    getParentRoute: () => AuthenticatedAdminQuestionsRoute,
   } as any)
 const AuthenticatedAdminQuestionnairesNewRoute =
   AuthenticatedAdminQuestionnairesNewRouteImport.update({
@@ -289,7 +261,6 @@ export interface FileRoutesByFullPath {
   '/admin/patients': typeof AuthenticatedAdminPatientsRouteWithChildren
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
-  '/admin/questions': typeof AuthenticatedAdminQuestionsRouteWithChildren
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/categories/$categoryId': typeof AuthenticatedAdminCategoriesCategoryIdRoute
@@ -303,8 +274,6 @@ export interface FileRoutesByFullPath {
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
-  '/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
-  '/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
   '/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
   '/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
@@ -312,7 +281,6 @@ export interface FileRoutesByFullPath {
   '/admin/patients/': typeof AuthenticatedAdminPatientsIndexRoute
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
-  '/admin/questions/': typeof AuthenticatedAdminQuestionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -334,8 +302,6 @@ export interface FileRoutesByTo {
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
-  '/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
-  '/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesIndexRoute
   '/admin/medicines': typeof AuthenticatedAdminMedicinesIndexRoute
@@ -343,7 +309,6 @@ export interface FileRoutesByTo {
   '/admin/patients': typeof AuthenticatedAdminPatientsIndexRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesIndexRoute
-  '/admin/questions': typeof AuthenticatedAdminQuestionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -362,7 +327,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/patients': typeof AuthenticatedAdminPatientsRouteWithChildren
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/_authenticated/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
-  '/_authenticated/admin/questions': typeof AuthenticatedAdminQuestionsRouteWithChildren
   '/_authenticated/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/categories/$categoryId': typeof AuthenticatedAdminCategoriesCategoryIdRoute
@@ -376,8 +340,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/_authenticated/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/_authenticated/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
-  '/_authenticated/admin/questions/$questionId': typeof AuthenticatedAdminQuestionsQuestionIdRoute
-  '/_authenticated/admin/questions/new': typeof AuthenticatedAdminQuestionsNewRoute
   '/_authenticated/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/_authenticated/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
   '/_authenticated/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
@@ -385,7 +347,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/patients/': typeof AuthenticatedAdminPatientsIndexRoute
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/_authenticated/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
-  '/_authenticated/admin/questions/': typeof AuthenticatedAdminQuestionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -404,7 +365,6 @@ export interface FileRouteTypes {
     | '/admin/patients'
     | '/admin/providers'
     | '/admin/questionnaires'
-    | '/admin/questions'
     | '/admin/slots'
     | '/admin/'
     | '/admin/categories/$categoryId'
@@ -418,8 +378,6 @@ export interface FileRouteTypes {
     | '/admin/providers/new'
     | '/admin/questionnaires/$questionnaireId'
     | '/admin/questionnaires/new'
-    | '/admin/questions/$questionId'
-    | '/admin/questions/new'
     | '/admin/categories/'
     | '/admin/medication-rules/'
     | '/admin/medicines/'
@@ -427,7 +385,6 @@ export interface FileRouteTypes {
     | '/admin/patients/'
     | '/admin/providers/'
     | '/admin/questionnaires/'
-    | '/admin/questions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -449,8 +406,6 @@ export interface FileRouteTypes {
     | '/admin/providers/new'
     | '/admin/questionnaires/$questionnaireId'
     | '/admin/questionnaires/new'
-    | '/admin/questions/$questionId'
-    | '/admin/questions/new'
     | '/admin/categories'
     | '/admin/medication-rules'
     | '/admin/medicines'
@@ -458,7 +413,6 @@ export interface FileRouteTypes {
     | '/admin/patients'
     | '/admin/providers'
     | '/admin/questionnaires'
-    | '/admin/questions'
   id:
     | '__root__'
     | '/'
@@ -476,7 +430,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/patients'
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/questionnaires'
-    | '/_authenticated/admin/questions'
     | '/_authenticated/admin/slots'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/categories/$categoryId'
@@ -490,8 +443,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers/new'
     | '/_authenticated/admin/questionnaires/$questionnaireId'
     | '/_authenticated/admin/questionnaires/new'
-    | '/_authenticated/admin/questions/$questionId'
-    | '/_authenticated/admin/questions/new'
     | '/_authenticated/admin/categories/'
     | '/_authenticated/admin/medication-rules/'
     | '/_authenticated/admin/medicines/'
@@ -499,7 +450,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/patients/'
     | '/_authenticated/admin/providers/'
     | '/_authenticated/admin/questionnaires/'
-    | '/_authenticated/admin/questions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -575,13 +525,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSlotsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/questions': {
-      id: '/_authenticated/admin/questions'
-      path: '/questions'
-      fullPath: '/admin/questions'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/questionnaires': {
       id: '/_authenticated/admin/questionnaires'
       path: '/questionnaires'
@@ -638,13 +581,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/questions/': {
-      id: '/_authenticated/admin/questions/'
-      path: '/'
-      fullPath: '/admin/questions/'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminQuestionsRoute
-    }
     '/_authenticated/admin/questionnaires/': {
       id: '/_authenticated/admin/questionnaires/'
       path: '/'
@@ -693,20 +629,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/categories/'
       preLoaderRoute: typeof AuthenticatedAdminCategoriesIndexRouteImport
       parentRoute: typeof AuthenticatedAdminCategoriesRoute
-    }
-    '/_authenticated/admin/questions/new': {
-      id: '/_authenticated/admin/questions/new'
-      path: '/new'
-      fullPath: '/admin/questions/new'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionsNewRouteImport
-      parentRoute: typeof AuthenticatedAdminQuestionsRoute
-    }
-    '/_authenticated/admin/questions/$questionId': {
-      id: '/_authenticated/admin/questions/$questionId'
-      path: '/$questionId'
-      fullPath: '/admin/questions/$questionId'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionsQuestionIdRouteImport
-      parentRoute: typeof AuthenticatedAdminQuestionsRoute
     }
     '/_authenticated/admin/questionnaires/new': {
       id: '/_authenticated/admin/questionnaires/new'
@@ -920,26 +842,6 @@ const AuthenticatedAdminQuestionnairesRouteWithChildren =
     AuthenticatedAdminQuestionnairesRouteChildren,
   )
 
-interface AuthenticatedAdminQuestionsRouteChildren {
-  AuthenticatedAdminQuestionsQuestionIdRoute: typeof AuthenticatedAdminQuestionsQuestionIdRoute
-  AuthenticatedAdminQuestionsNewRoute: typeof AuthenticatedAdminQuestionsNewRoute
-  AuthenticatedAdminQuestionsIndexRoute: typeof AuthenticatedAdminQuestionsIndexRoute
-}
-
-const AuthenticatedAdminQuestionsRouteChildren: AuthenticatedAdminQuestionsRouteChildren =
-  {
-    AuthenticatedAdminQuestionsQuestionIdRoute:
-      AuthenticatedAdminQuestionsQuestionIdRoute,
-    AuthenticatedAdminQuestionsNewRoute: AuthenticatedAdminQuestionsNewRoute,
-    AuthenticatedAdminQuestionsIndexRoute:
-      AuthenticatedAdminQuestionsIndexRoute,
-  }
-
-const AuthenticatedAdminQuestionsRouteWithChildren =
-  AuthenticatedAdminQuestionsRoute._addFileChildren(
-    AuthenticatedAdminQuestionsRouteChildren,
-  )
-
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRouteWithChildren
   AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
@@ -949,7 +851,6 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPatientsRoute: typeof AuthenticatedAdminPatientsRouteWithChildren
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRouteWithChildren
   AuthenticatedAdminQuestionnairesRoute: typeof AuthenticatedAdminQuestionnairesRouteWithChildren
-  AuthenticatedAdminQuestionsRoute: typeof AuthenticatedAdminQuestionsRouteWithChildren
   AuthenticatedAdminSlotsRoute: typeof AuthenticatedAdminSlotsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -968,8 +869,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminProvidersRouteWithChildren,
   AuthenticatedAdminQuestionnairesRoute:
     AuthenticatedAdminQuestionnairesRouteWithChildren,
-  AuthenticatedAdminQuestionsRoute:
-    AuthenticatedAdminQuestionsRouteWithChildren,
   AuthenticatedAdminSlotsRoute: AuthenticatedAdminSlotsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -1000,13 +899,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
