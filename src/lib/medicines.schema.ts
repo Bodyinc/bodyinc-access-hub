@@ -41,6 +41,8 @@ export const medicineFormSchema = z.object({
     .or(z.literal(""))
     .transform((v) => (v ? v : undefined)),
   sort_order: z.coerce.number().int().min(0).default(0),
+  requires_questionnaire: z.boolean().default(false),
+  category_ids: z.array(z.string().uuid()).default([]),
 });
 
 export type MedicineFormValues = z.input<typeof medicineFormSchema>;
