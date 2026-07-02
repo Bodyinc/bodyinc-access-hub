@@ -171,3 +171,56 @@ export const sendPatientPasswordReset = createServerFn({ method: "POST" })
     if (linkErr) throw new Error(linkErr.message);
     return { ok: true };
   });
+
+export const getPatientRelated = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => idInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const email = (profile as any)?.email ?? null;
+
+    const orderQ = supabaseAdmin
+      .from("shop_checkout_orders")
+      .select("id, total, status, created_at, selected_plan_code")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    // Sessions can be claimed by user or match email
+    let sessionQ = supabaseAdmin
+      .from("intake_sessions")
+      .select("id, full_name, email, status, selected_plan_id, created_at, claimed_by_user_id")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (email) {
+      sessionQ = sessionQ.or(`claimed_by_user_id.eq.${data.userId},email.eq.${email}`);
+    } else {
+      sessionQ = sessionQ.eq("claimed_by_user_id", data.userId);
+    }
+
+    const paymentQ = supabaseAdmin
+      .from("payments")
+      .select("id, amount_cents, currency, status, stripe_payment_intent_id, created_at, session_id")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    const [{ data: orders }, { data: sessions }, { data: payments }] = await Promise.all([
+      orderQ,
+      sessionQ,
+      paymentQ,
+    ]);
+
+    return {
+      orders: orders ?? [],
+      sessions: sessions ?? [],
+      payments: payments ?? [],
+    };
+  });

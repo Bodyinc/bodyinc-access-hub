@@ -1,41 +1,78 @@
-## Seed demo data for testing the Pre-Payment Flow
+## Goal
 
-Populate the database with realistic sample data so you can walk through the patient portal flow end-to-end and exercise every admin screen.
+Round out the admin portal with three new areas backed by existing seeded data: **Orders & Payments**, **Intake Sessions**, and a richer **Patient profile**. No schema changes — everything reads from tables that already exist (`shop_checkout_orders`, `shop_checkout_order_items`, `payments`, `intake_sessions`, `intake_session_questionnaire_responses`, `intake_session_eligibility_results`, `intake_session_medicines`, `profiles`).
 
-### What gets seeded
+## 1. Orders & Payments viewer
 
-**3 Medication Categories** (with BMI / sex / age eligibility rules)
-- `weight-loss` — Weight Loss. Eligibility: BMI ≥ 27, ages 18–75, any sex.
-- `hair-growth` — Hair Growth. Eligibility: any BMI, ages 18–65, male only.
-- `sexual-health` — Sexual Health / ED. Eligibility: any BMI, ages 18–70, male only.
+New sidebar item **Orders** (between Packages and Providers).
 
-**7 Medicines** (active, priced monthly, with image, short + long description, important-info bullets, notice)
-- Weight Loss: Semaglutide Compound ($299), Tirzepatide Compound ($449), Metformin ($49) — questionnaire required
-- Hair Growth: Finasteride 1mg ($35), Minoxidil 5% Topical ($25) — no questionnaire
-- Sexual Health: Sildenafil 50mg ($60), Tadalafil 10mg ($75) — questionnaire required
+Routes:
+- `src/routes/_authenticated/admin.orders.tsx` — pathless `<Outlet />`
+- `admin.orders.index.tsx` — list
+- `admin.orders.$orderId.tsx` — detail
 
-Each medicine is linked to its category via `medication_category_medicines`.
+List page:
+- Table of `shop_checkout_orders` (newest first): order #, customer name/email, item count, total, status, payment status, created.
+- Filters: search (name/email/order id), status select (all / paid / pending / failed / refunded — derived from data), date range.
+- Row click → detail.
 
-**2 Questionnaires** with questions + options
-- "Weight Loss Intake" — linked to Semaglutide + Tirzepatide. Questions: current weight (number), height (number), diabetes history (yes/no), pregnant/breastfeeding (yes/no), thyroid conditions (multi-select), allergies (text).
-- "ED Intake" — linked to Sildenafil + Tadalafil. Questions: heart condition (yes/no), nitrate medications (yes/no), blood pressure range (single-select), previous ED treatment (yes/no).
+Detail page (read-only):
+- Header: order id, created, status badges.
+- Customer block: name, email, phone, shipping address.
+- Items table from `shop_checkout_order_items` (image, name, qty, unit price, subtotal).
+- Payments block: rows from `payments` for that order/session (amount, currency, Stripe intent id, status, timestamps).
+- Raw payload accordion (`raw_event`) collapsed by default.
 
-**Medication compatibility rules** in `medication_relationships`
-- Semaglutide ↔ Tirzepatide — `incompatible` (can't select both — same drug class)
-- Finasteride + Minoxidil — `recommended_with` (safe to combine)
-- Sildenafil ↔ Tadalafil — `incompatible` (same class)
-- Metformin + Semaglutide — `compatible`
+Server layer: extend `src/lib/orders.functions.ts` (new) with `listOrders({search,status,from,to})` and `getOrder(id)` server fns using `requireSupabaseAuth` + admin-role check via `has_role`.
 
-### How
+## 2. Intake Sessions page
 
-Uses the `supabase--insert` tool with a single SQL script that inserts categories → medicines → join rows → questionnaires → questions → options → questionnaire-medicine links → medication_relationships. All IDs generated with `gen_random_uuid()` and stitched via CTEs / slug lookups so re-running is safe to reason about.
+New sidebar item **Intake Sessions** (below Patients).
 
-Nothing is inserted into `intake_sessions`, `payments`, `profiles`, or `user_roles` — those are populated by real patient flow / auth.
+Routes:
+- `admin.intake-sessions.tsx` (layout)
+- `admin.intake-sessions.index.tsx` — list
+- `admin.intake-sessions.$sessionId.tsx` — detail
 
-### After seeding
+List: table of `intake_sessions` — name/email, state, sex, DOB, status, selected plan (join to `packages`), claimed user, created. Filters: search, status, claimed/unclaimed toggle.
 
-You'll be able to:
-- Browse/edit all 3 categories, 7 medicines, 2 questionnaires, and 4 compatibility rules in the admin portal
-- Test the patient pre-payment flow with real category → medicine → questionnaire branching
-- Verify BMI-based eligibility filtering (e.g. BMI 25 hides Weight Loss)
-- Verify incompatibility rules block selecting Semaglutide + Tirzepatide together
+Detail:
+- Demographics + computed BMI from `height_cm` / `weight_kg`.
+- **Categories considered** from `intake_session_categories` with pass/fail per rule.
+- **Eligibility results** from `intake_session_eligibility_results` (rule, passed, reason).
+- **Questionnaire answers** from `intake_session_questionnaire_responses` joined to `questionnaire_questions` / `questionnaire_question_options` — rendered Q → A with disqualifying answers flagged.
+- **Recommended medicines** from `intake_session_medicines` (linked to `medicines`).
+- Linked payment (if any) and CTA to open the order.
+
+Server layer: `src/lib/intake-sessions.functions.ts` with `listIntakeSessions(filters)` and `getIntakeSession(id)` (admin-gated).
+
+## 3. Complete Patient profile
+
+Extend `src/routes/_authenticated/admin.patients.$patientId.tsx` with tabs (shadcn `Tabs`):
+
+- **Profile** — everything in `profiles` (name, email, phone, DOB, sex, full address, avatar, joined, last update). Read-only.
+- **Intake Sessions** — sessions where `claimed_by_user_id = patient.id` or matching email; each row links to the intake session detail above.
+- **Orders** — orders from `shop_checkout_orders` for this patient (by user_id/email); rows link to the order detail.
+- **Payments** — flat list of `payments` for this user.
+- **Account actions** — existing password-reset + activate/deactivate controls.
+
+Extend `patients.functions.ts` with `getPatientOrders(userId)`, `getPatientIntakeSessions(userId)`, `getPatientPayments(userId)`.
+
+## 4. Sidebar & titles
+
+- Add "Orders" and "Intake Sessions" to `src/components/admin/admin-sidebar.tsx` (icons: `ShoppingCart`, `FileText`).
+- Add matching titles + regex cases in `admin.tsx` `TITLES` map for the new list/detail routes.
+
+## Technical notes
+
+- All new server fns use `createServerFn` with `.middleware([requireSupabaseAuth])` and verify `has_role(userId,'admin')` before querying.
+- Queries paginated at 100 rows, sorted `created_at DESC`.
+- Reads use `context.supabase` (RLS as admin user). No service-role usage needed.
+- New query-options files under `src/lib/query-options/` (`orders.ts`, `intake-sessions.ts`) following the existing pattern; components use `useQuery`.
+- No DB migrations. No changes to seeded data, patient portal, or existing CRUD pages.
+
+## Out of scope (ask again if wanted)
+
+- Editing orders/payments/sessions (all read-only).
+- Dashboard stat cards, Available Slots, and Intake Form settings — still placeholders.
+- Refund actions or Stripe webhook wiring.

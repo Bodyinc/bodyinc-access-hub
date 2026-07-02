@@ -67,6 +67,8 @@ const TITLES: Record<string, string> = {
   "/admin/packages": "Packages",
   "/admin/patients": "Patients",
   "/admin/intake-form": "Intake Form",
+  "/admin/orders": "Orders",
+  "/admin/intake-sessions": "Intake Sessions",
 };
 
 function AdminLayout() {
@@ -86,6 +88,8 @@ function AdminLayout() {
   else if (/^\/admin\/categories\/[^/]+$/.test(cleaned)) title = "Edit Category";
   else if (cleaned === "/admin/questionnaires/new") title = "Add Questionnaire";
   else if (/^\/admin\/questionnaires\/[^/]+$/.test(cleaned)) title = "Edit Questionnaire";
+  else if (/^\/admin\/orders\/[^/]+$/.test(cleaned)) title = "Order details";
+  else if (/^\/admin\/intake-sessions\/[^/]+$/.test(cleaned)) title = "Intake session details";
 
   async function signOut() {
     await queryClient.cancelQueries();

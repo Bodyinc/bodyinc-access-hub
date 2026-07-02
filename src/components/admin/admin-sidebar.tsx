@@ -10,6 +10,8 @@ import {
   Target,
   ShieldAlert,
   FileQuestion,
+  ShoppingCart,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,8 +33,10 @@ const items: NavItem[] = [
   { title: "Medication Rules", url: "/admin/medication-rules", icon: ShieldAlert },
   { title: "Questionnaires", url: "/admin/questionnaires", icon: FileQuestion },
   { title: "Packages", url: "/admin/packages", icon: Package },
+  { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Providers", url: "/admin/providers", icon: Stethoscope },
   { title: "Patients", url: "/admin/patients", icon: Users },
+  { title: "Intake Sessions", url: "/admin/intake-sessions", icon: FileText },
   { title: "Available Slots", url: "/admin/slots", icon: CalendarClock },
   { title: "Intake Form", url: "/admin/intake-form", icon: ClipboardList },
 ];
