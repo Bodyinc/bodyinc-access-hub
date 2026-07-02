@@ -422,14 +422,6 @@ function ProfileTab({
   );
 }
 
-function DangerZone({
-// helper reused by all related tabs
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _placeholder,
-}: any) {
-  return null;
-}
-
 function RelatedList({
   isLoading,
   error,
@@ -456,7 +448,7 @@ function RelatedList({
   );
 }
 
-function DangerZoneOriginal({
+function DangerZone({
   isActive,
   name,
   disabled,
