@@ -548,38 +548,50 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          city: string | null
+          country: string | null
           created_at: string
           dob: string | null
           email: string
           full_name: string
           id: string
           phone: string | null
+          postal_code: string | null
           sex: Database["public"]["Enums"]["sex_type"] | null
           state_code: string | null
+          street_address: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           dob?: string | null
           email: string
           full_name: string
           id: string
           phone?: string | null
+          postal_code?: string | null
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
+          street_address?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           dob?: string | null
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
+          postal_code?: string | null
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
+          street_address?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -800,6 +812,168 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      shop_checkout_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          order_id: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          order_id: string
+          payload?: Json
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          order_id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_checkout_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_checkout_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_checkout_order_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          line_total: number
+          medicine_id: string
+          name: string
+          order_id: string
+          package_id: string | null
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          line_total: number
+          medicine_id: string
+          name: string
+          order_id: string
+          package_id?: string | null
+          quantity?: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          line_total?: number
+          medicine_id?: string
+          name?: string
+          order_id?: string
+          package_id?: string | null
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_checkout_order_items_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_checkout_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_checkout_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_checkout_order_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_checkout_orders: {
+        Row: {
+          created_at: string
+          id: string
+          medicine_id: string
+          payment_method_code: string
+          promo_code: string | null
+          promo_savings: number
+          selected_package_id: string | null
+          selected_plan_code: string
+          shipping: number
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medicine_id: string
+          payment_method_code: string
+          promo_code?: string | null
+          promo_savings?: number
+          selected_package_id?: string | null
+          selected_plan_code: string
+          shipping?: number
+          status?: string
+          subtotal: number
+          total: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medicine_id?: string
+          payment_method_code?: string
+          promo_code?: string | null
+          promo_savings?: number
+          selected_package_id?: string | null
+          selected_plan_code?: string
+          shipping?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_checkout_orders_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_checkout_orders_selected_package_id_fkey"
+            columns: ["selected_package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stripe_events: {
         Row: {
