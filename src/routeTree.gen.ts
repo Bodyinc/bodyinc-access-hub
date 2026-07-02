@@ -25,6 +25,7 @@ import { Route as AuthenticatedAdminPackagesRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
 import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authenticated/admin.medicines'
 import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/_authenticated/admin.medication-rules'
+import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_authenticated/admin.intake-sessions'
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
@@ -130,6 +131,12 @@ const AuthenticatedAdminMedicationRulesRoute =
   AuthenticatedAdminMedicationRulesRouteImport.update({
     id: '/medication-rules',
     path: '/medication-rules',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminIntakeSessionsRoute =
+  AuthenticatedAdminIntakeSessionsRouteImport.update({
+    id: '/intake-sessions',
+    path: '/intake-sessions',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminIntakeFormRoute =
@@ -262,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
+  '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   '/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -297,6 +305,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
+  '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -330,6 +339,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
   '/_authenticated/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
+  '/_authenticated/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRoute
   '/_authenticated/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   '/_authenticated/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/categories'
     | '/admin/intake-form'
+    | '/admin/intake-sessions'
     | '/admin/medication-rules'
     | '/admin/medicines'
     | '/admin/orders'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/admin/intake-form'
+    | '/admin/intake-sessions'
     | '/admin/orders'
     | '/admin/slots'
     | '/admin'
@@ -436,6 +448,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/intake-form'
+    | '/_authenticated/admin/intake-sessions'
     | '/_authenticated/admin/medication-rules'
     | '/_authenticated/admin/medicines'
     | '/_authenticated/admin/orders'
@@ -585,6 +598,13 @@ declare module '@tanstack/react-router' {
       path: '/medication-rules'
       fullPath: '/admin/medication-rules'
       preLoaderRoute: typeof AuthenticatedAdminMedicationRulesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/intake-sessions': {
+      id: '/_authenticated/admin/intake-sessions'
+      path: '/intake-sessions'
+      fullPath: '/admin/intake-sessions'
+      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/intake-form': {
@@ -865,6 +885,7 @@ const AuthenticatedAdminQuestionnairesRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRouteWithChildren
   AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
+  AuthenticatedAdminIntakeSessionsRoute: typeof AuthenticatedAdminIntakeSessionsRoute
   AuthenticatedAdminMedicationRulesRoute: typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRouteWithChildren
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
@@ -880,6 +901,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCategoriesRoute:
     AuthenticatedAdminCategoriesRouteWithChildren,
   AuthenticatedAdminIntakeFormRoute: AuthenticatedAdminIntakeFormRoute,
+  AuthenticatedAdminIntakeSessionsRoute: AuthenticatedAdminIntakeSessionsRoute,
   AuthenticatedAdminMedicationRulesRoute:
     AuthenticatedAdminMedicationRulesRouteWithChildren,
   AuthenticatedAdminMedicinesRoute:
