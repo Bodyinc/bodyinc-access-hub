@@ -356,9 +356,6 @@ function PatientDetailPage() {
 }
 
 function ProfileTab({
-  ...arguments
-}: never): never;
-function ProfileTab({
   defaultValues,
   submitting,
   onSubmit,
