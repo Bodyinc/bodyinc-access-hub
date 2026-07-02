@@ -24,10 +24,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   getPatient,
+  getPatientRelated,
   sendPatientPasswordReset,
   setPatientActive,
   updatePatientProfile,
 } from "@/lib/patients.functions";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   component: PatientDetailPage,
@@ -49,6 +58,7 @@ function PatientDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const get = useServerFn(getPatient);
+  const getRelated = useServerFn(getPatientRelated);
   const update = useServerFn(updatePatientProfile);
   const setActive = useServerFn(setPatientActive);
   const reset = useServerFn(sendPatientPasswordReset);
@@ -56,6 +66,12 @@ function PatientDetailPage() {
   const patient = useQuery({
     queryKey: ["patients", patientId],
     queryFn: () => get({ data: { userId: patientId } }),
+  });
+
+  const related = useQuery({
+    queryKey: ["patients", patientId, "related"],
+    queryFn: () => getRelated({ data: { userId: patientId } }),
+    enabled: !!patient.data,
   });
 
   const invalidate = () => {
@@ -140,6 +156,9 @@ function PatientDetailPage() {
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="intake">Intake Sessions</TabsTrigger>
+          <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -159,6 +178,110 @@ function PatientDetailPage() {
               })
             }
           />
+        </TabsContent>
+
+        <TabsContent value="intake">
+          <RelatedList
+            isLoading={related.isLoading}
+            error={related.error as Error | null}
+            empty="No intake sessions."
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Session</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(related.data?.sessions ?? []).map((s: any) => (
+                  <TableRow
+                    key={s.id}
+                    className="cursor-pointer"
+                    onClick={() =>
+                      navigate({ to: "/admin/intake-sessions/$sessionId", params: { sessionId: s.id } })
+                    }
+                  >
+                    <TableCell>
+                      <div className="font-medium">{s.full_name || "—"}</div>
+                      <div className="text-xs text-muted-foreground">{s.email || "—"}</div>
+                    </TableCell>
+                    <TableCell><Badge variant="secondary">{s.status}</Badge></TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(s.created_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </RelatedList>
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <RelatedList
+            isLoading={related.isLoading}
+            error={related.error as Error | null}
+            empty="No orders."
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(related.data?.orders ?? []).map((o: any) => (
+                  <TableRow
+                    key={o.id}
+                    className="cursor-pointer"
+                    onClick={() =>
+                      navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })
+                    }
+                  >
+                    <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}…</TableCell>
+                    <TableCell>{o.selected_plan_code || "—"}</TableCell>
+                    <TableCell>${Number(o.total ?? 0).toFixed(2)}</TableCell>
+                    <TableCell><Badge variant="secondary">{o.status ?? "—"}</Badge></TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(o.created_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </RelatedList>
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <RelatedList
+            isLoading={related.isLoading}
+            error={related.error as Error | null}
+            empty="No payments."
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment intent</TableHead>
+                  <TableHead>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(related.data?.payments ?? []).map((p: any) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      ${((p.amount_cents ?? 0) / 100).toFixed(2)} {p.currency?.toUpperCase()}
+                    </TableCell>
+                    <TableCell><Badge variant="secondary">{p.status}</Badge></TableCell>
+                    <TableCell className="font-mono text-xs">{p.stripe_payment_intent_id ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </RelatedList>
         </TabsContent>
 
         <TabsContent value="account">
