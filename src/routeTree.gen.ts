@@ -47,6 +47,7 @@ import { Route as AuthenticatedAdminPackagesPackageIdRouteImport } from './route
 import { Route as AuthenticatedAdminOrdersOrderIdRouteImport } from './routes/_authenticated/admin.orders.$orderId'
 import { Route as AuthenticatedAdminMedicinesNewRouteImport } from './routes/_authenticated/admin.medicines.new'
 import { Route as AuthenticatedAdminMedicinesMedicineIdRouteImport } from './routes/_authenticated/admin.medicines.$medicineId'
+import { Route as AuthenticatedAdminIntakeSessionsSessionIdRouteImport } from './routes/_authenticated/admin.intake-sessions.$sessionId'
 import { Route as AuthenticatedAdminCategoriesNewRouteImport } from './routes/_authenticated/admin.categories.new'
 import { Route as AuthenticatedAdminCategoriesCategoryIdRouteImport } from './routes/_authenticated/admin.categories.$categoryId'
 
@@ -268,6 +269,12 @@ const AuthenticatedAdminMedicinesMedicineIdRoute =
     path: '/$medicineId',
     getParentRoute: () => AuthenticatedAdminMedicinesRoute,
   } as any)
+const AuthenticatedAdminIntakeSessionsSessionIdRoute =
+  AuthenticatedAdminIntakeSessionsSessionIdRouteImport.update({
+    id: '/$sessionId',
+    path: '/$sessionId',
+    getParentRoute: () => AuthenticatedAdminIntakeSessionsRoute,
+  } as any)
 const AuthenticatedAdminCategoriesNewRoute =
   AuthenticatedAdminCategoriesNewRouteImport.update({
     id: '/new',
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/categories/$categoryId': typeof AuthenticatedAdminCategoriesCategoryIdRoute
   '/admin/categories/new': typeof AuthenticatedAdminCategoriesNewRoute
+  '/admin/intake-sessions/$sessionId': typeof AuthenticatedAdminIntakeSessionsSessionIdRoute
   '/admin/medicines/$medicineId': typeof AuthenticatedAdminMedicinesMedicineIdRoute
   '/admin/medicines/new': typeof AuthenticatedAdminMedicinesNewRoute
   '/admin/orders/$orderId': typeof AuthenticatedAdminOrdersOrderIdRoute
@@ -333,6 +341,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/categories/$categoryId': typeof AuthenticatedAdminCategoriesCategoryIdRoute
   '/admin/categories/new': typeof AuthenticatedAdminCategoriesNewRoute
+  '/admin/intake-sessions/$sessionId': typeof AuthenticatedAdminIntakeSessionsSessionIdRoute
   '/admin/medicines/$medicineId': typeof AuthenticatedAdminMedicinesMedicineIdRoute
   '/admin/medicines/new': typeof AuthenticatedAdminMedicinesNewRoute
   '/admin/orders/$orderId': typeof AuthenticatedAdminOrdersOrderIdRoute
@@ -376,6 +385,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/categories/$categoryId': typeof AuthenticatedAdminCategoriesCategoryIdRoute
   '/_authenticated/admin/categories/new': typeof AuthenticatedAdminCategoriesNewRoute
+  '/_authenticated/admin/intake-sessions/$sessionId': typeof AuthenticatedAdminIntakeSessionsSessionIdRoute
   '/_authenticated/admin/medicines/$medicineId': typeof AuthenticatedAdminMedicinesMedicineIdRoute
   '/_authenticated/admin/medicines/new': typeof AuthenticatedAdminMedicinesNewRoute
   '/_authenticated/admin/orders/$orderId': typeof AuthenticatedAdminOrdersOrderIdRoute
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/categories/$categoryId'
     | '/admin/categories/new'
+    | '/admin/intake-sessions/$sessionId'
     | '/admin/medicines/$medicineId'
     | '/admin/medicines/new'
     | '/admin/orders/$orderId'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/categories/$categoryId'
     | '/admin/categories/new'
+    | '/admin/intake-sessions/$sessionId'
     | '/admin/medicines/$medicineId'
     | '/admin/medicines/new'
     | '/admin/orders/$orderId'
@@ -492,6 +504,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/admin/categories/$categoryId'
     | '/_authenticated/admin/categories/new'
+    | '/_authenticated/admin/intake-sessions/$sessionId'
     | '/_authenticated/admin/medicines/$medicineId'
     | '/_authenticated/admin/medicines/new'
     | '/_authenticated/admin/orders/$orderId'
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMedicinesMedicineIdRouteImport
       parentRoute: typeof AuthenticatedAdminMedicinesRoute
     }
+    '/_authenticated/admin/intake-sessions/$sessionId': {
+      id: '/_authenticated/admin/intake-sessions/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/admin/intake-sessions/$sessionId'
+      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsSessionIdRouteImport
+      parentRoute: typeof AuthenticatedAdminIntakeSessionsRoute
+    }
     '/_authenticated/admin/categories/new': {
       id: '/_authenticated/admin/categories/new'
       path: '/new'
@@ -827,11 +847,14 @@ const AuthenticatedAdminCategoriesRouteWithChildren =
   )
 
 interface AuthenticatedAdminIntakeSessionsRouteChildren {
+  AuthenticatedAdminIntakeSessionsSessionIdRoute: typeof AuthenticatedAdminIntakeSessionsSessionIdRoute
   AuthenticatedAdminIntakeSessionsIndexRoute: typeof AuthenticatedAdminIntakeSessionsIndexRoute
 }
 
 const AuthenticatedAdminIntakeSessionsRouteChildren: AuthenticatedAdminIntakeSessionsRouteChildren =
   {
+    AuthenticatedAdminIntakeSessionsSessionIdRoute:
+      AuthenticatedAdminIntakeSessionsSessionIdRoute,
     AuthenticatedAdminIntakeSessionsIndexRoute:
       AuthenticatedAdminIntakeSessionsIndexRoute,
   }
