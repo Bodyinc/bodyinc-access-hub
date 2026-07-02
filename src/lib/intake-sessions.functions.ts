@@ -32,7 +32,7 @@ export const listIntakeSessions = createServerFn({ method: "POST" })
       )
       .order("created_at", { ascending: false })
       .limit(200);
-    if (data.status && data.status !== "all") q = q.eq("status", data.status);
+    if (data.status && data.status !== "all") q = q.eq("status", data.status as any);
     if (data.claimed === "claimed") q = q.not("claimed_by_user_id", "is", null);
     if (data.claimed === "unclaimed") q = q.is("claimed_by_user_id", null);
     if (data.search) {
