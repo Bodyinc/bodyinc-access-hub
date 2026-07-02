@@ -22,6 +22,7 @@ import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPatientsRouteImport } from './routes/_authenticated/admin.patients'
 import { Route as AuthenticatedAdminPackagesRouteImport } from './routes/_authenticated/admin.packages'
+import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
 import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authenticated/admin.medicines'
 import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/_authenticated/admin.medication-rules'
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
@@ -111,6 +112,12 @@ const AuthenticatedAdminPackagesRoute =
   AuthenticatedAdminPackagesRouteImport.update({
     id: '/packages',
     path: '/packages',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminOrdersRoute =
+  AuthenticatedAdminOrdersRouteImport.update({
+    id: '/orders',
+    path: '/orders',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminMedicinesRoute =
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   '/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
+  '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/packages': typeof AuthenticatedAdminPackagesRouteWithChildren
   '/admin/patients': typeof AuthenticatedAdminPatientsRouteWithChildren
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
@@ -289,6 +297,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
+  '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/categories/$categoryId': typeof AuthenticatedAdminCategoriesCategoryIdRoute
@@ -323,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
   '/_authenticated/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   '/_authenticated/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
+  '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/_authenticated/admin/packages': typeof AuthenticatedAdminPackagesRouteWithChildren
   '/_authenticated/admin/patients': typeof AuthenticatedAdminPatientsRouteWithChildren
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/intake-form'
     | '/admin/medication-rules'
     | '/admin/medicines'
+    | '/admin/orders'
     | '/admin/packages'
     | '/admin/patients'
     | '/admin/providers'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/admin/intake-form'
+    | '/admin/orders'
     | '/admin/slots'
     | '/admin'
     | '/admin/categories/$categoryId'
@@ -426,6 +438,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/intake-form'
     | '/_authenticated/admin/medication-rules'
     | '/_authenticated/admin/medicines'
+    | '/_authenticated/admin/orders'
     | '/_authenticated/admin/packages'
     | '/_authenticated/admin/patients'
     | '/_authenticated/admin/providers'
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       path: '/packages'
       fullPath: '/admin/packages'
       preLoaderRoute: typeof AuthenticatedAdminPackagesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/orders': {
+      id: '/_authenticated/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/medicines': {
@@ -847,6 +867,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
   AuthenticatedAdminMedicationRulesRoute: typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRouteWithChildren
+  AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
   AuthenticatedAdminPackagesRoute: typeof AuthenticatedAdminPackagesRouteWithChildren
   AuthenticatedAdminPatientsRoute: typeof AuthenticatedAdminPatientsRouteWithChildren
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRouteWithChildren
@@ -863,6 +884,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminMedicationRulesRouteWithChildren,
   AuthenticatedAdminMedicinesRoute:
     AuthenticatedAdminMedicinesRouteWithChildren,
+  AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
   AuthenticatedAdminPackagesRoute: AuthenticatedAdminPackagesRouteWithChildren,
   AuthenticatedAdminPatientsRoute: AuthenticatedAdminPatientsRouteWithChildren,
   AuthenticatedAdminProvidersRoute:
