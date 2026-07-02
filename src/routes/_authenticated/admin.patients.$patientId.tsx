@@ -423,6 +423,40 @@ function ProfileTab({
 }
 
 function DangerZone({
+// helper reused by all related tabs
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _placeholder,
+}: any) {
+  return null;
+}
+
+function RelatedList({
+  isLoading,
+  error,
+  empty,
+  children,
+}: {
+  isLoading: boolean;
+  error: Error | null;
+  empty: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-0">
+        {isLoading ? (
+          <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+        ) : error ? (
+          <div className="p-6 text-sm text-destructive">{error.message}</div>
+        ) : (
+          <>{children}</>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DangerZoneOriginal({
   isActive,
   name,
   disabled,
