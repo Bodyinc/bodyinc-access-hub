@@ -393,6 +393,7 @@ export type Database = {
           short_description: string
           sort_order: number
           status: Database["public"]["Enums"]["medicine_status"]
+          stripe_product_id: string | null
           updated_at: string
         }
         Insert: {
@@ -409,6 +410,7 @@ export type Database = {
           short_description: string
           sort_order?: number
           status?: Database["public"]["Enums"]["medicine_status"]
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -425,6 +427,7 @@ export type Database = {
           short_description?: string
           sort_order?: number
           status?: Database["public"]["Enums"]["medicine_status"]
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -443,6 +446,7 @@ export type Database = {
           original_price: number
           price: number
           sort_order: number
+          stripe_price_id: string | null
           updated_at: string
         }
         Insert: {
@@ -458,6 +462,7 @@ export type Database = {
           original_price?: number
           price?: number
           sort_order?: number
+          stripe_price_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -473,6 +478,7 @@ export type Database = {
           original_price?: number
           price?: number
           sort_order?: number
+          stripe_price_id?: string | null
           updated_at?: string
         }
         Relationships: [

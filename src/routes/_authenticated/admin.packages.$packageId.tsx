@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { packageQueryOptions, packagesQueryKey } from "@/lib/query-options/packages";
 import { updatePackage, type StoredPackage } from "@/lib/packages.store";
+import { syncPackageToStripe } from "@/lib/packages.functions";
 import type { PackageFormValues } from "@/lib/packages.schema";
 
 const PackageForm = lazy(() =>
@@ -41,15 +43,28 @@ function EditPackagePage() {
 
   const medicinesQuery = useQuery(medicinesQueryOptions());
   const packageQuery = useQuery(packageQueryOptions(packageId));
+  const syncPackage = useServerFn(syncPackageToStripe);
 
   const [previewValues, setPreviewValues] = useState<PackageFormValues | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (values: PackageFormValues) => updatePackage(packageId, values),
-    onSuccess: () => {
+    mutationFn: async (values: PackageFormValues) => {
+      await updatePackage(packageId, values);
+      try {
+        await syncPackage({ data: { packageId } });
+        return { synced: true as const };
+      } catch (e) {
+        return { synced: false as const, syncError: (e as Error).message };
+      }
+    },
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: packagesQueryKey });
       qc.invalidateQueries({ queryKey: ["package", packageId] });
-      toast.success("Package updated");
+      if (result.synced) {
+        toast.success("Package updated and synced to Stripe");
+      } else {
+        toast.warning(`Package updated, but Stripe sync failed: ${result.syncError}`);
+      }
       navigate({ to: "/admin/packages" });
     },
     onError: (e: Error) => toast.error(e.message),
