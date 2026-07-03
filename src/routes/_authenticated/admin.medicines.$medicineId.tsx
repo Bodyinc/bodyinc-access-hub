@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { medicineQueryOptions, medicinesQueryKey } from "@/lib/query-options/medicines";
 import { updateMedicine, type StoredMedicine } from "@/lib/medicines.store";
+import { syncMedicineToStripe } from "@/lib/medicines.functions";
 import type { MedicineFormValues } from "@/lib/medicines.schema";
 
 const MedicineForm = lazy(() =>
@@ -51,6 +53,7 @@ function EditMedicinePage() {
   const qc = useQueryClient();
 
   const medicineQuery = useQuery(medicineQueryOptions(medicineId));
+  const syncMedicine = useServerFn(syncMedicineToStripe);
 
   const [previewValues, setPreviewValues] = useState<MedicineFormValues | null>(null);
   const handlePreviewChange = useCallback((values: MedicineFormValues) => {
@@ -58,7 +61,14 @@ function EditMedicinePage() {
   }, []);
 
   const mutation = useMutation({
-    mutationFn: (values: MedicineFormValues) => updateMedicine(medicineId, values),
+    mutationFn: async (values: MedicineFormValues) => {
+      await updateMedicine(medicineId, values);
+      try {
+        await syncMedicine({ data: { medicineId } });
+      } catch {
+        // Product sync is best-effort; package sync will also ensure the product exists.
+      }
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       qc.invalidateQueries({ queryKey: ["medicine", medicineId] });

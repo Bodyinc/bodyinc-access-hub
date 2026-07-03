@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
-import { packageQueryOptions, packagesQueryKey } from "@/lib/query-options/packages";
+import { packagesQueryKey } from "@/lib/query-options/packages";
 import { createPackage } from "@/lib/packages.store";
+import { syncPackageToStripe } from "@/lib/packages.functions";
 import type { PackageFormValues } from "@/lib/packages.schema";
 
 const PackageForm = lazy(() =>
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/admin/packages/new")({
 function NewPackagePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const syncPackage = useServerFn(syncPackageToStripe);
   const medicinesQuery = useQuery(medicinesQueryOptions());
 
   const [previewValues, setPreviewValues] = useState<PackageFormValues>({
@@ -38,10 +41,22 @@ function NewPackagePage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (values: PackageFormValues) => createPackage(values),
-    onSuccess: () => {
+    mutationFn: async (values: PackageFormValues) => {
+      const { id } = await createPackage(values);
+      try {
+        await syncPackage({ data: { packageId: id } });
+        return { id, synced: true as const };
+      } catch (e) {
+        return { id, synced: false as const, syncError: (e as Error).message };
+      }
+    },
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: packagesQueryKey });
-      toast.success("Package created");
+      if (result.synced) {
+        toast.success("Package created and synced to Stripe");
+      } else {
+        toast.warning(`Package created, but Stripe sync failed: ${result.syncError}`);
+      }
       navigate({ to: "/admin/packages" });
     },
     onError: (e: Error) => toast.error(e.message),
