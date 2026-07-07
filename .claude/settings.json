@@ -7,7 +7,9 @@
       "Bash(git -C \"c:/Programming/BeezTech/BodyInc/bodyinc-access-hub\" branch --show-current)",
       "Bash(git -C \"c:/Programming/BeezTech/BodyInc/bodyinc-access-hub\" diff .env.example package.json src/integrations/supabase/types.ts src/routeTree.gen.ts)",
       "Bash(git -C \"c:/Programming/BeezTech/BodyInc/bodyinc-access-hub\" diff src/lib/medicines.functions.ts src/lib/packages.functions.ts)",
-      "Bash(git -C c:/Programming/BeezTech/BodyInc/bodyinc-access-hub diff 'src/routes/_authenticated/admin.medicines.$medicineId.tsx' src/routes/_authenticated/admin.medicines.new.tsx 'src/routes/_authenticated/admin.packages.$packageId.tsx' src/routes/_authenticated/admin.packages.new.tsx)"
+      "Bash(git -C c:/Programming/BeezTech/BodyInc/bodyinc-access-hub diff 'src/routes/_authenticated/admin.medicines.$medicineId.tsx' src/routes/_authenticated/admin.medicines.new.tsx 'src/routes/_authenticated/admin.packages.$packageId.tsx' src/routes/_authenticated/admin.packages.new.tsx)",
+      "Bash(git rev-list *)",
+      "Bash(git diff *)"
     ]
   }
 }
