@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { packagesQueryKey, packagesQueryOptions } from "@/lib/query-options/packages";
+import { RefreshButton } from "@/components/admin/refresh-button";
 import {
   deletePackage,
   setPackageActive,
@@ -105,13 +106,15 @@ function PackagesListPage() {
             Pricing plans linked to medicines — 1-month, 3-month, and custom durations.
           </p>
         </div>
-        <Button
-          onClick={() => navigate({ to: "/admin/packages/new" })}
-          className="shrink-0"
-          disabled={medicines.length === 0}
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Add Package
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+          <Button
+            onClick={() => navigate({ to: "/admin/packages/new" })}
+            disabled={medicines.length === 0}
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Add Package
+          </Button>
+        </div>
       </div>
 
       {!isEmpty && (

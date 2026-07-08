@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listIntakeSessions } from "@/lib/intake-sessions.functions";
+import { RefreshButton } from "@/components/admin/refresh-button";
 
 export const Route = createFileRoute("/_authenticated/admin/intake-sessions/")({
   component: IntakeSessionsListPage,
@@ -54,11 +55,14 @@ function IntakeSessionsListPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Intake Sessions</h2>
-        <p className="text-sm text-muted-foreground">
-          Patient intake responses, eligibility results, and selected plans.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Intake Sessions</h2>
+          <p className="text-sm text-muted-foreground">
+            Patient intake responses, eligibility results, and selected plans.
+          </p>
+        </div>
+        <RefreshButton onClick={() => q.refetch()} loading={q.isFetching} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

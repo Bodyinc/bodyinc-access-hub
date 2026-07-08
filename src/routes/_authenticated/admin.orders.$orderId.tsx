@@ -20,7 +20,9 @@ export const Route = createFileRoute("/_authenticated/admin/orders/$orderId")({
 });
 
 function formatCurrency(n: number | string | null | undefined) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n ?? 0));
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+    Number(n ?? 0),
+  );
 }
 function formatDate(iso?: string | null) {
   if (!iso) return "—";
@@ -50,7 +52,7 @@ function OrderDetailPage() {
     );
   }
 
-  const { order, items, events, customer, payments } = q.data as any;
+  const { subscription, package: pkg, medicine, customer, payments, display_status } = q.data as any;
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -61,19 +63,29 @@ function OrderDetailPage() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div>
-            <CardTitle className="font-mono text-base">{order.id}</CardTitle>
-            <CardDescription>{formatDate(order.created_at)}</CardDescription>
+            <CardTitle className="font-mono text-base">{subscription.id}</CardTitle>
+            <CardDescription>{formatDate(subscription.created_at)}</CardDescription>
           </div>
-          <Badge variant={order.status === "paid" ? "default" : "secondary"}>{order.status ?? "—"}</Badge>
+          <Badge variant={display_status === "paid" ? "default" : "secondary"}>
+            {display_status ?? "—"}
+          </Badge>
         </CardHeader>
         <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
-          <Row label="Plan code" value={order.selected_plan_code ?? "—"} />
-          <Row label="Payment method" value={order.payment_method_code ?? "—"} />
-          <Row label="Promo code" value={order.promo_code ?? "—"} />
-          <Row label="Promo savings" value={formatCurrency(order.promo_savings)} />
-          <Row label="Subtotal" value={formatCurrency(order.subtotal)} />
-          <Row label="Shipping" value={formatCurrency(order.shipping)} />
-          <Row label="Total" value={<strong>{formatCurrency(order.total)}</strong>} />
+          <Row label="Medication" value={medicine?.name ?? "—"} />
+          <Row label="Plan" value={pkg?.name ?? "—"} />
+          <Row label="Plan price" value={pkg ? formatCurrency(pkg.price) : "—"} />
+          <Row
+            label="Billing cycle"
+            value={pkg?.duration_months ? `Every ${pkg.duration_months} month(s)` : "—"}
+          />
+          <Row label="Renews on" value={formatDate(subscription.current_period_end)} />
+          <Row label="Auto-renew" value={subscription.cancel_at_period_end ? "No (canceling)" : "Yes"} />
+          <Row
+            label="Stripe subscription"
+            value={
+              <span className="font-mono text-xs">{subscription.stripe_subscription_id ?? "—"}</span>
+            }
+          />
         </CardContent>
       </Card>
 
@@ -90,67 +102,28 @@ function OrderDetailPage() {
               <Row
                 label="Address"
                 value={
-                  [customer.street_address, customer.city, customer.state_code, customer.postal_code, customer.country]
+                  [
+                    customer.street_address,
+                    customer.city,
+                    customer.state_code,
+                    customer.postal_code,
+                    customer.country,
+                  ]
                     .filter(Boolean)
                     .join(", ") || "—"
                 }
               />
             </>
           ) : (
-            <div className="text-muted-foreground">Guest checkout / no linked profile.</div>
+            <div className="text-muted-foreground">No linked profile.</div>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Items</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Unit price</TableHead>
-                <TableHead>Line total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-6">No items.</TableCell>
-                </TableRow>
-              )}
-              {items.map((it: any) => (
-                <TableRow key={it.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {it.image_url ? (
-                        <img src={it.image_url} alt="" className="h-10 w-10 rounded object-cover" />
-                      ) : null}
-                      <div>
-                        <div className="font-medium">{it.name}</div>
-                        {it.description ? (
-                          <div className="text-xs text-muted-foreground">{it.description}</div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{it.quantity}</TableCell>
-                  <TableCell>{formatCurrency(it.unit_price)}</TableCell>
-                  <TableCell>{formatCurrency(it.line_total)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle className="text-base">Payments</CardTitle>
-          <CardDescription>Payments recorded for this customer.</CardDescription>
+          <CardDescription>Charges recorded for this subscription.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -158,21 +131,29 @@ function OrderDetailPage() {
               <TableRow>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Payment intent</TableHead>
+                <TableHead>Invoice</TableHead>
                 <TableHead>Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-6">No payments.</TableCell>
+                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                    No payments.
+                  </TableCell>
                 </TableRow>
               )}
               {payments.map((p: any) => (
                 <TableRow key={p.id}>
-                  <TableCell>{formatCurrency((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}</TableCell>
-                  <TableCell><Badge variant="secondary">{p.status}</Badge></TableCell>
-                  <TableCell className="font-mono text-xs">{p.stripe_payment_intent_id ?? "—"}</TableCell>
+                  <TableCell>
+                    {formatCurrency((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={p.status === "succeeded" ? "default" : "secondary"}>
+                      {p.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{p.stripe_invoice_id ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
                 </TableRow>
               ))}
@@ -180,22 +161,6 @@ function OrderDetailPage() {
           </Table>
         </CardContent>
       </Card>
-
-      {events.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Checkout events</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {events.map((e: any) => (
-              <div key={e.id} className="flex justify-between border-b py-1.5 last:border-0">
-                <span className="font-medium">{e.event_type}</span>
-                <span className="text-muted-foreground">{formatDate(e.created_at)}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { RefreshButton } from "@/components/admin/refresh-button";
 import {
   listPatients,
   sendPatientPasswordReset,
@@ -84,11 +85,14 @@ function PatientsListPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Patients</h2>
-        <p className="text-sm text-muted-foreground">
-          Browse patient accounts, review intake responses, and manage access.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Patients</h2>
+          <p className="text-sm text-muted-foreground">
+            Browse patient accounts, review intake responses, and manage access.
+          </p>
+        </div>
+        <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
