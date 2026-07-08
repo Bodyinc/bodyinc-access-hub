@@ -186,10 +186,12 @@ export const getPatientRelated = createServerFn({ method: "POST" })
       .maybeSingle();
     const email = (profile as any)?.email ?? null;
 
-    const orderQ = supabaseAdmin
-      .from("shop_checkout_orders")
-      .select("id, total, status, created_at, selected_plan_code")
+    // Orders = the patient's confirmed subscriptions (both onboarding + shop write these).
+    const subQ = supabaseAdmin
+      .from("subscriptions")
+      .select("id, stripe_subscription_id, package_id, medicine_id, status, created_at")
       .eq("user_id", data.userId)
+      .not("status", "in", "(incomplete,incomplete_expired)")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -207,19 +209,53 @@ export const getPatientRelated = createServerFn({ method: "POST" })
 
     const paymentQ = supabaseAdmin
       .from("payments")
-      .select("id, amount_cents, currency, status, stripe_payment_intent_id, created_at, session_id")
+      .select(
+        "id, amount_cents, currency, status, stripe_invoice_id, stripe_subscription_id, created_at",
+      )
       .eq("user_id", data.userId)
       .order("created_at", { ascending: false })
       .limit(100);
 
-    const [{ data: orders }, { data: sessions }, { data: payments }] = await Promise.all([
-      orderQ,
+    const [{ data: subs }, { data: sessions }, { data: payments }] = await Promise.all([
+      subQ,
       sessionQ,
       paymentQ,
     ]);
 
+    const subRows = subs ?? [];
+    const pkgIds = Array.from(new Set(subRows.map((s: any) => s.package_id).filter(Boolean)));
+    const medIds = Array.from(new Set(subRows.map((s: any) => s.medicine_id).filter(Boolean)));
+    const [{ data: pkgs }, { data: meds }] = await Promise.all([
+      pkgIds.length
+        ? supabaseAdmin.from("packages").select("id, name").in("id", pkgIds)
+        : Promise.resolve({ data: [] as any[] }),
+      medIds.length
+        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const pkgMap = new Map((pkgs ?? []).map((p: any) => [p.id, p.name]));
+    const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name]));
+    const payBySub = new Map<string, any>();
+    for (const p of payments ?? []) {
+      // payments are desc; overwriting leaves the earliest (initial charge) per subscription
+      if (p.stripe_subscription_id) payBySub.set(p.stripe_subscription_id, p);
+    }
+
+    const orders = subRows.map((s: any) => {
+      const pay = payBySub.get(s.stripe_subscription_id);
+      const item =
+        [medMap.get(s.medicine_id), pkgMap.get(s.package_id)].filter(Boolean).join(" — ") || "—";
+      return {
+        id: s.id,
+        selected_plan_code: item,
+        total: pay ? Number(pay.amount_cents) / 100 : 0,
+        status: s.status === "active" ? "paid" : s.status,
+        created_at: s.created_at,
+      };
+    });
+
     return {
-      orders: orders ?? [],
+      orders,
       sessions: sessions ?? [],
       payments: payments ?? [],
     };

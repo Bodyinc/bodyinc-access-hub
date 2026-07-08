@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listOrders } from "@/lib/orders.functions";
+import { RefreshButton } from "@/components/admin/refresh-button";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/")({
   component: OrdersListPage,
@@ -57,11 +58,14 @@ function OrdersListPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Orders</h2>
-        <p className="text-sm text-muted-foreground">
-          Review checkout orders, line items, and payments.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Orders</h2>
+          <p className="text-sm text-muted-foreground">
+            Review checkout orders, line items, and payments.
+          </p>
+        </div>
+        <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -78,10 +82,9 @@ function OrdersListPage() {
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="refunded">Refunded</SelectItem>
+            <SelectItem value="past_due">Past due</SelectItem>
+            <SelectItem value="canceled">Canceled</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -92,8 +95,8 @@ function OrdersListPage() {
             <TableRow>
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead>Item</TableHead>
+              <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
             </TableRow>
@@ -127,8 +130,8 @@ function OrdersListPage() {
                   <div className="font-medium">{o.customer_name || "—"}</div>
                   <div className="text-xs text-muted-foreground">{o.customer_email || "—"}</div>
                 </TableCell>
-                <TableCell>{o.item_count}</TableCell>
-                <TableCell>{formatCurrency(o.total)}</TableCell>
+                <TableCell className="max-w-[220px] truncate">{o.item_name}</TableCell>
+                <TableCell>{o.amount != null ? formatCurrency(o.amount) : "—"}</TableCell>
                 <TableCell>
                   <Badge variant={o.status === "paid" ? "default" : "secondary"}>{o.status ?? "—"}</Badge>
                 </TableCell>

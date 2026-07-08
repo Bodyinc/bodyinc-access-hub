@@ -491,6 +491,114 @@ export type Database = {
           },
         ]
       }
+      promo_codes: {
+        Row: {
+          amount_off_cents: number | null
+          auto_apply: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          duration: string
+          duration_in_months: number | null
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          percent_off: number | null
+          redeem_by: string | null
+          stripe_coupon_id: string | null
+          stripe_promotion_code_id: string | null
+          times_redeemed: number
+          updated_at: string
+        }
+        Insert: {
+          amount_off_cents?: number | null
+          auto_apply?: boolean
+          code: string
+          created_at?: string
+          currency?: string
+          discount_type: string
+          duration?: string
+          duration_in_months?: number | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          percent_off?: number | null
+          redeem_by?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
+          times_redeemed?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_off_cents?: number | null
+          auto_apply?: boolean
+          code?: string
+          created_at?: string
+          currency?: string
+          discount_type?: string
+          duration?: string
+          duration_in_months?: number | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          percent_off?: number | null
+          redeem_by?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
+          times_redeemed?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          id: string
+          medicine_id: string | null
+          package_id: string | null
+          session_id: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          session_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          session_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_cents: number
@@ -502,7 +610,9 @@ export type Database = {
           session_id: string | null
           status: Database["public"]["Enums"]["payment_status"]
           stripe_customer_id: string | null
+          stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -516,7 +626,9 @@ export type Database = {
           session_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -530,7 +642,9 @@ export type Database = {
           session_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
         }

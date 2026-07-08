@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { medicinesQueryKey, medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { packagesQueryKey } from "@/lib/query-options/packages";
+import { RefreshButton } from "@/components/admin/refresh-button";
 import {
   deleteMedicine,
   setMedicineActive,
@@ -127,9 +128,12 @@ function MedicinesListPage() {
             Manage the medication catalog shown to patients during onboarding.
           </p>
         </div>
-        <Button onClick={() => navigate({ to: "/admin/medicines/new" })} className="shrink-0">
-          <Plus className="mr-1.5 h-4 w-4" /> Add New Medicine
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+          <Button onClick={() => navigate({ to: "/admin/medicines/new" })}>
+            <Plus className="mr-1.5 h-4 w-4" /> Add New Medicine
+          </Button>
+        </div>
       </div>
 
       {!isEmpty && (

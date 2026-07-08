@@ -17,6 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { categoriesQueryKey, categoriesQueryOptions } from "@/lib/query-options/categories";
+import { RefreshButton } from "@/components/admin/refresh-button";
 import { deleteCategory, setCategoryActive } from "@/lib/categories.store";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/")({
@@ -59,9 +60,12 @@ function CategoriesListPage() {
             Medication categories shown to patients as goals during intake.
           </p>
         </div>
-        <Button onClick={() => navigate({ to: "/admin/categories/new" })}>
-          <Plus className="mr-1.5 h-4 w-4" /> Add Category
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+          <Button onClick={() => navigate({ to: "/admin/categories/new" })}>
+            <Plus className="mr-1.5 h-4 w-4" /> Add Category
+          </Button>
+        </div>
       </div>
 
       {isEmpty ? (
