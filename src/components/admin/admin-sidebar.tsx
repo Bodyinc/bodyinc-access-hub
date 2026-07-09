@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   FileText,
   Ticket,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +36,7 @@ const items: NavItem[] = [
   { title: "Questionnaires", url: "/admin/questionnaires", icon: FileQuestion },
   { title: "Packages", url: "/admin/packages", icon: Package },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
+  { title: "Billing", url: "/admin/billing", icon: CreditCard },
   { title: "Promo Codes", url: "/admin/promos", icon: Ticket },
   { title: "Providers", url: "/admin/providers", icon: Stethoscope },
   { title: "Patients", url: "/admin/patients", icon: Users },

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -153,7 +153,35 @@ function OrderDetailPage() {
                       {p.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{p.stripe_invoice_id ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {p.raw_event?.hosted_invoice_url ? (
+                        <a
+                          href={p.raw_event.hosted_invoice_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label="View invoice"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </a>
+                      ) : null}
+                      {p.raw_event?.invoice_pdf ? (
+                        <a
+                          href={p.raw_event.invoice_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label="Download invoice PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+                      ) : null}
+                      {!p.raw_event?.hosted_invoice_url && !p.raw_event?.invoice_pdf ? (
+                        <span className="font-mono text-xs">{p.stripe_invoice_id ?? "—"}</span>
+                      ) : null}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
                 </TableRow>
               ))}
