@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/
 import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_authenticated/admin.intake-sessions'
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
+import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
 import { Route as AuthenticatedAdminPromosIndexRouteImport } from './routes/_authenticated/admin.promos.index'
@@ -38,6 +39,7 @@ import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_
 import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
 import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
 import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
+import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
 import { Route as AuthenticatedAdminQuestionnairesNewRouteImport } from './routes/_authenticated/admin.questionnaires.new'
 import { Route as AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport } from './routes/_authenticated/admin.questionnaires.$questionnaireId'
 import { Route as AuthenticatedAdminProvidersNewRouteImport } from './routes/_authenticated/admin.providers.new'
@@ -158,6 +160,12 @@ const AuthenticatedAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBillingRoute =
+  AuthenticatedAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminQuestionnairesIndexRoute =
   AuthenticatedAdminQuestionnairesIndexRouteImport.update({
     id: '/',
@@ -217,6 +225,12 @@ const AuthenticatedAdminCategoriesIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAdminCategoriesRoute,
+  } as any)
+const AuthenticatedAdminBillingIndexRoute =
+  AuthenticatedAdminBillingIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminBillingRoute,
   } as any)
 const AuthenticatedAdminQuestionnairesNewRoute =
   AuthenticatedAdminQuestionnairesNewRouteImport.update({
@@ -316,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/admin/billing': typeof AuthenticatedAdminBillingRouteWithChildren
   '/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
   '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
@@ -343,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
+  '/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
@@ -378,6 +394,7 @@ export interface FileRoutesByTo {
   '/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
+  '/admin/billing': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesIndexRoute
@@ -398,6 +415,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRouteWithChildren
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
   '/_authenticated/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
   '/_authenticated/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
@@ -425,6 +443,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers/new': typeof AuthenticatedAdminProvidersNewRoute
   '/_authenticated/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/_authenticated/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
+  '/_authenticated/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/_authenticated/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/_authenticated/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/_authenticated/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
@@ -445,6 +464,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/dashboard'
+    | '/admin/billing'
     | '/admin/categories'
     | '/admin/intake-form'
     | '/admin/intake-sessions'
@@ -472,6 +492,7 @@ export interface FileRouteTypes {
     | '/admin/providers/new'
     | '/admin/questionnaires/$questionnaireId'
     | '/admin/questionnaires/new'
+    | '/admin/billing/'
     | '/admin/categories/'
     | '/admin/intake-sessions/'
     | '/admin/medication-rules/'
@@ -507,6 +528,7 @@ export interface FileRouteTypes {
     | '/admin/providers/new'
     | '/admin/questionnaires/$questionnaireId'
     | '/admin/questionnaires/new'
+    | '/admin/billing'
     | '/admin/categories'
     | '/admin/intake-sessions'
     | '/admin/medication-rules'
@@ -526,6 +548,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/_authenticated/admin/billing'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/intake-form'
     | '/_authenticated/admin/intake-sessions'
@@ -553,6 +576,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers/new'
     | '/_authenticated/admin/questionnaires/$questionnaireId'
     | '/_authenticated/admin/questionnaires/new'
+    | '/_authenticated/admin/billing/'
     | '/_authenticated/admin/categories/'
     | '/_authenticated/admin/intake-sessions/'
     | '/_authenticated/admin/medication-rules/'
@@ -708,6 +732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/billing': {
+      id: '/_authenticated/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/questionnaires/': {
       id: '/_authenticated/admin/questionnaires/'
       path: '/'
@@ -777,6 +808,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/categories/'
       preLoaderRoute: typeof AuthenticatedAdminCategoriesIndexRouteImport
       parentRoute: typeof AuthenticatedAdminCategoriesRoute
+    }
+    '/_authenticated/admin/billing/': {
+      id: '/_authenticated/admin/billing/'
+      path: '/'
+      fullPath: '/admin/billing/'
+      preLoaderRoute: typeof AuthenticatedAdminBillingIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminBillingRoute
     }
     '/_authenticated/admin/questionnaires/new': {
       id: '/_authenticated/admin/questionnaires/new'
@@ -885,6 +923,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedAdminBillingRouteChildren {
+  AuthenticatedAdminBillingIndexRoute: typeof AuthenticatedAdminBillingIndexRoute
+}
+
+const AuthenticatedAdminBillingRouteChildren: AuthenticatedAdminBillingRouteChildren =
+  {
+    AuthenticatedAdminBillingIndexRoute: AuthenticatedAdminBillingIndexRoute,
+  }
+
+const AuthenticatedAdminBillingRouteWithChildren =
+  AuthenticatedAdminBillingRoute._addFileChildren(
+    AuthenticatedAdminBillingRouteChildren,
+  )
 
 interface AuthenticatedAdminCategoriesRouteChildren {
   AuthenticatedAdminCategoriesCategoryIdRoute: typeof AuthenticatedAdminCategoriesCategoryIdRoute
@@ -1053,6 +1105,7 @@ const AuthenticatedAdminQuestionnairesRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRouteWithChildren
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRouteWithChildren
   AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
   AuthenticatedAdminIntakeSessionsRoute: typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
@@ -1071,6 +1124,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRouteWithChildren,
   AuthenticatedAdminCategoriesRoute:
     AuthenticatedAdminCategoriesRouteWithChildren,
   AuthenticatedAdminIntakeFormRoute: AuthenticatedAdminIntakeFormRoute,
