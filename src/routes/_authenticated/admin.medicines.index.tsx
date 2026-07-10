@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Plus, MoreHorizontal, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -70,12 +69,6 @@ function formatUpdated(iso: string) {
   });
 }
 
-function statusVariant(status: MedicineStatus) {
-  if (status === "active") return "default" as const;
-  if (status === "draft") return "outline" as const;
-  return "secondary" as const;
-}
-
 function MedicinesListPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -120,41 +113,51 @@ function MedicinesListPage() {
   const isEmpty = !query.isLoading && allRows.length === 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Medicines</h2>
-          <p className="text-sm text-muted-foreground">
+    <div className="w-full p-4 sm:p-8 space-y-6 bg-white min-h-screen">
+      {/* Top Title & Primary Call-to-action bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Medicines</h2>
+          <p className="text-[14px] text-[#6B5AE0]/80 font-medium">
             Manage the medication catalog shown to patients during onboarding.
           </p>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
-          <Button onClick={() => navigate({ to: "/admin/medicines/new" })}>
-            <Plus className="mr-1.5 h-4 w-4" /> Add New Medicine
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+          <RefreshButton
+  onClick={() => {
+    query.refetch();
+  }}
+  loading={query.isFetching}
+/>
+          <Button 
+            onClick={() => navigate({ to: "/admin/medicines/new" })}
+            className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-11 px-6 rounded-lg font-semibold text-[14px] gap-2 shadow-sm transition-all"
+          >
+            <Plus className="h-4 w-4 stroke-[3]" /> Add New Medicine
           </Button>
         </div>
       </div>
 
+      {/* Filter / Inputs Controls Layer */}
       {!isEmpty && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative min-w-[200px] max-w-sm flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="relative w-full sm:max-w-md">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B5AE0]/60" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search medicines"
-              className="pl-8"
+              placeholder="Search by medication name or active ingredient..."
+              className="pl-10 pr-4 h-12 w-full border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
             />
           </div>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-44 h-12 border-[#EAE6FA] bg-[#FDFDFF] text-[#6B5AE0] font-medium rounded-xl focus:ring-[#2A00A2] text-[14px]">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
+            <SelectContent className="border-[#EAE6FA] rounded-xl">
+              <SelectItem value="all" className="text-[#2A00A2] font-medium focus:bg-[#F3EFFF]">All Statuses</SelectItem>
               {MEDICINE_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
+                <SelectItem key={s} value={s} className="text-[#2A00A2] font-medium focus:bg-[#F3EFFF]">
                   {MEDICINE_STATUS_LABELS[s]}
                 </SelectItem>
               ))}
@@ -163,119 +166,151 @@ function MedicinesListPage() {
         </div>
       )}
 
+      {/* Primary Data Display Component */}
       {isEmpty ? (
-        <Card className="border-dashed">
-          <CardHeader className="text-center">
-            <CardTitle>No medicines yet</CardTitle>
-            <CardDescription>
-              Add your first medicine to build the patient medication catalog.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center pb-8">
-            <Button onClick={() => navigate({ to: "/admin/medicines/new" })}>
-              <Plus className="mr-1.5 h-4 w-4" /> Add your first medicine
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="border-2 border-dashed border-[#EAE6FA] bg-[#FDFDFF] rounded-xl p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-[#2A00A2]">No medicines found</p>
+          <Button 
+            onClick={() => navigate({ to: "/admin/medicines/new" })}
+            className="bg-[#2A00A2] text-white rounded-lg px-4 h-10 font-medium"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add your first medicine
+          </Button>
+        </div>
       ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {query.isLoading && (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Loading…
-                  </TableCell>
+        <div className="border border-[#EAE6FA] rounded-xl bg-white overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <Table className="border-collapse min-w-[800px]">
+              <TableHeader className="bg-white">
+                <TableRow className="hover:bg-transparent border-b border-[#EAE6FA]">
+                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Medication Name</TableHead>
+                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Description</TableHead>
+                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Monthly Price</TableHead>
+                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
+                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Last Updated</TableHead>
+                  <TableHead className="h-14 w-16 px-4 text-center" />
                 </TableRow>
-              )}
-              {rows.map((m: StoredMedicine) => (
-                <TableRow
-                  key={m.id}
-                  className="cursor-pointer"
-                  onClick={() =>
-                    navigate({
-                      to: "/admin/medicines/$medicineId",
-                      params: { medicineId: m.id },
-                    })
-                  }
-                >
-                  <TableCell className="font-medium">{m.name}</TableCell>
-                  <TableCell className="max-w-xs text-muted-foreground">
-                    {truncate(m.short_description)}
-                  </TableCell>
-                  <TableCell>{formatPrice(m.price_monthly)}/mo</TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(m.status)}>{MEDICINE_STATUS_LABELS[m.status]}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{formatUpdated(m.updated_at)}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link to="/admin/medicines/$medicineId" params={{ medicineId: m.id }}>
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        {m.status !== "active" && (
-                          <DropdownMenuItem
-                            onClick={() => statusMut.mutate({ id: m.id, status: "active" })}
-                          >
-                            Set active
+              </TableHeader>
+              <TableBody>
+                {query.isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#6B5AE0]/70">
+                      Loading rows...
+                    </TableCell>
+                  </TableRow>
+                )}
+                
+                {rows.map((m: StoredMedicine) => (
+                  <TableRow
+                    key={m.id}
+                    className="border-b border-[#EAE6FA] bg-white hover:bg-[#F9F8FF] transition-colors cursor-pointer"
+                    onClick={() =>
+                      navigate({
+                        to: "/admin/medicines/$medicineId",
+                        params: { medicineId: m.id },
+                      })
+                    }
+                  >
+                    {/* Name column */}
+                    <TableCell className="px-6 py-5 font-bold text-[15px] text-[#2A00A2] border-r border-[#EAE6FA]/60">
+                      {m.name}
+                    </TableCell>
+
+                    {/* Description column - Updated to match Figma color legibility */}
+                    <TableCell className="px-6 py-5 text-[14px] font-medium max-w-xs text-[#5D22E8] border-r border-[#EAE6FA]/60 leading-relaxed">
+                      {truncate(m.short_description)}
+                    </TableCell>
+
+                    {/* Price column */}
+                    <TableCell className="px-6 py-5 text-[15px] font-bold text-[#2A00A2] border-r border-[#EAE6FA]/60">
+                      {formatPrice(m.price_monthly)}/mo
+                    </TableCell>
+
+                    {/* Status column */}
+                    <TableCell className="px-6 py-5 border-r border-[#EAE6FA]/60">
+                      <Badge 
+                        
+                        className={`rounded-md px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
+                          m.status === "active" 
+                            ? "bg-[#F3EFFF] text-[#5D22E8]" 
+                            : m.status === "draft"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {MEDICINE_STATUS_LABELS[m.status]}
+                      </Badge>
+                    </TableCell>
+
+                    {/* Updated column */}
+                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#6B5AE0] border-r border-[#EAE6FA]/60">
+                      {formatUpdated(m.updated_at)}
+                    </TableCell>
+
+                    {/* Context menu trigger column */}
+                    <TableCell className="px-4 py-5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-[#6B5AE0] hover:bg-[#F3EFFF]">
+                            <MoreHorizontal className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#EAE6FA] bg-white p-1">
+                          <DropdownMenuItem asChild className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]">
+                            <Link to="/admin/medicines/$medicineId" params={{ medicineId: m.id }}>
+                              Edit
+                            </Link>
                           </DropdownMenuItem>
-                        )}
-                        {m.status === "active" && (
+                          {m.status !== "active" && (
+                            <DropdownMenuItem
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
+                              onClick={() => statusMut.mutate({ id: m.id, status: "active" })}
+                            >
+                              Set active
+                            </DropdownMenuItem>
+                          )}
+                          {m.status === "active" && (
+                            <DropdownMenuItem
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
+                              onClick={() => statusMut.mutate({ id: m.id, status: "inactive" })}
+                            >
+                              Set inactive
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator className="bg-[#EAE6FA] my-1" />
                           <DropdownMenuItem
-                            onClick={() => statusMut.mutate({ id: m.id, status: "inactive" })}
+                            className="rounded-md cursor-pointer font-medium text-[14px] text-destructive focus:bg-red-50"
+                            onClick={() => setConfirmDelete({ id: m.id, name: m.name })}
                           >
-                            Set inactive
+                            Delete
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setConfirmDelete({ id: m.id, name: m.name })}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       )}
 
+      {/* Confirmation Modal Layer */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete medicine?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes &ldquo;{confirmDelete?.name}&rdquo;. Linked packages will
-              remain but may show an unknown medicine name.
+        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#EAE6FA] shadow-xl">
+          <AlertDialogHeader className="space-y-1">
+            <AlertDialogTitle className="text-[18px] font-bold text-[#2A00A2]">Delete medicine?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-[#6B5AE0]/90 leading-relaxed">
+              This permanently removes &ldquo;{confirmDelete?.name}&rdquo;. Linked packages will remain but may show an unknown medicine name.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="mt-5 gap-2">
+            <AlertDialogCancel className="rounded-lg border border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
             >
               Delete
             </AlertDialogAction>
