@@ -61,8 +61,8 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="space-y-2 w-full">
+      <Label className="text-[14px] font-bold text-[#2A00A2]">{label}</Label>
       {children}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -131,16 +131,20 @@ export function MedicineForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-      <Card>
-        <CardHeader>
-          <CardTitle>{mode === "create" ? "Add medicine" : "Edit medicine"}</CardTitle>
-          <CardDescription>Product image and details shown to patients.</CardDescription>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full" noValidate>
+      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
+          <CardTitle className="text-[20px] font-bold text-[#2A00A2]">
+            {mode === "create" ? "Add medicine" : "Edit medicine"}
+          </CardTitle>
+          <CardDescription className="text-[14px] text-[#6B5AE0]/80 font-medium">
+            Product image and details shown to patients.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-6 space-y-5">
           <Field label="Product image" error={errors.image_url?.message ?? uploadError ?? undefined}>
             <div
-              className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/30 p-6 transition-colors hover:bg-muted/50"
+              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-6 transition-colors hover:bg-[#F9F8FF]"
               onDragOver={(e) => e.preventDefault()}
               onDrop={onDrop}
             >
@@ -148,11 +152,11 @@ export function MedicineForm({
                 <img
                   src={imageUrl}
                   alt="Medicine preview"
-                  className="h-40 w-auto max-w-full rounded-md object-contain"
+                  className="h-40 w-auto max-w-full rounded-xl object-contain"
                 />
               ) : (
-                <div className="flex h-32 w-24 items-center justify-center rounded-md bg-muted">
-                  <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                <div className="flex h-32 w-24 items-center justify-center rounded-xl bg-[#EAE6FA]/30 border border-[#EAE6FA]">
+                  <ImagePlus className="h-8 w-8 text-[#6B5AE0]/40" />
                 </div>
               )}
               <input
@@ -169,6 +173,7 @@ export function MedicineForm({
                 size="sm"
                 disabled={submitting || uploading}
                 onClick={() => fileRef.current?.click()}
+                className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
               >
                 {uploading ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -177,7 +182,7 @@ export function MedicineForm({
                 )}
                 {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
               </Button>
-              <p className="text-xs text-muted-foreground">JPG, PNG, or WebP · Max 5MB</p>
+              <p className="text-xs text-[#6B5AE0]/60 font-medium">JPG, PNG, or WebP · Max 5MB</p>
             </div>
           </Field>
 
@@ -186,6 +191,7 @@ export function MedicineForm({
               {...register("name")}
               placeholder="e.g. GLP-1 Compound"
               disabled={submitting}
+              className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
             />
           </Field>
 
@@ -194,6 +200,7 @@ export function MedicineForm({
               {...register("short_description")}
               placeholder="Shown on the medication card"
               disabled={submitting}
+              className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
             />
           </Field>
 
@@ -203,10 +210,11 @@ export function MedicineForm({
               rows={4}
               placeholder="Full description in the Learn More modal"
               disabled={submitting}
+              className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[120px]"
             />
           </Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
             <Field label="Price per month ($)" error={errors.price_monthly?.message}>
               <Input
                 type="number"
@@ -214,6 +222,7 @@ export function MedicineForm({
                 min={0}
                 {...register("price_monthly")}
                 disabled={submitting}
+                className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
               />
             </Field>
             <Field label="Status" error={errors.status?.message}>
@@ -222,12 +231,12 @@ export function MedicineForm({
                 onValueChange={(v) => setValue("status", v as MedicineStatus)}
                 disabled={submitting}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus:ring-[#2A00A2] text-[14px] font-medium">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-[#EAE6FA]">
                   {MEDICINE_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
+                    <SelectItem key={s} value={s} className="text-[14px] font-medium text-[#2A00A2] focus:bg-[#F9F8FF] focus:text-[#2A00A2]">
                       {MEDICINE_STATUS_LABELS[s]}
                     </SelectItem>
                   ))}
@@ -236,46 +245,55 @@ export function MedicineForm({
             </Field>
           </div>
 
-          <div className="flex items-center gap-2 pt-2">
+          <div className="h-12 flex items-center bg-[#FDFDFF] border border-[#EAE6FA] rounded-xl px-4 w-full mt-2">
             <Controller
               control={control}
               name="requires_questionnaire"
               render={({ field }) => (
-                <>
-                  <Switch id="req-qq" checked={!!field.value} onCheckedChange={field.onChange} />
-                  <Label htmlFor="req-qq">Requires questionnaire before checkout</Label>
-                </>
+                <div className="flex items-center gap-3 w-full">
+                  <Switch 
+                    id="req-qq" 
+                    checked={!!field.value} 
+                    onCheckedChange={field.onChange} 
+                    className="data-[state=checked]:bg-[#2A00A2]"
+                  />
+                  <Label htmlFor="req-qq" className="text-[14px] font-semibold text-[#2A00A2] cursor-pointer select-none">Requires questionnaire before checkout</Label>
+                </div>
               )}
             />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Categories</CardTitle>
-          <CardDescription>Assign this medicine to one or more goal categories.</CardDescription>
+      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
+          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Categories</CardTitle>
+          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">Assign this medicine to one or more goal categories.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <Controller
             control={control}
             name="category_ids"
             render={({ field }) => (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
                 {(categoriesQ.data ?? []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground font-medium py-1">
                     No categories yet. Create one under Categories first.
                   </p>
                 )}
                 {(categoriesQ.data ?? []).map((c) => {
                   const checked = (field.value ?? []).includes(c.id);
                   return (
-                    <label key={c.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
-                      <Checkbox checked={checked} onCheckedChange={(v) => {
-                        const set = new Set(field.value ?? []);
-                        if (v) set.add(c.id); else set.delete(c.id);
-                        field.onChange(Array.from(set));
-                      }} />
+                    <label key={c.id} className="flex items-center gap-3 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-3.5 text-[14px] font-semibold text-[#2A00A2] cursor-pointer transition-colors hover:bg-[#F9F8FF]">
+                      <Checkbox 
+                        checked={checked} 
+                        className="border-[#6B5AE0]/40 data-[state=checked]:bg-[#2A00A2] data-[state=checked]:border-[#2A00A2] h-4 w-4 rounded"
+                        onCheckedChange={(v) => {
+                          const set = new Set(field.value ?? []);
+                          if (v) set.add(c.id); else set.delete(c.id);
+                          field.onChange(Array.from(set));
+                        }} 
+                      />
                       {c.name}
                     </label>
                   );
@@ -286,28 +304,29 @@ export function MedicineForm({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Important information</CardTitle>
-          <CardDescription>Bullet points shown in the Learn More modal.</CardDescription>
+      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
+          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Important information</CardTitle>
+          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">Bullet points shown in the Learn More modal.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="p-6 space-y-3">
           {fields.map((field, index) => (
-            <div key={field.id} className="flex gap-2">
+            <div key={field.id} className="flex gap-3 items-center">
               <Input
                 {...register(`important_info.${index}.text`)}
                 placeholder={`Bullet ${index + 1}`}
                 disabled={submitting}
+                className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="shrink-0 text-muted-foreground hover:text-destructive"
+                className="shrink-0 h-12 w-12 rounded-xl text-[#6B5AE0]/60 hover:text-destructive hover:bg-destructive/5"
                 disabled={submitting}
                 onClick={() => remove(index)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </Button>
             </div>
           ))}
@@ -317,33 +336,45 @@ export function MedicineForm({
             size="sm"
             disabled={submitting}
             onClick={() => append({ text: "" })}
+            className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-11 px-4 rounded-xl font-semibold text-[13px] transition-colors mt-1"
           >
             <Plus className="mr-1.5 h-4 w-4" /> Add bullet
           </Button>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notice</CardTitle>
-          <CardDescription>Optional footer disclaimer in the modal.</CardDescription>
+      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
+          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Notice</CardTitle>
+          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">Optional footer disclaimer in the modal.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <Textarea
             {...register("notice_text")}
             rows={2}
             placeholder="e.g. Individual results may vary…"
             disabled={submitting}
+            className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[80px]"
           />
         </CardContent>
       </Card>
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting || uploading}>
+      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+        <Button 
+          type="submit" 
+          disabled={submitting || uploading}
+          className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-12 px-6 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px] order-1 sm:order-none"
+        >
           {submitting ? "Saving…" : mode === "create" ? "Create medicine" : "Save changes"}
         </Button>
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel} 
+            disabled={submitting}
+            className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-12 px-6 rounded-xl font-semibold text-[14px] transition-colors"
+          >
             Cancel
           </Button>
         )}

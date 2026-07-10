@@ -1,77 +1,110 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
-  CalendarClock,
-  Stethoscope,
-  Pill,
-  Package,
-  Users,
-  ClipboardList,
-  Target,
-  ShieldAlert,
-  FileQuestion,
-  ShoppingCart,
-  FileText,
-  Ticket,
-  CreditCard,
-} from "lucide-react";
-import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
+type NavItem = { title: string; url: string; exact?: boolean };
+
 const items: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
-  { title: "Categories", url: "/admin/categories", icon: Target },
-  { title: "Medicines", url: "/admin/medicines", icon: Pill },
-  { title: "Medication Rules", url: "/admin/medication-rules", icon: ShieldAlert },
-  { title: "Questionnaires", url: "/admin/questionnaires", icon: FileQuestion },
-  { title: "Packages", url: "/admin/packages", icon: Package },
-  { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
-  { title: "Billing", url: "/admin/billing", icon: CreditCard },
-  { title: "Promo Codes", url: "/admin/promos", icon: Ticket },
-  { title: "Providers", url: "/admin/providers", icon: Stethoscope },
-  { title: "Patients", url: "/admin/patients", icon: Users },
-  { title: "Intake Sessions", url: "/admin/intake-sessions", icon: FileText },
-  { title: "Available Slots", url: "/admin/slots", icon: CalendarClock },
-  { title: "Intake Form", url: "/admin/intake-form", icon: ClipboardList },
+  { title: "Dashboard", url: "/admin", exact: true },
+  { title: "Categories", url: "/admin/categories" },
+  { title: "Medications", url: "/admin/medicines" },
+  { title: "Medication Rules", url: "/admin/medication-rules" },
+  { title: "Questionnaires", url: "/admin/questionnaires" },
+  { title: "Packages", url: "/admin/packages" },
+  { title: "Orders", url: "/admin/orders" },
+  { title: "Promo Codes", url: "/admin/promos" },
+  { title: "Providers", url: "/admin/providers" },
+  { title: "Patients", url: "/admin/patients" },
+  { title: "Intake Sessions", url: "/admin/intake-sessions" },
+  { title: "Available Slots", url: "/admin/slots" },
+  { title: "Intake Form", url: "/admin/intake-form" },
 ];
 
+
+const footerItems = [
+  { title: "Settings", url: "#" },
+  { title: "Logout", url: "#" },
+];
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b">
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
-            B
-          </div>
-          <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
-            Body Inc Admin
-          </span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Manage</SidebarGroupLabel>
+    <Sidebar collapsible="icon" className="border-r border-[#E2DCFA] bg-[#F5F3FF]">
+      {/* Top Brand Logo Container */}
+      <SidebarHeader className="bg-[#F5F3FF] px-6 pt-7 pb-2 select-none">
+  <div className="group-data-[collapsible=icon]:hidden">
+    <img
+      src="/logo.svg"
+      alt="Body Inc"
+      className="h-10 w-auto object-contain"
+    />
+
+    <div className="mt-5 h-px w-full bg-[#E2DCFA]" />
+  </div>
+
+  <div className="hidden group-data-[collapsible=icon]:flex h-8 w-8 items-center justify-center rounded-xl bg-[#2A00A2] text-white font-black text-sm">
+    B
+  </div>
+</SidebarHeader>
+
+      {/* Main Content Area - Layout uses flex-col justify-between with overflow disabled */}
+      <SidebarContent className="bg-[#F5F3FF] px-3 flex flex-col justify-between h-full pb-6 overflow-hidden">
+        {/* Navigation Items Link Stack */}
+        <SidebarGroup className="p-0 mt-2">
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
+            <SidebarMenu className="gap-0.5">
+              {items.map((item) => {
+                const active = isActive(item.url, item.exact);
+                return (
+                  <SidebarMenuItem key={item.url}>
+  <SidebarMenuButton
+    asChild
+    isActive={active}
+    tooltip={item.title}
+    className={`
+      w-full h-9 px-4 rounded-xl transition-all font-semibold text-[14px] flex items-center
+      ${
+        active
+          ? "bg-[#EAE6FA] !text-[#2A00A2] hover:bg-[#EAE6FA] hover:!text-[#2A00A2]"
+          : "!text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:!text-[#2A00A2] data-[active=true]:!text-[#2A00A2]"
+      }
+    `}
+  >
+    <Link to={item.url}>
+      <span>{item.title}</span>
+    </Link>
+  </SidebarMenuButton>
+</SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Bottom Actions Menu separated by Light Purple Line Divider */}
+        <SidebarGroup className="p-0 mt-auto group-data-[collapsible=icon]:hidden">
+          <div className="px-3 mb-3">
+            <div className="w-full h-px bg-[#E2DCFA]" />
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              {footerItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url, item.exact)} tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    className="w-full h-9 px-4 rounded-xl transition-all font-bold text-[15px] text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:text-[#2A00A2]"
+                  >
                     <Link to={item.url}>
-                      <item.icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
