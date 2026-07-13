@@ -126,7 +126,8 @@ function OrderDetailPage() {
           <CardDescription>Charges recorded for this subscription.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-[560px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Amount</TableHead>
@@ -187,6 +188,7 @@ function OrderDetailPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

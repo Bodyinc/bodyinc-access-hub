@@ -117,7 +117,7 @@ function AdminLayout() {
             </Button>
           </header>
 
-          <main className="flex-1 px-6 py-5">
+          <main className="flex-1 px-3 py-4 sm:px-6 sm:py-5">
             <Outlet />
           </main>
         </SidebarInset>

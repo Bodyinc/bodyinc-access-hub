@@ -139,7 +139,8 @@ function ProvidersListPage() {
 
       {/* Data Presentation Grid Block */}
       <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl">
-        <Table>
+        <div className="overflow-x-auto">
+        <Table className="min-w-[760px]">
           <TableHeader className="bg-[#FDFDFF]">
             <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
               <TableHead className="text-[#6B5AE0]/80 font-bold text-[13px] h-12 px-6">Name</TableHead>
@@ -237,6 +238,7 @@ function ProvidersListPage() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </Card>
 
       {/* Confirmation Dialog System */}

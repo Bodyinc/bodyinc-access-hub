@@ -112,7 +112,8 @@ export function RefundsTable() {
       </div>
 
       <Card>
-        <Table>
+        <div className="overflow-x-auto">
+        <Table className="min-w-[820px]">
           <TableHeader>
             <TableRow>
               <TableHead>Patient</TableHead>
@@ -215,6 +216,7 @@ export function RefundsTable() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </Card>
 
       <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>

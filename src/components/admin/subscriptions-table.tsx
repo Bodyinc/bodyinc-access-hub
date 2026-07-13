@@ -79,7 +79,8 @@ export function SubscriptionsTable() {
       </div>
 
       <Card>
-        <Table>
+        <div className="overflow-x-auto">
+        <Table className="min-w-[720px]">
           <TableHeader>
             <TableRow>
               <TableHead>Patient</TableHead>
@@ -144,6 +145,7 @@ export function SubscriptionsTable() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );
