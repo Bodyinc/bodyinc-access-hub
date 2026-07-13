@@ -1,6 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { RoutePending } from "@/components/route-pending";
