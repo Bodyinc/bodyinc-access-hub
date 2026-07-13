@@ -206,6 +206,8 @@ export type Database = {
           sex: Database["public"]["Enums"]["sex_type"] | null
           state_code: string | null
           status: Database["public"]["Enums"]["intake_session_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           weight_kg: number | null
         }
@@ -224,6 +226,8 @@ export type Database = {
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
           status?: Database["public"]["Enums"]["intake_session_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           weight_kg?: number | null
         }
@@ -242,6 +246,8 @@ export type Database = {
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
           status?: Database["public"]["Enums"]["intake_session_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           weight_kg?: number | null
         }
@@ -491,114 +497,6 @@ export type Database = {
           },
         ]
       }
-      promo_codes: {
-        Row: {
-          amount_off_cents: number | null
-          auto_apply: boolean
-          code: string
-          created_at: string
-          currency: string
-          discount_type: string
-          duration: string
-          duration_in_months: number | null
-          id: string
-          is_active: boolean
-          max_redemptions: number | null
-          percent_off: number | null
-          redeem_by: string | null
-          stripe_coupon_id: string | null
-          stripe_promotion_code_id: string | null
-          times_redeemed: number
-          updated_at: string
-        }
-        Insert: {
-          amount_off_cents?: number | null
-          auto_apply?: boolean
-          code: string
-          created_at?: string
-          currency?: string
-          discount_type: string
-          duration?: string
-          duration_in_months?: number | null
-          id?: string
-          is_active?: boolean
-          max_redemptions?: number | null
-          percent_off?: number | null
-          redeem_by?: string | null
-          stripe_coupon_id?: string | null
-          stripe_promotion_code_id?: string | null
-          times_redeemed?: number
-          updated_at?: string
-        }
-        Update: {
-          amount_off_cents?: number | null
-          auto_apply?: boolean
-          code?: string
-          created_at?: string
-          currency?: string
-          discount_type?: string
-          duration?: string
-          duration_in_months?: number | null
-          id?: string
-          is_active?: boolean
-          max_redemptions?: number | null
-          percent_off?: number | null
-          redeem_by?: string | null
-          stripe_coupon_id?: string | null
-          stripe_promotion_code_id?: string | null
-          times_redeemed?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          cancel_at_period_end: boolean
-          created_at: string
-          current_period_end: string | null
-          id: string
-          medicine_id: string | null
-          package_id: string | null
-          session_id: string | null
-          status: string
-          stripe_customer_id: string | null
-          stripe_price_id: string | null
-          stripe_subscription_id: string
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          cancel_at_period_end?: boolean
-          created_at?: string
-          current_period_end?: string | null
-          id?: string
-          medicine_id?: string | null
-          package_id?: string | null
-          session_id?: string | null
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_price_id?: string | null
-          stripe_subscription_id: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          cancel_at_period_end?: boolean
-          created_at?: string
-          current_period_end?: string | null
-          id?: string
-          medicine_id?: string | null
-          package_id?: string | null
-          session_id?: string | null
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_price_id?: string | null
-          stripe_subscription_id?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       payments: {
         Row: {
           amount_cents: number
@@ -665,99 +563,6 @@ export type Database = {
           },
         ]
       }
-      subscription_cancellation_feedback: {
-        Row: {
-          created_at: string
-          id: string
-          other_text: string | null
-          reasons: string[]
-          stripe_subscription_id: string
-          subscription_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          other_text?: string | null
-          reasons: string[]
-          stripe_subscription_id: string
-          subscription_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          other_text?: string | null
-          reasons?: string[]
-          stripe_subscription_id?: string
-          subscription_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      refund_requests: {
-        Row: {
-          admin_note: string | null
-          amount_cents: number
-          created_at: string
-          id: string
-          payment_id: string
-          reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          stripe_refund_id: string | null
-          subscription_id: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          admin_note?: string | null
-          amount_cents: number
-          created_at?: string
-          id?: string
-          payment_id: string
-          reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          stripe_refund_id?: string | null
-          subscription_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          admin_note?: string | null
-          amount_cents?: number
-          created_at?: string
-          id?: string
-          payment_id?: string
-          reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          stripe_refund_id?: string | null
-          subscription_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "refund_requests_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refund_requests_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -773,6 +578,7 @@ export type Database = {
           sex: Database["public"]["Enums"]["sex_type"] | null
           state_code: string | null
           street_address: string | null
+          stripe_customer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -789,6 +595,7 @@ export type Database = {
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
           street_address?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -805,6 +612,67 @@ export type Database = {
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
           street_address?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          amount_off_cents: number | null
+          auto_apply: boolean
+          code: string
+          created_at: string
+          currency: string
+          discount_type: string
+          duration: string
+          duration_in_months: number | null
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          percent_off: number | null
+          redeem_by: string | null
+          stripe_coupon_id: string | null
+          stripe_promotion_code_id: string | null
+          times_redeemed: number
+          updated_at: string
+        }
+        Insert: {
+          amount_off_cents?: number | null
+          auto_apply?: boolean
+          code: string
+          created_at?: string
+          currency?: string
+          discount_type: string
+          duration?: string
+          duration_in_months?: number | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          percent_off?: number | null
+          redeem_by?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
+          times_redeemed?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_off_cents?: number | null
+          auto_apply?: boolean
+          code?: string
+          created_at?: string
+          currency?: string
+          discount_type?: string
+          duration?: string
+          duration_in_months?: number | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          percent_off?: number | null
+          redeem_by?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
+          times_redeemed?: number
           updated_at?: string
         }
         Relationships: []
@@ -1026,6 +894,69 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_requests: {
+        Row: {
+          admin_note: string | null
+          amount_cents: number
+          created_at: string
+          id: string
+          payment_id: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          stripe_refund_id: string | null
+          subscription_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_cents: number
+          created_at?: string
+          id?: string
+          payment_id: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_refund_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          payment_id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_refund_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_checkout_events: {
         Row: {
           created_at: string
@@ -1134,6 +1065,9 @@ export type Database = {
           selected_plan_code: string
           shipping: number
           status: string
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
           subtotal: number
           total: number
           updated_at: string
@@ -1150,6 +1084,9 @@ export type Database = {
           selected_plan_code: string
           shipping?: number
           status?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           subtotal: number
           total: number
           updated_at?: string
@@ -1166,6 +1103,9 @@ export type Database = {
           selected_plan_code?: string
           shipping?: number
           status?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -1211,6 +1151,114 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      subscription_cancellation_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          other_text: string | null
+          reasons: string[]
+          stripe_subscription_id: string
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          other_text?: string | null
+          reasons: string[]
+          stripe_subscription_id: string
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          other_text?: string | null
+          reasons?: string[]
+          stripe_subscription_id?: string
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_cancellation_feedback_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          id: string
+          medicine_id: string | null
+          package_id: string | null
+          session_id: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          session_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          session_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
