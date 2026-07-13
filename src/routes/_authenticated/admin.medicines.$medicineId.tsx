@@ -102,9 +102,8 @@ function EditMedicinePage() {
   const preview = previewValues ?? formDefaults;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <Suspense fallback={<FormSkeleton />}>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <Suspense fallback={<FormSkeleton />}>
           <MedicineForm
             key={medicineId}
             mode="edit"
@@ -114,9 +113,9 @@ function EditMedicinePage() {
             onCancel={() => navigate({ to: "/admin/medicines" })}
             onValuesChange={handlePreviewChange}
           />
-        </Suspense>
-        <div className="lg:sticky lg:top-20">
-          <Suspense fallback={<FormSkeleton />}>
+      </Suspense>
+      <div>
+        <Suspense fallback={<FormSkeleton />}>
             <MedicinePreview
               name={preview.name}
               short_description={preview.short_description}
@@ -126,8 +125,7 @@ function EditMedicinePage() {
               important_info={preview.important_info}
               notice_text={preview.notice_text}
             />
-          </Suspense>
-        </div>
+        </Suspense>
       </div>
     </div>
   );
