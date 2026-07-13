@@ -132,135 +132,144 @@ export function MedicineForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full" noValidate>
+      <div className="space-y-1">
+        <h1 className="text-[28px] sm:text-[32px] font-bold text-[#2A00A2] leading-tight">
+          {mode === "create" ? "Add medicine" : "Edit medicine"}
+        </h1>
+        <p className="text-[14px] text-[#6B5AE0]/80 font-medium">
+          Product image and details shown to patients.
+        </p>
+      </div>
+
       <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-          <CardTitle className="text-[20px] font-bold text-[#2A00A2]">
-            {mode === "create" ? "Add medicine" : "Edit medicine"}
-          </CardTitle>
-          <CardDescription className="text-[14px] text-[#6B5AE0]/80 font-medium">
-            Product image and details shown to patients.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 space-y-5">
-          <Field label="Product image" error={errors.image_url?.message ?? uploadError ?? undefined}>
-            <div
-              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-6 transition-colors hover:bg-[#F9F8FF]"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={onDrop}
-            >
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt="Medicine preview"
-                  className="h-40 w-auto max-w-full rounded-xl object-contain"
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid gap-6 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+            {/* LEFT: Product image */}
+            <div className="space-y-3">
+              <Label className="text-[14px] font-bold text-[#2A00A2]">Product image</Label>
+              <div
+                className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-[#C9C0F0] bg-[#F5F3FF] p-4 sm:p-6 transition-colors"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDrop}
+              >
+                <div className="w-full aspect-square rounded-xl bg-white/60 border border-[#EAE6FA] flex items-center justify-center overflow-hidden">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt="Medicine preview"
+                      className="h-full w-full object-contain p-2"
+                    />
+                  ) : (
+                    <ImagePlus className="h-10 w-10 text-[#6B5AE0]/40" />
+                  )}
+                </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={onFileChange}
+                  disabled={submitting || uploading}
                 />
-              ) : (
-                <div className="flex h-32 w-24 items-center justify-center rounded-xl bg-[#EAE6FA]/30 border border-[#EAE6FA]">
-                  <ImagePlus className="h-8 w-8 text-[#6B5AE0]/40" />
-                </div>
+                <Button
+                  type="button"
+                  disabled={submitting || uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-10 px-5 rounded-lg font-semibold text-[13px] shadow-sm"
+                >
+                  {uploading ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1.5 h-4 w-4" />
+                  )}
+                  {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
+                </Button>
+                <p className="text-xs text-[#6B5AE0]/70 font-medium">JPG, PNG, or WebP · Max 5MB</p>
+              </div>
+              {(errors.image_url?.message || uploadError) && (
+                <p className="text-sm text-destructive">{errors.image_url?.message ?? uploadError}</p>
               )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={onFileChange}
-                disabled={submitting || uploading}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={submitting || uploading}
-                onClick={() => fileRef.current?.click()}
-                className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
-              >
-                {uploading ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-1.5 h-4 w-4" />
-                )}
-                {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
-              </Button>
-              <p className="text-xs text-[#6B5AE0]/60 font-medium">JPG, PNG, or WebP · Max 5MB</p>
             </div>
-          </Field>
 
-          <Field label="Medicine name" error={errors.name?.message}>
-            <Input
-              {...register("name")}
-              placeholder="e.g. GLP-1 Compound"
-              disabled={submitting}
-              className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
-            />
-          </Field>
+            {/* RIGHT: Fields */}
+            <div className="space-y-4">
+              <Field label="Medicine Name" error={errors.name?.message}>
+                <Input
+                  {...register("name")}
+                  placeholder="e.g. GLP-1 Compound"
+                  disabled={submitting}
+                  className="h-12 border-[#EAE6FA] bg-white text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+                />
+              </Field>
 
-          <Field label="Short description" error={errors.short_description?.message}>
-            <Input
-              {...register("short_description")}
-              placeholder="Shown on the medication card"
-              disabled={submitting}
-              className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
-            />
-          </Field>
+              <Field label="Short description" error={errors.short_description?.message}>
+                <Input
+                  {...register("short_description")}
+                  placeholder="Shown on the medication card"
+                  disabled={submitting}
+                  className="h-12 border-[#EAE6FA] bg-white text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+                />
+              </Field>
 
-          <Field label="Long description" error={errors.long_description?.message}>
-            <Textarea
-              {...register("long_description")}
-              rows={4}
-              placeholder="Full description in the Learn More modal"
-              disabled={submitting}
-              className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[120px]"
-            />
-          </Field>
+              <Field label="Long description" error={errors.long_description?.message}>
+                <Textarea
+                  {...register("long_description")}
+                  rows={4}
+                  placeholder="Full description in the Learn More modal"
+                  disabled={submitting}
+                  className="border-[#EAE6FA] bg-white text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[110px]"
+                />
+              </Field>
 
-          <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
-            <Field label="Price per month ($)" error={errors.price_monthly?.message}>
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
-                {...register("price_monthly")}
-                disabled={submitting}
-                className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
-              />
-            </Field>
-            <Field label="Status" error={errors.status?.message}>
-              <Select
-                value={status}
-                onValueChange={(v) => setValue("status", v as MedicineStatus)}
-                disabled={submitting}
-              >
-                <SelectTrigger className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus:ring-[#2A00A2] text-[14px] font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-[#EAE6FA]">
-                  {MEDICINE_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s} className="text-[14px] font-medium text-[#2A00A2] focus:bg-[#F9F8FF] focus:text-[#2A00A2]">
-                      {MEDICINE_STATUS_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="h-12 flex items-center bg-[#FDFDFF] border border-[#EAE6FA] rounded-xl px-4 w-full mt-2">
-            <Controller
-              control={control}
-              name="requires_questionnaire"
-              render={({ field }) => (
-                <div className="flex items-center gap-3 w-full">
-                  <Switch 
-                    id="req-qq" 
-                    checked={!!field.value} 
-                    onCheckedChange={field.onChange} 
-                    className="data-[state=checked]:bg-[#2A00A2]"
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                <Field label="Price per month ($)" error={errors.price_monthly?.message}>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    {...register("price_monthly")}
+                    disabled={submitting}
+                    className="h-12 border-[#EAE6FA] bg-white text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
                   />
-                  <Label htmlFor="req-qq" className="text-[14px] font-semibold text-[#2A00A2] cursor-pointer select-none">Requires questionnaire before checkout</Label>
-                </div>
-              )}
-            />
+                </Field>
+                <Field label="Status" error={errors.status?.message}>
+                  <Select
+                    value={status}
+                    onValueChange={(v) => setValue("status", v as MedicineStatus)}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger className="h-12 border-[#EAE6FA] bg-white text-foreground rounded-xl focus:ring-[#2A00A2] text-[14px] font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-[#EAE6FA]">
+                      {MEDICINE_STATUSES.map((s) => (
+                        <SelectItem key={s} value={s} className="text-[14px] font-medium text-[#2A00A2] focus:bg-[#F9F8FF] focus:text-[#2A00A2]">
+                          {MEDICINE_STATUS_LABELS[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+
+              <Controller
+                control={control}
+                name="requires_questionnaire"
+                render={({ field }) => (
+                  <div className="flex items-center gap-3 pt-1">
+                    <Switch
+                      id="req-qq"
+                      checked={!!field.value}
+                      onCheckedChange={field.onChange}
+                      className="data-[state=checked]:bg-[#2A00A2]"
+                    />
+                    <Label htmlFor="req-qq" className="text-[14px] font-semibold text-[#2A00A2] cursor-pointer select-none">
+                      Requires questionnaire before checkout
+                    </Label>
+                  </div>
+                )}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
