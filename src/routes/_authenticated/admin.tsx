@@ -1,6 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { RoutePending } from "@/components/route-pending";
@@ -72,24 +70,9 @@ const TITLES: Record<string, string> = {
 };
 
 function AdminLayout() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cleaned = pathname.replace(/\/$/, "");
   let title = TITLES[cleaned] ?? "Admin";
-  // ... Keep all your existing route title conditions exactly the same ...
-
-  async function signOut() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    try {
-      for (const k of Object.keys(sessionStorage)) {
-        if (k.startsWith("bi_portal_role:")) sessionStorage.removeItem(k);
-      }
-    } catch {}
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
 
   return (
     <SidebarProvider>
@@ -97,24 +80,11 @@ function AdminLayout() {
         <AdminSidebar />
         <SidebarInset className="flex flex-1 flex-col bg-white">
           {/* Relative header container allowing absolute trigger overlay positioning */}
-          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 border-b border-[#F4F1FE] bg-white pl-12 pr-6">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-[#F4F1FE] bg-white pl-12 pr-6">
             <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
               {/* Trigger positioned exactly over the sidebar vertical border boundary line */}
               <SidebarTrigger className="h-7 w-7 border border-[#E2DCFA] bg-white text-[#4A3AFF] hover:bg-[#F5F3FF] rounded-lg shadow-sm transition-transform" />
             </div>
-            
-            <div className="flex items-center">
-              {/* No placeholder or space here to ensure native sub-view titles match pixel perfect */}
-            </div>
-
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={signOut}
-              className="text-[#4A3AFF] hover:bg-[#e8eeff] font-bold rounded-xl h-9 px-4 transition-colors"
-            >
-              Sign out
-            </Button>
           </header>
 
           <main className="flex-1 px-3 py-4 sm:px-6 sm:py-5">
