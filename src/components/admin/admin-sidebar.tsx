@@ -39,9 +39,9 @@ export function AdminSidebar() {
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-[#E2DCFA] bg-[#F5F3FF]">
+    <Sidebar collapsible="icon" className="border-r-0 bg-brand-surface">
       {/* Top Brand Logo Container */}
-      <SidebarHeader className="bg-[#F5F3FF] px-6 pt-7 pb-2 select-none">
+      <SidebarHeader className="bg-brand-surface px-6 pt-7 pb-2 select-none">
   <div className="group-data-[collapsible=icon]:hidden">
     <img
       src="/logo.svg"
@@ -49,16 +49,16 @@ export function AdminSidebar() {
       className="h-10 w-auto object-contain"
     />
 
-    <div className="mt-5 h-px w-full bg-[#E2DCFA]" />
+    <div className="mt-5 h-px w-full bg-brand-border" />
   </div>
 
-  <div className="hidden group-data-[collapsible=icon]:flex h-8 w-8 items-center justify-center rounded-xl bg-[#2A00A2] text-white font-black text-sm">
+  <div className="hidden group-data-[collapsible=icon]:flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-brand-foreground font-black text-sm">
     B
   </div>
 </SidebarHeader>
 
       {/* Main Content Area - Layout uses flex-col justify-between with overflow disabled */}
-      <SidebarContent className="bg-[#F5F3FF] px-3 flex flex-col justify-between h-full pb-6 overflow-hidden">
+      <SidebarContent className="bg-brand-surface px-3 flex flex-col justify-between h-full pb-6 overflow-hidden">
         {/* Navigation Items Link Stack */}
         <SidebarGroup className="p-0 mt-2">
           <SidebarGroupContent>
@@ -75,8 +75,8 @@ export function AdminSidebar() {
       w-full h-9 px-4 rounded-xl transition-all font-semibold text-[14px] flex items-center
       ${
         active
-          ? "bg-[#EAE6FA] !text-[#2A00A2] hover:bg-[#EAE6FA] hover:!text-[#2A00A2]"
-          : "!text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:!text-[#2A00A2] data-[active=true]:!text-[#2A00A2]"
+          ? "bg-brand-soft !text-brand hover:bg-brand-soft hover:!text-brand"
+          : "!text-brand-strong bg-transparent hover:bg-brand-soft/50 hover:!text-brand data-[active=true]:!text-brand"
       }
     `}
   >
@@ -94,7 +94,7 @@ export function AdminSidebar() {
         {/* Bottom Actions Menu separated by Light Purple Line Divider */}
         <SidebarGroup className="p-0 mt-auto group-data-[collapsible=icon]:hidden">
           <div className="px-3 mb-3">
-            <div className="w-full h-px bg-[#E2DCFA]" />
+            <div className="w-full h-px bg-brand-border" />
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
@@ -102,7 +102,7 @@ export function AdminSidebar() {
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
-                    className="w-full h-9 px-4 rounded-xl transition-all font-bold text-[15px] text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:text-[#2A00A2]"
+                    className="w-full h-9 px-4 rounded-xl transition-all font-bold text-[15px] text-brand-strong bg-transparent hover:bg-brand-soft/50 hover:text-brand"
                   >
                     <Link to={item.url}>
                       <span>{item.title}</span>
