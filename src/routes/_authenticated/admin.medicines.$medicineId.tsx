@@ -102,8 +102,8 @@ function EditMedicinePage() {
   const preview = previewValues ?? formDefaults;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+    <div className="mx-auto max-w-7xl">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
         <Suspense fallback={<FormSkeleton />}>
           <MedicineForm
             key={medicineId}
