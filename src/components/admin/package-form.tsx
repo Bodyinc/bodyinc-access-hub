@@ -58,7 +58,7 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <Label className="text-[13px] font-bold text-[#4A3AFF]">{label}</Label>
+      <Label className="text-[13px] font-bold text-brand-strong">{label}</Label>
       {children}
       {error && <p className="text-xs font-semibold text-[#FF4D6D]">{error}</p>}
     </div>
@@ -108,19 +108,19 @@ export function PackageForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full text-left" noValidate>
       {/* Dynamic Header */}
       <div>
-        <h2 className="text-2xl font-black tracking-tight text-[#2A00A2]">
+        <h2 className="text-2xl font-black tracking-tight text-brand">
           {mode === "create" ? "Add package" : "Edit package"}
         </h2>
-        <p className="text-[14px] text-[#6B5AE0]/70 font-medium mt-1">
+        <p className="text-[14px] text-brand-strong/70 font-medium mt-1">
           Configure pricing plans and duration terms linked to prescription tracks.
         </p>
       </div>
 
       {/* Main Core Plan Configuration Details Card Panel */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-2 sm:p-4">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-2 sm:p-4">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-[#2A00A2]">Package Details</CardTitle>
-          <CardDescription className="text-[#6B5AE0]/60 font-medium text-[13px]">
+          <CardTitle className="text-lg font-bold text-brand">Package Details</CardTitle>
+          <CardDescription className="text-brand-strong/60 font-medium text-[13px]">
             Define treatment plan names, pricing matrix strategies, and operational visibility terms.
           </CardDescription>
         </CardHeader>
@@ -131,12 +131,12 @@ export function PackageForm({
               onValueChange={(v) => setValue("medicine_id", v, { shouldValidate: true })}
               disabled={submitting || mode === "edit"}
             >
-              <SelectTrigger className="h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] focus:ring-1 focus:ring-[#4A3AFF] outline-none shadow-none disabled:opacity-60">
+              <SelectTrigger className="h-11 rounded-xl border-brand-border bg-white text-brand font-semibold text-[14px] focus:ring-1 focus:ring-brand-strong outline-none shadow-none disabled:opacity-60">
                 <SelectValue placeholder="Select a medicine target link" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-[#E2DCFA]">
+              <SelectContent className="rounded-xl border-brand-border">
                 {medicines.map((m) => (
-                  <SelectItem key={m.id} value={m.id} className="font-medium text-[#2A00A2]">
+                  <SelectItem key={m.id} value={m.id} className="font-medium text-brand">
                     {m.name}
                   </SelectItem>
                 ))}
@@ -149,7 +149,7 @@ export function PackageForm({
               {...register("name")}
               placeholder="e.g. Standard Treatment Plan"
               disabled={submitting}
-              className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40"
+              className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 text-brand font-semibold text-[14px] placeholder:text-brand-strong/40"
             />
           </Field>
 
@@ -165,8 +165,8 @@ export function PackageForm({
                     onClick={() => setValue("duration_months", d, { shouldValidate: true })}
                     className={`h-11 px-5 rounded-xl font-bold transition-all shadow-none border text-[14px]
                       ${isSelected 
-                        ? "bg-[#2A00A2] border-[#2A00A2] hover:bg-[#1E0075] text-white" 
-                        : "bg-white border-[#E2DCFA] text-[#6B5AE0] hover:bg-[#F5F3FF] hover:text-[#2A00A2]"
+                        ? "bg-brand border-brand hover:bg-brand text-white" 
+                        : "bg-white border-brand-border text-brand-strong hover:bg-brand-surface hover:text-brand"
                       }
                     `}
                   >
@@ -179,7 +179,7 @@ export function PackageForm({
                 min={1}
                 {...register("duration_months", { valueAsNumber: true })}
                 disabled={submitting}
-                className="w-24 h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40"
+                className="w-24 h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 text-brand font-semibold text-[14px] placeholder:text-brand-strong/40"
               />
             </div>
           </Field>
@@ -192,7 +192,7 @@ export function PackageForm({
                 min={0}
                 {...register("original_price")}
                 disabled={submitting}
-                className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px]"
+                className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 text-brand font-semibold text-[14px]"
               />
             </Field>
             <Field label="Sale price ($)" error={errors.price?.message}>
@@ -202,22 +202,22 @@ export function PackageForm({
                 min={0}
                 {...register("price")}
                 disabled={submitting}
-                className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px]"
+                className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 text-brand font-semibold text-[14px]"
               />
             </Field>
           </div>
 
           {savings > 0 && (
-            <p className="text-[13px] font-semibold text-[#6B5AE0]/80 bg-[#F5F3FF] border border-[#E2DCFA]/40 px-3.5 py-2 rounded-xl inline-block">
-              Patient saves <span className="font-bold text-[#2A00A2]">{formatPrice(savings)}</span>
+            <p className="text-[13px] font-semibold text-brand-strong/80 bg-brand-surface border border-brand-border/40 px-3.5 py-2 rounded-xl inline-block">
+              Patient saves <span className="font-bold text-brand">{formatPrice(savings)}</span>
             </p>
           )}
 
           {/* Switch Block 1: Most popular toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-[#E2DCFA] p-3.5 bg-[#FDFDFF]/60">
+          <div className="flex items-center justify-between rounded-xl border border-brand-border p-3.5 bg-white/60">
             <div className="space-y-0.5">
-              <p className="text-[14px] font-bold text-[#2A00A2]">Most popular badge</p>
-              <p className="text-[12px] text-[#6B5AE0]/70 font-medium">
+              <p className="text-[14px] font-bold text-brand">Most popular badge</p>
+              <p className="text-[12px] text-brand-strong/70 font-medium">
                 Highlight this plan. Note: Only one plan variant per medicine can carry this target focus layout.
               </p>
             </div>
@@ -225,15 +225,15 @@ export function PackageForm({
               checked={isMostPopular}
               onCheckedChange={(v) => setValue("is_most_popular", v)}
               disabled={submitting}
-              className="data-[state=checked]:bg-[#4A3AFF] data-[state=unchecked]:bg-[#E2DCFA]"
+              className="data-[state=checked]:bg-brand-strong data-[state=unchecked]:bg-brand-border"
             />
           </div>
 
           {/* Switch Block 2: Active visibility track toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-[#E2DCFA] p-3.5 bg-[#FDFDFF]/60">
+          <div className="flex items-center justify-between rounded-xl border border-brand-border p-3.5 bg-white/60">
             <div className="space-y-0.5">
-              <p className="text-[14px] font-bold text-[#2A00A2]">Active status visibility</p>
-              <p className="text-[12px] text-[#6B5AE0]/70 font-medium">
+              <p className="text-[14px] font-bold text-brand">Active status visibility</p>
+              <p className="text-[12px] text-brand-strong/70 font-medium">
                 Make this package immediately visible during patient checkouts and plan selections.
               </p>
             </div>
@@ -241,17 +241,17 @@ export function PackageForm({
               checked={isActive}
               onCheckedChange={(v) => setValue("is_active", v)}
               disabled={submitting}
-              className="data-[state=checked]:bg-[#4A3AFF] data-[state=unchecked]:bg-[#E2DCFA]"
+              className="data-[state=checked]:bg-brand-strong data-[state=unchecked]:bg-brand-border"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Included Plan Features Checklist Card Section */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-2 sm:p-4">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-2 sm:p-4">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Included features</CardTitle>
-          <CardDescription className="text-[#6B5AE0]/60 font-medium text-[13px]">
+          <CardTitle className="text-base font-bold text-brand">Included features</CardTitle>
+          <CardDescription className="text-brand-strong/60 font-medium text-[13px]">
             Bullet point text lines shown inside the landing recommendation pricing cards.
           </CardDescription>
         </CardHeader>
@@ -262,7 +262,7 @@ export function PackageForm({
                 {...register(`features.${index}.text`)}
                 placeholder={`Feature attribute detail text #${index + 1}`}
                 disabled={submitting}
-                className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40"
+                className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 text-brand font-semibold text-[14px] placeholder:text-brand-strong/40"
               />
               <Button
                 type="button"
@@ -281,7 +281,7 @@ export function PackageForm({
             variant="outline"
             disabled={submitting}
             onClick={() => append({ text: "" })}
-            className="mt-1 border-[#E2DCFA] text-[#4A3AFF] hover:bg-[#F5F3FF] hover:text-[#2A00A2] font-bold rounded-xl h-10 px-4 transition-colors"
+            className="mt-1 border-brand-border text-brand-strong hover:bg-brand-surface hover:text-brand font-bold rounded-xl h-10 px-4 transition-colors"
           >
             <Plus className="mr-1.5 h-4 w-4 stroke-[3]" /> Add feature item
           </Button>
@@ -289,10 +289,10 @@ export function PackageForm({
       </Card>
 
       {/* Clinical Disclaimer Segment Panel */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-2 sm:p-4">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-2 sm:p-4">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Clinical note</CardTitle>
-          <CardDescription className="text-[#6B5AE0]/60 font-medium text-[13px]">
+          <CardTitle className="text-base font-bold text-brand">Clinical note</CardTitle>
+          <CardDescription className="text-brand-strong/60 font-medium text-[13px]">
             Legal disclaimers, medical descriptions, or regulatory advisory texts positioned beneath plan tier cards.
           </CardDescription>
         </CardHeader>
@@ -302,15 +302,15 @@ export function PackageForm({
             rows={2}
             placeholder="Optional clinical verification layout guidelines or disclaimer details..."
             disabled={submitting}
-            className="rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 resize-none font-medium text-[14px] text-[#2A00A2] placeholder:text-[#6B5AE0]/40 p-3 min-h-[70px]"
+            className="rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 resize-none font-medium text-[14px] text-brand placeholder:text-brand-strong/40 p-3 min-h-[70px]"
           />
         </CardContent>
       </Card>
 
       {/* Footer Meta Details Anchor info */}
       {selectedMedicine && (
-        <p className="text-[13px] font-medium text-[#6B5AE0]/60 px-1">
-          Currently establishing package link route directly onto <span className="font-bold text-[#2A00A2]">{selectedMedicine.name}</span>
+        <p className="text-[13px] font-medium text-brand-strong/60 px-1">
+          Currently establishing package link route directly onto <span className="font-bold text-brand">{selectedMedicine.name}</span>
         </p>
       )}
 
@@ -322,7 +322,7 @@ export function PackageForm({
             variant="ghost" 
             onClick={onCancel} 
             disabled={submitting}
-            className="w-32 text-[#4A3AFF] hover:bg-[#F5F3FF] hover:text-[#2A00A2] font-bold rounded-xl h-11 transition-colors border-none bg-transparent"
+            className="w-32 text-brand-strong hover:bg-brand-surface hover:text-brand font-bold rounded-xl h-11 transition-colors border-none bg-transparent"
           >
             Cancel
           </Button>
@@ -330,7 +330,7 @@ export function PackageForm({
         <Button 
           type="submit" 
           disabled={submitting}
-          className="w-48 bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors"
+          className="w-48 bg-brand hover:bg-brand text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors"
         >
           {submitting ? "Saving…" : mode === "create" ? "Create package" : "Save changes"}
         </Button>

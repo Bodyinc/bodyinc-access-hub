@@ -52,31 +52,31 @@ function QuestionnairesListPage() {
       {/* Top Banner Action Row matching Figma */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#2A00A2]">Questionnaires</h2>
-          <p className="text-[14px] text-[#6B5AE0]/70 font-medium mt-1">
+          <h2 className="text-2xl font-black tracking-tight text-brand">Questionnaires</h2>
+          <p className="text-[14px] text-brand-strong/70 font-medium mt-1">
             Eligibility screenings shown per medicine.
           </p>
         </div>
         <Button 
           onClick={() => navigate({ to: "/admin/questionnaires/new" })}
-          className="bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold h-11 px-5 rounded-xl shadow-sm transition-colors shrink-0"
+          className="bg-brand hover:bg-brand text-white font-bold h-11 px-5 rounded-xl shadow-sm transition-colors shrink-0"
         >
           <Plus className="mr-2 h-4 w-4 stroke-[3]" /> Add Questionnaire
         </Button>
       </div>
 
       {!query.isLoading && rows.length === 0 ? (
-        <Card className="border-dashed border-[#EAE6FA] bg-white rounded-2xl">
+        <Card className="border-dashed border-brand-border bg-white rounded-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl font-bold text-[#2A00A2]">No questionnaires yet</CardTitle>
-            <CardDescription className="text-[#6B5AE0]/70 font-medium">
+            <CardTitle className="text-xl font-bold text-brand">No questionnaires yet</CardTitle>
+            <CardDescription className="text-brand-strong/70 font-medium">
               Create one and link it to medicines that require screening.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center pb-8">
             <Button 
               onClick={() => navigate({ to: "/admin/questionnaires/new" })}
-              className="bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold h-11 px-5 rounded-xl shadow-sm transition-colors"
+              className="bg-brand hover:bg-brand text-white font-bold h-11 px-5 rounded-xl shadow-sm transition-colors"
             >
               <Plus className="mr-2 h-4 w-4 stroke-[3]" /> Add questionnaire
             </Button>
@@ -84,22 +84,22 @@ function QuestionnairesListPage() {
         </Card>
       ) : (
         /* Main Table Interface Panel */
-        <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl">
+        <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-[#FBFBFF] border-b border-[#EAE6FA]">
+              <TableHeader className="bg-white border-b border-brand-border">
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="h-12 font-bold text-[#2A00A2] text-[14px] px-6">Name</TableHead>
-                  <TableHead className="h-12 font-bold text-[#2A00A2] text-[14px] px-6">Questions</TableHead>
-                  <TableHead className="h-12 font-bold text-[#2A00A2] text-[14px] px-6">Linked medicines</TableHead>
-                  <TableHead className="h-12 font-bold text-[#2A00A2] text-[14px] px-6">Status</TableHead>
+                  <TableHead className="h-12 font-bold text-brand text-[14px] px-6">Name</TableHead>
+                  <TableHead className="h-12 font-bold text-brand text-[14px] px-6">Questions</TableHead>
+                  <TableHead className="h-12 font-bold text-brand text-[14px] px-6">Linked medicines</TableHead>
+                  <TableHead className="h-12 font-bold text-brand text-[14px] px-6">Status</TableHead>
                   <TableHead className="h-12 w-16 px-6" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center font-semibold text-[#6B5AE0]/60">
+                    <TableCell colSpan={5} className="py-12 text-center font-semibold text-brand-strong/60">
                       Loading records…
                     </TableCell>
                   </TableRow>
@@ -107,16 +107,16 @@ function QuestionnairesListPage() {
                 {rows.map((r) => (
                   <TableRow 
                     key={r.id} 
-                    className="border-b border-[#F4F1FE]/80 last:border-none hover:bg-[#FDFDFF]/50 transition-colors cursor-pointer"
+                    className="border-b border-brand-border/80 last:border-none hover:bg-white/50 transition-colors cursor-pointer"
                     onClick={() => navigate({ to: "/admin/questionnaires/$questionnaireId", params: { questionnaireId: r.id } })}
                   >
-                    <TableCell className="font-bold text-[#2A00A2] text-[14px] py-4 px-6">
+                    <TableCell className="font-bold text-brand text-[14px] py-4 px-6">
                       {r.name}
                     </TableCell>
-                    <TableCell className="font-medium text-[#6B5AE0]/80 text-[14px] py-4 px-6">
+                    <TableCell className="font-medium text-brand-strong/80 text-[14px] py-4 px-6">
                       {r.question_count}
                     </TableCell>
-                    <TableCell className="font-medium text-[#6B5AE0]/80 text-[14px] py-4 px-6">
+                    <TableCell className="font-medium text-brand-strong/80 text-[14px] py-4 px-6">
                       {r.medicine_ids.length}
                     </TableCell>
                     <TableCell className="py-4 px-6">
@@ -124,8 +124,8 @@ function QuestionnairesListPage() {
                         className={`
                           px-3 py-1 rounded-xl text-[14px] font-semibold tracking-normal normal-case border shadow-none
                           ${r.is_active 
-                            ? "bg-[#F5F3FF] text-[#4A3AFF] border-transparent" 
-                            : "bg-white text-[#6B5AE0]/60 border-[#E2DCFA]"
+                            ? "bg-brand-surface text-brand-strong border-transparent" 
+                            : "bg-white text-brand-strong/60 border-brand-border"
                           }
                         `}
                       >
@@ -135,15 +135,15 @@ function QuestionnairesListPage() {
                     <TableCell className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 text-[#4A3AFF] hover:bg-[#F5F3FF] rounded-xl transition-colors">
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-brand-strong hover:bg-brand-surface rounded-xl transition-colors">
                             <MoreHorizontal className="h-[18px] w-[18px]" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl border-[#E2DCFA] p-1 shadow-md bg-white">
-                          <DropdownMenuItem asChild className="rounded-lg font-medium text-[#2A00A2] focus:bg-[#F5F3FF] focus:text-[#2A00A2] cursor-pointer">
+                        <DropdownMenuContent align="end" className="rounded-xl border-brand-border p-1 shadow-md bg-white">
+                          <DropdownMenuItem asChild className="rounded-lg font-medium text-brand focus:bg-brand-surface focus:text-brand cursor-pointer">
                             <Link to="/admin/questionnaires/$questionnaireId" params={{ questionnaireId: r.id }}>Edit</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-[#F4F1FE]" />
+                          <DropdownMenuSeparator className="bg-brand-border" />
                           <DropdownMenuItem 
                             className="rounded-lg font-medium text-[#FF4D6D] focus:bg-[#FFE8EC] focus:text-[#FF4D6D] cursor-pointer"
                             onClick={() => setConfirm({ id: r.id, name: r.name })}
@@ -165,15 +165,15 @@ function QuestionnairesListPage() {
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
         <AlertDialogContent className="rounded-[24px] border-none bg-white p-6 max-w-[440px] shadow-xl sm:rounded-[24px]">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[20px] font-black tracking-tight text-[#2A00A2]">
+            <AlertDialogTitle className="text-[20px] font-black tracking-tight text-brand">
               Delete questionnaire?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] font-medium text-[#6B5AE0]/60">
+            <AlertDialogDescription className="text-[13px] font-medium text-brand-strong/60">
               &ldquo;{confirm?.name}&rdquo; and all its questions will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex items-center gap-2 pt-2 w-full">
-            <AlertDialogCancel className="flex-1 text-[#4A3AFF] hover:bg-[#F5F3FF] hover:text-[#2A00A2] font-bold rounded-xl h-11 transition-colors border-none bg-transparent shadow-none mt-0">
+            <AlertDialogCancel className="flex-1 text-brand-strong hover:bg-brand-surface hover:text-brand font-bold rounded-xl h-11 transition-colors border-none bg-transparent shadow-none mt-0">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 

@@ -62,7 +62,7 @@ function Field({
 }) {
   return (
     <div className="space-y-2 w-full">
-      <Label className="text-[14px] font-bold text-[#2A00A2]">{label}</Label>
+      <Label className="text-[14px] font-bold text-brand">{label}</Label>
       {children}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -132,19 +132,19 @@ export function MedicineForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full" noValidate>
-      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-          <CardTitle className="text-[20px] font-bold text-[#2A00A2]">
+      <Card className="border border-brand-border bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-brand-border bg-white p-6">
+          <CardTitle className="text-[20px] font-bold text-brand">
             {mode === "create" ? "Add medicine" : "Edit medicine"}
           </CardTitle>
-          <CardDescription className="text-[14px] text-[#6B5AE0]/80 font-medium">
+          <CardDescription className="text-[14px] text-brand-strong/80 font-medium">
             Product image and details shown to patients.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-5">
           <Field label="Product image" error={errors.image_url?.message ?? uploadError ?? undefined}>
             <div
-              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-6 transition-colors hover:bg-[#F9F8FF]"
+              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-brand-border bg-white p-6 transition-colors hover:bg-brand-surface"
               onDragOver={(e) => e.preventDefault()}
               onDrop={onDrop}
             >
@@ -155,8 +155,8 @@ export function MedicineForm({
                   className="h-40 w-auto max-w-full rounded-xl object-contain"
                 />
               ) : (
-                <div className="flex h-32 w-24 items-center justify-center rounded-xl bg-[#EAE6FA]/30 border border-[#EAE6FA]">
-                  <ImagePlus className="h-8 w-8 text-[#6B5AE0]/40" />
+                <div className="flex h-32 w-24 items-center justify-center rounded-xl bg-brand-border/30 border border-brand-border">
+                  <ImagePlus className="h-8 w-8 text-brand-strong/40" />
                 </div>
               )}
               <input
@@ -173,7 +173,7 @@ export function MedicineForm({
                 size="sm"
                 disabled={submitting || uploading}
                 onClick={() => fileRef.current?.click()}
-                className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
+                className="border-brand-border hover:bg-brand-surface text-brand-strong h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
               >
                 {uploading ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -182,7 +182,7 @@ export function MedicineForm({
                 )}
                 {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
               </Button>
-              <p className="text-xs text-[#6B5AE0]/60 font-medium">JPG, PNG, or WebP · Max 5MB</p>
+              <p className="text-xs text-brand-strong/60 font-medium">JPG, PNG, or WebP · Max 5MB</p>
             </div>
           </Field>
 
@@ -191,7 +191,7 @@ export function MedicineForm({
               {...register("name")}
               placeholder="e.g. GLP-1 Compound"
               disabled={submitting}
-              className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+              className="h-12 border-brand-border bg-white text-foreground placeholder:text-brand-strong/40 rounded-xl focus-visible:ring-brand text-[14px] font-medium"
             />
           </Field>
 
@@ -200,7 +200,7 @@ export function MedicineForm({
               {...register("short_description")}
               placeholder="Shown on the medication card"
               disabled={submitting}
-              className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+              className="h-12 border-brand-border bg-white text-foreground placeholder:text-brand-strong/40 rounded-xl focus-visible:ring-brand text-[14px] font-medium"
             />
           </Field>
 
@@ -210,7 +210,7 @@ export function MedicineForm({
               rows={4}
               placeholder="Full description in the Learn More modal"
               disabled={submitting}
-              className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[120px]"
+              className="border-brand-border bg-white text-foreground rounded-xl focus-visible:ring-brand text-[14px] font-medium p-3 min-h-[120px]"
             />
           </Field>
 
@@ -222,7 +222,7 @@ export function MedicineForm({
                 min={0}
                 {...register("price_monthly")}
                 disabled={submitting}
-                className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+                className="h-12 border-brand-border bg-white text-foreground rounded-xl focus-visible:ring-brand text-[14px] font-medium"
               />
             </Field>
             <Field label="Status" error={errors.status?.message}>
@@ -231,12 +231,12 @@ export function MedicineForm({
                 onValueChange={(v) => setValue("status", v as MedicineStatus)}
                 disabled={submitting}
               >
-                <SelectTrigger className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus:ring-[#2A00A2] text-[14px] font-medium">
+                <SelectTrigger className="h-12 border-brand-border bg-white text-foreground rounded-xl focus:ring-brand text-[14px] font-medium">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border-[#EAE6FA]">
+                <SelectContent className="rounded-xl border-brand-border">
                   {MEDICINE_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s} className="text-[14px] font-medium text-[#2A00A2] focus:bg-[#F9F8FF] focus:text-[#2A00A2]">
+                    <SelectItem key={s} value={s} className="text-[14px] font-medium text-brand focus:bg-brand-surface focus:text-brand">
                       {MEDICINE_STATUS_LABELS[s]}
                     </SelectItem>
                   ))}
@@ -245,7 +245,7 @@ export function MedicineForm({
             </Field>
           </div>
 
-          <div className="h-12 flex items-center bg-[#FDFDFF] border border-[#EAE6FA] rounded-xl px-4 w-full mt-2">
+          <div className="h-12 flex items-center bg-white border border-brand-border rounded-xl px-4 w-full mt-2">
             <Controller
               control={control}
               name="requires_questionnaire"
@@ -255,9 +255,9 @@ export function MedicineForm({
                     id="req-qq" 
                     checked={!!field.value} 
                     onCheckedChange={field.onChange} 
-                    className="data-[state=checked]:bg-[#2A00A2]"
+                    className="data-[state=checked]:bg-brand"
                   />
-                  <Label htmlFor="req-qq" className="text-[14px] font-semibold text-[#2A00A2] cursor-pointer select-none">Requires questionnaire before checkout</Label>
+                  <Label htmlFor="req-qq" className="text-[14px] font-semibold text-brand cursor-pointer select-none">Requires questionnaire before checkout</Label>
                 </div>
               )}
             />
@@ -265,10 +265,10 @@ export function MedicineForm({
         </CardContent>
       </Card>
 
-      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Categories</CardTitle>
-          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">Assign this medicine to one or more goal categories.</CardDescription>
+      <Card className="border border-brand-border bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-brand-border bg-white p-6">
+          <CardTitle className="text-[16px] font-bold text-brand">Categories</CardTitle>
+          <CardDescription className="text-[13px] text-brand-strong/80 font-medium">Assign this medicine to one or more goal categories.</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <Controller
@@ -284,10 +284,10 @@ export function MedicineForm({
                 {(categoriesQ.data ?? []).map((c) => {
                   const checked = (field.value ?? []).includes(c.id);
                   return (
-                    <label key={c.id} className="flex items-center gap-3 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-3.5 text-[14px] font-semibold text-[#2A00A2] cursor-pointer transition-colors hover:bg-[#F9F8FF]">
+                    <label key={c.id} className="flex items-center gap-3 rounded-xl border border-brand-border bg-white p-3.5 text-[14px] font-semibold text-brand cursor-pointer transition-colors hover:bg-brand-surface">
                       <Checkbox 
                         checked={checked} 
-                        className="border-[#6B5AE0]/40 data-[state=checked]:bg-[#2A00A2] data-[state=checked]:border-[#2A00A2] h-4 w-4 rounded"
+                        className="border-brand-strong/40 data-[state=checked]:bg-brand data-[state=checked]:border-brand h-4 w-4 rounded"
                         onCheckedChange={(v) => {
                           const set = new Set(field.value ?? []);
                           if (v) set.add(c.id); else set.delete(c.id);
@@ -304,10 +304,10 @@ export function MedicineForm({
         </CardContent>
       </Card>
 
-      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Important information</CardTitle>
-          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">Bullet points shown in the Learn More modal.</CardDescription>
+      <Card className="border border-brand-border bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-brand-border bg-white p-6">
+          <CardTitle className="text-[16px] font-bold text-brand">Important information</CardTitle>
+          <CardDescription className="text-[13px] text-brand-strong/80 font-medium">Bullet points shown in the Learn More modal.</CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-3">
           {fields.map((field, index) => (
@@ -316,13 +316,13 @@ export function MedicineForm({
                 {...register(`important_info.${index}.text`)}
                 placeholder={`Bullet ${index + 1}`}
                 disabled={submitting}
-                className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+                className="h-12 border-brand-border bg-white text-foreground placeholder:text-brand-strong/40 rounded-xl focus-visible:ring-brand text-[14px] font-medium"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="shrink-0 h-12 w-12 rounded-xl text-[#6B5AE0]/60 hover:text-destructive hover:bg-destructive/5"
+                className="shrink-0 h-12 w-12 rounded-xl text-brand-strong/60 hover:text-destructive hover:bg-destructive/5"
                 disabled={submitting}
                 onClick={() => remove(index)}
               >
@@ -336,17 +336,17 @@ export function MedicineForm({
             size="sm"
             disabled={submitting}
             onClick={() => append({ text: "" })}
-            className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-11 px-4 rounded-xl font-semibold text-[13px] transition-colors mt-1"
+            className="border-brand-border hover:bg-brand-surface text-brand-strong h-11 px-4 rounded-xl font-semibold text-[13px] transition-colors mt-1"
           >
             <Plus className="mr-1.5 h-4 w-4" /> Add bullet
           </Button>
         </CardContent>
       </Card>
 
-      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Notice</CardTitle>
-          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">Optional footer disclaimer in the modal.</CardDescription>
+      <Card className="border border-brand-border bg-white rounded-xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-brand-border bg-white p-6">
+          <CardTitle className="text-[16px] font-bold text-brand">Notice</CardTitle>
+          <CardDescription className="text-[13px] text-brand-strong/80 font-medium">Optional footer disclaimer in the modal.</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <Textarea
@@ -354,7 +354,7 @@ export function MedicineForm({
             rows={2}
             placeholder="e.g. Individual results may vary…"
             disabled={submitting}
-            className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[80px]"
+            className="border-brand-border bg-white text-foreground rounded-xl focus-visible:ring-brand text-[14px] font-medium p-3 min-h-[80px]"
           />
         </CardContent>
       </Card>
@@ -363,7 +363,7 @@ export function MedicineForm({
         <Button 
           type="submit" 
           disabled={submitting || uploading}
-          className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-12 px-6 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px] order-1 sm:order-none"
+          className="bg-brand hover:bg-brand text-white h-12 px-6 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px] order-1 sm:order-none"
         >
           {submitting ? "Saving…" : mode === "create" ? "Create medicine" : "Save changes"}
         </Button>
@@ -373,7 +373,7 @@ export function MedicineForm({
             variant="outline" 
             onClick={onCancel} 
             disabled={submitting}
-            className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-12 px-6 rounded-xl font-semibold text-[14px] transition-colors"
+            className="border-brand-border hover:bg-brand-surface text-brand-strong h-12 px-6 rounded-xl font-semibold text-[14px] transition-colors"
           >
             Cancel
           </Button>

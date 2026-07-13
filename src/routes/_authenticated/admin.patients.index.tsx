@@ -89,8 +89,8 @@ function PatientsListPage() {
       {/* Header View Section */}
       <div className="flex items-start justify-between gap-3 w-full">
         <div className="space-y-0.5">
-          <h2 className="text-xl font-bold text-[#2A00A2] tracking-tight">Patients</h2>
-          <p className="text-sm text-[#6B5AE0]/70 font-medium">
+          <h2 className="text-xl font-bold text-brand tracking-tight">Patients</h2>
+          <p className="text-sm text-brand-strong/70 font-medium">
             Browse patient accounts, review intake responses, and manage access.
           </p>
         </div>
@@ -100,59 +100,59 @@ function PatientsListPage() {
       {/* Filter and Input Controls Strip */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full">
         <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6B5AE0]/50" />
+          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-brand-strong/50" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or phone"
-            className="pl-9 h-10 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40 bg-white"
+            className="pl-9 h-10 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40 bg-white"
           />
         </div>
         <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-          <SelectTrigger className="w-40 h-10 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+          <SelectTrigger className="w-40 h-10 rounded-xl border-brand-border bg-white text-brand font-semibold text-[14px] shadow-none">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-[#E2DCFA]">
-            <SelectItem value="all" className="font-medium text-[#2A00A2]">All</SelectItem>
-            <SelectItem value="active" className="font-medium text-[#2A00A2]">Active</SelectItem>
-            <SelectItem value="deactivated" className="font-medium text-[#2A00A2]">Deactivated</SelectItem>
+          <SelectContent className="rounded-xl border-brand-border">
+            <SelectItem value="all" className="font-medium text-brand">All</SelectItem>
+            <SelectItem value="active" className="font-medium text-brand">Active</SelectItem>
+            <SelectItem value="deactivated" className="font-medium text-brand">Deactivated</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Complete Data Matrix Table Structure */}
-      <Card className="w-full overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl max-w-none m-0">
+      <Card className="w-full overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl max-w-none m-0">
         <div className="overflow-x-auto">
         <Table className="min-w-[820px]">
-          <TableHeader className="bg-[#FDFDFF]">
-            <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Name</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Email</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Phone</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">DOB</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Joined</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Status</TableHead>
+          <TableHeader className="bg-white">
+            <TableRow className="border-b border-brand-border hover:bg-transparent">
+              <TableHead className="text-brand font-bold h-11 text-[13px]">Name</TableHead>
+              <TableHead className="text-brand font-bold h-11 text-[13px]">Email</TableHead>
+              <TableHead className="text-brand font-bold h-11 text-[13px]">Phone</TableHead>
+              <TableHead className="text-brand font-bold h-11 text-[13px]">DOB</TableHead>
+              <TableHead className="text-brand font-bold h-11 text-[13px]">Joined</TableHead>
+              <TableHead className="text-brand font-bold h-11 text-[13px]">Status</TableHead>
               <TableHead className="w-12 h-11 text-[13px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {query.isLoading && (
-              <TableRow className="border-b border-[#EAE6FA]/50">
-                <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+              <TableRow className="border-b border-brand-border/50">
+                <TableCell colSpan={7} className="py-12 text-center text-brand-strong/60 font-semibold text-[14px]">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {query.isError && (
-              <TableRow className="border-b border-[#EAE6FA]/50">
+              <TableRow className="border-b border-brand-border/50">
                 <TableCell colSpan={7} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
             )}
             {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#EAE6FA]/50">
-                <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+              <TableRow className="border-b border-brand-border/50">
+                <TableCell colSpan={7} className="py-12 text-center text-brand-strong/60 font-semibold text-[14px]">
                   No patients found.
                 </TableCell>
               </TableRow>
@@ -160,7 +160,7 @@ function PatientsListPage() {
             {query.data?.map((p: any) => (
               <TableRow
                 key={p.id}
-                className="cursor-pointer border-b border-[#EAE6FA]/50 hover:bg-[#F5F3FF]/40 transition-colors"
+                className="cursor-pointer border-b border-brand-border/50 hover:bg-brand-surface/40 transition-colors"
                 onClick={() =>
                   navigate({
                     to: "/admin/patients/$patientId",
@@ -168,18 +168,18 @@ function PatientsListPage() {
                   })
                 }
               >
-                <TableCell className="font-bold text-[#2A00A2] text-[14px]">{p.full_name || "—"}</TableCell>
-                <TableCell className="text-[#2A00A2] font-semibold text-[14px]">{p.email}</TableCell>
-                <TableCell className="text-[#2A00A2] font-semibold text-[14px]">{p.phone || "—"}</TableCell>
-                <TableCell className="text-[#2A00A2] font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
-                <TableCell className="text-[#2A00A2]/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
+                <TableCell className="font-bold text-brand text-[14px]">{p.full_name || "—"}</TableCell>
+                <TableCell className="text-brand font-semibold text-[14px]">{p.email}</TableCell>
+                <TableCell className="text-brand font-semibold text-[14px]">{p.phone || "—"}</TableCell>
+                <TableCell className="text-brand font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
+                <TableCell className="text-brand/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
                 <TableCell>
                   <Badge 
                     variant={p.is_active ? "default" : "secondary"}
                     className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                       p.is_active 
-                        ? "bg-[#E8F5E9] text-[#6B5AE0] hover:bg-[#E8F5E9]" 
-                        : "bg-[#F5F3FF] text-[#2A00A2] hover:bg-[#F5F3FF]"
+                        ? "bg-[#E8F5E9] text-brand-strong hover:bg-[#E8F5E9]" 
+                        : "bg-brand-surface text-brand hover:bg-brand-surface"
                     }`}
                   >
                     {p.is_active ? "Active" : "Deactivated"}
@@ -188,13 +188,13 @@ function PatientsListPage() {
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#F5F3FF] text-[#6B5AE0] rounded-xl">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-brand-surface text-brand-strong rounded-xl">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-[#E2DCFA] shadow-md p-1">
+                    <DropdownMenuContent align="end" className="rounded-xl border-brand-border shadow-md p-1">
                       <DropdownMenuItem
-                        className="rounded-lg text-[#2A00A2] font-semibold text-[13px] focus:bg-[#F5F3FF] focus:text-[#2A00A2]"
+                        className="rounded-lg text-brand font-semibold text-[13px] focus:bg-brand-surface focus:text-brand"
                         onClick={() =>
                           navigate({
                             to: "/admin/patients/$patientId",
@@ -205,14 +205,14 @@ function PatientsListPage() {
                         View Profile
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        className="rounded-lg text-[#2A00A2] font-semibold text-[13px] focus:bg-[#F5F3FF] focus:text-[#2A00A2]"
+                        className="rounded-lg text-brand font-semibold text-[13px] focus:bg-brand-surface focus:text-brand"
                         onClick={() => resetMut.mutate(p.id)}
                       >
-                        <Mail className="mr-2 h-4 w-4 stroke-[2.5] text-[#6B5AE0]" /> Send password reset
+                        <Mail className="mr-2 h-4 w-4 stroke-[2.5] text-brand-strong" /> Send password reset
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-[#EAE6FA]" />
+                      <DropdownMenuSeparator className="bg-brand-border" />
                       <DropdownMenuItem
-                        className={`rounded-lg font-bold text-[13px] focus:bg-[#F5F3FF] ${
+                        className={`rounded-lg font-bold text-[13px] focus:bg-brand-surface ${
                           p.is_active 
                             ? "text-[#FF4D6D] focus:text-[#FF4D6D]" 
                             : "text-[#2E7D32] focus:text-[#2E7D32]"
