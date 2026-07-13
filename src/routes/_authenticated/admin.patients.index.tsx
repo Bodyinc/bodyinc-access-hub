@@ -122,7 +122,8 @@ function PatientsListPage() {
 
       {/* Complete Data Matrix Table Structure */}
       <Card className="w-full overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl max-w-none m-0">
-        <Table>
+        <div className="overflow-x-auto">
+        <Table className="min-w-[820px]">
           <TableHeader className="bg-[#FDFDFF]">
             <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
               <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Name</TableHead>
@@ -229,6 +230,7 @@ function PatientsListPage() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );
