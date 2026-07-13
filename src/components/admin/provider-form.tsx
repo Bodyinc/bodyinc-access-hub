@@ -91,35 +91,35 @@ export function ProviderForm({
       noValidate
     >
       {/* Identity Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-1 sm:p-3">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Identity</CardTitle>
+          <CardTitle className="text-base font-bold text-brand">Identity</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Field label="Full name" error={errors.full_name?.message} required>
-            <Input {...register("full_name")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("full_name")} className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px]" />
           </Field>
           <Field label="Email" error={errors.email?.message} required>
-            <Input type="email" disabled={mode === "edit"} {...register("email")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] disabled:bg-[#FDFDFF] disabled:text-[#6B5AE0]/50" />
+            <Input type="email" disabled={mode === "edit"} {...register("email")} className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] disabled:bg-white disabled:text-brand-strong/50" />
           </Field>
           <Field label="Phone" error={errors.phone?.message}>
-            <Input {...register("phone")} placeholder="(555) 555-1234" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("phone")} placeholder="(555) 555-1234" className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40" />
           </Field>
           <Field label="Avatar URL" error={errors.avatar_url?.message}>
-            <Input {...register("avatar_url")} placeholder="https://…" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("avatar_url")} placeholder="https://…" className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40" />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Bio" error={errors.bio?.message}>
-              <Textarea rows={3} {...register("bio")} className="rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-medium text-[14px]" />
+              <Textarea rows={3} {...register("bio")} className="rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-medium text-[14px]" />
             </Field>
           </div>
         </CardContent>
       </Card>
 
       {/* Licensing & Credentials Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-1 sm:p-3">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Licensing & Credentials</CardTitle>
+          <CardTitle className="text-base font-bold text-brand">Licensing & Credentials</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Field label="Credentials" error={errors.credentials?.message}>
@@ -127,27 +127,27 @@ export function ProviderForm({
               value={credentials ?? ""}
               onValueChange={(v) => setValue("credentials", v as any, { shouldDirty: true })}
             >
-              <SelectTrigger className="h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+              <SelectTrigger className="h-11 rounded-xl border-brand-border bg-white text-brand font-semibold text-[14px] shadow-none">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-[#E2DCFA]">
+              <SelectContent className="rounded-xl border-brand-border">
                 {CREDENTIALS.map((c) => (
-                  <SelectItem key={c} value={c} className="font-medium text-[#2A00A2]">{c}</SelectItem>
+                  <SelectItem key={c} value={c} className="font-medium text-brand">{c}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field label="Specialty" error={errors.specialty?.message}>
-            <Input {...register("specialty")} placeholder="e.g. Internal Medicine" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("specialty")} placeholder="e.g. Internal Medicine" className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40" />
           </Field>
           <Field label="NPI" error={errors.npi?.message}>
-            <Input {...register("npi")} placeholder="10 digits" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("npi")} placeholder="10 digits" className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40" />
           </Field>
           <Field label="DEA" error={errors.dea?.message}>
-            <Input {...register("dea")} placeholder="AB1234567" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("dea")} placeholder="AB1234567" className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40" />
           </Field>
           <Field label="State license number" error={errors.license_number?.message}>
-            <Input {...register("license_number")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("license_number")} className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px]" />
           </Field>
           <Field label="Licensed in (states)">
             <StateMultiSelect
@@ -163,9 +163,9 @@ export function ProviderForm({
       </Card>
 
       {/* Practice Parameters Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-1 sm:p-3">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Practice</CardTitle>
+          <CardTitle className="text-base font-bold text-brand">Practice</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Field label="Years of experience" error={errors.years_experience?.message}>
@@ -176,7 +176,7 @@ export function ProviderForm({
               {...register("years_experience", {
                 setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
               })}
-              className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]"
+              className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px]"
             />
           </Field>
           <Field label="Consultation types">
@@ -189,8 +189,8 @@ export function ProviderForm({
                     variant={on ? "default" : "outline"}
                     className={`cursor-pointer capitalize text-[13px] px-3 py-1 rounded-xl transition-all font-semibold shadow-none tracking-normal normal-case ${
                       on 
-                        ? "bg-[#2A00A2] text-white hover:bg-[#2A00A2]" 
-                        : "border-[#E2DCFA] text-[#6B5AE0] bg-white hover:bg-[#F5F3FF]"
+                        ? "bg-brand text-white hover:bg-brand" 
+                        : "border-brand-border text-brand-strong bg-white hover:bg-brand-surface"
                     }`}
                     onClick={() =>
                       setValue(
@@ -237,65 +237,65 @@ export function ProviderForm({
       </Card>
 
       {/* Physical Address Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-1 sm:p-3">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Address</CardTitle>
+          <CardTitle className="text-base font-bold text-brand">Address</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field label="Address line 1" error={errors.address_line1?.message}>
-              <Input {...register("address_line1")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+              <Input {...register("address_line1")} className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px]" />
             </Field>
           </div>
           <div className="sm:col-span-2">
             <Field label="Address line 2" error={errors.address_line2?.message}>
-              <Input {...register("address_line2")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+              <Input {...register("address_line2")} className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px]" />
             </Field>
           </div>
           <Field label="City" error={errors.city?.message}>
-            <Input {...register("city")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("city")} className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px]" />
           </Field>
           <Field label="State" error={errors.state?.message}>
             <Select
               value={state ?? ""}
               onValueChange={(v) => setValue("state", v as any, { shouldDirty: true })}
             >
-              <SelectTrigger className="h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+              <SelectTrigger className="h-11 rounded-xl border-brand-border bg-white text-brand font-semibold text-[14px] shadow-none">
                 <SelectValue placeholder="Select state" />
               </SelectTrigger>
-              <SelectContent className="max-h-72 rounded-xl border-[#E2DCFA]">
+              <SelectContent className="max-h-72 rounded-xl border-brand-border">
                 {US_STATES.map((s) => (
-                  <SelectItem key={s} value={s} className="font-medium text-[#2A00A2]">{s}</SelectItem>
+                  <SelectItem key={s} value={s} className="font-medium text-brand">{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field label="ZIP" error={errors.zip?.message}>
-            <Input {...register("zip")} placeholder="12345 or 12345-6789" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("zip")} placeholder="12345 or 12345-6789" className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[14px] placeholder:text-brand-strong/40" />
           </Field>
           <Field label="Country">
-            <Input {...register("country")} disabled className="h-11 rounded-xl border-[#E2DCFA] bg-[#FDFDFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("country")} disabled className="h-11 rounded-xl border-brand-border bg-white text-brand font-semibold text-[14px]" />
           </Field>
         </CardContent>
       </Card>
 
       {/* Account Activation Metrics Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
+      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-1 sm:p-3">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Status</CardTitle>
+          <CardTitle className="text-base font-bold text-brand">Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between bg-[#FDFDFF]/80 border border-[#E2DCFA]/60 rounded-xl p-4">
+          <div className="flex items-center justify-between bg-white/80 border border-brand-border/60 rounded-xl p-4">
             <div>
-              <p className="text-[14px] font-bold text-[#2A00A2]">Active Account State</p>
-              <p className="text-[13px] text-[#6B5AE0]/70 font-medium mt-0.5">
+              <p className="text-[14px] font-bold text-brand">Active Account State</p>
+              <p className="text-[13px] text-brand-strong/70 font-medium mt-0.5">
                 Inactive providers cannot sign in or manage patient consultation slots.
               </p>
             </div>
             <Switch
               checked={!!isActive}
               onCheckedChange={(v) => setValue("is_active", v, { shouldDirty: true })}
-              className="data-[state=checked]:bg-[#4A3AFF]"
+              className="data-[state=checked]:bg-brand-strong"
             />
           </div>
         </CardContent>
@@ -309,7 +309,7 @@ export function ProviderForm({
             variant="ghost" 
             onClick={onCancel} 
             disabled={submitting}
-            className="text-[#6B5AE0] hover:bg-[#F5F3FF] hover:text-[#2A00A2] font-bold rounded-xl h-11 px-5 transition-colors"
+            className="text-brand-strong hover:bg-brand-surface hover:text-brand font-bold rounded-xl h-11 px-5 transition-colors"
           >
             Cancel
           </Button>
@@ -317,7 +317,7 @@ export function ProviderForm({
         <Button 
           type="submit" 
           disabled={submitting}
-          className="bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold rounded-xl h-11 px-6 shadow-sm transition-colors"
+          className="bg-brand hover:bg-brand text-white font-bold rounded-xl h-11 px-6 shadow-sm transition-colors"
         >
           {submitting ? "Saving changes…" : mode === "create" ? "Create provider" : "Save changes"}
         </Button>
@@ -339,11 +339,11 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5 text-left">
-      <Label className="text-[13px] font-bold text-[#2A00A2]/90">
-        {label} {required && <span className="text-[#FF4D6D] ml-0.5">*</span>}
+      <Label className="text-[13px] font-bold text-brand/90">
+        {label} {required && <span className="text-destructive ml-0.5">*</span>}
       </Label>
       {children}
-      {error && <p className="text-[12px] text-[#FF4D6D] font-medium mt-1">{error}</p>}
+      {error && <p className="text-[12px] text-destructive font-medium mt-1">{error}</p>}
     </div>
   );
 }
@@ -358,21 +358,21 @@ function StateMultiSelect({
   return (
     <div className="space-y-2.5 w-full">
       <Select value="" onValueChange={(v) => v && onToggle(v)}>
-        <SelectTrigger className="h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+        <SelectTrigger className="h-11 rounded-xl border-brand-border bg-white text-brand font-semibold text-[14px] shadow-none">
           <SelectValue placeholder="Add state" />
         </SelectTrigger>
-        <SelectContent className="max-h-72 rounded-xl border-[#E2DCFA]">
+        <SelectContent className="max-h-72 rounded-xl border-brand-border">
           {US_STATES.filter((s) => !selected.includes(s)).map((s) => (
-            <SelectItem key={s} value={s} className="font-medium text-[#2A00A2]">{s}</SelectItem>
+            <SelectItem key={s} value={s} className="font-medium text-brand">{s}</SelectItem>
           ))}
         </SelectContent>
       </Select>
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 p-1 bg-[#FDFDFF] border border-[#F4F1FE] rounded-xl">
+        <div className="flex flex-wrap gap-1.5 p-1 bg-white border border-brand-border rounded-xl">
           {selected.map((s) => (
-            <Badge key={s} className="bg-[#F5F3FF] text-[#4A3AFF] hover:bg-[#F5F3FF] border border-transparent font-bold text-[12px] px-2.5 py-1 rounded-lg gap-1 shadow-none normal-case tracking-normal">
+            <Badge key={s} className="bg-brand-surface text-brand-strong hover:bg-brand-surface border border-transparent font-bold text-[12px] px-2.5 py-1 rounded-lg gap-1 shadow-none normal-case tracking-normal">
               {s}
-              <button type="button" onClick={() => onToggle(s)} className="ml-1 p-0.5 hover:bg-[#E2DCFA] rounded-md transition-colors">
+              <button type="button" onClick={() => onToggle(s)} className="ml-1 p-0.5 hover:bg-brand-border rounded-md transition-colors">
                 <X className="h-3 w-3 stroke-[3]" />
               </button>
             </Badge>
@@ -407,8 +407,8 @@ function ChipMultiSelect({
               variant={on ? "default" : "outline"}
               className={`cursor-pointer text-[13px] px-3 py-1 rounded-xl transition-all font-semibold shadow-none tracking-normal normal-case ${
                 on 
-                  ? "bg-[#2A00A2] text-white hover:bg-[#2A00A2]" 
-                  : "border-[#E2DCFA] text-[#6B5AE0] bg-white hover:bg-[#F5F3FF]"
+                  ? "bg-brand text-white hover:bg-brand" 
+                  : "border-brand-border text-brand-strong bg-white hover:bg-brand-surface"
               }`}
               onClick={() => onToggle(o)}
             >
@@ -419,9 +419,9 @@ function ChipMultiSelect({
         {selected
           .filter((s) => !options.includes(s))
           .map((s) => (
-            <Badge key={s} className="bg-[#F5F3FF] text-[#4A3AFF] hover:bg-[#F5F3FF] border border-transparent font-bold text-[13px] px-3 py-1 rounded-xl gap-1 shadow-none normal-case tracking-normal">
+            <Badge key={s} className="bg-brand-surface text-brand-strong hover:bg-brand-surface border border-transparent font-bold text-[13px] px-3 py-1 rounded-xl gap-1 shadow-none normal-case tracking-normal">
               {s}
-              <button type="button" onClick={() => onToggle(s)} className="ml-1 p-0.5 hover:bg-[#E2DCFA] rounded-md transition-colors">
+              <button type="button" onClick={() => onToggle(s)} className="ml-1 p-0.5 hover:bg-brand-border rounded-md transition-colors">
                 <X className="h-3 w-3 stroke-[3]" />
               </button>
             </Badge>
@@ -441,7 +441,7 @@ function ChipMultiSelect({
                 }
               }
             }}
-            className="h-10 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[13px] placeholder:text-[#6B5AE0]/40 bg-white"
+            className="h-10 rounded-xl border-brand-border focus-visible:ring-brand-strong text-brand font-semibold text-[13px] placeholder:text-brand-strong/40 bg-white"
           />
         </div>
       )}
