@@ -60,7 +60,7 @@ function Field({
     <div className="space-y-2">
       <Label className="text-[13px] font-bold text-brand-strong">{label}</Label>
       {children}
-      {error && <p className="text-xs font-semibold text-[#FF4D6D]">{error}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
     </div>
   );
 }
@@ -270,7 +270,7 @@ export function PackageForm({
                 size="icon"
                 disabled={submitting}
                 onClick={() => remove(index)}
-                className="h-11 w-11 rounded-xl text-[#FF4D6D] hover:bg-[#FFE8EC] hover:text-[#FF4D6D] transition-colors shrink-0"
+                className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
               >
                 <Trash2 className="h-[18px] w-[18px]" />
               </Button>

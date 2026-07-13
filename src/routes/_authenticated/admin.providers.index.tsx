@@ -161,7 +161,7 @@ function ProvidersListPage() {
             )}
             {query.isError && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="text-center text-[#FF4D6D] font-semibold py-12">
+                <TableCell colSpan={6} className="text-center text-destructive font-semibold py-12">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
@@ -190,11 +190,11 @@ function ProvidersListPage() {
                 <TableCell className="text-brand-strong font-medium text-[14px] py-4 px-6">{p.credentials ?? "—"}</TableCell>
                 <TableCell className="py-4 px-6">
                   {p.is_active ? (
-                    <Badge className="bg-[#E8FFE8] hover:bg-[#E8FFE8] text-[#008A22] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                    <Badge className="bg-emerald-100 hover:bg-emerald-100 text-emerald-700 border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
                       Active
                     </Badge>
                   ) : (
-                    <Badge className="bg-[#FFF0F2] hover:bg-[#FFF0F2] text-[#FF4D6D] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                    <Badge className="bg-destructive/10 hover:bg-destructive/10 text-destructive border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
                       Inactive
                     </Badge>
                   )}
@@ -226,7 +226,7 @@ function ProvidersListPage() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-brand-border" />
                       <DropdownMenuItem
-                        className="rounded-lg font-semibold text-[13px] text-[#FF4D6D] focus:bg-[#FFE8EC] focus:text-[#FF4D6D] px-3 py-2 cursor-pointer"
+                        className="rounded-lg font-semibold text-[13px] text-destructive focus:bg-destructive/10 focus:text-destructive px-3 py-2 cursor-pointer"
                         onClick={() => setConfirmDelete({ id: p.id, name: p.full_name })}
                       >
                         Delete Permanent
@@ -256,7 +256,7 @@ function ProvidersListPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
-              className="bg-[#FF4D6D] text-white hover:bg-[#E03B58] font-bold rounded-xl h-11 px-5 transition-colors shadow-none"
+              className="bg-destructive text-white hover:bg-destructive/90 font-bold rounded-xl h-11 px-5 transition-colors shadow-none"
             >
               Confirm Delete
             </AlertDialogAction>

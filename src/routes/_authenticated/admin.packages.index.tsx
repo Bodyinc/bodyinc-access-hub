@@ -287,7 +287,7 @@ function PackagesListPage() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-brand-border" />
                           <DropdownMenuItem
-                            className="rounded-lg font-medium text-[#FF4D6D] focus:bg-[#FFE8EC] focus:text-[#FF4D6D] cursor-pointer"
+                            className="rounded-lg font-medium text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
                             onClick={() => setConfirmDelete({ id: p.id, name: p.name })}
                           >
                             Delete
@@ -320,7 +320,7 @@ function PackagesListPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
-              className="flex-1 bg-[#FF4D6D] hover:bg-[#E63956] text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors border-none"
+              className="flex-1 bg-destructive hover:bg-destructive/90 text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors border-none"
             >
               Delete
             </AlertDialogAction>

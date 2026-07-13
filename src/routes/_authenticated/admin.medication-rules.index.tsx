@@ -215,7 +215,7 @@ function MedicationRulesPage() {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-9 w-9 text-[#FF4D6D] hover:bg-[#FFE8EC] hover:text-[#FF4D6D] rounded-xl transition-colors"
+                      className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl transition-colors"
                       onClick={() => deleteMut.mutate(r.id)}
                     >
                       <Trash2 className="h-[18px] w-[18px]" />

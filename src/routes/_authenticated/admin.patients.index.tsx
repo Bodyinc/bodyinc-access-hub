@@ -145,7 +145,7 @@ function PatientsListPage() {
             )}
             {query.isError && (
               <TableRow className="border-b border-brand-border/50">
-                <TableCell colSpan={7} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
+                <TableCell colSpan={7} className="py-12 text-center text-destructive font-semibold text-[14px]">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
@@ -178,7 +178,7 @@ function PatientsListPage() {
                     variant={p.is_active ? "default" : "secondary"}
                     className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                       p.is_active 
-                        ? "bg-[#E8F5E9] text-brand-strong hover:bg-[#E8F5E9]" 
+                        ? "bg-emerald-100 text-brand-strong hover:bg-emerald-100" 
                         : "bg-brand-surface text-brand hover:bg-brand-surface"
                     }`}
                   >
@@ -214,8 +214,8 @@ function PatientsListPage() {
                       <DropdownMenuItem
                         className={`rounded-lg font-bold text-[13px] focus:bg-brand-surface ${
                           p.is_active 
-                            ? "text-[#FF4D6D] focus:text-[#FF4D6D]" 
-                            : "text-[#2E7D32] focus:text-[#2E7D32]"
+                            ? "text-destructive focus:text-destructive" 
+                            : "text-emerald-700 focus:text-emerald-700"
                         }`}
                         onClick={() =>
                           activeMut.mutate({ userId: p.id, is_active: !p.is_active })

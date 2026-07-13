@@ -119,7 +119,7 @@ function OrdersListPage() {
             )}
             {query.isError && (
               <TableRow className="border-b border-brand-border/50">
-                <TableCell colSpan={6} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
+                <TableCell colSpan={6} className="py-12 text-center text-destructive font-semibold text-[14px]">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
@@ -155,10 +155,10 @@ function OrdersListPage() {
                     variant={o.status === "paid" ? "default" : "secondary"}
                     className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                       o.status === "paid"
-                        ? "bg-[#E8F5E9] text-brand-strong hover:bg-[#E8F5E9]"
+                        ? "bg-emerald-100 text-brand-strong hover:bg-emerald-100"
                         : o.status === "canceled"
-                        ? "bg-[#FFEBEE] text-[#C62828] hover:bg-[#FFEBEE]"
-                        : "bg-[#FFF3E0] text-[#EF6C00] hover:bg-[#FFF3E0]"
+                        ? "bg-destructive/10 text-destructive hover:bg-destructive/10"
+                        : "bg-amber-100 text-amber-700 hover:bg-amber-100"
                     }`}
                   >
                     {o.status ?? "—"}
