@@ -1,4 +1,6 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -29,14 +31,24 @@ const items: NavItem[] = [
 ];
 
 
-const footerItems = [
-  { title: "Settings", url: "#" },
-  { title: "Logout", url: "#" },
-];
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
+
+  async function handleLogout() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    try {
+      for (const k of Object.keys(sessionStorage)) {
+        if (k.startsWith("bi_portal_role:")) sessionStorage.removeItem(k);
+      }
+    } catch {}
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-[#E2DCFA] bg-[#F5F3FF]">
