@@ -110,18 +110,14 @@ export function AdminSidebar() {
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
-              {footerItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    asChild
-                    className="w-full h-9 px-4 rounded-xl transition-all font-bold text-[15px] text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:text-[#2A00A2]"
-                  >
-                    <Link to={item.url}>
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleLogout}
+                  className="w-full h-9 px-4 rounded-xl transition-all font-bold text-[15px] text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:text-[#2A00A2] cursor-pointer"
+                >
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
