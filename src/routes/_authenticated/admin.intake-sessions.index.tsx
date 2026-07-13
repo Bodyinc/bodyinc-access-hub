@@ -95,8 +95,9 @@ function IntakeSessionsListPage() {
         </Select>
       </div>
 
-      <Card>
-        <Table>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+        <Table className="min-w-[720px]">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -135,6 +136,7 @@ function IntakeSessionsListPage() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </Card>
     </div>
   );

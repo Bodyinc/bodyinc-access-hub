@@ -154,13 +154,15 @@ function PatientDetailPage() {
       </Card>
 
       <Tabs defaultValue="profile">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="intake">Intake Sessions</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
-        </TabsList>
+        <div className="-mx-1 overflow-x-auto px-1">
+          <TabsList className="w-max">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="intake">Intake Sessions</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="account">Account</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="profile">
           <ProfileTab
@@ -186,7 +188,8 @@ function PatientDetailPage() {
             error={related.error as Error | null}
             empty="No intake sessions."
           >
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[520px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Session</TableHead>
@@ -213,6 +216,7 @@ function PatientDetailPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </RelatedList>
         </TabsContent>
 
@@ -222,7 +226,8 @@ function PatientDetailPage() {
             error={related.error as Error | null}
             empty="No orders."
           >
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Order</TableHead>
@@ -250,6 +255,7 @@ function PatientDetailPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </RelatedList>
         </TabsContent>
 
@@ -259,7 +265,8 @@ function PatientDetailPage() {
             error={related.error as Error | null}
             empty="No payments."
           >
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Amount</TableHead>
@@ -281,6 +288,7 @@ function PatientDetailPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </RelatedList>
         </TabsContent>
 
