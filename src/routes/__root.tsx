@@ -87,12 +87,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Body Inc — Practitioner & Admin Portal" },
-      { name: "description", content: "Manage medications, patients, orders and intake sessions for the Body Inc care team." },
-      { property: "og:title", content: "Body Inc Portal" },
-      { property: "og:description", content: "Practitioner & admin portal for the Body Inc care team." },
+      { title: "Lovable App" },
+      { name: "description", content: "Lovable Generated Project" },
+      { name: "author", content: "Lovable" },
+      { property: "og:title", content: "Lovable App" },
+      { property: "og:description", content: "Lovable Generated Project" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

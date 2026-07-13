@@ -45,41 +45,41 @@ function NewQuestionnairePage() {
     <div className="space-y-6 w-full text-left">
       {/* Top Header Section */}
       <div>
-        <h2 className="text-2xl font-black tracking-tight text-brand">New questionnaire</h2>
-        <p className="text-[14px] text-brand-strong/70 font-medium mt-1">
+        <h2 className="text-2xl font-black tracking-tight text-[#2A00A2]">New questionnaire</h2>
+        <p className="text-[14px] text-[#6B5AE0]/70 font-medium mt-1">
           Add screening configurations and structure questions.
         </p>
       </div>
 
       {/* Main Configurations Card Group */}
-      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-2 sm:p-4">
+      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-2 sm:p-4">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-brand">Questionnaire details</CardTitle>
-          <CardDescription className="text-brand-strong/60 font-medium text-[13px]">
+          <CardTitle className="text-lg font-bold text-[#2A00A2]">Questionnaire details</CardTitle>
+          <CardDescription className="text-[#6B5AE0]/60 font-medium text-[13px]">
             Add details below. You will be able to add screening questions after creating.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Form Field Name */}
           <div className="space-y-2">
-            <Label className="text-[13px] font-bold text-brand-strong">Name</Label>
+            <Label className="text-[13px] font-bold text-[#4A3AFF]">Name</Label>
             <Input 
               value={name} 
               onChange={(e) => setName(e.target.value)} 
               placeholder="e.g. GLP-1 Eligibility" 
-              className="h-11 rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 text-brand font-semibold text-[14px] placeholder:text-brand-strong/40"
+              className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40"
             />
           </div>
 
           {/* Form Field Description */}
           <div className="space-y-2">
-            <Label className="text-[13px] font-bold text-brand-strong">Description (optional)</Label>
+            <Label className="text-[13px] font-bold text-[#4A3AFF]">Description (optional)</Label>
             <Textarea 
               value={description} 
               onChange={(e) => setDescription(e.target.value)} 
               rows={3} 
               placeholder="Provide context or instructions for this custom review cluster..."
-              className="rounded-xl border-brand-border focus-visible:ring-brand-strong focus-visible:ring-1 resize-none font-medium text-[14px] text-brand placeholder:text-brand-strong/40 p-3 min-h-[90px]"
+              className="rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 resize-none font-medium text-[14px] text-[#2A00A2] placeholder:text-[#6B5AE0]/40 p-3 min-h-[90px]"
             />
           </div>
 
@@ -89,9 +89,9 @@ function NewQuestionnairePage() {
               checked={isActive} 
               onCheckedChange={setIsActive} 
               id="q-active"
-              className="data-[state=checked]:bg-brand-strong data-[state=unchecked]:bg-brand-border"
+              className="data-[state=checked]:bg-[#4A3AFF] data-[state=unchecked]:bg-[#E2DCFA]"
             />
-            <Label htmlFor="q-active" className="text-[14px] font-bold text-brand cursor-pointer select-none">
+            <Label htmlFor="q-active" className="text-[14px] font-bold text-[#2A00A2] cursor-pointer select-none">
               Active Status
             </Label>
           </div>
@@ -99,19 +99,19 @@ function NewQuestionnairePage() {
       </Card>
 
       {/* Linked Medicines Target Group */}
-      <Card className="overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl p-2 sm:p-4">
+      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-2 sm:p-4">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-brand">Linked medicines</CardTitle>
-          <CardDescription className="text-brand-strong/60 font-medium text-[13px]">
+          <CardTitle className="text-base font-bold text-[#2A00A2]">Linked medicines</CardTitle>
+          <CardDescription className="text-[#6B5AE0]/60 font-medium text-[13px]">
             Patients selecting these treatment variants will see this custom screening sequence during checkouts.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {medsQ.isLoading && (
-            <p className="text-[14px] font-medium text-brand-strong/60 py-2">Loading target medicines list...</p>
+            <p className="text-[14px] font-medium text-[#6B5AE0]/60 py-2">Loading target medicines list...</p>
           )}
           {!medsQ.isLoading && (medsQ.data ?? []).length === 0 && (
-            <p className="text-[14px] font-medium text-brand-strong/60 py-2">No active medicines found to link.</p>
+            <p className="text-[14px] font-medium text-[#6B5AE0]/60 py-2">No active medicines found to link.</p>
           )}
           <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3">
             {(medsQ.data ?? []).map((m) => {
@@ -121,14 +121,14 @@ function NewQuestionnairePage() {
                   key={m.id} 
                   className={`flex items-center gap-3 rounded-xl border p-3 text-[14px] font-semibold transition-all cursor-pointer select-none
                     ${checked 
-                      ? "border-brand-strong bg-brand-surface text-brand" 
-                      : "border-brand-border bg-white text-brand-strong/80 hover:bg-white/80"
+                      ? "border-[#4A3AFF] bg-[#F5F3FF] text-[#2A00A2]" 
+                      : "border-[#E2DCFA] bg-white text-[#6B5AE0]/80 hover:bg-[#FDFDFF]/80"
                     }
                   `}
                 >
                   <Checkbox 
                     checked={checked} 
-                    className="rounded-md border-brand-border data-[state=checked]:bg-brand-strong data-[state=checked]:border-brand-strong"
+                    className="rounded-md border-[#E2DCFA] data-[state=checked]:bg-[#4A3AFF] data-[state=checked]:border-[#4A3AFF]"
                     onCheckedChange={(v) => {
                       setMedicineIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id));
                     }} 
@@ -146,14 +146,14 @@ function NewQuestionnairePage() {
         <Button 
           variant="ghost" 
           onClick={() => navigate({ to: "/admin/questionnaires" })}
-          className="w-32 text-brand-strong hover:bg-brand-surface hover:text-brand font-bold rounded-xl h-11 transition-colors border-none bg-transparent"
+          className="w-32 text-[#4A3AFF] hover:bg-[#F5F3FF] hover:text-[#2A00A2] font-bold rounded-xl h-11 transition-colors border-none bg-transparent"
         >
           Cancel
         </Button>
         <Button 
           disabled={!name.trim() || mut.isPending} 
           onClick={() => mut.mutate()}
-          className="w-48 bg-brand hover:bg-brand text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors"
+          className="w-48 bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors"
         >
           {mut.isPending ? "Saving…" : "Create questionnaire"}
         </Button>

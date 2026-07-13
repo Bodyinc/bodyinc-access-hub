@@ -49,8 +49,8 @@ function PromosListPage() {
     <div className="w-full text-left m-0 p-0 space-y-5 max-w-none">
       <div className="flex items-start justify-between gap-3 w-full">
         <div className="space-y-0.5">
-          <h2 className="text-xl font-bold text-brand tracking-tight">Promo Codes</h2>
-          <p className="text-sm text-brand-strong/70 font-medium">
+          <h2 className="text-xl font-bold text-[#2A00A2] tracking-tight">Promo Codes</h2>
+          <p className="text-sm text-[#6B5AE0]/70 font-medium">
             Discounts applied at checkout. Auto-apply is the first-time welcome discount.
           </p>
         </div>
@@ -58,37 +58,37 @@ function PromosListPage() {
           <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
           <Button 
             onClick={() => navigate({ to: "/admin/promos/new" })}
-            className="bg-brand hover:bg-brand text-white font-bold rounded-xl h-10 px-4 shadow-sm transition-colors"
+            className="bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold rounded-xl h-10 px-4 shadow-sm transition-colors"
           >
             <Plus className="mr-1.5 h-4 w-4 stroke-[2.5]" /> Add Promo
           </Button>
         </div>
       </div>
 
-      <Card className="w-full overflow-hidden border border-brand-border bg-white shadow-sm rounded-2xl max-w-none m-0">
+      <Card className="w-full overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl max-w-none m-0">
         <div className="overflow-x-auto">
         <Table className="min-w-[720px]">
-          <TableHeader className="bg-white">
-            <TableRow className="border-b border-brand-border hover:bg-transparent">
-              <TableHead className="text-brand font-bold h-11 text-[13px]">Code</TableHead>
-              <TableHead className="text-brand font-bold h-11 text-[13px]">Discount</TableHead>
-              <TableHead className="text-brand font-bold h-11 text-[13px]">Auto-apply</TableHead>
-              <TableHead className="text-brand font-bold h-11 text-[13px]">Redeemed</TableHead>
-              <TableHead className="text-brand font-bold h-11 text-[13px]">Expires</TableHead>
-              <TableHead className="text-brand font-bold h-11 text-[13px] w-20">Active</TableHead>
+          <TableHeader className="bg-[#FDFDFF]">
+            <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
+              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Code</TableHead>
+              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Discount</TableHead>
+              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Auto-apply</TableHead>
+              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Redeemed</TableHead>
+              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Expires</TableHead>
+              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px] w-20">Active</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {query.isLoading && (
-              <TableRow className="border-b border-brand-border/50">
-                <TableCell colSpan={6} className="py-12 text-center text-brand-strong/60 font-semibold text-[14px]">
+              <TableRow className="border-b border-[#EAE6FA]/50">
+                <TableCell colSpan={6} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-brand-border/50">
-                <TableCell colSpan={6} className="py-12 text-center text-brand-strong/60 font-semibold text-[14px]">
+              <TableRow className="border-b border-[#EAE6FA]/50">
+                <TableCell colSpan={6} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
                   No promo codes yet.
                 </TableCell>
               </TableRow>
@@ -96,38 +96,38 @@ function PromosListPage() {
             {query.data?.map((p: any) => (
               <TableRow
                 key={p.id}
-                className="cursor-pointer border-b border-brand-border/50 hover:bg-brand-surface/40 transition-colors"
+                className="cursor-pointer border-b border-[#EAE6FA]/50 hover:bg-[#F5F3FF]/40 transition-colors"
                 onClick={() =>
                   navigate({ to: "/admin/promos/$promoId", params: { promoId: p.id } })
                 }
               >
-                <TableCell className="font-bold text-brand text-[14px]">{p.code}</TableCell>
-                <TableCell className="text-brand-strong font-semibold text-[14px]">{discountLabel(p)}</TableCell>
+                <TableCell className="font-bold text-[#2A00A2] text-[14px]">{p.code}</TableCell>
+                <TableCell className="text-[#6B5AE0] font-semibold text-[14px]">{discountLabel(p)}</TableCell>
                 <TableCell>
                   {p.auto_apply ? (
-                    <Badge className="bg-brand text-white hover:bg-brand font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent">
+                    <Badge className="bg-[#2A00A2] text-white hover:bg-[#2A00A2] font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent">
                       Auto
                     </Badge>
                   ) : (
-                    <span className="text-brand-strong/40 font-medium">—</span>
+                    <span className="text-[#6B5AE0]/40 font-medium">—</span>
                   )}
                 </TableCell>
-                <TableCell className="text-brand font-semibold text-[14px]">
+                <TableCell className="text-[#2A00A2] font-semibold text-[14px]">
                   {p.times_redeemed}
                   {p.max_redemptions != null ? (
-                    <span className="text-brand-strong/60 font-medium"> / {p.max_redemptions}</span>
+                    <span className="text-[#6B5AE0]/60 font-medium"> / {p.max_redemptions}</span>
                   ) : (
                     ""
                   )}
                 </TableCell>
-                <TableCell className="text-brand-strong font-medium text-[14px]">
-                  {p.redeem_by ? String(p.redeem_by).slice(0, 10) : <span className="text-brand-strong/40">—</span>}
+                <TableCell className="text-[#6B5AE0] font-medium text-[14px]">
+                  {p.redeem_by ? String(p.redeem_by).slice(0, 10) : <span className="text-[#6B5AE0]/40">—</span>}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Switch 
                     checked={p.is_active} 
                     onCheckedChange={(x) => toggle(p.id, x)} 
-                    className="data-[state=checked]:bg-brand-strong"
+                    className="data-[state=checked]:bg-[#4A3AFF]"
                   />
                 </TableCell>
               </TableRow>

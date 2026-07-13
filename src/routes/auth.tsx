@@ -160,14 +160,11 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-surface px-4 py-12">
-      <Card className="w-full max-w-md p-2 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto mb-2">
-            <img src="/logo.svg" alt="Body Inc" className="h-10 w-auto object-contain" />
-          </div>
-          <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight text-brand">Sign In</CardTitle>
-          <CardDescription className="text-brand-strong/80">
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardDescription>
             Body Inc — Practitioner & Admin portal
           </CardDescription>
         </CardHeader>

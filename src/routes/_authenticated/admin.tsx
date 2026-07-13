@@ -93,30 +93,32 @@ function AdminLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-brand-surface">
+      <div className="flex min-h-screen w-full bg-white">
         <AdminSidebar />
-        <SidebarInset className="flex flex-1 flex-col bg-brand-surface">
-          <header className="sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-brand-border bg-brand-surface/80 backdrop-blur px-4 sm:px-6 h-16">
-            <SidebarTrigger className="h-8 w-8 border border-brand-border bg-white text-brand hover:bg-brand-soft rounded-lg shadow-sm shrink-0" />
-            <div className="min-w-0">
-              <h1 className="truncate text-xl sm:text-2xl font-black tracking-tight text-brand leading-tight">
-                {title}
-              </h1>
+        <SidebarInset className="flex flex-1 flex-col bg-white">
+          {/* Relative header container allowing absolute trigger overlay positioning */}
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 border-b border-[#F4F1FE] bg-white pl-12 pr-6">
+            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              {/* Trigger positioned exactly over the sidebar vertical border boundary line */}
+              <SidebarTrigger className="h-7 w-7 border border-[#E2DCFA] bg-white text-[#4A3AFF] hover:bg-[#F5F3FF] rounded-lg shadow-sm transition-transform" />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
+            
+            <div className="flex items-center">
+              {/* No placeholder or space here to ensure native sub-view titles match pixel perfect */}
+            </div>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
               onClick={signOut}
-              className="shrink-0 text-brand-strong hover:bg-brand-soft/60 font-semibold rounded-xl"
+              className="text-[#4A3AFF] hover:bg-[#e8eeff] font-bold rounded-xl h-9 px-4 transition-colors"
             >
               Sign out
             </Button>
           </header>
 
-          <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8">
-            <div className="mx-auto w-full max-w-6xl">
-              <Outlet />
-            </div>
+          <main className="flex-1 px-3 py-4 sm:px-6 sm:py-5">
+            <Outlet />
           </main>
         </SidebarInset>
       </div>

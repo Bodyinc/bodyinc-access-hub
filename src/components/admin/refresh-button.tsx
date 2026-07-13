@@ -9,7 +9,19 @@ export function RefreshButton({ onClick, loading }: { onClick: () => void; loadi
   size="sm"
   onClick={onClick}
   disabled={loading}
-  className="h-10 px-4 gap-2 rounded-xl border-brand-border bg-white text-brand font-medium shadow-sm hover:bg-brand-surface hover:border-brand"
+  className="
+    h-11
+    px-5
+    gap-2
+    rounded-xl
+    border-[#E2DCFA]
+    bg-white
+    text-[#2A00A2]
+    font-medium
+    shadow-sm
+    hover:bg-[#F8F6FF]
+    hover:border-[#D7CCFA]
+  "
 >
   <RefreshCw
     className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
