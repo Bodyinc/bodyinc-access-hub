@@ -104,7 +104,7 @@ function PackagesListPage() {
       {/* Top Banner Context Header Area */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#2A00A2]">Packages</h2>
+          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Packages</h2>
           <p className="text-[14px] text-[#6B5AE0]/70 font-medium mt-1">
             Pricing plans linked to medicines — 1-month, 3-month, and custom durations.
           </p>

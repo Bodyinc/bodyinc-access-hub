@@ -47,7 +47,7 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
   };
 }
 
-function EditMedicinePage() {
+export default function EditMedicinePage() {
   const { medicineId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -79,13 +79,13 @@ function EditMedicinePage() {
   });
 
   if (medicineQuery.isLoading && !medicineQuery.data) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-sm text-muted-foreground p-6">Loading…</p>;
   }
 
   const medicine = medicineQuery.data;
   if (!medicine) {
     return (
-      <p className="text-sm text-destructive">
+      <p className="text-sm text-destructive p-6">
         Medicine not found.{" "}
         <button
           type="button"
@@ -102,20 +102,27 @@ function EditMedicinePage() {
   const preview = previewValues ?? formDefaults;
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
-        <Suspense fallback={<FormSkeleton />}>
-          <MedicineForm
-            key={medicineId}
-            mode="edit"
-            defaultValues={formDefaults}
-            submitting={mutation.isPending}
-            onSubmit={(values) => mutation.mutate(values)}
-            onCancel={() => navigate({ to: "/admin/medicines" })}
-            onValuesChange={handlePreviewChange}
-          />
-        </Suspense>
-        <div className="lg:sticky lg:top-20">
+    <div className="w-full bg-white pl-8 pr-12 py-6">
+      {/* FIXED: Removed max-w-[1380px] and max-w-[660px] bounds to match Category layout */}
+      <div className="flex flex-col lg:flex-row items-start gap-12 w-full">
+        
+        {/* Left Form Panel */}
+        <div className="flex-1 w-full shrink-0 max-w-5xl">
+          <Suspense fallback={<FormSkeleton />}>
+            <MedicineForm
+              key={medicineId}
+              mode="edit"
+              defaultValues={formDefaults}
+              submitting={mutation.isPending}
+              onSubmit={(values) => mutation.mutate(values)}
+              onCancel={() => navigate({ to: "/admin/medicines" })}
+              onValuesChange={handlePreviewChange}
+            />
+          </Suspense>
+        </div>
+
+        {/* Right Patient Preview Panel */}
+        <div className="w-full lg:w-[440px] lg:sticky lg:top-6 shrink-0 mt-[44px]">
           <Suspense fallback={<FormSkeleton />}>
             <MedicinePreview
               name={preview.name}
@@ -128,6 +135,7 @@ function EditMedicinePage() {
             />
           </Suspense>
         </div>
+
       </div>
     </div>
   );

@@ -113,7 +113,7 @@ function PatientsListPage() {
       {/* Header View Section */}
       <div className="flex items-start justify-between gap-3 w-full">
         <div className="space-y-0.5">
-          <h2 className="text-xl font-bold text-[#2A00A2] tracking-tight">Patients</h2>
+          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Patients</h2>
           <p className="text-sm text-[#6B5AE0]/70 font-medium">
             Browse patient accounts, review intake responses, and manage access.
           </p>

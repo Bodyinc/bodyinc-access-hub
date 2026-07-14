@@ -54,88 +54,138 @@ function IntakeSessionsListPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Intake Sessions</h2>
-          <p className="text-sm text-muted-foreground">
+    // FIX: Replaced constrained layout wrappers with left-aligned, zero-margin canvas block matching your design system
+    <div className="w-full text-left m-0 p-0 space-y-5 max-w-none">
+      
+      {/* Title & Description Banner */}
+      <div className="flex items-start justify-between gap-3 w-full">
+        <div className="space-y-0.5">
+          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Intake Sessions</h2>
+          <p className="text-sm text-[#6B5AE0]/70 font-medium">
             Patient intake responses, eligibility results, and selected plans.
           </p>
         </div>
         <RefreshButton onClick={() => q.refetch()} loading={q.isFetching} />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Action Filters Panel */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full">
         <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6B5AE0]/50" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or phone"
-            className="pl-8"
+            className="pl-9 h-10 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40 bg-white"
           />
         </div>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="in_progress">In progress</SelectItem>
-            <SelectItem value="payment_pending">Payment pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="abandoned">Abandoned</SelectItem>
+          <SelectTrigger className="w-44 h-10 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-[#E2DCFA]">
+            <SelectItem value="all" className="font-medium text-[#2A00A2]">All statuses</SelectItem>
+            <SelectItem value="in_progress" className="font-medium text-[#2A00A2]">In progress</SelectItem>
+            <SelectItem value="payment_pending" className="font-medium text-[#2A00A2]">Payment pending</SelectItem>
+            <SelectItem value="completed" className="font-medium text-[#2A00A2]">Completed</SelectItem>
+            <SelectItem value="abandoned" className="font-medium text-[#2A00A2]">Abandoned</SelectItem>
           </SelectContent>
         </Select>
         <Select value={claimed} onValueChange={(v) => setClaimed(v as any)}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All sessions</SelectItem>
-            <SelectItem value="claimed">Claimed</SelectItem>
-            <SelectItem value="unclaimed">Unclaimed</SelectItem>
+          <SelectTrigger className="w-40 h-10 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+            <SelectValue placeholder="All sessions" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-[#E2DCFA]">
+            <SelectItem value="all" className="font-medium text-[#2A00A2]">All sessions</SelectItem>
+            <SelectItem value="claimed" className="font-medium text-[#2A00A2]">Claimed</SelectItem>
+            <SelectItem value="unclaimed" className="font-medium text-[#2A00A2]">Unclaimed</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <Card className="overflow-hidden">
+      {/* Main Table Matrix */}
+      <Card className="w-full overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl max-w-none m-0">
         <div className="overflow-x-auto">
-        <Table className="min-w-[720px]">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>State</TableHead>
-              <TableHead>Sex</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {q.isLoading && (
-              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            )}
-            {q.isError && (
-              <TableRow><TableCell colSpan={7} className="py-8 text-center text-destructive">{(q.error as Error).message}</TableCell></TableRow>
-            )}
-            {!q.isLoading && q.data?.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No sessions found.</TableCell></TableRow>
-            )}
-            {q.data?.map((s: any) => (
-              <TableRow
-                key={s.id}
-                className="cursor-pointer"
-                onClick={() => navigate({ to: "/admin/intake-sessions/$sessionId", params: { sessionId: s.id } })}
-              >
-                <TableCell className="font-medium">{s.full_name || "—"}</TableCell>
-                <TableCell>{s.email || "—"}</TableCell>
-                <TableCell>{s.state_code || "—"}</TableCell>
-                <TableCell className="capitalize">{s.sex || "—"}</TableCell>
-                <TableCell>{s.plan_name || "—"}</TableCell>
-                <TableCell><Badge variant="secondary">{s.status}</Badge></TableCell>
-                <TableCell className="text-muted-foreground">{formatDate(s.created_at)}</TableCell>
+          <Table className="min-w-[720px]">
+            <TableHeader className="bg-[#FDFDFF]">
+              <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Name</TableHead>
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Email</TableHead>
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">State</TableHead>
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Sex</TableHead>
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Plan</TableHead>
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Status</TableHead>
+                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Created</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {q.isLoading && (
+                <TableRow className="border-b border-[#EAE6FA]/50">
+                  <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+                    Loading…
+                  </TableCell>
+                </TableRow>
+              )}
+              {q.isError && (
+                <TableRow className="border-b border-[#EAE6FA]/50">
+                  <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0] font-semibold text-[14px]">
+                    {(q.error as Error).message}
+                  </TableCell>
+                </TableRow>
+              )}
+              {!q.isLoading && q.data?.length === 0 && (
+                <TableRow className="border-b border-[#EAE6FA]/50">
+                  <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+                    No sessions found.
+                  </TableCell>
+                </TableRow>
+              )}
+              {q.data?.map((s: any) => (
+                <TableRow
+                  key={s.id}
+                  className="cursor-pointer border-b border-[#EAE6FA]/50 hover:bg-[#F5F3FF]/40 transition-colors"
+                  onClick={() =>
+                    navigate({ to: "/admin/intake-sessions/$sessionId", params: { sessionId: s.id } })
+                  }
+                >
+                  <TableCell className="font-bold text-[#2A00A2] text-[14px]">
+                    {s.full_name || "—"}
+                  </TableCell>
+                  <TableCell className="text-[#6B5AE0] font-semibold text-[14px]">
+                    {s.email || "—"}
+                  </TableCell>
+                  <TableCell className="text-[#2A00A2] font-semibold text-[14px]">
+                    {s.state_code || "—"}
+                  </TableCell>
+                  <TableCell className="capitalize text-[#6B5AE0] font-medium text-[14px]">
+                    {s.sex || "—"}
+                  </TableCell>
+                  <TableCell className="text-[#2A00A2] font-semibold text-[14px]">
+                    {s.plan_name || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
+                        s.status === "completed"
+                          ? "bg-[#E8F5E9] text-[#6B5AE0] hover:bg-[#E8F5E9]"
+                          : s.status === "payment_pending"
+                          ? "bg-[#FFF3E0] text-[#6B5AE0] hover:bg-[#FFF3E0]"
+                          : s.status === "abandoned"
+                          ? "bg-[#FFEBEE] text-[#6B5AE0] hover:bg-[#FFEBEE]"
+                          : "bg-[#F3E5F5] text-[#6B5AE0] hover:bg-[#F3E5F5]"
+                      }`}
+                    >
+                      {s.status ?? "—"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-[#6B5AE0] font-medium text-[14px]">
+                    {formatDate(s.created_at)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </Card>
     </div>

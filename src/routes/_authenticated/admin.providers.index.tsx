@@ -101,7 +101,7 @@ function ProvidersListPage() {
       {/* Top Header Section without redundant space */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#2A00A2]">Providers</h2>
+          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Providers</h2>
           <p className="text-[14px] text-[#6B5AE0]/70 font-medium mt-1">
             Manage clinical accounts, credentials, and track activation statuses.
           </p>

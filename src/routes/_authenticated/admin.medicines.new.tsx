@@ -34,11 +34,13 @@ function NewMedicinePage() {
     important_info: [],
     notice_text: "",
     sort_order: 0,
+    requires_questionnaire: false,
+    category_ids: [],
   });
 
   const mutation = useMutation({
     mutationFn: async (values: MedicineFormValues) => {
-      const { id } = await createMedicine(values);
+      const id = await createMedicine(values);
       try {
         await syncMedicine({ data: { medicineId: id } });
       } catch {
@@ -55,18 +57,21 @@ function NewMedicinePage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <Suspense fallback={<FormSkeleton />}>
-          <MedicineForm
-            mode="create"
-            submitting={mutation.isPending}
-            onSubmit={(values) => mutation.mutate(values)}
-            onCancel={() => navigate({ to: "/admin/medicines" })}
-            onValuesChange={setPreviewValues}
-          />
-        </Suspense>
-        <div className="lg:sticky lg:top-20">
+    /* FIXED: Removed mx-auto and max-w-5xl, changed to match left alignment structure */
+    <div className="w-full bg-white pl-8 pr-12 py-6">
+      <div className="flex flex-col lg:flex-row items-start gap-12 w-full">
+        <div className="flex-1 w-full shrink-0 max-w-5xl">
+          <Suspense fallback={<FormSkeleton />}>
+            <MedicineForm
+              mode="create"
+              submitting={mutation.isPending}
+              onSubmit={(values) => mutation.mutate(values)}
+              onCancel={() => navigate({ to: "/admin/medicines" })}
+              onValuesChange={setPreviewValues}
+            />
+          </Suspense>
+        </div>
+        <div className="w-full lg:w-[440px] lg:sticky lg:top-6 shrink-0 mt-[44px]">
           <Suspense fallback={<FormSkeleton />}>
             <MedicinePreview
               name={previewValues.name}
