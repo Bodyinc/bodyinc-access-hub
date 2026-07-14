@@ -1,14 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { assertAdmin } from "@/lib/admin-guard";
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (error || !data) throw new Error("Forbidden");
-}
 
 const listInput = z
   .object({
@@ -35,6 +29,24 @@ export const listPatients = createServerFn({ method: "POST" })
     const userIds = (roleRows ?? []).map((r: any) => r.user_id);
     if (userIds.length === 0) return [];
 
+    // One paged listUsers sweep replaces a getUserById call per patient row (that was
+    // N auth round trips scaling with patient count); it runs concurrently with the
+    // profiles query below.
+    const authByIdPromise = (async () => {
+      const map = new Map<string, any>();
+      for (let authPage = 1; ; authPage++) {
+        const { data: usersPage, error: usersErr } = await supabaseAdmin.auth.admin.listUsers({
+          page: authPage,
+          perPage: 1000,
+        });
+        if (usersErr) throw new Error(usersErr.message);
+        const users = usersPage?.users ?? [];
+        for (const u of users) map.set(u.id, u);
+        if (users.length < 1000) break;
+      }
+      return map;
+    })();
+
     let q = supabaseAdmin
       .from("profiles")
       .select("id, full_name, email, phone, dob, avatar_url, created_at")
@@ -47,22 +59,19 @@ export const listPatients = createServerFn({ method: "POST" })
     }
     const { data: profiles, error } = await q;
     if (error) throw new Error(error.message);
+    const authById = await authByIdPromise;
 
-    // Fetch ban status for each via auth admin
-    const rows = await Promise.all(
-      (profiles ?? []).map(async (p: any) => {
-        const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(p.id);
-        const u: any = userRes?.user ?? null;
-        const bannedUntil = u?.banned_until ? new Date(u.banned_until) : null;
-        const isDeactivated = !!(bannedUntil && bannedUntil.getTime() > Date.now());
-        return {
-          ...p,
-          is_active: !isDeactivated,
-          last_sign_in_at: u?.last_sign_in_at ?? null,
-          email_confirmed_at: u?.email_confirmed_at ?? null,
-        };
-      }),
-    );
+    const rows = (profiles ?? []).map((p: any) => {
+      const u: any = authById.get(p.id) ?? null;
+      const bannedUntil = u?.banned_until ? new Date(u.banned_until) : null;
+      const isDeactivated = !!(bannedUntil && bannedUntil.getTime() > Date.now());
+      return {
+        ...p,
+        is_active: !isDeactivated,
+        last_sign_in_at: u?.last_sign_in_at ?? null,
+        email_confirmed_at: u?.email_confirmed_at ?? null,
+      };
+    });
 
     if (data.status === "active") return rows.filter((r) => r.is_active);
     if (data.status === "deactivated") return rows.filter((r) => !r.is_active);
@@ -147,6 +156,68 @@ export const setPatientActive = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       ban_duration: data.is_active ? "none" : "876000h",
     });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deletePatient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => idInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: role, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (roleErr) throw new Error(roleErr.message);
+    if (!role || role.role !== "patient") throw new Error("Patient not found");
+
+    // Cancel live Stripe subscriptions first — a deleted account must never keep billing.
+    // Abort the whole delete if a cancel fails, so we can't strand a billing subscription.
+    const { data: subs } = await supabaseAdmin
+      .from("subscriptions")
+      .select("stripe_subscription_id, status")
+      .eq("user_id", data.userId)
+      .in("status", ["active", "trialing", "past_due", "unpaid", "incomplete"]);
+    const live = (subs ?? []).filter((s: any) => s.stripe_subscription_id);
+    if (live.length) {
+      const { getStripe } = await import("@/integrations/stripe/client.server");
+      const stripe = getStripe();
+      for (const s of live) {
+        try {
+          await stripe.subscriptions.cancel(s.stripe_subscription_id);
+        } catch (e: any) {
+          if (e?.code !== "resource_missing") {
+            throw new Error(
+              `Could not cancel Stripe subscription ${s.stripe_subscription_id}: ${e?.message ?? e}`,
+            );
+          }
+        }
+      }
+    }
+
+    // These tables have a NOT NULL user_id and would block the auth delete.
+    const { data: orders } = await supabaseAdmin
+      .from("shop_checkout_orders")
+      .select("id")
+      .eq("user_id", data.userId);
+    const orderIds = (orders ?? []).map((o: any) => o.id);
+    if (orderIds.length) {
+      await supabaseAdmin.from("shop_checkout_events").delete().in("order_id", orderIds);
+      await supabaseAdmin.from("shop_checkout_orders").delete().eq("user_id", data.userId);
+    }
+    await supabaseAdmin
+      .from("subscription_cancellation_feedback")
+      .delete()
+      .eq("user_id", data.userId);
+
+    // Cascades profiles + user_roles; payments, subscriptions, refund_requests and
+    // intake_sessions keep their rows with user_id nulled, so financial history survives.
+    // The email is freed for a brand-new signup.
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -29,6 +29,7 @@ import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
+import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
 import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
 import { Route as AuthenticatedAdminPromosIndexRouteImport } from './routes/_authenticated/admin.promos.index'
@@ -164,6 +165,12 @@ const AuthenticatedAdminBillingRoute =
   AuthenticatedAdminBillingRouteImport.update({
     id: '/billing',
     path: '/billing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminReferralsIndexRoute =
+  AuthenticatedAdminReferralsIndexRouteImport.update({
+    id: '/referrals/',
+    path: '/referrals/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminQuestionnairesIndexRoute =
@@ -369,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/admin/promos/': typeof AuthenticatedAdminPromosIndexRoute
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
+  '/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -405,6 +413,7 @@ export interface FileRoutesByTo {
   '/admin/promos': typeof AuthenticatedAdminPromosIndexRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesIndexRoute
+  '/admin/referrals': typeof AuthenticatedAdminReferralsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -454,6 +463,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/promos/': typeof AuthenticatedAdminPromosIndexRoute
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/_authenticated/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
+  '/_authenticated/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/admin/promos/'
     | '/admin/providers/'
     | '/admin/questionnaires/'
+    | '/admin/referrals/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -539,6 +550,7 @@ export interface FileRouteTypes {
     | '/admin/promos'
     | '/admin/providers'
     | '/admin/questionnaires'
+    | '/admin/referrals'
   id:
     | '__root__'
     | '/'
@@ -587,6 +599,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/promos/'
     | '/_authenticated/admin/providers/'
     | '/_authenticated/admin/questionnaires/'
+    | '/_authenticated/admin/referrals/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -737,6 +750,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/admin/billing'
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/referrals/': {
+      id: '/_authenticated/admin/referrals/'
+      path: '/referrals'
+      fullPath: '/admin/referrals/'
+      preLoaderRoute: typeof AuthenticatedAdminReferralsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/questionnaires/': {
@@ -1121,6 +1141,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPromosPromoIdRoute: typeof AuthenticatedAdminPromosPromoIdRoute
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
   AuthenticatedAdminPromosIndexRoute: typeof AuthenticatedAdminPromosIndexRoute
+  AuthenticatedAdminReferralsIndexRoute: typeof AuthenticatedAdminReferralsIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -1146,6 +1167,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPromosPromoIdRoute: AuthenticatedAdminPromosPromoIdRoute,
   AuthenticatedAdminPromosNewRoute: AuthenticatedAdminPromosNewRoute,
   AuthenticatedAdminPromosIndexRoute: AuthenticatedAdminPromosIndexRoute,
+  AuthenticatedAdminReferralsIndexRoute: AuthenticatedAdminReferralsIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =
@@ -1174,3 +1196,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

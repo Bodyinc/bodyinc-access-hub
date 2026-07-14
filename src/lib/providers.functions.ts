@@ -2,14 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { providerFormSchema } from "./providers.schema";
+import { assertAdmin } from "@/lib/admin-guard";
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (error || !data) throw new Error("Forbidden");
-}
 
 const PROFILE_KEYS = ["full_name", "phone", "avatar_url"] as const;
 type ProfileKey = (typeof PROFILE_KEYS)[number];

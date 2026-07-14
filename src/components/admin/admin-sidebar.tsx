@@ -22,6 +22,8 @@ const items: NavItem[] = [
   { title: "Questionnaires", url: "/admin/questionnaires" },
   { title: "Packages", url: "/admin/packages" },
   { title: "Orders", url: "/admin/orders" },
+  { title: "Billing", url: "/admin/billing" },
+  { title: "Referrals", url: "/admin/referrals" },
   { title: "Promo Codes", url: "/admin/promos" },
   { title: "Providers", url: "/admin/providers" },
   { title: "Patients", url: "/admin/patients" },
