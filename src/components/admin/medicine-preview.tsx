@@ -44,22 +44,22 @@ export function MedicinePreview({
   const displayPrice = monthly > 0 && !Number.isNaN(monthly) ? formatPrice(monthly) : "$—/mo";
 
   return (
-    <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden w-full">
-      <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-        <CardTitle className="text-[20px] font-bold text-[#2A00A2]">Patient preview</CardTitle>
-        <CardDescription className="text-[14px] text-[#6B5AE0]/80 font-medium">
+    <Card className="border border-[#EDEAFB] bg-white rounded-2xl shadow-none overflow-hidden w-full antialiased">
+      <CardHeader className="border-b border-[#EDEAFB] bg-white p-6">
+        <CardTitle className="text-[20px] font-semibold text-[#1D0087]">Patient preview</CardTitle>
+        <CardDescription className="text-[14px] text-[#5527E7]/80 font-normal">
           Medication card and Learn More modal.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
-        <p className="text-[14px] font-bold text-[#2A00A2]">
+        <p className="text-[14px] font-semibold text-[#1D0087]">
           Select Your Medication
         </p>
 
-        <div className="rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="rounded-2xl border border-[#EDEAFB] bg-[#FAF9FF] p-5">
+          <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
             {image_url ? (
-              <div className="h-28 w-28 shrink-0 rounded-xl bg-[#EAE6FA]/40 overflow-hidden flex items-center justify-center p-2">
+              <div className="h-28 w-28 shrink-0 rounded-xl bg-white border border-[#EDEAFB] overflow-hidden flex items-center justify-center p-2">
                 <img
                   src={image_url}
                   alt=""
@@ -67,22 +67,22 @@ export function MedicinePreview({
                 />
               </div>
             ) : (
-              <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-[#EAE6FA]/30 border border-[#EAE6FA] text-[13px] font-medium text-[#6B5AE0]/60">
+              <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-white border border-[#EDEAFB] text-[13px] font-medium text-[#5527E7]/60">
                 Image
               </div>
             )}
             <div className="flex min-w-0 flex-1 flex-col justify-between h-full w-full">
               <div>
-                <h3 className="text-[18px] font-bold text-[#2A00A2] leading-snug">{displayName}</h3>
-                <p className="mt-1 text-[14px] font-medium text-[#6B5AE0]/80 line-clamp-2 leading-normal">{displayShort}</p>
+                <h3 className="text-[18px] font-semibold text-[#1D0087] leading-snug">{displayName}</h3>
+                <p className="mt-1 text-[14px] font-normal text-[#5140AB] line-clamp-2 leading-normal">{displayShort}</p>
               </div>
               <div className="mt-4 flex items-baseline justify-between gap-2 w-full">
-                <div className="text-[15px] font-medium text-[#2A00A2]">
-                  From <span className="font-bold text-[18px]">{displayPrice}</span>
+                <div className="text-[14px] font-normal text-[#1D0087]">
+                  From <span className="font-semibold text-[18px]">{displayPrice}</span>
                 </div>
                 <button
                   type="button"
-                  className="text-[14px] font-bold text-[#6B5AE0] underline hover:text-[#2A00A2] transition-colors pb-0.5"
+                  className="text-[14px] font-semibold text-[#5527E7] underline hover:text-[#1D0087] transition-colors pb-0.5"
                   onClick={() => setModalOpen(true)}
                 >
                   Learn More
@@ -92,15 +92,16 @@ export function MedicinePreview({
           </div>
         </div>
 
+        {/* Modal View matching reference specifications */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-md rounded-xl border border-[#EAE6FA] bg-white p-6">
+          <DialogContent className="max-w-md rounded-2xl border border-[#EDEAFB] bg-white p-6 shadow-xl">
             <DialogHeader className="space-y-1">
-              <DialogTitle className="text-[20px] font-bold text-[#2A00A2]">{displayName}</DialogTitle>
-              <DialogDescription className="text-[14px] text-[#6B5AE0]/80 font-medium">{displayShort}</DialogDescription>
+              <DialogTitle className="text-[20px] font-semibold text-[#1D0087]">{displayName}</DialogTitle>
+              <DialogDescription className="text-[14px] text-[#5527E7]/80 font-normal">{displayShort}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 my-2">
               {image_url && (
-                <div className="mx-auto h-36 w-36 rounded-xl bg-[#EAE6FA]/40 flex items-center justify-center p-3">
+                <div className="mx-auto h-36 w-36 rounded-xl bg-white border border-[#EDEAFB] flex items-center justify-center p-3">
                   <img
                     src={image_url}
                     alt=""
@@ -108,19 +109,19 @@ export function MedicinePreview({
                   />
                 </div>
               )}
-              <p className="text-[14px] leading-relaxed text-[#2A00A2]/90 font-medium">{displayLong}</p>
+              <p className="text-[14px] leading-relaxed text-[#1D0087]/90 font-normal">{displayLong}</p>
               {bullets.length > 0 && (
                 <ul className="space-y-2">
                   {bullets.map((text, i) => (
-                    <li key={i} className="flex gap-2 text-[13px] font-medium text-[#5D22E8]">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#2A00A2]" />
+                    <li key={i} className="flex gap-2 text-[13px] font-normal text-[#5527E7]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#1D0087]" />
                       <span>{text}</span>
                     </li>
                   ))}
                 </ul>
               )}
               {notice_text?.trim() && (
-                <p className="rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-3 text-[12px] font-medium text-[#6B5AE0]/90 leading-normal">
+                <p className="rounded-xl border border-[#EDEAFB] bg-[#FAF9FF] p-3 text-[12px] font-normal text-[#5140AB] leading-normal">
                   {notice_text.trim()}
                 </p>
               )}
@@ -130,7 +131,7 @@ export function MedicinePreview({
                 type="button" 
                 variant="outline" 
                 onClick={() => setModalOpen(false)}
-                className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors flex items-center gap-1.5"
+                className="border-[#EDEAFB] bg-white hover:bg-[#FAF9FF] text-[#5527E7] h-10 px-4 rounded-lg font-medium text-[13px] transition-colors flex items-center gap-1.5 shadow-none"
               >
                 <X className="h-4 w-4" /> Close preview
               </Button>

@@ -97,21 +97,28 @@ function EditPackagePage() {
   const selectedMedicine = medicines.find((m) => m.id === preview.medicine_id);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <Suspense fallback={<FormSkeleton />}>
-          <PackageForm
-            key={packageId}
-            mode="edit"
-            medicines={medicines}
-            defaultValues={formDefaults}
-            submitting={mutation.isPending}
-            onSubmit={(values) => mutation.mutate(values)}
-            onCancel={() => navigate({ to: "/admin/packages" })}
-            onValuesChange={setPreviewValues}
-          />
-        </Suspense>
-        <div className="lg:sticky lg:top-20">
+    /* FIXED: Removed mx-auto max-w-5xl wrapper layout constraints to align natively left-to-right */
+    <div className="w-full bg-white pl-8 pr-12 py-6">
+      <div className="flex flex-col lg:flex-row items-start gap-12 w-full">
+        
+        {/* Left Form Panel */}
+        <div className="flex-1 w-full shrink-0 max-w-5xl">
+          <Suspense fallback={<FormSkeleton />}>
+            <PackageForm
+              key={packageId}
+              mode="edit"
+              medicines={medicines}
+              defaultValues={formDefaults}
+              submitting={mutation.isPending}
+              onSubmit={(values) => mutation.mutate(values)}
+              onCancel={() => navigate({ to: "/admin/packages" })}
+              onValuesChange={setPreviewValues}
+            />
+          </Suspense>
+        </div>
+
+        {/* Right Patient Preview Panel */}
+        <div className="w-full lg:w-[440px] lg:sticky lg:top-6 shrink-0 mt-[80px]">
           <Suspense fallback={<FormSkeleton />}>
             <PackagePreview
               medicine_name={selectedMedicine?.name}
@@ -125,6 +132,7 @@ function EditPackagePage() {
             />
           </Suspense>
         </div>
+
       </div>
     </div>
   );
