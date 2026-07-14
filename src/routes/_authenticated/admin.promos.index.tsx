@@ -49,7 +49,7 @@ function PromosListPage() {
     <div className="w-full text-left m-0 p-0 space-y-5 max-w-none">
       <div className="flex items-start justify-between gap-3 w-full">
         <div className="space-y-0.5">
-          <h2 className="text-xl font-bold text-[#2A00A2] tracking-tight">Promo Codes</h2>
+          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Promo Codes</h2>
           <p className="text-sm text-[#6B5AE0]/70 font-medium">
             Discounts applied at checkout. Auto-apply is the first-time welcome discount.
           </p>
