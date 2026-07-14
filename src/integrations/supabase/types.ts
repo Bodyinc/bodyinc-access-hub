@@ -1260,6 +1260,78 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          id: string;
+          referrer_user_id: string;
+          referred_user_id: string | null;
+          code: string;
+          status: string;
+          reward_cents: number;
+          stripe_balance_txn_id: string | null;
+          created_at: string;
+          converted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          referrer_user_id: string;
+          referred_user_id?: string | null;
+          code: string;
+          status?: string;
+          reward_cents?: number;
+          stripe_balance_txn_id?: string | null;
+          created_at?: string;
+          converted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          referrer_user_id?: string;
+          referred_user_id?: string | null;
+          code?: string;
+          status?: string;
+          reward_cents?: number;
+          stripe_balance_txn_id?: string | null;
+          created_at?: string;
+          converted_at?: string | null;
+        };
+        Relationships: [];
+      };
+      wallet_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount_cents: number;
+          type: string;
+          description: string | null;
+          referral_id: string | null;
+          stripe_invoice_id: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount_cents: number;
+          type: string;
+          description?: string | null;
+          referral_id?: string | null;
+          stripe_invoice_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount_cents?: number;
+          type?: string;
+          description?: string | null;
+          referral_id?: string | null;
+          stripe_invoice_id?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
           created_at: string

@@ -3,7 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Search, Mail } from "lucide-react";
+import { MoreHorizontal, Search, Mail, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -33,6 +43,7 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import {
+  deletePatient,
   listPatients,
   sendPatientPasswordReset,
   setPatientActive,
@@ -58,9 +69,12 @@ function PatientsListPage() {
   const setActive = useServerFn(setPatientActive);
   const reset = useServerFn(sendPatientPasswordReset);
 
+  const remove = useServerFn(deletePatient);
+
   const [search, setSearch] = useState("");
   const debounced = useDebouncedValue(search);
   const [status, setStatus] = useState<"all" | "active" | "deactivated">("all");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
   const query = useQuery({
     queryKey: ["patients", { search: debounced, status }],
@@ -80,6 +94,16 @@ function PatientsListPage() {
     mutationFn: (userId: string) =>
       reset({ data: { userId, redirect_to: `${window.location.origin}/reset-password` } }),
     onSuccess: () => toast.success("Password reset email sent"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (userId: string) => remove({ data: { userId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["patients"] });
+      toast.success("Patient deleted");
+      setDeleteTarget(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -223,6 +247,14 @@ function PatientsListPage() {
                       >
                         {p.is_active ? "Deactivate" : "Reactivate"}
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="rounded-lg font-bold text-[13px] text-[#FF4D6D] focus:bg-[#FFF1F4] focus:text-[#FF4D6D]"
+                        onClick={() =>
+                          setDeleteTarget({ id: p.id, label: p.full_name || p.email })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 stroke-[2.5]" /> Delete
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -232,6 +264,41 @@ function PatientsListPage() {
         </Table>
         </div>
       </Card>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteMut.isPending) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-[#E2DCFA]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#2A00A2]">
+              Delete {deleteTarget?.label}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#6B5AE0]/80 font-medium">
+              This permanently deletes the patient's account and cancels any active
+              subscription immediately. Payment history is kept for records. The email
+              becomes available for a brand-new signup. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending} className="rounded-xl">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMut.isPending}
+              className="rounded-xl bg-[#FF4D6D] text-white hover:bg-[#E63E5C]"
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTarget) deleteMut.mutate(deleteTarget.id);
+              }}
+            >
+              {deleteMut.isPending ? "Deleting…" : "Delete patient"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
