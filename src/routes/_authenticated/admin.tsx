@@ -8,10 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
   head: () => ({
-    meta: [
-      { title: "Admin — Body Inc" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Admin — Body Inc" }, { name: "robots", content: "noindex" }],
   }),
   pendingComponent: () => <RoutePending />,
   beforeLoad: async ({ context }) => {
@@ -67,12 +64,13 @@ const TITLES: Record<string, string> = {
   "/admin/intake-form": "Intake Form",
   "/admin/orders": "Orders",
   "/admin/intake-sessions": "Intake Sessions",
+  "/admin/settings": "Settings",
 };
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cleaned = pathname.replace(/\/$/, "");
-  let title = TITLES[cleaned] ?? "Admin";
+  const title = TITLES[cleaned] ?? "Admin";
 
   return (
     <SidebarProvider>

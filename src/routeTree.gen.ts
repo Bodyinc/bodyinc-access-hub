@@ -29,6 +29,7 @@ import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_
 import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
+import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
 import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
 import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
@@ -165,6 +166,12 @@ const AuthenticatedAdminBillingRoute =
   AuthenticatedAdminBillingRouteImport.update({
     id: '/billing',
     path: '/billing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSettingsIndexRoute =
+  AuthenticatedAdminSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminReferralsIndexRoute =
@@ -377,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
   '/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
+  '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -414,6 +422,7 @@ export interface FileRoutesByTo {
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesIndexRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsIndexRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -464,6 +473,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/_authenticated/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
   '/_authenticated/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
+  '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -514,6 +524,7 @@ export interface FileRouteTypes {
     | '/admin/providers/'
     | '/admin/questionnaires/'
     | '/admin/referrals/'
+    | '/admin/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -551,6 +562,7 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/questionnaires'
     | '/admin/referrals'
+    | '/admin/settings'
   id:
     | '__root__'
     | '/'
@@ -600,6 +612,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers/'
     | '/_authenticated/admin/questionnaires/'
     | '/_authenticated/admin/referrals/'
+    | '/_authenticated/admin/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -750,6 +763,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/admin/billing'
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/settings/': {
+      id: '/_authenticated/admin/settings/'
+      path: '/settings'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/referrals/': {
@@ -1142,6 +1162,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
   AuthenticatedAdminPromosIndexRoute: typeof AuthenticatedAdminPromosIndexRoute
   AuthenticatedAdminReferralsIndexRoute: typeof AuthenticatedAdminReferralsIndexRoute
+  AuthenticatedAdminSettingsIndexRoute: typeof AuthenticatedAdminSettingsIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -1168,6 +1189,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPromosNewRoute: AuthenticatedAdminPromosNewRoute,
   AuthenticatedAdminPromosIndexRoute: AuthenticatedAdminPromosIndexRoute,
   AuthenticatedAdminReferralsIndexRoute: AuthenticatedAdminReferralsIndexRoute,
+  AuthenticatedAdminSettingsIndexRoute: AuthenticatedAdminSettingsIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =

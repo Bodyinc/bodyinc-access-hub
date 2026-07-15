@@ -236,8 +236,16 @@ export const sendPatientPasswordReset = createServerFn({ method: "POST" })
       .eq("id", data.userId)
       .maybeSingle();
     if (error || !profile?.email) throw new Error("Patient email not found");
+
+    // Patients reset their password on the PATIENT portal — never on this admin app's
+    // origin (which is what the client-provided redirect_to points at).
+    const portalUrl = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "");
+    const redirectTo = portalUrl
+      ? `${portalUrl}/auth/callback?next=/reset-password`
+      : data.redirect_to;
+
     const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(profile.email, {
-      redirectTo: data.redirect_to,
+      redirectTo,
     });
     if (linkErr) throw new Error(linkErr.message);
     return { ok: true };
