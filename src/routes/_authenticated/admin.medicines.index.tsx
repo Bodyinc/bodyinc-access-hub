@@ -47,7 +47,7 @@ import {
   type StoredMedicine,
 } from "@/lib/medicines.store";
 import {
-  formatPrice,
+  formatFromPrice,
   MEDICINE_STATUSES,
   MEDICINE_STATUS_LABELS,
   type MedicineStatus,
@@ -185,7 +185,7 @@ function MedicinesListPage() {
                 <TableRow className="hover:bg-transparent border-b border-[#EAE6FA]">
                   <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Medication Name</TableHead>
                   <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Description</TableHead>
-                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Monthly Price</TableHead>
+                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Price</TableHead>
                   <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
                   <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Last Updated</TableHead>
                   <TableHead className="h-14 w-16 px-4 text-center" />
@@ -223,7 +223,7 @@ function MedicinesListPage() {
 
                     {/* Price column */}
                     <TableCell className="px-6 py-5 text-[15px] font-bold text-[#2A00A2] border-r border-[#EAE6FA]/60">
-                      {formatPrice(m.price_monthly)}/mo
+                      {formatFromPrice(m.from_price_cents)}
                     </TableCell>
 
                     {/* Status column */}

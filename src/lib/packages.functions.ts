@@ -20,7 +20,7 @@ export const syncPackageToStripe = createServerFn({ method: "POST" })
 
     const { data: pkg, error: pkgErr } = await supabaseAdmin
       .from("packages")
-      .select("id, name, price, duration_months, stripe_price_id, medicine_id")
+      .select("id, name, price, duration_months, stripe_price_id, medicine_id, variant_id")
       .eq("id", data.packageId)
       .maybeSingle();
     if (pkgErr) throw new Error(pkgErr.message);
@@ -34,18 +34,55 @@ export const syncPackageToStripe = createServerFn({ method: "POST" })
     if (medErr) throw new Error(medErr.message);
     if (!medicine) throw new Error("Linked medicine not found.");
 
-    let productId = medicine.stripe_product_id;
-    if (!productId) {
-      const product = await stripe.products.create({
-        name: medicine.name,
-        description: medicine.short_description || undefined,
-        metadata: { medicine_id: medicine.id },
-      });
-      productId = product.id;
-      await supabaseAdmin
-        .from("medicines")
-        .update({ stripe_product_id: productId })
-        .eq("id", medicine.id);
+    // Variant packages map to their own Stripe Product ("Medicine — Variant") so invoices name
+    // the variant; medicine-level packages use the medicine's product.
+    let productId: string;
+    if (pkg.variant_id) {
+      const { data: variant, error: vErr } = await supabaseAdmin
+        .from("medicine_variants")
+        .select("id, name, stripe_product_id")
+        .eq("id", pkg.variant_id)
+        .maybeSingle();
+      if (vErr) throw new Error(vErr.message);
+      if (!variant) throw new Error("Linked variant not found.");
+
+      const productName = `${medicine.name} — ${variant.name}`;
+      if (variant.stripe_product_id) {
+        productId = variant.stripe_product_id;
+        try {
+          await stripe.products.update(productId, {
+            name: productName,
+            description: medicine.short_description || undefined,
+          });
+        } catch {
+          // Non-fatal: keep the existing product if the name update fails.
+        }
+      } else {
+        const product = await stripe.products.create({
+          name: productName,
+          description: medicine.short_description || undefined,
+          metadata: { medicine_id: medicine.id, variant_id: variant.id },
+        });
+        productId = product.id;
+        await supabaseAdmin
+          .from("medicine_variants")
+          .update({ stripe_product_id: productId })
+          .eq("id", variant.id);
+      }
+    } else {
+      productId = medicine.stripe_product_id ?? "";
+      if (!productId) {
+        const product = await stripe.products.create({
+          name: medicine.name,
+          description: medicine.short_description || undefined,
+          metadata: { medicine_id: medicine.id },
+        });
+        productId = product.id;
+        await supabaseAdmin
+          .from("medicines")
+          .update({ stripe_product_id: productId })
+          .eq("id", medicine.id);
+      }
     }
 
     const unitAmount = Math.round(Number(pkg.price) * 100);

@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Download, Eye } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Download, Eye, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ChangeMedicineDialog } from "@/components/admin/change-medicine-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,6 +39,7 @@ function OrderDetailPage() {
     queryKey: ["admin-order", orderId],
     queryFn: () => get({ data: { orderId } }),
   });
+  const [changeOpen, setChangeOpen] = useState(false);
 
   if (q.isLoading) return <div className="text-sm text-muted-foreground">Loading order…</div>;
   if (q.isError || !q.data) {
@@ -52,7 +55,10 @@ function OrderDetailPage() {
     );
   }
 
-  const { subscription, package: pkg, medicine, customer, payments, display_status } = q.data as any;
+  const { subscription, package: pkg, variant_name, medicine, customer, payments, display_status } =
+    q.data as any;
+
+  const canChangeMedicine = ["active", "trialing", "past_due"].includes(subscription.status);
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -66,12 +72,20 @@ function OrderDetailPage() {
             <CardTitle className="font-mono text-base">{subscription.id}</CardTitle>
             <CardDescription>{formatDate(subscription.created_at)}</CardDescription>
           </div>
-          <Badge variant={display_status === "paid" ? "default" : "secondary"}>
-            {display_status ?? "—"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {canChangeMedicine ? (
+              <Button variant="outline" size="sm" onClick={() => setChangeOpen(true)}>
+                <Repeat className="mr-1 h-4 w-4" /> Change medicine
+              </Button>
+            ) : null}
+            <Badge variant={display_status === "paid" ? "default" : "secondary"}>
+              {display_status ?? "—"}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
           <Row label="Medication" value={medicine?.name ?? "—"} />
+          <Row label="Variant" value={variant_name ?? "—"} />
           <Row label="Plan" value={pkg?.name ?? "—"} />
           <Row label="Plan price" value={pkg ? formatCurrency(pkg.price) : "—"} />
           <Row
@@ -191,6 +205,13 @@ function OrderDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ChangeMedicineDialog
+        orderId={subscription.id}
+        open={changeOpen}
+        onOpenChange={setChangeOpen}
+        onChanged={() => q.refetch()}
+      />
     </div>
   );
 }

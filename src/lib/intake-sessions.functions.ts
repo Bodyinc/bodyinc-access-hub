@@ -83,7 +83,7 @@ export const getIntakeSession = createServerFn({ method: "POST" })
         .eq("session_id", session.id),
       supabaseAdmin
         .from("intake_session_medicines")
-        .select("medicine_id, category_id, medicines(name, price_monthly)")
+        .select("medicine_id, category_id, medicines(name, from_price_cents)")
         .eq("session_id", session.id),
       supabaseAdmin
         .from("intake_session_questionnaire_responses")
@@ -94,7 +94,7 @@ export const getIntakeSession = createServerFn({ method: "POST" })
       session.selected_plan_id
         ? supabaseAdmin
             .from("packages")
-            .select("id, name, price_monthly, billing_cycle")
+            .select("id, name, price, duration_months")
             .eq("id", session.selected_plan_id)
             .maybeSingle()
         : Promise.resolve({ data: null as any }),
@@ -154,7 +154,7 @@ export const getIntakeSession = createServerFn({ method: "POST" })
         medicine_id: m.medicine_id,
         category_id: m.category_id,
         name: m.medicines?.name ?? null,
-        price_monthly: m.medicines?.price_monthly ?? null,
+        from_price_cents: m.medicines?.from_price_cents ?? null,
       })),
       responses,
       selected_plan: pkg ?? null,

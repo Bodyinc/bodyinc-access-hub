@@ -391,10 +391,10 @@ export type Database = {
           image_url: string | null
           important_info: Json
           is_active: boolean
+          from_price_cents: number | null
           long_description: string | null
           name: string
           notice_text: string | null
-          price_monthly: number
           requires_questionnaire: boolean
           short_description: string
           sort_order: number
@@ -408,10 +408,10 @@ export type Database = {
           image_url?: string | null
           important_info?: Json
           is_active?: boolean
+          from_price_cents?: number | null
           long_description?: string | null
           name: string
           notice_text?: string | null
-          price_monthly?: number
           requires_questionnaire?: boolean
           short_description: string
           sort_order?: number
@@ -425,10 +425,10 @@ export type Database = {
           image_url?: string | null
           important_info?: Json
           is_active?: boolean
+          from_price_cents?: number | null
           long_description?: string | null
           name?: string
           notice_text?: string | null
-          price_monthly?: number
           requires_questionnaire?: boolean
           short_description?: string
           sort_order?: number
@@ -454,6 +454,7 @@ export type Database = {
           sort_order: number
           stripe_price_id: string | null
           updated_at: string
+          variant_id: string | null
         }
         Insert: {
           clinical_note?: string | null
@@ -470,6 +471,7 @@ export type Database = {
           sort_order?: number
           stripe_price_id?: string | null
           updated_at?: string
+          variant_id?: string | null
         }
         Update: {
           clinical_note?: string | null
@@ -486,10 +488,62 @@ export type Database = {
           sort_order?: number
           stripe_price_id?: string | null
           updated_at?: string
+          variant_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "packages_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "medicine_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicine_variants: {
+        Row: {
+          created_at: string
+          from_price_cents: number | null
+          id: string
+          is_active: boolean
+          medicine_id: string
+          name: string
+          sort_order: number
+          stripe_product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_price_cents?: number | null
+          id?: string
+          is_active?: boolean
+          medicine_id: string
+          name: string
+          sort_order?: number
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_price_cents?: number | null
+          id?: string
+          is_active?: boolean
+          medicine_id?: string
+          name?: string
+          sort_order?: number
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicine_variants_medicine_id_fkey"
             columns: ["medicine_id"]
             isOneToOne: false
             referencedRelation: "medicines"

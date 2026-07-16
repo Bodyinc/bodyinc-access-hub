@@ -9,6 +9,48 @@ export const MEDICINE_STATUS_LABELS: Record<MedicineStatus, string> = {
   draft: "Draft",
 };
 
+export const MAX_PACKAGES_PER_MEDICINE = 2;
+
+export const medicinePackageSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z
+    .string()
+    .trim()
+    .max(120)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
+  duration_months: z.coerce.number().int().min(1, "Duration must be at least 1 month"),
+  original_price: z.coerce.number().min(0, "Original price must be 0 or greater"),
+  price: z.coerce.number().min(0, "Sale price must be 0 or greater"),
+  is_most_popular: z.boolean().default(false),
+  is_active: z.boolean().default(true),
+  features: z
+    .array(z.object({ text: z.string().trim().min(1, "Feature cannot be empty").max(300) }))
+    .default([]),
+  clinical_note: z
+    .string()
+    .trim()
+    .max(2000)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
+});
+
+export type MedicinePackageValues = z.input<typeof medicinePackageSchema>;
+
+export const medicineVariantSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1, "Variant name is required").max(120),
+  is_active: z.boolean().default(true),
+  packages: z
+    .array(medicinePackageSchema)
+    .max(MAX_PACKAGES_PER_MEDICINE, `A variant can have at most ${MAX_PACKAGES_PER_MEDICINE} packages`)
+    .default([]),
+});
+
+export type MedicineVariantValues = z.input<typeof medicineVariantSchema>;
+
 export const medicineFormSchema = z.object({
   name: z.string().trim().min(1, "Medicine name is required").max(120),
   short_description: z.string().trim().min(1, "Short description is required").max(500),
@@ -28,7 +70,11 @@ export const medicineFormSchema = z.object({
       message: "Upload an image or provide a valid URL",
     })
     .transform((v) => (v ? v : undefined)),
-  price_monthly: z.coerce.number().min(0, "Price must be 0 or greater"),
+  packages: z
+    .array(medicinePackageSchema)
+    .max(MAX_PACKAGES_PER_MEDICINE, `A medicine can have at most ${MAX_PACKAGES_PER_MEDICINE} packages`)
+    .default([]),
+  variants: z.array(medicineVariantSchema).default([]),
   status: z.enum(MEDICINE_STATUSES).default("draft"),
   important_info: z
     .array(z.object({ text: z.string().trim().min(1, "Bullet cannot be empty").max(500) }))
@@ -53,4 +99,41 @@ export function isMedicineActive(status: MedicineStatus) {
 
 export function formatPrice(amount: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+}
+
+type PricedPackage = { price: number; duration_months: number; is_active?: boolean };
+
+// Lowest effective per-month rate (in cents) across a medicine's active packages.
+export function computeFromPriceCents(packages: PricedPackage[]): number | null {
+  const rates = packages
+    .filter((p) => p.is_active !== false && Number(p.duration_months) > 0)
+    .map((p) => Math.round((Number(p.price) / Number(p.duration_months)) * 100))
+    .filter((c) => Number.isFinite(c));
+  return rates.length > 0 ? Math.min(...rates) : null;
+}
+
+export function formatFromPrice(fromPriceCents: number | null | undefined): string {
+  if (fromPriceCents == null) return "Pricing coming soon";
+  const dollars = fromPriceCents / 100;
+  const label = Number.isInteger(dollars) ? `$${dollars}` : `$${dollars.toFixed(2)}`;
+  return `From ${label}/mo`;
+}
+
+// Cheapest per-month rate across a medicine's pricing — its own packages plus the packages of
+// any active variant. Mirrors the DB from_price_cents rollup for the live admin preview.
+export function computeMedicineFromPriceCents(values: {
+  packages?: MedicinePackageValues[];
+  variants?: { is_active?: boolean; packages?: MedicinePackageValues[] }[];
+}): number | null {
+  const all: PricedPackage[] = [
+    ...(values.packages ?? []),
+    ...(values.variants ?? [])
+      .filter((v) => v.is_active !== false)
+      .flatMap((v) => v.packages ?? []),
+  ].map((p) => ({
+    price: Number(p.price),
+    duration_months: Number(p.duration_months),
+    is_active: p.is_active,
+  }));
+  return computeFromPriceCents(all);
 }

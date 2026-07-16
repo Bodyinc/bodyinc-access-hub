@@ -9,14 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatPrice, type MedicineFormValues } from "@/lib/medicines.schema";
+import { formatFromPrice, type MedicineFormValues } from "@/lib/medicines.schema";
 
 export type MedicinePreviewProps = {
   name?: string;
   short_description?: string;
   long_description?: string;
   image_url?: string;
-  price_monthly?: number;
+  from_price_cents?: number | null;
   important_info?: MedicineFormValues["important_info"];
   notice_text?: string;
 };
@@ -26,7 +26,7 @@ export function MedicinePreview({
   short_description = "",
   long_description = "",
   image_url = "",
-  price_monthly = 0,
+  from_price_cents = null,
   important_info = [],
   notice_text = "",
 }: MedicinePreviewProps) {
@@ -40,8 +40,7 @@ export function MedicinePreview({
   const bullets = (important_info ?? [])
     .map((b) => (typeof b === "string" ? b : b?.text)?.trim())
     .filter(Boolean) as string[];
-  const monthly = Number(price_monthly);
-  const displayPrice = monthly > 0 && !Number.isNaN(monthly) ? formatPrice(monthly) : "$—/mo";
+  const displayPrice = formatFromPrice(from_price_cents);
 
   return (
     <Card className="border border-[#EDEAFB] bg-white rounded-2xl shadow-none overflow-hidden w-full antialiased">
@@ -78,7 +77,7 @@ export function MedicinePreview({
               </div>
               <div className="mt-4 flex items-baseline justify-between gap-2 w-full">
                 <div className="text-[14px] font-normal text-[#1D0087]">
-                  From <span className="font-semibold text-[18px]">{displayPrice}</span>
+                  <span className="font-semibold text-[16px]">{displayPrice}</span>
                 </div>
                 <button
                   type="button"

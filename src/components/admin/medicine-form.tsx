@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { uploadMedicineImage } from "@/lib/medicine-image-upload";
+import { MedicinePricingSection } from "@/components/admin/medicine-pricing-section";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
@@ -42,7 +43,8 @@ const EMPTY: MedicineFormValues = {
   short_description: "",
   long_description: "",
   image_url: "",
-  price_monthly: 0,
+  packages: [],
+  variants: [],
   status: "draft",
   important_info: [],
   notice_text: "",
@@ -222,36 +224,24 @@ export function MedicineForm({
                 />
               </Field>
 
-              <div className="grid gap-5 grid-cols-1 sm:grid-cols-2">
-                <Field label="Price per month ($)" error={errors.price_monthly?.message}>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    {...register("price_monthly")}
-                    disabled={submitting}
-                    className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
-                  />
-                </Field>
-                <Field label="Status" error={errors.status?.message}>
-                  <Select
-                    value={status}
-                    onValueChange={(v) => setValue("status", v as MedicineStatus)}
-                    disabled={submitting}
-                  >
-                    <SelectTrigger className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus:ring-[#2A00A2] text-[14px] font-medium">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-[#EAE6FA]">
-                      {MEDICINE_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s} className="text-[14px] font-medium text-[#2A00A2] focus:bg-[#F9F8FF] focus:text-[#2A00A2]">
-                          {MEDICINE_STATUS_LABELS[s]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
+              <Field label="Status" error={errors.status?.message}>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setValue("status", v as MedicineStatus)}
+                  disabled={submitting}
+                >
+                  <SelectTrigger className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus:ring-[#2A00A2] text-[14px] font-medium">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-[#EAE6FA]">
+                    {MEDICINE_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s} className="text-[14px] font-medium text-[#2A00A2] focus:bg-[#F9F8FF] focus:text-[#2A00A2]">
+                        {MEDICINE_STATUS_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
 
               <div className="h-12 flex items-center bg-[#FDFDFF] border border-[#EAE6FA] rounded-xl px-4 mt-2">
                 <Controller
@@ -316,6 +306,15 @@ export function MedicineForm({
           />
         </CardContent>
       </Card>
+
+      <MedicinePricingSection
+        control={control}
+        register={register}
+        getValues={form.getValues}
+        setValue={setValue}
+        errors={errors}
+        submitting={submitting}
+      />
 
       {/* Important Info Array Lists */}
       <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
