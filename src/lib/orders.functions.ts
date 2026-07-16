@@ -125,7 +125,7 @@ export const getOrder = createServerFn({ method: "POST" })
       sub.package_id
         ? supabaseAdmin
             .from("packages")
-            .select("name, price, duration_months")
+            .select("name, price, duration_months, medicine_variants(name)")
             .eq("id", sub.package_id)
             .maybeSingle()
         : Promise.resolve({ data: null as any }),
@@ -151,9 +151,184 @@ export const getOrder = createServerFn({ method: "POST" })
     return {
       subscription: sub,
       package: pkg ?? null,
+      variant_name: (pkg as any)?.medicine_variants?.name ?? null,
       medicine: med ?? null,
       customer: profile ?? null,
       payments: payments ?? [],
       display_status: displayStatus(sub.status),
     };
+  });
+
+const CHANGEABLE_STATUSES = ["active", "trialing", "past_due"];
+
+function isShippingItemPrice(price: any): boolean {
+  return (
+    price?.metadata?.kind === "shipping" ||
+    (typeof price?.lookup_key === "string" && price.lookup_key.startsWith("bi_shipping_"))
+  );
+}
+
+// Admin-only: change the medicine/variant/plan of a patient's live subscription. The new price
+// applies from the NEXT billing cycle (proration_behavior: "none"); if the new plan's billing
+// duration differs, the recurring shipping item is re-intervalled to match (Stripe requires all
+// recurring prices on a subscription to share an interval).
+export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ orderId: z.string().uuid(), packageId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getStripe } = await import("@/integrations/stripe/client.server");
+    const stripe = getStripe();
+
+    const { data: sub, error: subErr } = await supabaseAdmin
+      .from("subscriptions")
+      .select("id, stripe_subscription_id, medicine_id, package_id, stripe_price_id, status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (subErr) throw new Error(subErr.message);
+    if (!sub) throw new Error("Subscription not found.");
+    if (!sub.stripe_subscription_id) throw new Error("This subscription has no Stripe record.");
+    if (!CHANGEABLE_STATUSES.includes(sub.status)) {
+      throw new Error(`Cannot change a ${sub.status} subscription.`);
+    }
+
+    const { data: pkg, error: pkgErr } = await supabaseAdmin
+      .from("packages")
+      .select(
+        "id, medicine_id, variant_id, duration_months, price, stripe_price_id, is_active, medicines(name), medicine_variants(name)",
+      )
+      .eq("id", data.packageId)
+      .maybeSingle();
+    if (pkgErr) throw new Error(pkgErr.message);
+    if (!pkg) throw new Error("Selected plan not found.");
+    if (!pkg.is_active) throw new Error("Selected plan is inactive.");
+    if (!pkg.stripe_price_id) {
+      throw new Error("This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.");
+    }
+
+    const medicineName = (pkg as any).medicines?.name ?? "Treatment";
+    const variantName = (pkg as any).medicine_variants?.name ?? null;
+    const planLabel =
+      pkg.duration_months === 1 ? "Monthly Plan" : `${pkg.duration_months}-Month Plan`;
+    const description = `${medicineName}${variantName ? ` — ${variantName}` : ""} · ${planLabel}`;
+    const newIntervalCount = Math.max(1, Number(pkg.duration_months) || 1);
+
+    // Resolve the subscription's current plan + shipping items.
+    const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+    const items = stripeSub.items.data;
+    const shippingItem = items.find((it) => isShippingItemPrice(it.price));
+    const currentPeriodEnd: number | undefined =
+      (stripeSub as any).current_period_end ?? (items[0] as any)?.current_period_end;
+    if (!currentPeriodEnd) throw new Error("Could not determine the current billing period end.");
+
+    // Build the NEW phase's items: the new plan price + the shipping item re-intervalled to
+    // match the new plan's duration (Stripe requires all recurring prices on a subscription to
+    // share an interval). Shipping keeps its current amount.
+    const newItems: Array<{ price: string; quantity: number }> = [
+      { price: pkg.stripe_price_id, quantity: 1 },
+    ];
+    if (shippingItem) {
+      const shipPrice: any = shippingItem.price;
+      const currency: string = shipPrice.currency ?? "usd";
+      const amountCents: number = shipPrice.unit_amount ?? 0;
+      const sameInterval =
+        shipPrice.recurring?.interval === "month" &&
+        (shipPrice.recurring?.interval_count ?? 1) === newIntervalCount;
+      let shippingPriceId: string = shipPrice.id;
+      if (!sameInterval) {
+        const lookupKey = `bi_shipping_${currency}_month_${newIntervalCount}_${amountCents}`;
+        const existing = await stripe.prices.list({
+          lookup_keys: [lookupKey],
+          active: true,
+          limit: 1,
+        });
+        shippingPriceId =
+          existing.data[0]?.id ??
+          (
+            await stripe.prices.create({
+              currency,
+              unit_amount: amountCents,
+              recurring: { interval: "month", interval_count: newIntervalCount },
+              lookup_key: lookupKey,
+              product_data: { name: "Shipping" },
+              metadata: { kind: "shipping" },
+            })
+          ).id;
+      }
+      newItems.push({ price: shippingPriceId, quantity: 1 });
+    }
+
+    // Use a subscription schedule so the change applies from the NEXT cycle: the current phase
+    // runs unchanged until the current period ends, then a new phase starts with the new plan.
+    // A plain subscriptions.update would stretch the CURRENT period to the new interval.
+    const existingSchedule = (stripeSub as any).schedule;
+    if (existingSchedule) {
+      const sid = typeof existingSchedule === "string" ? existingSchedule : existingSchedule.id;
+      try {
+        await stripe.subscriptionSchedules.release(sid);
+      } catch {
+        // Already released / not managed — proceed to create a fresh one.
+      }
+    }
+
+    const schedule = await stripe.subscriptionSchedules.create({
+      from_subscription: sub.stripe_subscription_id,
+    });
+    const currentPhase: any = schedule.phases[0];
+    const currentPhaseItems = (currentPhase.items ?? []).map((i: any) => ({
+      price: typeof i.price === "string" ? i.price : i.price?.id,
+      quantity: i.quantity ?? 1,
+    }));
+    const newMeta: Record<string, string> = {
+      ...(stripeSub.metadata ?? {}),
+      medicine_id: pkg.medicine_id,
+      package_id: pkg.id,
+      variant_id: pkg.variant_id ?? "",
+      variant_name: variantName ?? "",
+    };
+
+    await stripe.subscriptionSchedules.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: currentPhaseItems,
+          start_date: currentPhase.start_date,
+          end_date: currentPeriodEnd,
+          proration_behavior: "none",
+        },
+        {
+          items: newItems,
+          proration_behavior: "none",
+          // Reset the billing cycle to the phase start so the new plan begins a FRESH period
+          // (and generates the renewal invoice) at the transition — otherwise Stripe keeps the
+          // old anchor and the new interval spans from the old cycle start (e.g. Jul→Oct, no
+          // charge at the boundary).
+          billing_cycle_anchor: "phase_start",
+          metadata: newMeta,
+        },
+      ],
+    });
+
+    // Reflect the go-forward plan in our DB now (shown as the upcoming plan; the next invoice
+    // date stays at the current period end). stripe_price_id / current_period_end are left to
+    // the webhook, which flips them at the phase transition.
+    const { error: updErr } = await supabaseAdmin
+      .from("subscriptions")
+      .update({ medicine_id: pkg.medicine_id, package_id: pkg.id })
+      .eq("id", sub.id);
+    if (updErr) throw new Error(updErr.message);
+
+    await supabaseAdmin.from("admin_activity_log").insert({
+      admin_user_id: context.userId,
+      action: "subscription.change_medicine",
+      entity: "subscriptions",
+      entity_id: sub.id,
+      before: { medicine_id: sub.medicine_id, package_id: sub.package_id },
+      after: { medicine_id: pkg.medicine_id, package_id: pkg.id },
+    } as any);
+
+    return { ok: true, description };
   });

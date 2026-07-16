@@ -7,7 +7,8 @@ import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { medicinesQueryKey } from "@/lib/query-options/medicines";
 import { createMedicine } from "@/lib/medicines.store";
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
-import type { MedicineFormValues } from "@/lib/medicines.schema";
+import { syncPackageToStripe } from "@/lib/packages.functions";
+import { computeMedicineFromPriceCents, type MedicineFormValues } from "@/lib/medicines.schema";
 
 const MedicineForm = lazy(() =>
   import("@/components/admin/medicine-form").then((m) => ({ default: m.MedicineForm })),
@@ -24,12 +25,14 @@ function NewMedicinePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const syncMedicine = useServerFn(syncMedicineToStripe);
+  const syncPackage = useServerFn(syncPackageToStripe);
   const [previewValues, setPreviewValues] = useState<MedicineFormValues>({
     name: "",
     short_description: "",
     long_description: "",
     image_url: "",
-    price_monthly: 0,
+    packages: [],
+    variants: [],
     status: "draft",
     important_info: [],
     notice_text: "",
@@ -40,11 +43,18 @@ function NewMedicinePage() {
 
   const mutation = useMutation({
     mutationFn: async (values: MedicineFormValues) => {
-      const id = await createMedicine(values);
+      const { id, packageSyncIds } = await createMedicine(values);
       try {
         await syncMedicine({ data: { medicineId: id } });
       } catch {
         // Product sync is best-effort here; the package sync will also ensure it exists.
+      }
+      for (const packageId of packageSyncIds) {
+        try {
+          await syncPackage({ data: { packageId } });
+        } catch {
+          // Best-effort Stripe price sync; the package row is already saved.
+        }
       }
       return { id };
     },
@@ -78,7 +88,7 @@ function NewMedicinePage() {
               short_description={previewValues.short_description}
               long_description={previewValues.long_description}
               image_url={previewValues.image_url}
-              price_monthly={previewValues.price_monthly}
+              from_price_cents={computeMedicineFromPriceCents(previewValues)}
               important_info={previewValues.important_info}
               notice_text={previewValues.notice_text}
             />

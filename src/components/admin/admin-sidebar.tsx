@@ -20,7 +20,6 @@ const items: NavItem[] = [
   { title: "Medications", url: "/admin/medicines" },
   { title: "Medication Rules", url: "/admin/medication-rules" },
   { title: "Questionnaires", url: "/admin/questionnaires" },
-  { title: "Packages", url: "/admin/packages" },
   { title: "Orders", url: "/admin/orders" },
   { title: "Billing", url: "/admin/billing" },
   { title: "Referrals", url: "/admin/referrals" },

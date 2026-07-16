@@ -5,9 +5,14 @@ import { useCallback, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { medicineQueryOptions, medicinesQueryKey } from "@/lib/query-options/medicines";
-import { updateMedicine, type StoredMedicine } from "@/lib/medicines.store";
+import {
+  updateMedicine,
+  type StoredMedicine,
+  type StoredMedicinePackage,
+} from "@/lib/medicines.store";
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
-import type { MedicineFormValues } from "@/lib/medicines.schema";
+import { syncPackageToStripe } from "@/lib/packages.functions";
+import { computeMedicineFromPriceCents, type MedicineFormValues } from "@/lib/medicines.schema";
 
 const MedicineForm = lazy(() =>
   import("@/components/admin/medicine-form").then((m) => ({ default: m.MedicineForm })),
@@ -31,13 +36,33 @@ function normalizeBullets(info: unknown): MedicineFormValues["important_info"] {
   });
 }
 
+function packageToForm(p: StoredMedicinePackage) {
+  return {
+    id: p.id,
+    name: p.name,
+    duration_months: p.duration_months,
+    original_price: p.original_price,
+    price: p.price,
+    is_most_popular: p.is_most_popular,
+    is_active: p.is_active,
+    features: p.features.map((text) => ({ text })),
+    clinical_note: p.clinical_note ?? "",
+  };
+}
+
 function toFormValues(m: StoredMedicine): MedicineFormValues {
   return {
     name: m.name,
     short_description: m.short_description,
     long_description: m.long_description ?? "",
     image_url: m.image_url ?? "",
-    price_monthly: m.price_monthly,
+    packages: m.packages.map(packageToForm),
+    variants: m.variants.map((v) => ({
+      id: v.id,
+      name: v.name,
+      is_active: v.is_active,
+      packages: v.packages.map(packageToForm),
+    })),
     status: m.status,
     important_info: normalizeBullets(m.important_info),
     notice_text: m.notice_text ?? "",
@@ -54,6 +79,7 @@ export default function EditMedicinePage() {
 
   const medicineQuery = useQuery(medicineQueryOptions(medicineId));
   const syncMedicine = useServerFn(syncMedicineToStripe);
+  const syncPackage = useServerFn(syncPackageToStripe);
 
   const [previewValues, setPreviewValues] = useState<MedicineFormValues | null>(null);
   const handlePreviewChange = useCallback((values: MedicineFormValues) => {
@@ -62,11 +88,18 @@ export default function EditMedicinePage() {
 
   const mutation = useMutation({
     mutationFn: async (values: MedicineFormValues) => {
-      await updateMedicine(medicineId, values);
+      const { packageSyncIds } = await updateMedicine(medicineId, values);
       try {
         await syncMedicine({ data: { medicineId } });
       } catch {
         // Product sync is best-effort; package sync will also ensure the product exists.
+      }
+      for (const packageId of packageSyncIds) {
+        try {
+          await syncPackage({ data: { packageId } });
+        } catch {
+          // Best-effort Stripe price sync; the package row is already saved.
+        }
       }
     },
     onSuccess: () => {
@@ -129,7 +162,7 @@ export default function EditMedicinePage() {
               short_description={preview.short_description}
               long_description={preview.long_description}
               image_url={preview.image_url}
-              price_monthly={preview.price_monthly}
+              from_price_cents={computeMedicineFromPriceCents(preview)}
               important_info={preview.important_info}
               notice_text={preview.notice_text}
             />

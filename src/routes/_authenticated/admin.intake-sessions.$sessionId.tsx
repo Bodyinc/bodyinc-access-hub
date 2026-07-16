@@ -93,7 +93,10 @@ function IntakeSessionDetailPage() {
           <CardContent className="text-sm">
             <div className="font-medium">{selected_plan.name}</div>
             <div className="text-muted-foreground">
-              ${selected_plan.price_monthly} / {selected_plan.billing_cycle}
+              ${selected_plan.price} /{" "}
+              {selected_plan.duration_months === 1
+                ? "month"
+                : `${selected_plan.duration_months} months`}
             </div>
           </CardContent>
         </Card>
@@ -146,7 +149,9 @@ function IntakeSessionDetailPage() {
             recommended_medicines.map((m: any, i: number) => (
               <div key={`${m.medicine_id}-${i}`} className="flex justify-between rounded-md border p-3">
                 <span className="font-medium">{m.name || m.medicine_id}</span>
-                <span className="text-muted-foreground">${m.price_monthly ?? "—"}/mo</span>
+                <span className="text-muted-foreground">
+                  {m.from_price_cents != null ? `From $${m.from_price_cents / 100}/mo` : "—"}
+                </span>
               </div>
             ))
           )}
