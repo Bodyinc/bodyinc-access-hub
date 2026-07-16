@@ -1064,6 +1064,7 @@ export type Database = {
           selected_package_id: string | null
           selected_plan_code: string
           shipping: number
+          consultation: number
           status: string
           stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
@@ -1083,6 +1084,7 @@ export type Database = {
           selected_package_id?: string | null
           selected_plan_code: string
           shipping?: number
+          consultation?: number
           status?: string
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -1102,6 +1104,7 @@ export type Database = {
           selected_package_id?: string | null
           selected_plan_code?: string
           shipping?: number
+          consultation?: number
           status?: string
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -1328,6 +1331,60 @@ export type Database = {
           referral_id?: string | null;
           stripe_invoice_id?: string | null;
           created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      platform_settings: {
+        Row: {
+          key: string;
+          value: Json;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          key: string;
+          value: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          key?: string;
+          value?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      admin_activity_log: {
+        Row: {
+          id: string;
+          admin_user_id: string | null;
+          action: string;
+          entity: string;
+          entity_id: string | null;
+          before: Json | null;
+          after: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_user_id?: string | null;
+          action: string;
+          entity: string;
+          entity_id?: string | null;
+          before?: Json | null;
+          after?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_user_id?: string | null;
+          action?: string;
+          entity?: string;
+          entity_id?: string | null;
+          before?: Json | null;
+          after?: Json | null;
           created_at?: string;
         };
         Relationships: [];
