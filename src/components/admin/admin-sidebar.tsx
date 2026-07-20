@@ -85,7 +85,7 @@ export function AdminSidebar() {
       ${
         active
           ? "bg-[#EAE6FA] !text-[#2A00A2] hover:bg-[#EAE6FA] hover:!text-[#2A00A2]"
-          : "!text-[#4A3AFF] bg-transparent hover:bg-[#EAE6FA]/50 hover:!text-[#2A00A2] data-[active=true]:!text-[#2A00A2]"
+          : "!text-[#2A00A2] bg-transparent hover:bg-[#EAE6FA]/50 hover:!text-[#4A3AFF] data-[active=true]:!text-[#2A00A2]"
       }
     `}
                     >

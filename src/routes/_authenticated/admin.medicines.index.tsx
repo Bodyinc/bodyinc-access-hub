@@ -113,7 +113,7 @@ function MedicinesListPage() {
   const isEmpty = !query.isLoading && allRows.length === 0;
 
   return (
-    <div className="w-full p-4 sm:p-8 space-y-6 bg-white min-h-screen">
+    <div className="w-full p-4 sm:p-1 space-y-6 bg-white min-h-screen">
       {/* Top Title & Primary Call-to-action bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
