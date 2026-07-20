@@ -70,7 +70,7 @@ function MedicationRulesPage() {
   const medicines = medsQ.data ?? [];
 
   return (
-    <div className="w-full p-10 bg-white min-h-screen space-y-7 antialiased">
+    <div className="w-full p-4 sm:p-1 space-y-6 bg-white min-h-screen">
       {/* Top Banner Action Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

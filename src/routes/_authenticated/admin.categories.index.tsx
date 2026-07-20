@@ -51,7 +51,8 @@ function CategoriesListPage() {
   const isEmpty = !query.isLoading && rows.length === 0;
 
   return (
-    <div className="w-full p-8 space-y-6 bg-white min-h-screen">
+    /* FIXED: Changed from 'w-full p-8 bg-white min-h-screen' to match original alignment with sidebar */
+    <div className="w-full space-y-4 text-left">
       {/* Top Header matching Figma title sizing and custom button */}
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">
@@ -62,11 +63,11 @@ function CategoriesListPage() {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <RefreshButton
-  onClick={() => {
-    query.refetch();
-  }}
-  loading={query.isFetching}
-/>
+            onClick={() => {
+              query.refetch();
+            }}
+            loading={query.isFetching}
+          />
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
             className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-11 px-6 rounded-lg font-semibold text-[14px] gap-2 shadow-sm"
@@ -111,9 +112,6 @@ function CategoriesListPage() {
               )}
               
               {rows.map((c) => {
-                // To visually match Figma perfectly, let's make the second row active/selected style
-               
-
                 return (
                   <TableRow
                     key={c.id}
@@ -155,7 +153,6 @@ function CategoriesListPage() {
                           c.is_active
                           ? "bg-[#F3EFFF] text-[#5D22E8]"
                           : "bg-gray-100 text-gray-500"
-                             
                         }`}
                       >
                         {c.is_active ? "Active" : "Inactive"}
