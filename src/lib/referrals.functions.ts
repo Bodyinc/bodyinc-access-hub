@@ -129,6 +129,9 @@ const adjustInput = z.object({
   userId: z.string().uuid(),
   amount_cents: z.number().int().min(-100000).max(100000).refine((v) => v !== 0, "Amount required"),
   note: z.string().trim().max(300).optional(),
+  // Stable per-submit token so a retry/double-click can't double-credit (see migration
+  // 20260720120000_wallet_idempotency).
+  request_id: z.string().uuid(),
 });
 
 export const adjustPatientWallet = createServerFn({ method: "POST" })
@@ -161,20 +164,30 @@ export const adjustPatientWallet = createServerFn({ method: "POST" })
         .eq("id", data.userId);
     }
 
-    // Wallet credit = negative Stripe balance, so the sign flips here.
-    const txn = await stripe.customers.createBalanceTransaction(customerId, {
-      amount: -data.amount_cents,
-      currency: "usd",
-      description: data.note || "Admin wallet adjustment",
-    });
+    // Wallet credit = negative Stripe balance, so the sign flips here. The idempotency key
+    // makes a repeated submit return the SAME balance transaction instead of stacking a second.
+    const txn = await stripe.customers.createBalanceTransaction(
+      customerId,
+      {
+        amount: -data.amount_cents,
+        currency: "usd",
+        description: data.note || "Admin wallet adjustment",
+      },
+      { idempotencyKey: `wallet_adjust_${data.request_id}` },
+    );
 
-    await supabaseAdmin.from("wallet_transactions").insert({
+    // Unique idempotency_key dedups the ledger row; a duplicate submit is a no-op (23505).
+    const { error: ledgerError } = await supabaseAdmin.from("wallet_transactions").insert({
       user_id: data.userId,
       amount_cents: data.amount_cents,
       type: "admin_adjustment",
       description: data.note || "Admin wallet adjustment",
       created_by: context.userId,
-    });
+      idempotency_key: data.request_id,
+    } as any);
+    if (ledgerError && (ledgerError as any).code !== "23505") {
+      throw new Error(ledgerError.message);
+    }
 
     return { ok: true, stripe_txn_id: txn.id };
   });

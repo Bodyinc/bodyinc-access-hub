@@ -83,7 +83,7 @@ function WalletDialog({
   });
 
   const adjustMut = useMutation({
-    mutationFn: (vars: { amount_cents: number; note?: string }) =>
+    mutationFn: (vars: { amount_cents: number; note?: string; request_id: string }) =>
       adjustFn({ data: { userId, ...vars } }),
     onSuccess: () => {
       toast.success("Wallet updated");
@@ -100,7 +100,11 @@ function WalletDialog({
       toast.error("Enter a positive amount");
       return;
     }
-    adjustMut.mutate({ amount_cents: sign * Math.round(dollars * 100), note: note || undefined });
+    adjustMut.mutate({
+      amount_cents: sign * Math.round(dollars * 100),
+      note: note || undefined,
+      request_id: crypto.randomUUID(),
+    });
   }
 
   return (
