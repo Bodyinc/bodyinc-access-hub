@@ -11,31 +11,49 @@ export const MEDICINE_STATUS_LABELS: Record<MedicineStatus, string> = {
 
 export const MAX_PACKAGES_PER_MEDICINE = 2;
 
-export const medicinePackageSchema = z.object({
-  id: z.string().uuid().optional(),
-  name: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
-  duration_months: z.coerce.number().int().min(1, "Duration must be at least 1 month"),
-  original_price: z.coerce.number().min(0, "Original price must be 0 or greater"),
-  price: z.coerce.number().min(0, "Sale price must be 0 or greater"),
-  is_most_popular: z.boolean().default(false),
-  is_active: z.boolean().default(true),
-  features: z
-    .array(z.object({ text: z.string().trim().min(1, "Feature cannot be empty").max(300) }))
-    .default([]),
-  clinical_note: z
-    .string()
-    .trim()
-    .max(2000)
-    .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
-});
+const MAX_PACKAGE_PRICE = 100_000;
+const MAX_PACKAGE_DURATION_MONTHS = 24;
+
+export const medicinePackageSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .or(z.literal(""))
+      .transform((v) => (v ? v : undefined)),
+    duration_months: z.coerce
+      .number()
+      .int()
+      .min(1, "Duration must be at least 1 month")
+      .max(MAX_PACKAGE_DURATION_MONTHS, `Duration must be ${MAX_PACKAGE_DURATION_MONTHS} months or fewer`),
+    original_price: z.coerce
+      .number()
+      .min(0, "Original price must be 0 or greater")
+      .max(MAX_PACKAGE_PRICE, "Original price is too large"),
+    price: z.coerce
+      .number()
+      .min(0, "Sale price must be 0 or greater")
+      .max(MAX_PACKAGE_PRICE, "Sale price is too large"),
+    is_most_popular: z.boolean().default(false),
+    is_active: z.boolean().default(true),
+    features: z
+      .array(z.object({ text: z.string().trim().min(1, "Feature cannot be empty").max(300) }))
+      .default([]),
+    clinical_note: z
+      .string()
+      .trim()
+      .max(2000)
+      .optional()
+      .or(z.literal(""))
+      .transform((v) => (v ? v : undefined)),
+  })
+  .refine((p) => p.price <= p.original_price, {
+    message: "Sale price cannot exceed the original price",
+    path: ["price"],
+  });
 
 export type MedicinePackageValues = z.input<typeof medicinePackageSchema>;
 

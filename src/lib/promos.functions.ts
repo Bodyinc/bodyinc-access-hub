@@ -4,8 +4,13 @@ import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
 
-const promoInput = z.object({
-  code: z.string().trim().min(1).max(60),
+const promoBase = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .regex(/^[A-Za-z0-9_-]+$/, "Code may only contain letters, numbers, dashes, and underscores"),
   discount_type: z.enum(["percent", "amount"]),
   percent_off: z.number().min(0).max(100).nullable().optional(),
   amount_off_cents: z.number().int().min(0).nullable().optional(),
@@ -15,7 +20,26 @@ const promoInput = z.object({
   redeem_by: z.string().trim().min(1).nullable().optional(),
 });
 
-function toRow(data: z.infer<typeof promoInput>) {
+type PromoBaseValues = z.infer<typeof promoBase>;
+
+// A percent promo needs a positive percent_off, an amount promo a positive amount_off_cents —
+// otherwise you can save a code that silently discounts nothing.
+function hasPositiveDiscount<T extends z.ZodTypeAny>(schema: T) {
+  return schema
+    .refine(
+      (d: PromoBaseValues) => d.discount_type !== "percent" || (d.percent_off ?? 0) > 0,
+      { message: "Percent off must be greater than 0", path: ["percent_off"] },
+    )
+    .refine(
+      (d: PromoBaseValues) => d.discount_type !== "amount" || (d.amount_off_cents ?? 0) > 0,
+      { message: "Amount off must be greater than 0", path: ["amount_off_cents"] },
+    );
+}
+
+const promoInput = hasPositiveDiscount(promoBase);
+const promoUpdateInput = hasPositiveDiscount(promoBase.extend({ id: z.string().uuid() }));
+
+function toRow(data: PromoBaseValues) {
   return {
     code: data.code.trim().toUpperCase(),
     discount_type: data.discount_type,
@@ -82,7 +106,7 @@ export const createPromo = createServerFn({ method: "POST" })
 
 export const updatePromo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => promoInput.extend({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) => promoUpdateInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
