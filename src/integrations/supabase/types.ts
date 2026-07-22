@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_log: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      email_reminders: {
+        Row: {
+          id: string
+          period_key: string
+          reminder_type: string
+          sent_at: string
+          target_id: string
+        }
+        Insert: {
+          id?: string
+          period_key?: string
+          reminder_type: string
+          sent_at?: string
+          target_id: string
+        }
+        Update: {
+          id?: string
+          period_key?: string
+          reminder_type?: string
+          sent_at?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
       intake_session_categories: {
         Row: {
           category_id: string
@@ -81,6 +138,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "intake_session_eligibility_results_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "intake_session_eligibility_results_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -121,6 +185,13 @@ export type Database = {
             columns: ["medicine_id"]
             isOneToOne: false
             referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_session_medicines_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
             referencedColumns: ["id"]
           },
           {
@@ -172,6 +243,13 @@ export type Database = {
             columns: ["medicine_id"]
             isOneToOne: false
             referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_session_questionnaire_responses_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
             referencedColumns: ["id"]
           },
           {
@@ -337,6 +415,13 @@ export type Database = {
             referencedRelation: "medicines"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "medication_category_medicines_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
         ]
       }
       medication_relationships: {
@@ -376,10 +461,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "medication_relationships_medicine_a_id_fkey"
+            columns: ["medicine_a_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "medication_relationships_medicine_b_id_fkey"
             columns: ["medicine_b_id"]
             isOneToOne: false
             referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_relationships_medicine_b_id_fkey"
+            columns: ["medicine_b_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicine_variants: {
+        Row: {
+          created_at: string
+          from_price_cents: number | null
+          id: string
+          is_active: boolean
+          medicine_id: string
+          name: string
+          sort_order: number
+          stripe_product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_price_cents?: number | null
+          id?: string
+          is_active?: boolean
+          medicine_id: string
+          name: string
+          sort_order?: number
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_price_cents?: number | null
+          id?: string
+          is_active?: boolean
+          medicine_id?: string
+          name?: string
+          sort_order?: number
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicine_variants_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicine_variants_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
             referencedColumns: ["id"]
           },
         ]
@@ -387,11 +537,11 @@ export type Database = {
       medicines: {
         Row: {
           created_at: string
+          from_price_cents: number | null
           id: string
           image_url: string | null
           important_info: Json
           is_active: boolean
-          from_price_cents: number | null
           long_description: string | null
           name: string
           notice_text: string | null
@@ -404,11 +554,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          from_price_cents?: number | null
           id?: string
           image_url?: string | null
           important_info?: Json
           is_active?: boolean
-          from_price_cents?: number | null
           long_description?: string | null
           name: string
           notice_text?: string | null
@@ -421,11 +571,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          from_price_cents?: number | null
           id?: string
           image_url?: string | null
           important_info?: Json
           is_active?: boolean
-          from_price_cents?: number | null
           long_description?: string | null
           name?: string
           notice_text?: string | null
@@ -499,54 +649,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "packages_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "packages_variant_id_fkey"
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "medicine_variants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      medicine_variants: {
-        Row: {
-          created_at: string
-          from_price_cents: number | null
-          id: string
-          is_active: boolean
-          medicine_id: string
-          name: string
-          sort_order: number
-          stripe_product_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          from_price_cents?: number | null
-          id?: string
-          is_active?: boolean
-          medicine_id: string
-          name: string
-          sort_order?: number
-          stripe_product_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          from_price_cents?: number | null
-          id?: string
-          is_active?: boolean
-          medicine_id?: string
-          name?: string
-          sort_order?: number
-          stripe_product_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "medicine_variants_medicine_id_fkey"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
             referencedColumns: ["id"]
           },
         ]
@@ -617,6 +730,27 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -629,6 +763,7 @@ export type Database = {
           id: string
           phone: string | null
           postal_code: string | null
+          referral_code: string | null
           sex: Database["public"]["Enums"]["sex_type"] | null
           state_code: string | null
           street_address: string | null
@@ -646,6 +781,7 @@ export type Database = {
           id: string
           phone?: string | null
           postal_code?: string | null
+          referral_code?: string | null
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
           street_address?: string | null
@@ -663,6 +799,7 @@ export type Database = {
           id?: string
           phone?: string | null
           postal_code?: string | null
+          referral_code?: string | null
           sex?: Database["public"]["Enums"]["sex_type"] | null
           state_code?: string | null
           street_address?: string | null
@@ -828,6 +965,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "questionnaire_medicines_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "questionnaire_medicines_questionnaire_id_fkey"
             columns: ["questionnaire_id"]
             isOneToOne: false
@@ -945,6 +1089,42 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          code: string
+          converted_at: string | null
+          created_at: string
+          id: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_cents: number
+          status: string
+          stripe_balance_txn_id: string | null
+        }
+        Insert: {
+          code: string
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_cents?: number
+          status?: string
+          stripe_balance_txn_id?: string | null
+        }
+        Update: {
+          code?: string
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_cents?: number
+          status?: string
+          stripe_balance_txn_id?: string | null
         }
         Relationships: []
       }
@@ -1092,6 +1272,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shop_checkout_order_items_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shop_checkout_order_items_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -1109,6 +1296,7 @@ export type Database = {
       }
       shop_checkout_orders: {
         Row: {
+          consultation: number
           created_at: string
           id: string
           medicine_id: string
@@ -1118,7 +1306,6 @@ export type Database = {
           selected_package_id: string | null
           selected_plan_code: string
           shipping: number
-          consultation: number
           status: string
           stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
@@ -1129,6 +1316,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          consultation?: number
           created_at?: string
           id?: string
           medicine_id: string
@@ -1138,7 +1326,6 @@ export type Database = {
           selected_package_id?: string | null
           selected_plan_code: string
           shipping?: number
-          consultation?: number
           status?: string
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -1149,6 +1336,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          consultation?: number
           created_at?: string
           id?: string
           medicine_id?: string
@@ -1158,7 +1346,6 @@ export type Database = {
           selected_package_id?: string | null
           selected_plan_code?: string
           shipping?: number
-          consultation?: number
           status?: string
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -1174,6 +1361,13 @@ export type Database = {
             columns: ["medicine_id"]
             isOneToOne: false
             referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_checkout_orders_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
             referencedColumns: ["id"]
           },
           {
@@ -1302,6 +1496,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscriptions_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "subscriptions_package_id_fkey"
             columns: ["package_id"]
             isOneToOne: false
@@ -1317,132 +1518,6 @@ export type Database = {
           },
         ]
       }
-      referrals: {
-        Row: {
-          id: string;
-          referrer_user_id: string;
-          referred_user_id: string | null;
-          code: string;
-          status: string;
-          reward_cents: number;
-          stripe_balance_txn_id: string | null;
-          created_at: string;
-          converted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          referrer_user_id: string;
-          referred_user_id?: string | null;
-          code: string;
-          status?: string;
-          reward_cents?: number;
-          stripe_balance_txn_id?: string | null;
-          created_at?: string;
-          converted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          referrer_user_id?: string;
-          referred_user_id?: string | null;
-          code?: string;
-          status?: string;
-          reward_cents?: number;
-          stripe_balance_txn_id?: string | null;
-          created_at?: string;
-          converted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      wallet_transactions: {
-        Row: {
-          id: string;
-          user_id: string;
-          amount_cents: number;
-          type: string;
-          description: string | null;
-          referral_id: string | null;
-          stripe_invoice_id: string | null;
-          created_by: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          amount_cents: number;
-          type: string;
-          description?: string | null;
-          referral_id?: string | null;
-          stripe_invoice_id?: string | null;
-          created_by?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          amount_cents?: number;
-          type?: string;
-          description?: string | null;
-          referral_id?: string | null;
-          stripe_invoice_id?: string | null;
-          created_by?: string | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      platform_settings: {
-        Row: {
-          key: string;
-          value: Json;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          key: string;
-          value: Json;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          key?: string;
-          value?: Json;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [];
-      };
-      admin_activity_log: {
-        Row: {
-          id: string;
-          admin_user_id: string | null;
-          action: string;
-          entity: string;
-          entity_id: string | null;
-          before: Json | null;
-          after: Json | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          admin_user_id?: string | null;
-          action: string;
-          entity: string;
-          entity_id?: string | null;
-          before?: Json | null;
-          after?: Json | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          admin_user_id?: string | null;
-          action?: string;
-          entity?: string;
-          entity_id?: string | null;
-          before?: Json | null;
-          after?: Json | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
       user_roles: {
         Row: {
           created_at: string
@@ -1461,6 +1536,53 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          idempotency_key: string | null
+          referral_id: string | null
+          stripe_invoice_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          idempotency_key?: string | null
+          referral_id?: string | null
+          stripe_invoice_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          idempotency_key?: string | null
+          referral_id?: string | null
+          stripe_invoice_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       provider_directory: {
@@ -1474,6 +1596,42 @@ export type Database = {
           is_active: boolean | null
           phone: string | null
           specialty: string | null
+        }
+        Relationships: []
+      }
+      public_medicines: {
+        Row: {
+          from_price_cents: number | null
+          id: string | null
+          image_url: string | null
+          important_info: Json | null
+          long_description: string | null
+          name: string | null
+          notice_text: string | null
+          short_description: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          from_price_cents?: number | null
+          id?: string | null
+          image_url?: string | null
+          important_info?: Json | null
+          long_description?: string | null
+          name?: string | null
+          notice_text?: string | null
+          short_description?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          from_price_cents?: number | null
+          id?: string | null
+          image_url?: string | null
+          important_info?: Json | null
+          long_description?: string | null
+          name?: string | null
+          notice_text?: string | null
+          short_description?: string | null
+          sort_order?: number | null
         }
         Relationships: []
       }
@@ -1491,12 +1649,25 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      has_password: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_promo_redemption: {
+        Args: { p_promo_id: string }
+        Returns: number
+      }
+      recompute_medicine_from_price: {
+        Args: { p_medicine_id: string }
+        Returns: undefined
+      }
+      recompute_variant_from_price: {
+        Args: { p_variant_id: string }
+        Returns: undefined
       }
     }
     Enums: {
