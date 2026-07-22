@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { CategoryForm } from "@/components/admin/category-form";
 import { updateCategory } from "@/lib/categories.store";
 import { categoriesQueryKey, categoryQueryOptions } from "@/lib/query-options/categories";
-import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import type { CategoryFormValues } from "@/lib/categories.schema";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/$categoryId")({
@@ -16,7 +15,6 @@ function EditCategoryPage() {
   const qc = useQueryClient();
   const { categoryId } = Route.useParams();
   const catQ = useQuery(categoryQueryOptions(categoryId));
-  const medsQ = useQuery(medicinesQueryOptions());
   const mut = useMutation({
     mutationFn: (v: CategoryFormValues) => updateCategory(categoryId, v),
     onSuccess: () => {
@@ -35,17 +33,14 @@ function EditCategoryPage() {
     <CategoryForm
       mode="edit"
       submitting={mut.isPending}
-      medicines={(medsQ.data ?? []).map((m) => ({ id: m.id, name: m.name }))}
       defaultValues={{
         slug: c.slug,
         name: c.name,
         tagline: c.tagline ?? "",
-        description: c.description ?? "",
-        icon: c.icon ?? "",
+        image_url: c.image_url ?? "",
         sort_order: c.sort_order,
         is_active: c.is_active,
         eligibility_rules: c.eligibility_rules,
-        medicine_ids: c.medicine_ids,
       }}
       onSubmit={(v) => mut.mutate(v)}
       onCancel={() => navigate({ to: "/admin/categories" })}
