@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -43,22 +43,26 @@ export function MedicinePreview({
   const displayPrice = formatFromPrice(from_price_cents);
 
   return (
-    <Card className="border border-[#EDEAFB] bg-white rounded-2xl shadow-none overflow-hidden w-full antialiased">
-      <CardHeader className="border-b border-[#EDEAFB] bg-white p-6">
-        <CardTitle className="text-[20px] font-semibold text-[#1D0087]">Patient preview</CardTitle>
-        <CardDescription className="text-[14px] text-[#5527E7]/80 font-normal">
+    <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-none overflow-hidden p-6 space-y-6 w-full">
+      {/* Title Header matching the left card structure */}
+      <div className="space-y-1">
+        <h2 className="text-[22px] font-bold text-[#1D0087]">
+          Patient preview
+        </h2>
+        <p className="text-[14px] font-normal text-[#5527E7]/80">
           Medication card and Learn More modal.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
+        </p>
+      </div>
+
+      <div className="space-y-4 pt-2">
         <p className="text-[14px] font-semibold text-[#1D0087]">
           Select Your Medication
         </p>
 
-        <div className="rounded-2xl border border-[#EDEAFB] bg-[#FAF9FF] p-5">
-          <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+        <div className="rounded-2xl border border-[#EDEAFB] bg-[#FAF9FF] p-4">
+          <div className="flex gap-4 items-center">
             {image_url ? (
-              <div className="h-28 w-28 shrink-0 rounded-xl bg-white border border-[#EDEAFB] overflow-hidden flex items-center justify-center p-2">
+              <div className="h-20 w-20 shrink-0 rounded-xl bg-[#EAE4FF] border border-[#EDEAFB] overflow-hidden flex items-center justify-center p-2">
                 <img
                   src={image_url}
                   alt=""
@@ -66,22 +70,26 @@ export function MedicinePreview({
                 />
               </div>
             ) : (
-              <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-white border border-[#EDEAFB] text-[13px] font-medium text-[#5527E7]/60">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-[#EAE4FF] border border-[#EDEAFB] text-[13px] font-medium text-[#5527E7]/60">
                 Image
               </div>
             )}
             <div className="flex min-w-0 flex-1 flex-col justify-between h-full w-full">
               <div>
-                <h3 className="text-[18px] font-semibold text-[#1D0087] leading-snug">{displayName}</h3>
-                <p className="mt-1 text-[14px] font-normal text-[#5140AB] line-clamp-2 leading-normal">{displayShort}</p>
+                <h3 className="text-[16px] font-semibold text-[#1D0087] leading-snug truncate">
+                  {displayName}
+                </h3>
+                <p className="mt-0.5 text-[13px] font-normal text-[#5140AB] line-clamp-2 leading-tight">
+                  {displayShort}
+                </p>
               </div>
-              <div className="mt-4 flex items-baseline justify-between gap-2 w-full">
-                <div className="text-[14px] font-normal text-[#1D0087]">
-                  <span className="font-semibold text-[16px]">{displayPrice}</span>
+              <div className="mt-2 flex items-center justify-between gap-2 w-full">
+                <div className="text-[13px] font-normal text-[#1D0087] shrink-0">
+                  <span className="font-semibold text-[14px]">{displayPrice}</span>
                 </div>
                 <button
                   type="button"
-                  className="text-[14px] font-semibold text-[#5527E7] underline hover:text-[#1D0087] transition-colors pb-0.5"
+                  className="text-[13px] font-semibold text-[#5527E7] underline hover:text-[#1D0087] transition-colors whitespace-nowrap shrink-0"
                   onClick={() => setModalOpen(true)}
                 >
                   Learn More
@@ -91,16 +99,20 @@ export function MedicinePreview({
           </div>
         </div>
 
-        {/* Modal View matching reference specifications */}
+        {/* Modal View */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
           <DialogContent className="max-w-md rounded-2xl border border-[#EDEAFB] bg-white p-6 shadow-xl">
             <DialogHeader className="space-y-1">
-              <DialogTitle className="text-[20px] font-semibold text-[#1D0087]">{displayName}</DialogTitle>
-              <DialogDescription className="text-[14px] text-[#5527E7]/80 font-normal">{displayShort}</DialogDescription>
+              <DialogTitle className="text-[20px] font-semibold text-[#1D0087]">
+                {displayName}
+              </DialogTitle>
+              <DialogDescription className="text-[14px] text-[#5527E7]/80 font-normal">
+                {displayShort}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 my-2">
               {image_url && (
-                <div className="mx-auto h-36 w-36 rounded-xl bg-white border border-[#EDEAFB] flex items-center justify-center p-3">
+                <div className="mx-auto h-36 w-36 rounded-xl bg-[#EAE4FF] border border-[#EDEAFB] flex items-center justify-center p-3">
                   <img
                     src={image_url}
                     alt=""
@@ -108,7 +120,9 @@ export function MedicinePreview({
                   />
                 </div>
               )}
-              <p className="text-[14px] leading-relaxed text-[#1D0087]/90 font-normal">{displayLong}</p>
+              <p className="text-[14px] leading-relaxed text-[#1D0087]/90 font-normal">
+                {displayLong}
+              </p>
               {bullets.length > 0 && (
                 <ul className="space-y-2">
                   {bullets.map((text, i) => (
@@ -126,9 +140,9 @@ export function MedicinePreview({
               )}
             </div>
             <div className="flex justify-end pt-2">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setModalOpen(false)}
                 className="border-[#EDEAFB] bg-white hover:bg-[#FAF9FF] text-[#5527E7] h-10 px-4 rounded-lg font-medium text-[13px] transition-colors flex items-center gap-1.5 shadow-none"
               >
@@ -137,7 +151,7 @@ export function MedicinePreview({
             </div>
           </DialogContent>
         </Dialog>
-      </CardContent>
+      </div>
     </Card>
   );
 }

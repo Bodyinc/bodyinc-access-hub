@@ -36,7 +36,7 @@ function NewProviderPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-0xl">
       <Suspense fallback={<FormSkeleton />}>
         <ProviderForm
           mode="create"

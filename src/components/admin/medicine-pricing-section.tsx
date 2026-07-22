@@ -70,7 +70,7 @@ export function MedicinePricingSection({
     <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
       <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
         <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Variants</CardTitle>
-        <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">
+        <CardDescription className="text-[13px] text-[#2A00A2]/80 font-medium">
           Dose or strength options (e.g. 50mg, 100mg). Each variant has its own packages (up to 2)
           and pricing; patients pick a variant in the shop. The medicine&apos;s &ldquo;from&rdquo;
           price is the cheapest across variants.
@@ -140,7 +140,7 @@ export function MedicinePricingSection({
           onClick={() =>
             variantsArray.append({ name: "", is_active: true, packages: [] } as any)
           }
-          className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors"
+          className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2A00A2] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Add variant
         </Button>

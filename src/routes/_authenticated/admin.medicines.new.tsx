@@ -78,10 +78,10 @@ function NewMedicinePage() {
   });
 
   return (
-    /* FIXED: Removed mx-auto and max-w-5xl, changed to match left alignment structure */
-    <div className="w-full bg-white pl-8 pr-12 py-6">
-      <div className="flex flex-col lg:flex-row items-start gap-12 w-full">
-        <div className="flex-1 w-full shrink-0 max-w-5xl">
+    <div className="w-full max-w-full overflow-x-hidden bg-white px-4 py-6">
+      <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
+        {/* Main Form Section */}
+        <div className="flex-1 w-full min-w-0">
           <Suspense fallback={<FormSkeleton />}>
             <MedicineForm
               mode="create"
@@ -92,7 +92,9 @@ function NewMedicinePage() {
             />
           </Suspense>
         </div>
-        <div className="w-full lg:w-[440px] lg:sticky lg:top-6 shrink-0 mt-[44px]">
+
+        {/* Right Preview Card Section */}
+        <div className="w-full lg:w-[410px] lg:sticky lg:top-0.5 shrink-0">
           <Suspense fallback={<FormSkeleton />}>
             <MedicinePreview
               name={previewValues.name}
