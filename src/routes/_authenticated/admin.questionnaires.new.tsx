@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createQuestionnaire } from "@/lib/questionnaires.store";
-import { medicinesQueryOptions } from "@/lib/query-options/medicines";
+import { categoriesQueryOptions } from "@/lib/query-options/categories";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/new")({
   component: NewQuestionnairePage,
@@ -19,18 +19,18 @@ export const Route = createFileRoute("/_authenticated/admin/questionnaires/new")
 function NewQuestionnairePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const medsQ = useQuery(medicinesQueryOptions());
+  const catsQ = useQuery(categoriesQueryOptions());
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [medicineIds, setMedicineIds] = useState<string[]>([]);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
 
   const mut = useMutation({
     mutationFn: () => createQuestionnaire({
       name: name.trim(),
       description: description.trim() || null,
       is_active: isActive,
-      medicine_ids: medicineIds,
+      category_ids: categoryIds,
     }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
@@ -101,21 +101,21 @@ function NewQuestionnairePage() {
       {/* Linked Medicines Target Group */}
       <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-2 sm:p-4">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Linked medicines</CardTitle>
+          <CardTitle className="text-base font-bold text-[#2A00A2]">Linked goals / categories</CardTitle>
           <CardDescription className="text-[#6B5AE0]/60 font-medium text-[13px]">
-            Patients selecting these treatment variants will see this custom screening sequence during checkouts.
+            Patients selecting these goals/categories will see this custom screening sequence during checkout.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {medsQ.isLoading && (
-            <p className="text-[14px] font-medium text-[#6B5AE0]/60 py-2">Loading target medicines list...</p>
+          {catsQ.isLoading && (
+            <p className="text-[14px] font-medium text-[#6B5AE0]/60 py-2">Loading categories…</p>
           )}
-          {!medsQ.isLoading && (medsQ.data ?? []).length === 0 && (
-            <p className="text-[14px] font-medium text-[#6B5AE0]/60 py-2">No active medicines found to link.</p>
+          {!catsQ.isLoading && (catsQ.data ?? []).length === 0 && (
+            <p className="text-[14px] font-medium text-[#6B5AE0]/60 py-2">No categories found to link.</p>
           )}
           <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3">
-            {(medsQ.data ?? []).map((m) => {
-              const checked = medicineIds.includes(m.id);
+            {(catsQ.data ?? []).map((m) => {
+              const checked = categoryIds.includes(m.id);
               return (
                 <label 
                   key={m.id} 
@@ -130,7 +130,7 @@ function NewQuestionnairePage() {
                     checked={checked} 
                     className="rounded-md border-[#E2DCFA] data-[state=checked]:bg-[#4A3AFF] data-[state=checked]:border-[#4A3AFF]"
                     onCheckedChange={(v) => {
-                      setMedicineIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id));
+                      setCategoryIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id));
                     }} 
                   />
                   {m.name}
