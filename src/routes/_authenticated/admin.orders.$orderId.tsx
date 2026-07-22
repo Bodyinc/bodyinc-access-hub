@@ -219,6 +219,14 @@ function OrderDetailPage() {
         open={changeOpen}
         onOpenChange={setChangeOpen}
         onChanged={() => q.refetch()}
+        current={{
+          medicineName: medicine?.name ?? null,
+          variantName: variant_name ?? null,
+          planName: pkg?.name ?? null,
+          price: pkg?.price != null ? Number(pkg.price) : null,
+          durationMonths: pkg?.duration_months ?? null,
+          renewsAt: subscription.current_period_end ?? null,
+        }}
       />
     </div>
   );
