@@ -160,10 +160,10 @@ export function MedicineForm({
           </div>
 
           <div className="flex w-full min-w-0 flex-col items-start gap-6 md:flex-row">
-            {/* Product Image Box Container - Restored to full height (457px) to align with toggle */}
-            <div className="w-full max-w-[354px] shrink-0 space-y-2">
+            {/* Product Image Box Container - narrower upload card */}
+            <div className="w-full max-w-[280px] shrink-0 space-y-2">
               <div
-                className="flex h-[457px] w-full flex-col items-center justify-between rounded-[12px] border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-[14px]"
+                className="flex h-[360px] w-full flex-col items-center justify-between rounded-[12px] border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-[14px]"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={onDrop}
               >
