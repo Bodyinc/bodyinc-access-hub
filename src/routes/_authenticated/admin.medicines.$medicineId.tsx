@@ -193,12 +193,11 @@ export default function EditMedicinePage() {
   ].filter((p) => !p.stripe_price_id).length;
 
   return (
-    <div className="w-full bg-white pl-8 pr-12 py-6">
-      {/* FIXED: Removed max-w-[1380px] and max-w-[660px] bounds to match Category layout */}
-      <div className="flex flex-col lg:flex-row items-start gap-12 w-full">
-        
+    <div className="w-full bg-white px-4 sm:px-6 xl:pl-8 xl:pr-12 py-6">
+      <div className="flex flex-col xl:flex-row items-start gap-6 xl:gap-12 w-full">
+
         {/* Left Form Panel */}
-        <div className="flex-1 w-full shrink-0 max-w-5xl">
+        <div className="flex-1 w-full min-w-0">
           {unsyncedCount > 0 && (
             <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
@@ -236,7 +235,7 @@ export default function EditMedicinePage() {
         </div>
 
         {/* Right Patient Preview Panel */}
-        <div className="w-full lg:w-[440px] lg:sticky lg:top-6 shrink-0 mt-[44px]">
+        <div className="w-full xl:w-[440px] xl:sticky xl:top-6 shrink-0 xl:mt-[44px]">
           <Suspense fallback={<FormSkeleton />}>
             <MedicinePreview
               name={preview.name}
