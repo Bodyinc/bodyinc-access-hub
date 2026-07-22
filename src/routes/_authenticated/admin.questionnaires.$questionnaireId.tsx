@@ -19,7 +19,7 @@ import {
   replaceQuestionOptions, updateQuestion, updateQuestionnaire,
   type QQuestionType, type StoredQuestion, type StoredQuestionOption,
 } from "@/lib/questionnaires.store";
-import { medicinesQueryOptions } from "@/lib/query-options/medicines";
+import { categoriesQueryOptions } from "@/lib/query-options/categories";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/$questionnaireId")({
   component: EditQuestionnairePage,
@@ -38,12 +38,12 @@ function EditQuestionnairePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const dataQ = useQuery(detailQO(questionnaireId));
-  const medsQ = useQuery(medicinesQueryOptions());
+  const catsQ = useQuery(categoriesQueryOptions());
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [medicineIds, setMedicineIds] = useState<string[]>([]);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
 
   useEffect(() => {
     const q = dataQ.data?.questionnaire;
@@ -51,12 +51,12 @@ function EditQuestionnairePage() {
     setName(q.name);
     setDescription(q.description ?? "");
     setIsActive(q.is_active);
-    setMedicineIds(q.medicine_ids);
+    setCategoryIds(q.category_ids);
   }, [dataQ.data?.questionnaire]);
 
   const saveMut = useMutation({
     mutationFn: () => updateQuestionnaire(questionnaireId, {
-      name: name.trim(), description: description.trim() || null, is_active: isActive, medicine_ids: medicineIds,
+      name: name.trim(), description: description.trim() || null, is_active: isActive, category_ids: categoryIds,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
@@ -108,14 +108,14 @@ function EditQuestionnairePage() {
             <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Linked medicines</Label>
+            <Label>Linked goals / categories</Label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {(medsQ.data ?? []).map((m) => {
-                const checked = medicineIds.includes(m.id);
+              {(catsQ.data ?? []).map((m) => {
+                const checked = categoryIds.includes(m.id);
                 return (
                   <label key={m.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
                     <Checkbox checked={checked} onCheckedChange={(v) =>
-                      setMedicineIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id))
+                      setCategoryIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id))
                     } />
                     {m.name}
                   </label>
