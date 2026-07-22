@@ -141,7 +141,17 @@ function OrdersListPage() {
                   {o.id.slice(0, 8)}…
                 </TableCell>
                 <TableCell>
-                  <div className="font-bold text-[#2A00A2] text-[14px]">{o.customer_name || "—"}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#2A00A2] text-[14px]">{o.customer_name || "—"}</span>
+                    {o.is_guest ? (
+                      <span
+                        className="rounded bg-[#F3EFFF] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6B5AE0]"
+                        title="Paid during onboarding; account not yet created"
+                      >
+                        Guest
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-[12px] text-[#6B5AE0] font-semibold">{o.customer_email || "—"}</div>
                 </TableCell>
                 <TableCell className="max-w-[220px] truncate text-[#2A00A2] font-semibold text-[14px]">

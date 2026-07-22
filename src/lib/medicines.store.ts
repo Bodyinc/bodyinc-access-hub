@@ -12,6 +12,8 @@ export type StoredMedicinePackage = {
   features: string[];
   clinical_note?: string | null;
   sort_order: number;
+  // Null means no Stripe price exists, so patients cannot buy this plan.
+  stripe_price_id: string | null;
 };
 
 export type StoredMedicineVariant = {
@@ -65,6 +67,7 @@ function packageRowToStored(row: any): StoredMedicinePackage {
       .filter(Boolean),
     clinical_note: row.clinical_note,
     sort_order: Number(row.sort_order ?? 0),
+    stripe_price_id: row.stripe_price_id ?? null,
   };
 }
 
@@ -165,23 +168,53 @@ function packageFromForm(
 // package keeps its row (and its order/subscription history + Stripe price) even when it moves
 // between the medicine-level bucket and a variant — it is UPDATEd (reparented), never
 // deleted-and-recreated. Only genuinely removed rows are deleted. Returns package ids to sync.
+// The name rides along so a failed Stripe sync can name the plan the admin needs to retry.
+export type PackageSyncTarget = { id: string; name: string };
+
+export type PricingReconcileResult = {
+  syncTargets: PackageSyncTarget[];
+  // Stripe objects left behind by rows this save deleted; the caller archives them.
+  orphanedPriceIds: string[];
+  orphanedProductIds: string[];
+};
+
 export async function reconcileMedicinePricing(
   medicineId: string,
   values: MedicineFormValues,
-): Promise<string[]> {
+): Promise<PricingReconcileResult> {
   const variants = values.variants ?? [];
 
   // 1. Reconcile variant rows; map each form variant to its persisted id. Deleting a variant
   //    cascade-deletes its packages (intended — the variant's plans go with it).
   const { data: existingVariantRows, error: vErr } = await supabase
     .from("medicine_variants")
-    .select("id")
+    .select("id, stripe_product_id")
     .eq("medicine_id", medicineId);
   if (vErr) throw new Error(vErr.message);
   const existingVariantIds = new Set((existingVariantRows ?? []).map((r: any) => String(r.id)));
   const keptVariantIds = new Set(variants.map((v) => v.id).filter((id): id is string => !!id));
   const variantsToDelete = [...existingVariantIds].filter((id) => !keptVariantIds.has(id));
+
+  // Stripe ids of everything about to be removed. Collected before the deletes because packages
+  // cascade off variants — afterwards there is no row left to find the Stripe object by.
+  const orphanedPriceIds: string[] = [];
+  const orphanedProductIds: string[] = [];
+
   if (variantsToDelete.length > 0) {
+    const { data: doomedVariantPkgs } = await supabase
+      .from("packages")
+      .select("stripe_price_id")
+      .in("variant_id", variantsToDelete);
+    orphanedPriceIds.push(
+      ...(doomedVariantPkgs ?? []).map((p: any) => p.stripe_price_id).filter(Boolean),
+    );
+    orphanedProductIds.push(
+      ...(existingVariantRows ?? [])
+        .filter((v: any) => variantsToDelete.includes(String(v.id)))
+        .map((v: any) => v.stripe_product_id)
+        .filter(Boolean),
+    );
+
     const { error } = await supabase.from("medicine_variants").delete().in("id", variantsToDelete);
     if (error) throw new Error(error.message);
   }
@@ -227,24 +260,31 @@ export async function reconcileMedicinePricing(
   // 3. Id-based package reconcile across the whole medicine.
   const { data: existingPkgRows, error: pErr } = await supabase
     .from("packages")
-    .select("id")
+    .select("id, stripe_price_id")
     .eq("medicine_id", medicineId);
   if (pErr) throw new Error(pErr.message);
   const existingPkgIds = new Set((existingPkgRows ?? []).map((r: any) => String(r.id)));
   const keptPkgIds = new Set(desired.map((d) => d.pkg.id).filter((id): id is string => !!id));
   const pkgsToDelete = [...existingPkgIds].filter((id) => !keptPkgIds.has(id));
   if (pkgsToDelete.length > 0) {
+    orphanedPriceIds.push(
+      ...(existingPkgRows ?? [])
+        .filter((p: any) => pkgsToDelete.includes(String(p.id)))
+        .map((p: any) => p.stripe_price_id)
+        .filter(Boolean),
+    );
+
     const { error } = await supabase.from("packages").delete().in("id", pkgsToDelete);
     if (error) throw new Error(error.message);
   }
 
-  const syncIds: string[] = [];
+  const syncTargets: PackageSyncTarget[] = [];
   for (const d of desired) {
     const payload = packageFromForm(medicineId, d.variantId, d.pkg, d.sort);
     if (d.pkg.id && existingPkgIds.has(d.pkg.id)) {
       const { error } = await supabase.from("packages").update(payload as any).eq("id", d.pkg.id);
       if (error) throw new Error(error.message);
-      syncIds.push(d.pkg.id);
+      syncTargets.push({ id: d.pkg.id, name: d.pkg.name ?? "Unnamed plan" });
     } else {
       const { data, error } = await supabase
         .from("packages")
@@ -252,10 +292,10 @@ export async function reconcileMedicinePricing(
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      syncIds.push(data.id);
+      syncTargets.push({ id: data.id, name: d.pkg.name ?? "Unnamed plan" });
     }
   }
-  return syncIds;
+  return { syncTargets, orphanedPriceIds, orphanedProductIds };
 }
 
 async function syncMedicineCategories(medicineId: string, categoryIds: string[]) {
@@ -308,7 +348,7 @@ export async function getMedicine(id: string): Promise<StoredMedicine | null> {
 
 export async function createMedicine(
   values: MedicineFormValues,
-): Promise<{ id: string; packageSyncIds: string[] }> {
+): Promise<{ id: string } & PricingReconcileResult> {
   const payload = fromForm(values);
   const { data, error } = await supabase
     .from("medicines")
@@ -317,20 +357,20 @@ export async function createMedicine(
     .single();
   if (error) throw new Error(error.message);
   await syncMedicineCategories(data.id, values.category_ids ?? []);
-  const packageSyncIds = await reconcileMedicinePricing(data.id, values);
-  return { id: data.id, packageSyncIds };
+  const pricing = await reconcileMedicinePricing(data.id, values);
+  return { id: data.id, ...pricing };
 }
 
 export async function updateMedicine(
   id: string,
   values: MedicineFormValues,
-): Promise<{ id: string; packageSyncIds: string[] }> {
+): Promise<{ id: string } & PricingReconcileResult> {
   const payload = fromForm(values);
   const { error } = await supabase.from("medicines").update(payload as any).eq("id", id);
   if (error) throw new Error(error.message);
   await syncMedicineCategories(id, values.category_ids ?? []);
-  const packageSyncIds = await reconcileMedicinePricing(id, values);
-  return { id, packageSyncIds };
+  const pricing = await reconcileMedicinePricing(id, values);
+  return { id, ...pricing };
 }
 
 export async function deleteMedicine(id: string): Promise<{ ok: true }> {

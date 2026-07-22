@@ -35,6 +35,8 @@ function rowToStored(row: any): StoredCategory {
       sex: (rules.sex ?? []) as EligibilityRules["sex"],
       min_age: rules.min_age ?? null,
       max_age: rules.max_age ?? null,
+      blocked_state_codes: (rules.blocked_state_codes ??
+        []) as EligibilityRules["blocked_state_codes"],
     },
     medicine_ids: meds,
     created_at: row.created_at,
@@ -56,6 +58,7 @@ function fromForm(values: CategoryFormValues) {
       sex: values.eligibility_rules?.sex ?? [],
       min_age: values.eligibility_rules?.min_age ?? null,
       max_age: values.eligibility_rules?.max_age ?? null,
+      blocked_state_codes: values.eligibility_rules?.blocked_state_codes ?? [],
     },
   };
 }

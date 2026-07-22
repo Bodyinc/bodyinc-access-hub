@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Search } from "lucide-react";
+import { Plus, MoreHorizontal, Search, AlertTriangle } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -41,11 +42,9 @@ import {
 import { medicinesQueryKey, medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { packagesQueryKey } from "@/lib/query-options/packages";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import {
-  deleteMedicine,
-  setMedicineActive,
-  type StoredMedicine,
-} from "@/lib/medicines.store";
+import { setMedicineActive, type StoredMedicine } from "@/lib/medicines.store";
+import { syncUnpricedPackages } from "@/lib/packages.functions";
+import { deleteMedicineSafely, getMedicineDeletionImpact } from "@/lib/medicines.functions";
 import {
   formatFromPrice,
   MEDICINE_STATUSES,
@@ -67,6 +66,14 @@ function formatUpdated(iso: string) {
     day: "numeric",
     year: "numeric",
   });
+}
+
+// A package with no stripe_price_id has no Stripe price, so checkout rejects it with
+// "This plan is not available for purchase yet" — the plan looks fine here but cannot be sold.
+function unsyncedPackages(m: StoredMedicine) {
+  return [...m.packages, ...m.variants.flatMap((v) => v.packages)].filter(
+    (p) => !p.stripe_price_id,
+  );
 }
 
 function MedicinesListPage() {
@@ -99,16 +106,60 @@ function MedicinesListPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Server-side guard + Stripe archive + delete, in one call so the checks cannot be skipped.
+  const deleteSafely = useServerFn(deleteMedicineSafely);
   const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteMedicine(id),
-    onSuccess: () => {
+    mutationFn: (id: string) => deleteSafely({ data: { medicineId: id } }),
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       qc.invalidateQueries({ queryKey: packagesQueryKey });
-      toast.success("Medicine deleted");
+      if (result.archiveFailed.length > 0) {
+        toast.warning(
+          `Medicine deleted, but ${result.archiveFailed.length} Stripe object${result.archiveFailed.length === 1 ? "" : "s"} could not be archived and may still appear in Stripe.`,
+          { duration: 12000 },
+        );
+      } else {
+        toast.success("Medicine deleted");
+      }
       setConfirmDelete(null);
+    },
+    onError: (e: Error) => toast.error(e.message, { duration: 15000 }),
+  });
+
+  const impactQuery = useQuery({
+    queryKey: ["medicine-deletion-impact", confirmDelete?.id],
+    queryFn: () => measureImpact({ data: { medicineId: confirmDelete!.id } }),
+    enabled: !!confirmDelete,
+  });
+  const impact = impactQuery.data;
+
+  const syncPrices = useServerFn(syncUnpricedPackages);
+  const measureImpact = useServerFn(getMedicineDeletionImpact);
+  const syncMut = useMutation({
+    mutationFn: (vars: { medicineId?: string }) =>
+      syncPrices({ data: vars.medicineId ? { medicineId: vars.medicineId } : {} }),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: medicinesQueryKey });
+      qc.invalidateQueries({ queryKey: packagesQueryKey });
+      if (result.total === 0) {
+        toast.success("Every plan already has a Stripe price");
+      } else if (result.failed.length === 0) {
+        toast.success(
+          `${result.synced} plan${result.synced === 1 ? "" : "s"} synced to Stripe and can now be purchased`,
+        );
+      } else {
+        toast.warning(
+          `${result.synced} of ${result.total} synced. Failed: ${result.failed
+            .map((f) => `${f.name} (${f.error})`)
+            .join("; ")}`,
+          { duration: 15000 },
+        );
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const totalUnsynced = allRows.reduce((n, m) => n + unsyncedPackages(m).length, 0);
 
   const isEmpty = !query.isLoading && allRows.length === 0;
 
@@ -137,6 +188,30 @@ function MedicinesListPage() {
           </Button>
         </div>
       </div>
+
+      {totalUnsynced > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <div className="space-y-0.5">
+              <p className="text-[14px] font-bold text-amber-900">
+                {totalUnsynced} plan{totalUnsynced === 1 ? "" : "s"} cannot be purchased
+              </p>
+              <p className="text-[13px] font-medium text-amber-800">
+                They have no Stripe price, so patients hit &ldquo;This plan is not available for
+                purchase yet&rdquo; at checkout. Syncing creates the missing Stripe prices.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => syncMut.mutate({})}
+            disabled={syncMut.isPending}
+            className="h-11 shrink-0 rounded-lg bg-amber-600 px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-amber-700"
+          >
+            {syncMut.isPending ? "Syncing…" : `Sync all ${totalUnsynced} to Stripe`}
+          </Button>
+        </div>
+      )}
 
       {/* Filter / Inputs Controls Layer */}
       {!isEmpty && (
@@ -213,7 +288,16 @@ function MedicinesListPage() {
                   >
                     {/* Name column */}
                     <TableCell className="px-6 py-5 font-bold text-[15px] text-[#2A00A2] border-r border-[#EAE6FA]/60">
-                      {m.name}
+                      <div className="space-y-1.5">
+                        <div>{m.name}</div>
+                        {unsyncedPackages(m).length > 0 && (
+                          <Badge className="gap-1 rounded-md border-0 bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800 shadow-none">
+                            <AlertTriangle className="h-3 w-3" />
+                            {unsyncedPackages(m).length} plan
+                            {unsyncedPackages(m).length === 1 ? "" : "s"} not on Stripe
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Description column - Updated to match Figma color legibility */}
@@ -277,6 +361,14 @@ function MedicinesListPage() {
                               Set inactive
                             </DropdownMenuItem>
                           )}
+                          {unsyncedPackages(m).length > 0 && (
+                            <DropdownMenuItem
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
+                              onClick={() => syncMut.mutate({ medicineId: m.id })}
+                            >
+                              Sync to Stripe
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator className="bg-[#EAE6FA] my-1" />
                           <DropdownMenuItem
                             className="rounded-md cursor-pointer font-medium text-[14px] text-destructive focus:bg-red-50"
@@ -299,21 +391,84 @@ function MedicinesListPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#EAE6FA] shadow-xl">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[18px] font-bold text-[#2A00A2]">Delete medicine?</AlertDialogTitle>
+            <AlertDialogTitle className="text-[18px] font-bold text-[#2A00A2]">
+              {impact?.blocked ? "Cannot delete this medicine" : "Delete medicine?"}
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-[#6B5AE0]/90 leading-relaxed">
-              This permanently removes &ldquo;{confirmDelete?.name}&rdquo;. Linked packages will remain but may show an unknown medicine name.
+              {impactQuery.isLoading
+                ? "Checking what depends on this medicine…"
+                : impact?.blocked
+                  ? `"${confirmDelete?.name}" has records that would be lost or left stranded.`
+                  : `This permanently removes "${confirmDelete?.name}" and its ${impact?.packages ?? 0} plan${impact?.packages === 1 ? "" : "s"}. Their Stripe prices will be archived.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {impact?.blocked && (
+            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-3">
+              {impact.billingSubscriptions > 0 && (
+                <p className="text-[13px] leading-relaxed text-red-900">
+                  <span className="font-bold">
+                    {impact.billingSubscriptions} patient
+                    {impact.billingSubscriptions === 1 ? " is" : "s are"} still being billed.
+                  </span>{" "}
+                  Deleting will <span className="font-bold">not</span> stop those charges — Stripe
+                  keeps collecting — and the subscription records would lose all trace of what they
+                  are for. Cancel or migrate them in Stripe first.
+                </p>
+              )}
+              {impact.shopOrderRefs > 0 && (
+                <p className="text-[13px] leading-relaxed text-red-900">
+                  <span className="font-bold">
+                    Referenced by {impact.shopOrderRefs} shop order
+                    {impact.shopOrderRefs === 1 ? "" : "s"}.
+                  </span>{" "}
+                  Deleting would destroy that order history.
+                </p>
+              )}
+              <p className="text-[13px] font-medium text-red-800">
+                Set the medicine inactive instead — patients stop seeing it and every record stays
+                intact.
+              </p>
+            </div>
+          )}
+
+          {!impact?.blocked && (impact?.totalSubscriptions ?? 0) > 0 && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[13px] leading-relaxed text-amber-900">
+              {impact!.totalSubscriptions} past subscription
+              {impact!.totalSubscriptions === 1 ? "" : "s"} reference this medicine. They will be
+              kept but will no longer show which medicine they were for.
+            </p>
+          )}
+
           <AlertDialogFooter className="mt-5 gap-2">
             <AlertDialogCancel className="rounded-lg border border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]">
-              Cancel
+              {impact?.blocked ? "Close" : "Cancel"}
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
-            >
-              Delete
-            </AlertDialogAction>
+            {confirmDelete && !impact?.blocked && (
+              <>
+                <Button
+                  variant="outline"
+                  disabled={statusMut.isPending}
+                  onClick={() => {
+                    statusMut.mutate({ id: confirmDelete.id, status: "inactive" });
+                    setConfirmDelete(null);
+                  }}
+                  className="rounded-lg border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]"
+                >
+                  Set inactive instead
+                </Button>
+                <AlertDialogAction
+                  disabled={impactQuery.isLoading || deleteMut.isPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    deleteMut.mutate(confirmDelete.id);
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
+                >
+                  {deleteMut.isPending ? "Deleting…" : "Delete"}
+                </AlertDialogAction>
+              </>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

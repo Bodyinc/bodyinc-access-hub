@@ -43,24 +43,35 @@ function NewMedicinePage() {
 
   const mutation = useMutation({
     mutationFn: async (values: MedicineFormValues) => {
-      const { id, packageSyncIds } = await createMedicine(values);
+      const { id, syncTargets } = await createMedicine(values);
+      // A create has nothing pre-existing to orphan, so no archive pass is needed here.
       try {
         await syncMedicine({ data: { medicineId: id } });
       } catch {
         // Product sync is best-effort here; the package sync will also ensure it exists.
       }
-      for (const packageId of packageSyncIds) {
+      // A plan with no Stripe price cannot be bought, so a swallowed failure here surfaces
+      // later as "This plan is not available for purchase yet" at the patient's checkout.
+      const failedSyncs: string[] = [];
+      for (const target of syncTargets) {
         try {
-          await syncPackage({ data: { packageId } });
+          await syncPackage({ data: { packageId: target.id } });
         } catch {
-          // Best-effort Stripe price sync; the package row is already saved.
+          failedSyncs.push(target.name);
         }
       }
-      return { id };
+      return { id, failedSyncs };
     },
-    onSuccess: () => {
+    onSuccess: ({ failedSyncs }) => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
-      toast.success("Medicine created");
+      if (failedSyncs.length > 0) {
+        toast.warning(
+          `Created, but ${failedSyncs.length} plan${failedSyncs.length > 1 ? "s" : ""} could not sync to Stripe and cannot be purchased yet: ${failedSyncs.join(", ")}. Edit and re-save to retry.`,
+          { duration: 12000 },
+        );
+      } else {
+        toast.success("Medicine created");
+      }
       navigate({ to: "/admin/medicines" });
     },
     onError: (e: Error) => toast.error(e.message),
