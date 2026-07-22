@@ -1,20 +1,29 @@
-## Fix horizontal scroll on Edit Medicine page
+## Category form cleanup
 
-The page overflows on ~1138px MacBook widths because the two-column layout kicks in at `lg` (1024px) even though the columns together need more space than that:
+Update the Category create/edit form and supporting code:
 
-- Left form column: `flex-1 max-w-5xl` with an inner 354px image card + form fields
-- Right preview column: fixed `w-[440px]`
-- `gap-12` (48px) between them
-- Outer padding: `pl-8 pr-12`
+### 1. Remove "Assigned medicines"
+- Delete the entire "Assigned medicines" card from `src/components/admin/category-form.tsx`.
+- Drop `medicine_ids` from `CategoryFormValues` (`src/lib/categories.schema.ts`) and remove all references in `src/lib/categories.store.ts` (`syncMedicines`, `medicine_ids` in `StoredCategory`, list/get selects with `medication_category_medicines`).
+- Remove the `medicines` prop from `CategoryForm` and stop fetching medicines in `admin.categories.new.tsx` and `admin.categories.$categoryId.tsx`.
+- Leave the `medication_category_medicines` table in place (no destructive migration) since it may still be used elsewhere; just stop reading/writing it from the category form.
 
-With the admin sidebar taking ~260px, the content area on a 1138px screen is ~878px, well under what the two columns need — so the page scrolls sideways.
+### 2. Eligibility rules gated by toggle
+- Add a local UI-only state `showEligibility` in `CategoryForm` (default: `true` when editing a category that already has any rules configured, otherwise `false`).
+- Add a `Switch` labeled "Add eligibility rules" above the Eligibility card.
+- Only render the Eligibility card when the toggle is on. When toggled off, clear all eligibility values (bmi_bands/sex/min_age/max_age/blocked_state_codes) before submit so nothing stale persists.
 
-### Changes (single file: `src/routes/_authenticated/admin.medicines.$medicineId.tsx`)
+### 3. Replace icon + description with an image upload
+- Remove the `icon` field and the `description` textarea from the form UI.
+- Drop `icon` and `description` from `categoryFormSchema` and from `fromForm`/`rowToStored` writes (keep the DB columns; just stop writing them).
+- Add a new `image_url` field:
+  - DB migration: `ALTER TABLE public.medication_categories ADD COLUMN image_url text;`
+  - Create a public `category-images` bucket via `supabase--storage_create_bucket` and add RLS on `storage.objects`: public SELECT, admin-only INSERT/UPDATE/DELETE (mirroring the existing `medicine-images` policies).
+  - Add `src/lib/category-image-upload.ts` mirroring `src/lib/medicine-image-upload.ts`.
+  - Add an upload control to the form (drag/drop area + preview + remove), similar in style to the medicine image uploader but scoped to the category card.
+- Update `StoredCategory` and `categoriesQueryOptions` consumers to expose `image_url`. Update the categories list page to show the image thumbnail where the icon used to appear.
 
-1. Promote the side-by-side layout from `lg:` (1024px) to `xl:` (1280px), so on MacBook screens the form and preview stack vertically and each fits its own row.
-2. Reduce outer padding on smaller widths: `px-4 sm:px-6 xl:pl-8 xl:pr-12`.
-3. Add `min-w-0` to the form column and drop the `max-w-5xl` cap so it can shrink to the container width.
-4. Make the preview column full-width when stacked and only fix to `440px` at `xl:`.
-5. Reduce the gap at smaller widths (`gap-6 xl:gap-12`).
-
-No visual changes at xl+ widths; only fixes the overflow at ≤1279px.
+### Technical notes
+- `CategoryFormValues` becomes: `slug, name, tagline, sort_order, is_active, image_url, eligibility_rules`.
+- If `supabase--storage_create_bucket` is blocked by the workspace public-bucket policy, fall back to reusing the existing `medicine-images` bucket under a `categories/` prefix, and note it for the user.
+- No changes to patient-facing routes in this pass — only admin form + store + schema + one migration.
