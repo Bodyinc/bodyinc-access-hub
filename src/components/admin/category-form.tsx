@@ -1,13 +1,15 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Upload, X } from "lucide-react";
+import { toast } from "sonner";
+import { uploadCategoryImage } from "@/lib/category-image-upload";
 import {
   categoryFormSchema,
   BMI_BANDS,
@@ -17,14 +19,12 @@ import {
   type CategoryFormValues,
 } from "@/lib/categories.schema";
 import { StateMultiSelect } from "@/components/admin/state-multi-select";
-import type { StoredMedicine } from "@/lib/medicines.store";
 
 const EMPTY: CategoryFormValues = {
   slug: "",
   name: "",
   tagline: "",
-  description: "",
-  icon: "",
+  image_url: "",
   sort_order: 0,
   is_active: true,
   eligibility_rules: {
@@ -34,7 +34,6 @@ const EMPTY: CategoryFormValues = {
     max_age: null,
     blocked_state_codes: [],
   },
-  medicine_ids: [],
 };
 
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
@@ -51,18 +50,31 @@ export type CategoryFormProps = {
   defaultValues?: Partial<CategoryFormValues>;
   mode: "create" | "edit";
   submitting?: boolean;
-  medicines: Pick<StoredMedicine, "id" | "name">[];
   onSubmit: (values: CategoryFormValues) => void | Promise<void>;
   onCancel?: () => void;
 };
 
-export function CategoryForm({ defaultValues, mode, submitting, medicines, onSubmit, onCancel }: CategoryFormProps) {
+export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCancel }: CategoryFormProps) {
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema) as any,
     defaultValues: { ...EMPTY, ...defaultValues },
   });
   const { register, handleSubmit, control, watch, setValue, formState } = form;
   const errors = formState.errors as any;
+
+  const initialRules = defaultValues?.eligibility_rules;
+  const hasInitialRules = !!initialRules && (
+    (initialRules.bmi_bands?.length ?? 0) > 0 ||
+    (initialRules.sex?.length ?? 0) > 0 ||
+    initialRules.min_age != null ||
+    initialRules.max_age != null ||
+    (initialRules.blocked_state_codes?.length ?? 0) > 0
+  );
+  const [showEligibility, setShowEligibility] = useState<boolean>(hasInitialRules);
+
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageUrl = watch("image_url");
 
   const nameVal = watch("name");
   const slugVal = watch("slug");
@@ -78,8 +90,33 @@ export function CategoryForm({ defaultValues, mode, submitting, medicines, onSub
     }
   }, [nameVal, slugVal, mode, setValue]);
 
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const url = await uploadCategoryImage(file);
+      setValue("image_url", url, { shouldDirty: true });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const submit = handleSubmit((values) => {
+    if (!showEligibility) {
+      values.eligibility_rules = {
+        bmi_bands: [],
+        sex: [],
+        min_age: null,
+        max_age: null,
+        blocked_state_codes: [],
+      };
+    }
+    return onSubmit(values);
+  });
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-5xl" noValidate>
+    <form onSubmit={submit} className="space-y-6 max-w-5xl" noValidate>
       {/* Primary Info Card */}
       <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
         <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
@@ -117,23 +154,61 @@ export function CategoryForm({ defaultValues, mode, submitting, medicines, onSub
               className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
             />
           </Field>
-          <Field label="Description" error={errors.description?.message}>
-            <Textarea 
-              {...register("description")} 
-              rows={3} 
-              disabled={submitting} 
-              className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[100px]"
+
+          {/* Image upload */}
+          <Field label="Category image" error={errors.image_url?.message}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = "";
+              }}
             />
+            {imageUrl ? (
+              <div className="flex items-center gap-4 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-3">
+                <img src={imageUrl} alt="" className="h-20 w-20 rounded-lg object-cover border border-[#EAE6FA]" />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={submitting || uploading}
+                    className="border-[#EAE6FA] text-[#2A00A2] rounded-lg"
+                  >
+                    {uploading ? "Uploading…" : "Replace"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setValue("image_url", "", { shouldDirty: true })}
+                    disabled={submitting || uploading}
+                    className="text-destructive hover:bg-red-50 rounded-lg"
+                  >
+                    <X className="h-4 w-4 mr-1" /> Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={submitting || uploading}
+                className="w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-8 text-[#6B5AE0] hover:bg-[#F9F8FF] transition-colors"
+              >
+                <Upload className="h-6 w-6" />
+                <span className="text-[14px] font-semibold">
+                  {uploading ? "Uploading…" : "Click to upload category image"}
+                </span>
+                <span className="text-[12px] text-[#6B5AE0]/70">JPG, PNG or WebP • max 5MB</span>
+              </button>
+            )}
           </Field>
-          <div className="grid gap-5 sm:grid-cols-3 items-end">
-            <Field label="Icon (lucide name)" error={errors.icon?.message}>
-              <Input 
-                {...register("icon")} 
-                placeholder="Sparkles" 
-                disabled={submitting} 
-                className="h-12 border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
-              />
-            </Field>
+
+          <div className="grid gap-5 sm:grid-cols-2 items-end">
             <Field label="Sort order" error={errors.sort_order?.message}>
               <Input 
                 type="number" 
@@ -164,7 +239,23 @@ export function CategoryForm({ defaultValues, mode, submitting, medicines, onSub
         </CardContent>
       </Card>
 
+      {/* Eligibility toggle */}
+      <div className="flex items-center justify-between rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-[14px] font-bold text-[#2A00A2]">Add eligibility rules</p>
+          <p className="text-[13px] text-[#6B5AE0]/80 font-medium">
+            Restrict who can pick this category based on BMI, sex, age, or state.
+          </p>
+        </div>
+        <Switch
+          checked={showEligibility}
+          onCheckedChange={setShowEligibility}
+          className="data-[state=checked]:bg-[#2A00A2]"
+        />
+      </div>
+
       {/* Rules Card */}
+      {showEligibility && (
       <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
         <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
           <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Eligibility rules</CardTitle>
@@ -283,47 +374,7 @@ export function CategoryForm({ defaultValues, mode, submitting, medicines, onSub
           />
         </CardContent>
       </Card>
-
-      {/* Medicines Assignment Card */}
-      <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
-          <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Assigned medicines</CardTitle>
-          <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">
-            Medicines shown to patients who pick this category.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Controller
-            control={control}
-            name="medicine_ids"
-            render={({ field }) => (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {medicines.length === 0 && (
-                  <p className="text-sm text-muted-foreground font-medium py-2">No medicines yet. Add medicines first.</p>
-                )}
-                {medicines.map((m) => {
-                  const checked = (field.value ?? []).includes(m.id);
-                  return (
-                    <label key={m.id} className="flex items-center gap-3 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-3.5 text-[14px] font-semibold text-[#2A00A2] cursor-pointer transition-colors hover:bg-[#F9F8FF]">
-                      <Checkbox
-                        checked={checked}
-                        className="border-[#6B5AE0]/40 data-[state=checked]:bg-[#2A00A2] data-[state=checked]:border-[#2A00A2] h-4 w-4 rounded"
-                        onCheckedChange={(v) => {
-                          const set = new Set(field.value ?? []);
-                          if (v) set.add(m.id);
-                          else set.delete(m.id);
-                          field.onChange(Array.from(set));
-                        }}
-                      />
-                      {m.name}
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          />
-        </CardContent>
-      </Card>
+      )}
 
       {/* Bottom Action Row */}
       <div className="flex gap-3 pt-2">
