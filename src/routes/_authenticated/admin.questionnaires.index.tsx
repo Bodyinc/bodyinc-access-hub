@@ -55,7 +55,7 @@ function QuestionnairesListPage() {
         <div>
           <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Questionnaires</h2>
           <p className="text-[14px] text-[#5527E7]/80 font-normal mt-1">
-            Eligibility screenings shown per medicine.
+            Eligibility screenings shown per goal/category.
           </p>
         </div>
         <Button 
@@ -92,7 +92,7 @@ function QuestionnairesListPage() {
                 <TableRow className="hover:bg-transparent border-none">
                   <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Name</TableHead>
                   <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Questions</TableHead>
-                  <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Linked medicines</TableHead>
+                  <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Linked goals</TableHead>
                   <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Status</TableHead>
                   <TableHead className="h-14 w-16 px-8" />
                 </TableRow>
@@ -122,7 +122,7 @@ function QuestionnairesListPage() {
                     </TableCell>
                     
                     <TableCell className="font-normal text-[#5140AB] text-[14px] py-5 px-8 border-r border-[#EDEAFB]">
-                      {r.medicine_ids.length}
+                      {r.category_ids.length}
                     </TableCell>
                     
                     {/* Active dynamic pill tags updated */}
