@@ -193,16 +193,16 @@ export default function EditMedicinePage() {
   ].filter((p) => !p.stripe_price_id).length;
 
   return (
-    <div className="w-full bg-white px-4 sm:px-6 xl:pl-8 xl:pr-12 py-6">
-      <div className="flex flex-col xl:flex-row items-start gap-6 xl:gap-12 w-full">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden bg-white px-4 py-6 sm:px-6 xl:pl-8 xl:pr-12">
+      <div className="flex w-full min-w-0 flex-col items-start gap-6 xl:flex-row xl:gap-12">
 
         {/* Left Form Panel */}
-        <div className="flex-1 w-full min-w-0">
+        <div className="w-full min-w-0 max-w-full flex-1">
           {unsyncedCount > 0 && (
-            <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
+            <div className="mb-6 flex min-w-0 flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                <div className="space-y-0.5">
+                <div className="min-w-0 space-y-0.5">
                   <p className="text-[14px] font-bold text-amber-900">
                     {unsyncedCount} plan{unsyncedCount === 1 ? "" : "s"} have no Stripe price
                   </p>
@@ -235,7 +235,7 @@ export default function EditMedicinePage() {
         </div>
 
         {/* Right Patient Preview Panel */}
-        <div className="w-full xl:w-[440px] xl:sticky xl:top-6 shrink-0 xl:mt-[44px]">
+        <div className="w-full min-w-0 max-w-full shrink-0 xl:sticky xl:top-6 xl:mt-[44px] xl:w-[440px]">
           <Suspense fallback={<FormSkeleton />}>
             <MedicinePreview
               name={preview.name}
