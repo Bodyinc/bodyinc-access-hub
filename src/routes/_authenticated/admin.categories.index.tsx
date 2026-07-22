@@ -97,7 +97,7 @@ function CategoriesListPage() {
                 <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Slug</TableHead>
                 <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">BMI rule</TableHead>
                 <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Sex rule</TableHead>
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Medicines</TableHead>
+                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Image</TableHead>
                 <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
                 <TableHead className="h-14 w-16 px-4 text-center" />
               </TableRow>
@@ -140,9 +140,17 @@ function CategoriesListPage() {
                       {c.eligibility_rules.sex.length ? c.eligibility_rules.sex.join(", ") : "All"}
                     </TableCell>
 
-                    {/* Medicines count column */}
-                    <TableCell className="px-6 py-5 text-[15px] font-bold text-[#2A00A2] border-r border-[#EAE6FA]/60">
-                      {c.medicine_ids.length}
+                    {/* Image column */}
+                    <TableCell className="px-6 py-5 border-r border-[#EAE6FA]/60">
+                      {c.image_url ? (
+                        <img
+                          src={c.image_url}
+                          alt={c.name}
+                          className="h-10 w-10 rounded-md object-cover border border-[#EAE6FA]"
+                        />
+                      ) : (
+                        <span className="text-[13px] text-[#6B5AE0]/60">—</span>
+                      )}
                     </TableCell>
 
                     {/* Status Badge column */}
