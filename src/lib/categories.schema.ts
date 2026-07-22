@@ -39,12 +39,10 @@ export const categoryFormSchema = z.object({
     .transform((v) => v.toLowerCase()),
   name: z.string().trim().min(1, "Name is required").max(120),
   tagline: z.string().trim().max(200).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
-  description: z.string().trim().max(2000).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
-  icon: z.string().trim().max(60).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
+  image_url: z.string().trim().url().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
   sort_order: z.coerce.number().int().min(0).default(0),
   is_active: z.boolean().default(true),
   eligibility_rules: eligibilityRulesSchema,
-  medicine_ids: z.array(z.string().uuid()).default([]),
 });
 
 export type CategoryFormValues = z.input<typeof categoryFormSchema>;
