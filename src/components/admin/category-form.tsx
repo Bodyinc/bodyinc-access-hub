@@ -16,6 +16,7 @@ import {
   SEX_LABELS,
   type CategoryFormValues,
 } from "@/lib/categories.schema";
+import { StateMultiSelect } from "@/components/admin/state-multi-select";
 import type { StoredMedicine } from "@/lib/medicines.store";
 
 const EMPTY: CategoryFormValues = {
@@ -26,7 +27,13 @@ const EMPTY: CategoryFormValues = {
   icon: "",
   sort_order: 0,
   is_active: true,
-  eligibility_rules: { bmi_bands: [], sex: [], min_age: null, max_age: null },
+  eligibility_rules: {
+    bmi_bands: [],
+    sex: [],
+    min_age: null,
+    max_age: null,
+    blocked_state_codes: [],
+  },
   medicine_ids: [],
 };
 
@@ -248,6 +255,32 @@ export function CategoryForm({ defaultValues, mode, submitting, medicines, onSub
               />
             </Field>
           </div>
+
+          <Controller
+            control={control}
+            name="eligibility_rules.blocked_state_codes"
+            render={({ field }) => (
+              <div className="space-y-3 border-t border-[#EAE6FA] pt-6">
+                <div className="space-y-1">
+                  <Label className="text-[14px] font-bold text-[#2A00A2]">Blocked states</Label>
+                  <p className="text-[13px] text-[#6B5AE0]/80 font-medium">
+                    Patients in these states cannot select this category. Leave empty to allow every
+                    state — unlike the groups above, this one excludes rather than includes.
+                  </p>
+                </div>
+                <StateMultiSelect
+                  selected={(field.value ?? []) as string[]}
+                  placeholder="Block a state"
+                  onToggle={(s) => {
+                    const set = new Set((field.value ?? []) as string[]);
+                    if (set.has(s)) set.delete(s);
+                    else set.add(s);
+                    field.onChange(Array.from(set));
+                  }}
+                />
+              </div>
+            )}
+          />
         </CardContent>
       </Card>
 

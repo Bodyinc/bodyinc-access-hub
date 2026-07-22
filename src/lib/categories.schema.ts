@@ -1,19 +1,31 @@
 import { z } from "zod";
 
+import { US_STATES } from "@/lib/us-states";
+
 export const BMI_BANDS = ["underweight", "normal", "overweight", "obese"] as const;
 export type BmiBand = (typeof BMI_BANDS)[number];
 
 export const SEX_VALUES = ["female", "male", "other"] as const;
 export type SexValue = (typeof SEX_VALUES)[number];
 
+// A cleared number input submits "", and z.coerce turns "" into 0 — .optional()/.nullable() only
+// short-circuit undefined/null, so a blank age field would persist a bound of 0 and disqualify
+// every patient. Map blank to null so it reads as "no bound configured".
+const ageBound = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.coerce.number().int().min(0).max(120).nullable().optional(),
+);
+
 export const eligibilityRulesSchema = z
   .object({
     bmi_bands: z.array(z.enum(BMI_BANDS)).default([]),
     sex: z.array(z.enum(SEX_VALUES)).default([]),
-    min_age: z.coerce.number().int().min(0).max(120).optional().nullable(),
-    max_age: z.coerce.number().int().min(0).max(120).optional().nullable(),
+    min_age: ageBound,
+    max_age: ageBound,
+    // Unlike the other groups this one is a deny list: listed states are excluded, empty allows all.
+    blocked_state_codes: z.array(z.enum(US_STATES)).default([]),
   })
-  .default({ bmi_bands: [], sex: [] });
+  .default({ bmi_bands: [], sex: [], blocked_state_codes: [] });
 
 export type EligibilityRules = z.infer<typeof eligibilityRulesSchema>;
 

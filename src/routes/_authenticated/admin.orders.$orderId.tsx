@@ -104,8 +104,13 @@ function OrderDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Customer</CardTitle>
+          {customer?.is_guest ? (
+            <Badge variant="secondary" title="Paid during onboarding; account not yet created">
+              Guest — no account yet
+            </Badge>
+          ) : null}
         </CardHeader>
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
           {customer ? (
@@ -124,12 +129,15 @@ function OrderDetailPage() {
                     customer.country,
                   ]
                     .filter(Boolean)
-                    .join(", ") || "—"
+                    .join(", ") ||
+                  (customer.is_guest ? "Captured after account setup" : "—")
                 }
               />
             </>
           ) : (
-            <div className="text-muted-foreground">No linked profile.</div>
+            <div className="text-muted-foreground">
+              No customer on this subscription (no linked account or intake session).
+            </div>
           )}
         </CardContent>
       </Card>

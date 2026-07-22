@@ -11,7 +11,13 @@ import {
   type StoredMedicinePackage,
 } from "@/lib/medicines.store";
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
-import { syncPackageToStripe } from "@/lib/packages.functions";
+import {
+  archiveStripeObjects,
+  syncPackageToStripe,
+  syncUnpricedPackages,
+} from "@/lib/packages.functions";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { computeMedicineFromPriceCents, type MedicineFormValues } from "@/lib/medicines.schema";
 
 const MedicineForm = lazy(() =>
@@ -80,6 +86,29 @@ export default function EditMedicinePage() {
   const medicineQuery = useQuery(medicineQueryOptions(medicineId));
   const syncMedicine = useServerFn(syncMedicineToStripe);
   const syncPackage = useServerFn(syncPackageToStripe);
+  const syncPrices = useServerFn(syncUnpricedPackages);
+  const archiveStripe = useServerFn(archiveStripeObjects);
+
+  const syncMut = useMutation({
+    mutationFn: () => syncPrices({ data: { medicineId } }),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: medicinesQueryKey });
+      qc.invalidateQueries({ queryKey: ["medicine", medicineId] });
+      if (result.failed.length === 0) {
+        toast.success(
+          `${result.synced} plan${result.synced === 1 ? "" : "s"} synced to Stripe and can now be purchased`,
+        );
+      } else {
+        toast.warning(
+          `${result.synced} of ${result.total} synced. Failed: ${result.failed
+            .map((f) => `${f.name} (${f.error})`)
+            .join("; ")}`,
+          { duration: 15000 },
+        );
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const [previewValues, setPreviewValues] = useState<MedicineFormValues | null>(null);
   const handlePreviewChange = useCallback((values: MedicineFormValues) => {
@@ -88,24 +117,49 @@ export default function EditMedicinePage() {
 
   const mutation = useMutation({
     mutationFn: async (values: MedicineFormValues) => {
-      const { packageSyncIds } = await updateMedicine(medicineId, values);
+      const { syncTargets, orphanedPriceIds, orphanedProductIds } = await updateMedicine(
+        medicineId,
+        values,
+      );
       try {
         await syncMedicine({ data: { medicineId } });
       } catch {
         // Product sync is best-effort; package sync will also ensure the product exists.
       }
-      for (const packageId of packageSyncIds) {
+      // Plans/variants removed by this save leave live Stripe objects behind — deactivate them so
+      // they cannot back a new subscription. Existing subscribers are unaffected.
+      if (orphanedPriceIds.length > 0 || orphanedProductIds.length > 0) {
         try {
-          await syncPackage({ data: { packageId } });
+          await archiveStripe({ data: { priceIds: orphanedPriceIds, productIds: orphanedProductIds } });
         } catch {
-          // Best-effort Stripe price sync; the package row is already saved.
+          // Non-fatal: the rows are already gone and the stale Stripe objects are unreachable
+          // from the catalogue, so a failure here cannot sell anything by accident.
         }
       }
+      // A plan with no Stripe price cannot be bought, so a swallowed failure here surfaces
+      // later as "This plan is not available for purchase yet" at the patient's checkout.
+      // Save still succeeds — the row is persisted — but the admin has to be told.
+      const failedSyncs: string[] = [];
+      for (const target of syncTargets) {
+        try {
+          await syncPackage({ data: { packageId: target.id } });
+        } catch {
+          failedSyncs.push(target.name);
+        }
+      }
+      return { failedSyncs };
     },
-    onSuccess: () => {
+    onSuccess: ({ failedSyncs }) => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       qc.invalidateQueries({ queryKey: ["medicine", medicineId] });
-      toast.success("Medicine updated");
+      if (failedSyncs.length > 0) {
+        toast.warning(
+          `Saved, but ${failedSyncs.length} plan${failedSyncs.length > 1 ? "s" : ""} could not sync to Stripe and cannot be purchased yet: ${failedSyncs.join(", ")}. Re-save to retry.`,
+          { duration: 12000 },
+        );
+      } else {
+        toast.success("Medicine updated");
+      }
       navigate({ to: "/admin/medicines" });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -133,6 +187,10 @@ export default function EditMedicinePage() {
 
   const formDefaults = toFormValues(medicine);
   const preview = previewValues ?? formDefaults;
+  const unsyncedCount = [
+    ...medicine.packages,
+    ...medicine.variants.flatMap((v) => v.packages),
+  ].filter((p) => !p.stripe_price_id).length;
 
   return (
     <div className="w-full bg-white pl-8 pr-12 py-6">
@@ -141,6 +199,29 @@ export default function EditMedicinePage() {
         
         {/* Left Form Panel */}
         <div className="flex-1 w-full shrink-0 max-w-5xl">
+          {unsyncedCount > 0 && (
+            <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div className="space-y-0.5">
+                  <p className="text-[14px] font-bold text-amber-900">
+                    {unsyncedCount} plan{unsyncedCount === 1 ? "" : "s"} have no Stripe price
+                  </p>
+                  <p className="text-[13px] font-medium text-amber-800">
+                    Patients cannot buy them until they are synced.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={() => syncMut.mutate()}
+                disabled={syncMut.isPending}
+                className="h-11 shrink-0 rounded-lg bg-amber-600 px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-amber-700"
+              >
+                {syncMut.isPending ? "Syncing…" : "Sync to Stripe"}
+              </Button>
+            </div>
+          )}
           <Suspense fallback={<FormSkeleton />}>
             <MedicineForm
               key={medicineId}

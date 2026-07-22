@@ -26,7 +26,9 @@ export const listOrders = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("subscriptions")
-      .select("id, user_id, stripe_subscription_id, package_id, medicine_id, status, created_at")
+      .select(
+        "id, user_id, session_id, stripe_subscription_id, package_id, medicine_id, status, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
 
@@ -45,8 +47,12 @@ export const listOrders = createServerFn({ method: "POST" })
     const pkgIds = Array.from(new Set(rows.map((r: any) => r.package_id).filter(Boolean)));
     const medIds = Array.from(new Set(rows.map((r: any) => r.medicine_id).filter(Boolean)));
     const subIds = rows.map((r: any) => r.stripe_subscription_id).filter(Boolean);
+    // Guest onboarding orders (no account yet) carry the customer only on their intake session.
+    const sessionIds = Array.from(
+      new Set(rows.filter((r: any) => !r.user_id).map((r: any) => r.session_id).filter(Boolean)),
+    );
 
-    const [{ data: profiles }, { data: pkgs }, { data: meds }, { data: payments }] =
+    const [{ data: profiles }, { data: pkgs }, { data: meds }, { data: payments }, { data: sessions }] =
       await Promise.all([
         userIds.length
           ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
@@ -64,11 +70,18 @@ export const listOrders = createServerFn({ method: "POST" })
               .in("stripe_subscription_id", subIds)
               .order("created_at", { ascending: true })
           : Promise.resolve({ data: [] as any[] }),
+        sessionIds.length
+          ? supabaseAdmin
+              .from("intake_sessions")
+              .select("id, full_name, email")
+              .in("id", sessionIds)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
     const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     const pkgMap = new Map((pkgs ?? []).map((p: any) => [p.id, p]));
     const medMap = new Map((meds ?? []).map((m: any) => [m.id, m]));
+    const sessMap = new Map((sessions ?? []).map((s: any) => [s.id, s]));
     const payMap = new Map<string, any>();
     for (const pay of payments ?? []) {
       // first payment per subscription = the initial charge (list amount)
@@ -77,13 +90,15 @@ export const listOrders = createServerFn({ method: "POST" })
 
     let result = rows.map((r: any) => {
       const p = pMap.get(r.user_id) as any;
+      const sess = !p ? (sessMap.get(r.session_id) as any) : null;
       const pay = payMap.get(r.stripe_subscription_id);
       const medName = (medMap.get(r.medicine_id) as any)?.name;
       const pkgName = (pkgMap.get(r.package_id) as any)?.name;
       return {
         id: r.id,
-        customer_name: p?.full_name ?? null,
-        customer_email: p?.email ?? null,
+        customer_name: p?.full_name ?? sess?.full_name ?? null,
+        customer_email: p?.email ?? sess?.email ?? null,
+        is_guest: !p && !!sess,
         item_name: [medName, pkgName].filter(Boolean).join(" — ") || "—",
         item_count: 1,
         amount: pay ? Number(pay.amount_cents) / 100 : null,
@@ -121,17 +136,10 @@ export const getOrder = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!sub) throw new Error("Order not found");
 
-    const [{ data: pkg }, { data: med }, { data: profile }, { data: payments }] = await Promise.all([
-      sub.package_id
-        ? supabaseAdmin
-            .from("packages")
-            .select("name, price, duration_months, medicine_variants(name)")
-            .eq("id", sub.package_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null as any }),
-      sub.medicine_id
-        ? supabaseAdmin.from("medicines").select("name").eq("id", sub.medicine_id).maybeSingle()
-        : Promise.resolve({ data: null as any }),
+    // Onboarding subscriptions are created as a guest — the account (and its profile) only exist
+    // after the post-checkout OTP step, so user_id stays null until then. The customer's details
+    // were captured on the intake_session at checkout, so fall back to it when there is no profile.
+    const [{ data: profile }, { data: intake }, { data: payments }] = await Promise.all([
       sub.user_id
         ? supabaseAdmin
             .from("profiles")
@@ -141,6 +149,13 @@ export const getOrder = createServerFn({ method: "POST" })
             .eq("id", sub.user_id)
             .maybeSingle()
         : Promise.resolve({ data: null as any }),
+      sub.session_id
+        ? supabaseAdmin
+            .from("intake_sessions")
+            .select("full_name, email, phone, state_code, selected_plan_id")
+            .eq("id", sub.session_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null as any }),
       supabaseAdmin
         .from("payments")
         .select("*")
@@ -148,12 +163,45 @@ export const getOrder = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false }),
     ]);
 
+    // The subscription's own package/medicine ids can be null on bare rows; the intake session's
+    // selected plan is the fallback for what the patient actually chose.
+    const effectivePackageId = sub.package_id ?? (intake as any)?.selected_plan_id ?? null;
+
+    const { data: pkg } = effectivePackageId
+      ? await supabaseAdmin
+          .from("packages")
+          .select("name, price, duration_months, medicine_id, medicine_variants(name)")
+          .eq("id", effectivePackageId)
+          .maybeSingle()
+      : { data: null as any };
+
+    const effectiveMedicineId = sub.medicine_id ?? (pkg as any)?.medicine_id ?? null;
+    const { data: med } = effectiveMedicineId
+      ? await supabaseAdmin.from("medicines").select("name").eq("id", effectiveMedicineId).maybeSingle()
+      : { data: null as any };
+
+    const customer = profile
+      ? { ...profile, is_guest: false }
+      : intake
+        ? {
+            full_name: (intake as any).full_name ?? null,
+            email: (intake as any).email ?? null,
+            phone: (intake as any).phone ?? null,
+            state_code: (intake as any).state_code ?? null,
+            street_address: null,
+            city: null,
+            postal_code: null,
+            country: null,
+            is_guest: true,
+          }
+        : null;
+
     return {
       subscription: sub,
       package: pkg ?? null,
       variant_name: (pkg as any)?.medicine_variants?.name ?? null,
       medicine: med ?? null,
-      customer: profile ?? null,
+      customer,
       payments: payments ?? [],
       display_status: displayStatus(sub.status),
     };
