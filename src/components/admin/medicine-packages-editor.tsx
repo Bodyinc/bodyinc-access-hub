@@ -41,7 +41,7 @@ export function MedicinePackagesEditor({
   const atMax = fields.length >= MAX_PACKAGES_PER_MEDICINE;
 
   const body = (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 max-w-full space-y-4">
       {fields.length === 0 && (
         <p className="text-sm text-muted-foreground font-medium py-1">
           No packages yet. Add at least one so this {embedded ? "variant" : "medicine"} has a price
@@ -50,7 +50,7 @@ export function MedicinePackagesEditor({
       )}
 
       {fields.length > 0 && (
-        <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_auto] gap-3 px-1 text-[12px] font-bold text-[#2A00A2]/70">
+        <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 px-1 text-[12px] font-bold text-[#2A00A2]/70 sm:grid">
           <span>Duration (months)</span>
           <span>Original price ($)</span>
           <span>Sale price ($)</span>
@@ -101,15 +101,15 @@ export function MedicinePackagesEditor({
   if (embedded) return body;
 
   return (
-    <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-      <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
+    <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white shadow-sm">
+      <CardHeader className="border-b border-[#EAE6FA] bg-white p-4 sm:p-6">
         <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Pricing packages</CardTitle>
         <CardDescription className="text-[13px] text-[#2A00A2]/80 font-medium">
           Duration-based plans patients can buy — up to {MAX_PACKAGES_PER_MEDICINE} per medicine. The
           lowest per-month price is shown as the medicine&apos;s &ldquo;from&rdquo; price.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-6">{body}</CardContent>
+      <CardContent className="min-w-0 p-4 sm:p-6">{body}</CardContent>
     </Card>
   );
 }
@@ -138,9 +138,9 @@ function PackageRow({
   });
 
   return (
-    <div className="rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-4 space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-start">
-        <div className="space-y-1">
+    <div className="min-w-0 space-y-3 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-4">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <div className="min-w-0 space-y-1">
           <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]">Duration (months)</Label>
           <Input
             type="number"
@@ -154,7 +154,7 @@ function PackageRow({
             <p className="text-xs text-destructive">{rowErrors.duration_months.message}</p>
           )}
         </div>
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]/70">Original price ($)</Label>
           <Input
             type="number"
@@ -168,7 +168,7 @@ function PackageRow({
             <p className="text-xs text-destructive">{rowErrors.original_price.message}</p>
           )}
         </div>
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]/70">Sale price ($)</Label>
           <Input
             type="number"
@@ -194,12 +194,12 @@ function PackageRow({
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-6">
         <Controller
           control={control}
           name={`${name}.${index}.is_most_popular` as any}
           render={({ field }) => (
-            <div className="flex items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
               <Switch
                 checked={!!field.value}
                 onCheckedChange={field.onChange}
@@ -214,7 +214,7 @@ function PackageRow({
           control={control}
           name={`${name}.${index}.is_active` as any}
           render={({ field }) => (
-            <div className="flex items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
               <Switch
                 checked={field.value ?? true}
                 onCheckedChange={field.onChange}
@@ -228,7 +228,7 @@ function PackageRow({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="ml-auto flex items-center gap-1 text-[13px] font-semibold text-[#6B5AE0] hover:text-[#2A00A2] transition-colors"
+          className="col-span-2 flex min-w-0 items-center justify-end gap-1 text-[13px] font-semibold text-[#6B5AE0] transition-colors hover:text-[#2A00A2] sm:col-span-1 sm:ml-auto"
         >
           Features &amp; clinical note
           <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
@@ -240,7 +240,7 @@ function PackageRow({
           <div className="space-y-2">
             <Label className="text-[12px] font-bold text-[#2A00A2]/70">Included features</Label>
             {fields.map((f, fi) => (
-              <div key={f.id} className="flex gap-2.5 items-center">
+              <div key={f.id} className="flex min-w-0 items-center gap-2.5">
                 <Input
                   {...register(`${name}.${index}.features.${fi}.text` as any)}
                   placeholder={`Feature ${fi + 1}`}

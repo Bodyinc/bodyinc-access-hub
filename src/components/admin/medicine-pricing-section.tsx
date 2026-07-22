@@ -67,8 +67,8 @@ export function MedicinePricingSection({
   }
 
   return (
-    <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
-      <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
+    <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white shadow-sm">
+      <CardHeader className="border-b border-[#EAE6FA] bg-white p-4 sm:p-6">
         <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Variants</CardTitle>
         <CardDescription className="text-[13px] text-[#2A00A2]/80 font-medium">
           Dose or strength options (e.g. 50mg, 100mg). Each variant has its own packages (up to 2)
@@ -76,14 +76,14 @@ export function MedicinePricingSection({
           price is the cheapest across variants.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-6 space-y-5">
+      <CardContent className="min-w-0 space-y-5 p-4 sm:p-6">
         {variantsArray.fields.map((field, vIndex) => (
           <div
             key={field.id}
-            className="rounded-xl border border-[#E2DCFA] bg-[#FBFAFF] p-5 space-y-4"
+            className="min-w-0 space-y-4 rounded-xl border border-[#E2DCFA] bg-[#FBFAFF] p-4 sm:p-5"
           >
-            <div className="flex items-start gap-3">
-              <div className="flex-1 space-y-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-3">
+              <div className="min-w-0 space-y-1">
                 <Label className="text-[13px] font-bold text-[#2A00A2]">Variant name</Label>
                 <Input
                   {...register(`variants.${vIndex}.name`)}

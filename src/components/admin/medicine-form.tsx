@@ -72,7 +72,7 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex w-full min-w-0 flex-col gap-2">
       <Label className={labelClass}>{label}</Label>
       {children}
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
@@ -144,12 +144,12 @@ export function MedicineForm({
   return (
     <form
   onSubmit={handleSubmit(onSubmit)}
-  className="font-['DM_Sans',sans-serif] space-y-6 w-full m-0 p-0"
+   className="font-['DM_Sans',sans-serif] m-0 w-full min-w-0 max-w-full space-y-6 p-0"
   noValidate
 >
-      <div className="space-y-6 w-full">
+      <div className="w-full min-w-0 max-w-full space-y-6">
         {/* Main Details Card */}
-        <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-none overflow-hidden p-6 space-y-6 w-full">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-6">
           <div className="space-y-1">
             <h2 className="text-[22px] font-bold text-[#2E00AB]">
               {mode === "create" ? "Add medicine" : "Edit medicine"}
@@ -159,15 +159,15 @@ export function MedicineForm({
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-6 items-start w-full">
+          <div className="flex w-full min-w-0 flex-col items-start gap-6 md:flex-row">
             {/* Product Image Box Container - Restored to full height (457px) to align with toggle */}
-            <div className="space-y-2 shrink-0">
+            <div className="w-full max-w-[354px] shrink-0 space-y-2">
               <div
-                className="w-[354px] h-[457px] rounded-[12px] border border-dashed border-[#EAE6FA] p-[14px] flex flex-col items-center justify-between bg-[#FDFDFF]"
+                className="flex h-[457px] w-full flex-col items-center justify-between rounded-[12px] border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-[14px]"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={onDrop}
               >
-                <div className="w-[326px] h-[315px] rounded-[8px] bg-[#EAE4FF] flex items-center justify-center overflow-hidden">
+                <div className="flex aspect-[326/315] w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#EAE4FF]">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -218,7 +218,7 @@ export function MedicineForm({
             </div>
 
             {/* Input Fields */}
-            <div className="flex-1 space-y-4 w-full min-w-0">
+            <div className="w-full min-w-0 flex-1 space-y-4">
               <Field label="Medicine Name" error={errors.name?.message}>
                 <Input
                   {...register("name")}
@@ -282,7 +282,7 @@ export function MedicineForm({
                 </div>
 
                 {/* Clean Toggle Switch & Single-Line Label */}
-                <div className="flex items-center gap-3 pt-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-3 pt-1">
                   <Controller
   control={control}
   name="requires_questionnaire"
@@ -297,7 +297,7 @@ export function MedicineForm({
 />
                   <Label
                     htmlFor="req-qq"
-                    className="text-[14px] font-medium text-[#2E00AB] cursor-pointer select-none whitespace-nowrap"
+                    className="min-w-0 cursor-pointer select-none text-[14px] font-medium text-[#2E00AB]"
                   >
                     Requires questionnaire before checkout
                   </Label>
@@ -308,7 +308,7 @@ export function MedicineForm({
         </Card>
 
         {/* Target Categories */}
-        <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-none overflow-hidden p-6 space-y-4 w-full">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-1">
             <h3 className="text-[18px] font-bold text-[#2E00AB]">
               Categories
@@ -365,7 +365,7 @@ export function MedicineForm({
         />
 
         {/* Important Info */}
-        <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-none overflow-hidden p-6 space-y-4 w-full">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-1">
             <h3 className="text-[18px] font-bold text-[#2E00AB]">
               Important information
@@ -377,7 +377,7 @@ export function MedicineForm({
 
           <div className="space-y-3">
             {fields.map((field, index) => (
-              <div key={field.id} className="flex gap-3 items-center">
+              <div key={field.id} className="flex min-w-0 items-center gap-3">
                 <Input
                   {...register(`important_info.${index}.text`)}
                   placeholder={`Bullet ${index + 1}`}
@@ -409,7 +409,7 @@ export function MedicineForm({
         </Card>
 
         {/* Notice Block */}
-        <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-none overflow-hidden p-6 space-y-4 w-full">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-1">
             <h3 className="text-[18px] font-bold text-[#2E00AB]">Notice</h3>
             <p className="text-[13px] font-medium text-[#2E00AB]/80">
@@ -427,7 +427,7 @@ export function MedicineForm({
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-wrap gap-3 pt-2">
           <Button
             type="submit"
             disabled={submitting || uploading}

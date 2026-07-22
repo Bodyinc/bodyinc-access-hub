@@ -73,9 +73,9 @@ function AdminLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-white">
+      <div className="flex min-h-screen w-full overflow-x-hidden bg-white">
         <AdminSidebar />
-        <SidebarInset className="flex flex-1 flex-col bg-white">
+        <SidebarInset className="flex min-w-0 flex-1 flex-col bg-white">
           {/* Relative header container allowing absolute trigger overlay positioning */}
           <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-[#F4F1FE] bg-white pl-12 pr-6">
             <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
@@ -84,7 +84,7 @@ function AdminLayout() {
             </div>
           </header>
 
-          <main className="flex-1 px-3 py-4 sm:px-6 sm:py-5">
+          <main className="min-w-0 flex-1 px-3 py-4 sm:px-6 sm:py-5">
             <Outlet />
           </main>
         </SidebarInset>
