@@ -943,39 +943,32 @@ export type Database = {
         }
         Relationships: []
       }
-      questionnaire_medicines: {
+      questionnaire_categories: {
         Row: {
+          category_id: string
           created_at: string
-          medicine_id: string
           questionnaire_id: string
         }
         Insert: {
+          category_id: string
           created_at?: string
-          medicine_id: string
           questionnaire_id: string
         }
         Update: {
+          category_id?: string
           created_at?: string
-          medicine_id?: string
           questionnaire_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "questionnaire_medicines_medicine_id_fkey"
-            columns: ["medicine_id"]
+            foreignKeyName: "questionnaire_categories_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "medicines"
+            referencedRelation: "medication_categories"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "questionnaire_medicines_medicine_id_fkey"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "public_medicines"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "questionnaire_medicines_questionnaire_id_fkey"
+            foreignKeyName: "questionnaire_categories_questionnaire_id_fkey"
             columns: ["questionnaire_id"]
             isOneToOne: false
             referencedRelation: "questionnaires"

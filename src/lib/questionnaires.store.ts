@@ -28,7 +28,7 @@ export type StoredQuestionnaire = {
   name: string;
   description: string | null;
   is_active: boolean;
-  medicine_ids: string[];
+  category_ids: string[];
   question_count: number;
   created_at: string;
   updated_at: string;
@@ -37,7 +37,7 @@ export type StoredQuestionnaire = {
 export async function listQuestionnaires(): Promise<StoredQuestionnaire[]> {
   const { data, error } = await supabase
     .from("questionnaires")
-    .select("*, questionnaire_medicines(medicine_id), questionnaire_questions(id)")
+    .select("*, questionnaire_categories(category_id), questionnaire_questions(id)")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r: any) => ({
@@ -45,7 +45,7 @@ export async function listQuestionnaires(): Promise<StoredQuestionnaire[]> {
     name: r.name,
     description: r.description,
     is_active: r.is_active,
-    medicine_ids: (r.questionnaire_medicines ?? []).map((m: any) => String(m.medicine_id)),
+    category_ids: (r.questionnaire_categories ?? []).map((m: any) => String(m.category_id)),
     question_count: (r.questionnaire_questions ?? []).length,
     created_at: r.created_at,
     updated_at: r.updated_at,
@@ -59,7 +59,7 @@ export async function getQuestionnaire(id: string): Promise<{
   const { data, error } = await supabase
     .from("questionnaires")
     .select(
-      "*, questionnaire_medicines(medicine_id), questionnaire_questions(*, questionnaire_question_options(*))",
+      "*, questionnaire_categories(category_id), questionnaire_questions(*, questionnaire_question_options(*))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -71,7 +71,7 @@ export async function getQuestionnaire(id: string): Promise<{
     name: r.name,
     description: r.description,
     is_active: r.is_active,
-    medicine_ids: (r.questionnaire_medicines ?? []).map((m: any) => String(m.medicine_id)),
+    category_ids: (r.questionnaire_categories ?? []).map((m: any) => String(m.category_id)),
     question_count: (r.questionnaire_questions ?? []).length,
     created_at: r.created_at,
     updated_at: r.updated_at,
@@ -101,14 +101,14 @@ export async function getQuestionnaire(id: string): Promise<{
   return { questionnaire, questions };
 }
 
-async function syncQuestionnaireMedicines(questionnaireId: string, medicineIds: string[]) {
-  await supabase.from("questionnaire_medicines").delete().eq("questionnaire_id", questionnaireId);
-  if (medicineIds.length > 0) {
-    const rows = medicineIds.map((mid) => ({
+async function syncQuestionnaireCategories(questionnaireId: string, categoryIds: string[]) {
+  await supabase.from("questionnaire_categories").delete().eq("questionnaire_id", questionnaireId);
+  if (categoryIds.length > 0) {
+    const rows = categoryIds.map((cid) => ({
       questionnaire_id: questionnaireId,
-      medicine_id: mid,
+      category_id: cid,
     }));
-    const { error } = await supabase.from("questionnaire_medicines").insert(rows as any);
+    const { error } = await supabase.from("questionnaire_categories").insert(rows as any);
     if (error) throw new Error(error.message);
   }
 }
@@ -117,7 +117,7 @@ export async function createQuestionnaire(input: {
   name: string;
   description?: string | null;
   is_active: boolean;
-  medicine_ids: string[];
+  category_ids: string[];
 }): Promise<{ id: string }> {
   const { data, error } = await supabase
     .from("questionnaires")
@@ -129,13 +129,13 @@ export async function createQuestionnaire(input: {
     .select("id")
     .single();
   if (error) throw new Error(error.message);
-  await syncQuestionnaireMedicines(data.id, input.medicine_ids);
+  await syncQuestionnaireCategories(data.id, input.category_ids);
   return { id: data.id };
 }
 
 export async function updateQuestionnaire(
   id: string,
-  input: { name: string; description?: string | null; is_active: boolean; medicine_ids: string[] },
+  input: { name: string; description?: string | null; is_active: boolean; category_ids: string[] },
 ): Promise<{ id: string }> {
   const { error } = await supabase
     .from("questionnaires")
@@ -146,7 +146,7 @@ export async function updateQuestionnaire(
     } as any)
     .eq("id", id);
   if (error) throw new Error(error.message);
-  await syncQuestionnaireMedicines(id, input.medicine_ids);
+  await syncQuestionnaireCategories(id, input.category_ids);
   return { id };
 }
 
