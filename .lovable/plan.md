@@ -1,16 +1,51 @@
 ## Goal
-Link questionnaires to categories (goals) instead of medicines.
 
-## Database migration
-- Create `public.questionnaire_categories` (questionnaire_id, category_id) with PK on the pair, FKs to `questionnaires` and `medication_categories` (both `on delete cascade`), grants for `authenticated`/`service_role`, RLS enabled, and admin-write + authenticated-read policies matching `questionnaire_medicines`.
-- Drop `public.questionnaire_medicines`.
-- Any place in DB (functions/policies) referencing `questionnaire_medicines` — none found, safe to drop.
+Replace the three cascading dropdowns in the Change Medicine dialog with a scalable, side-by-side layout that shows the current plan, lets an admin quickly find a new medicine + plan (even with 250+ medicines), and previews the price difference before confirming.
 
-## Code changes
-- `src/lib/questionnaires.store.ts`: rename `medicine_ids` → `category_ids`; replace `questionnaire_medicines` reads/writes with `questionnaire_categories`. Rename `syncQuestionnaireMedicines` → `syncQuestionnaireCategories`.
-- `src/routes/_authenticated/admin.questionnaires.new.tsx` and `admin.questionnaires.$questionnaireId.tsx`: swap the medicines multi-select for a categories multi-select using `categoriesQueryOptions()` from `src/lib/query-options/categories.ts`. Update labels ("Linked medicines" → "Linked goals / categories") and state variable names.
-- `src/routes/_authenticated/admin.questionnaires.index.tsx`: if it shows a "medicines" column/count, switch to categories.
-- Leave sidebar entry and the intake-session eligibility flow (which reads `intake_session_medicines`) untouched — this change only concerns which entity a questionnaire is attached to.
+## New Modal Layout
 
-## Out of scope
-- Intake session evaluation logic that currently resolves questionnaires per medicine. If that runtime lookup exists elsewhere and needs to switch to category-based resolution, we address it in a follow-up once you confirm.
+Wider dialog (`max-w-3xl`), two columns on md+, stacked on mobile.
+
+```text
+┌─────────────────────── Change medicine ────────────────────────┐
+│  CURRENT PLAN                    │  NEW PLAN                    │
+│  ┌────────────────────────────┐  │  [Search medicines…]         │
+│  │ Semaglutide — 50mg         │  │  ┌────────────────────────┐  │
+│  │ Monthly plan               │  │  │ ○ Tirzepatide          │  │
+│  │ $199.00 / mo               │  │  │ ○ Metformin            │  │
+│  │ Renews Aug 21, 2026        │  │  │ ● Finasteride ✓        │  │
+│  └────────────────────────────┘  │  │ ○ Minoxidil            │  │
+│                                  │  │ … virtualized / scroll │  │
+│                                  │  └────────────────────────┘  │
+│                                  │  Variant: [50mg ▾]           │
+│                                  │  Plan:    [Monthly $210 ▾]   │
+│                                  │                              │
+│  DIFFERENCE                                                     │
+│  New price:      $210.00 / mo                                   │
+│  Current price:  $199.00 / mo                                   │
+│  Change:         +$11.00 / mo   (applies from next cycle)       │
+├──────────────────────────────────────────────────────────────── │
+│                              [Cancel]  [Confirm change]         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Behavior
+
+- Left column reads current medicine / variant / plan / price / next renewal directly from the already-fetched `getOrder` data — no extra request.
+- Right column:
+  - Text input filters the medicine list by name (case-insensitive substring). Active medicines only. Excludes the current medicine.
+  - Medicine list is a scrollable panel (`max-h-72 overflow-y-auto`) with radio-style rows so it works for 10 or 250 items. Each row shows name + "from $X/mo".
+  - Once a medicine is picked, Variant selector appears only if it has variants; Plan selector always appears with the same `planLabel` formatting used today.
+  - Selecting a medicine auto-selects the only variant/package when there's just one.
+- Difference block computes `new.price - current.price`. Handles differing `duration_months` by normalizing to per-month ($/mo) so the comparison is meaningful, and shows the raw plan price alongside. Copy notes the change applies from the next billing cycle (no charge now) — same guarantee as today's backend.
+- Confirm button disabled until a package is selected and it differs from the current one. Calls the existing `changeSubscriptionMedicine` server fn — no backend changes.
+
+## Files
+
+- `src/components/admin/change-medicine-dialog.tsx` — rewrite: accept `currentPackage`, `currentMedicineName`, `currentVariantName`, `currentPeriodEnd` props; new two-column layout; searchable list; difference summary.
+- `src/routes/_authenticated/admin.orders.$orderId.tsx` — pass the current-plan context (already in `q.data`) into `<ChangeMedicineDialog />`.
+
+## Out of Scope
+
+- Backend/Stripe logic (`changeSubscriptionMedicine`) unchanged.
+- No prorated-charge preview from Stripe's upcoming-invoice API — we intentionally don't charge at the switch, so a plain per-month diff matches the actual behavior.
