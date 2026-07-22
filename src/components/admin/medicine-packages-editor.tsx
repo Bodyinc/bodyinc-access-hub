@@ -27,7 +27,7 @@ type Props = {
 };
 
 const inputClass =
-  "h-11 border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium";
+  "h-11 border-[#EAE6FA] bg-[#FDFDFF] text-[#2A00A2] rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium";
 
 export function MedicinePackagesEditor({
   control,
@@ -50,7 +50,7 @@ export function MedicinePackagesEditor({
       )}
 
       {fields.length > 0 && (
-        <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_auto] gap-3 px-1 text-[12px] font-bold text-[#6B5AE0]/70">
+        <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_auto] gap-3 px-1 text-[12px] font-bold text-[#2A00A2]/70">
           <span>Duration (months)</span>
           <span>Original price ($)</span>
           <span>Sale price ($)</span>
@@ -86,7 +86,7 @@ export function MedicinePackagesEditor({
             clinical_note: "",
           } as any)
         }
-        className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors disabled:opacity-50"
+        className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2A00A2] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors disabled:opacity-50"
       >
         <Plus className="mr-1.5 h-4 w-4" /> Add package
       </Button>
@@ -104,7 +104,7 @@ export function MedicinePackagesEditor({
     <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-sm overflow-hidden">
       <CardHeader className="border-b border-[#EAE6FA] bg-white p-6">
         <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Pricing packages</CardTitle>
-        <CardDescription className="text-[13px] text-[#6B5AE0]/80 font-medium">
+        <CardDescription className="text-[13px] text-[#2A00A2]/80 font-medium">
           Duration-based plans patients can buy — up to {MAX_PACKAGES_PER_MEDICINE} per medicine. The
           lowest per-month price is shown as the medicine&apos;s &ldquo;from&rdquo; price.
         </CardDescription>
@@ -141,7 +141,7 @@ function PackageRow({
     <div className="rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-4 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-start">
         <div className="space-y-1">
-          <Label className="sm:hidden text-[12px] font-bold text-[#6B5AE0]/70">Duration (months)</Label>
+          <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]">Duration (months)</Label>
           <Input
             type="number"
             min={1}
@@ -155,7 +155,7 @@ function PackageRow({
           )}
         </div>
         <div className="space-y-1">
-          <Label className="sm:hidden text-[12px] font-bold text-[#6B5AE0]/70">Original price ($)</Label>
+          <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]/70">Original price ($)</Label>
           <Input
             type="number"
             step="0.01"
@@ -169,7 +169,7 @@ function PackageRow({
           )}
         </div>
         <div className="space-y-1">
-          <Label className="sm:hidden text-[12px] font-bold text-[#6B5AE0]/70">Sale price ($)</Label>
+          <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]/70">Sale price ($)</Label>
           <Input
             type="number"
             step="0.01"
@@ -238,7 +238,7 @@ function PackageRow({
       {expanded && (
         <div className="space-y-3 border-t border-[#EAE6FA] pt-3">
           <div className="space-y-2">
-            <Label className="text-[12px] font-bold text-[#6B5AE0]/70">Included features</Label>
+            <Label className="text-[12px] font-bold text-[#2A00A2]/70">Included features</Label>
             {fields.map((f, fi) => (
               <div key={f.id} className="flex gap-2.5 items-center">
                 <Input
@@ -251,7 +251,7 @@ function PackageRow({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 rounded-xl text-[#6B5AE0]/60 hover:text-destructive hover:bg-destructive/5 shrink-0"
+                  className="h-11 w-11 rounded-xl text-[#2A00A2]/60 hover:text-destructive hover:bg-destructive/5 shrink-0"
                   disabled={submitting}
                   onClick={() => remove(fi)}
                 >
@@ -264,19 +264,19 @@ function PackageRow({
               variant="outline"
               disabled={submitting}
               onClick={() => append({ text: "" } as any)}
-              className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
+              className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2A00A2] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
             >
               <Plus className="mr-1.5 h-4 w-4" /> Add feature
             </Button>
           </div>
           <div className="space-y-2">
-            <Label className="text-[12px] font-bold text-[#6B5AE0]/70">Clinical note</Label>
+            <Label className="text-[12px] font-bold text-[#2A00A2]/70">Clinical note</Label>
             <Textarea
               {...register(`${name}.${index}.clinical_note` as any)}
               rows={2}
               placeholder="Optional disclaimer shown with this plan"
               disabled={submitting}
-              className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[70px] resize-none"
+              className="border-[#EAE6FA] bg-[#FDFDFF] text-[#2A00A2] rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[70px] resize-none"
             />
           </div>
         </div>
