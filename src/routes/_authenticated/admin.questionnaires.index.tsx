@@ -18,6 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteQuestionnaire, listQuestionnaires } from "@/lib/questionnaires.store";
+import { adminPageTitle, adminPageSubtitle, adminBtnPrimary, adminCard } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/")({
   component: QuestionnairesListPage,
@@ -48,111 +49,99 @@ function QuestionnairesListPage() {
   });
 
   return (
-    /* Changed container classes to sit flush with the sidebar layout from left-to-right */
-    <div className="w-full p-4 sm:p-1 space-y-6 bg-white min-h-screen">
-      {/* Top Banner Action Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Questionnaires</h2>
-          <p className="text-[14px] text-[#5527E7]/80 font-normal mt-1">
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h2 className={adminPageTitle}>Questionnaires</h2>
+          <p className={`mt-1 ${adminPageSubtitle}`}>
             Eligibility screenings shown per goal/category.
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => navigate({ to: "/admin/questionnaires/new" })}
-          className="bg-[#1D0087] hover:bg-[#140061] text-white font-medium text-[14px] h-10 px-5 rounded-lg shadow-none transition-colors shrink-0"
+          className={adminBtnPrimary}
         >
           <Plus className="mr-1.5 h-4 w-4 stroke-[2.5]" /> Add Questionnaire
         </Button>
       </div>
 
       {!query.isLoading && rows.length === 0 ? (
-        <Card className="border-dashed border-[#EDEAFB] bg-white rounded-2xl">
+        <Card className={`${adminCard} border-dashed`}>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl font-bold text-[#1D0087]">No questionnaires yet</CardTitle>
-            <CardDescription className="text-[#5527E7]/80 font-medium">
+            <CardTitle className={adminPageTitle}>No questionnaires yet</CardTitle>
+            <CardDescription className={adminPageSubtitle}>
               Create one and link it to medicines that require screening.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center pb-8">
-            <Button 
+            <Button
               onClick={() => navigate({ to: "/admin/questionnaires/new" })}
-              className="bg-[#1D0087] hover:bg-[#140061] text-white font-medium text-[14px] h-10 px-5 rounded-lg shadow-none transition-colors"
+              className={adminBtnPrimary}
             >
               <Plus className="mr-1.5 h-4 w-4 stroke-[2.5]" /> Add questionnaire
             </Button>
           </CardContent>
         </Card>
       ) : (
-        /* Main Table Interface Panel styled horizontally left-to-right */
-        <Card className="overflow-hidden border border-[#EDEAFB] bg-white shadow-none rounded-2xl w-full">
-          <div className="overflow-x-auto">
-            <Table className="border-collapse w-full">
-              <TableHeader className="bg-[#FAF9FF] border-b border-[#EDEAFB]">
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Name</TableHead>
-                  <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Questions</TableHead>
-                  <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Linked goals</TableHead>
-                  <TableHead className="h-14 font-medium text-[#1D0087] text-[14px] px-8 border-r border-[#EDEAFB]">Status</TableHead>
-                  <TableHead className="h-14 w-16 px-8" />
+        <Card className={adminCard}>
+          <div className="admin-table-scroll">
+            <Table className="w-full min-w-[680px] border-collapse">
+              <TableHeader className="border-b border-[#EAE6FA] bg-[#FAF9FF]">
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Name</TableHead>
+                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Questions</TableHead>
+                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Linked goals</TableHead>
+                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Status</TableHead>
+                  <TableHead className="h-12 w-14 px-2 sm:h-14 sm:px-4 lg:px-8" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center font-medium text-[#5527E7]/60">
+                    <TableCell colSpan={5} className="py-12 text-center font-medium text-[#2E00AB]/60">
                       Loading records…
                     </TableCell>
                   </TableRow>
                 )}
                 {rows.map((r) => (
-                  <TableRow 
-                    key={r.id} 
-                    className="border-b border-[#EDEAFB] last:border-none hover:bg-[#FAF9FF]/20 transition-colors cursor-pointer"
+                  <TableRow
+                    key={r.id}
+                    className="cursor-pointer border-b border-[#EAE6FA] last:border-none hover:bg-[#FAF9FF]/20 transition-colors"
                     onClick={() => navigate({ to: "/admin/questionnaires/$questionnaireId", params: { questionnaireId: r.id } })}
                   >
-                    {/* Primary item title matches deep purple font weights */}
-                    <TableCell className="font-semibold text-[#1D0087] text-[14px] py-5 px-8 border-r border-[#EDEAFB]">
+                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 text-[14px] font-semibold text-[#2E00AB] sm:px-6 sm:py-5 lg:px-8">
                       {r.name}
                     </TableCell>
-                    
-                    {/* Column variables mapped to slate indigo font color */}
-                    <TableCell className="font-normal text-[#5140AB] text-[14px] py-5 px-8 border-r border-[#EDEAFB]">
+                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 text-[14px] font-normal text-[#2E00AB]/80 sm:px-6 sm:py-5 lg:px-8">
                       {r.question_count}
                     </TableCell>
-                    
-                    <TableCell className="font-normal text-[#5140AB] text-[14px] py-5 px-8 border-r border-[#EDEAFB]">
+                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 text-[14px] font-normal text-[#2E00AB]/80 sm:px-6 sm:py-5 lg:px-8">
                       {r.category_ids.length}
                     </TableCell>
-                    
-                    {/* Active dynamic pill tags updated */}
-                    <TableCell className="py-5 px-8 border-r border-[#EDEAFB]">
-                      <Badge 
-                        className={`
-                          px-3.5 py-1 rounded-[6px] text-[13px] font-medium tracking-normal normal-case border shadow-none
-                          ${r.is_active 
-                            ? "bg-[#F3F0FF] text-[#5527E7] border-transparent" 
-                            : "bg-white text-[#5527E7]/50 border-[#E5E1FC]"
-                          }
-                        `}
+                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+                      <Badge
+                        className={`px-3.5 py-1 rounded-[6px] text-[13px] font-medium tracking-normal normal-case border shadow-none ${
+                          r.is_active
+                            ? "bg-[#F3F0FF] text-[#2E00AB] border-transparent"
+                            : "bg-white text-[#2E00AB]/50 border-[#EAE6FA]"
+                        }`}
                       >
                         {r.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    
-                    <TableCell className="py-5 px-8 text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="px-2 py-4 text-right sm:px-4 sm:py-5 lg:px-8" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#5140AB] hover:bg-[#F3F0FF] rounded-lg transition-colors">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E00AB]/70 hover:bg-[#F3F0FF] rounded-lg transition-colors">
                             <MoreHorizontal className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl border-[#EDEAFB] p-1 shadow-md bg-white">
-                          <DropdownMenuItem asChild className="rounded-lg font-medium text-[#1D0087] focus:bg-[#F3F0FF] focus:text-[#1D0087] cursor-pointer">
+                        <DropdownMenuContent align="end" className="rounded-xl border-[#EAE6FA] p-1 shadow-md bg-white">
+                          <DropdownMenuItem asChild className="rounded-lg font-medium text-[#2E00AB] focus:bg-[#F3F0FF] focus:text-[#2E00AB] cursor-pointer">
                             <Link to="/admin/questionnaires/$questionnaireId" params={{ questionnaireId: r.id }}>Edit</Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-[#FAF9FF]" />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="rounded-lg font-medium text-[#FF5A79] focus:bg-[#FFE8EC] focus:text-[#FF5A79] cursor-pointer"
                             onClick={() => setConfirm({ id: r.id, name: r.name })}
                           >
@@ -169,14 +158,13 @@ function QuestionnairesListPage() {
         </Card>
       )}
 
-      {/* Confirmation Modal */}
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent className="rounded-2xl border-none bg-white p-6 max-w-[440px] shadow-xl">
+        <AlertDialogContent className="rounded-2xl border border-[#EAE6FA] bg-white p-6 max-w-[440px] shadow-xl">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-xl font-bold text-[#1D0087]">
+            <AlertDialogTitle className={adminPageTitle}>
               Delete questionnaire?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[14px] font-medium text-[#5527E7]/80">
+            <AlertDialogDescription className={adminPageSubtitle}>
               &ldquo;{confirm?.name}&rdquo; and all its questions will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>

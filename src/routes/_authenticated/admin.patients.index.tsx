@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -48,6 +47,7 @@ import {
   sendPatientPasswordReset,
   setPatientActive,
 } from "@/lib/patients.functions";
+import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/")({
   component: PatientsListPage,
@@ -108,75 +108,71 @@ function PatientsListPage() {
   });
 
   return (
-    // FIX: Replaced layout wrappers with an expansive left-aligned canvas block
-    <div className="w-full text-left m-0 p-0 space-y-5 max-w-none">
-      {/* Header View Section */}
-      <div className="flex items-start justify-between gap-3 w-full">
-        <div className="space-y-0.5">
-          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Patients</h2>
-          <p className="text-sm text-[#6B5AE0]/70 font-medium">
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h2 className={adminPageTitle}>Patients</h2>
+          <p className={adminPageSubtitle}>
             Browse patient accounts, review intake responses, and manage access.
           </p>
         </div>
         <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
       </div>
 
-      {/* Filter and Input Controls Strip */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full">
-        <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6B5AE0]/50" />
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1 sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or phone"
-            className="pl-9 h-10 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40 bg-white"
+            className={`${adminInput} pl-9`}
           />
         </div>
         <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-          <SelectTrigger className="w-40 h-10 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+          <SelectTrigger className={`${adminSelect} sm:w-40`}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-[#E2DCFA]">
-            <SelectItem value="all" className="font-medium text-[#2A00A2]">All</SelectItem>
-            <SelectItem value="active" className="font-medium text-[#2A00A2]">Active</SelectItem>
-            <SelectItem value="deactivated" className="font-medium text-[#2A00A2]">Deactivated</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="deactivated">Deactivated</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Complete Data Matrix Table Structure */}
-      <Card className="w-full overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl max-w-none m-0">
-        <div className="overflow-x-auto">
+      <div className="admin-table-wrap m-0 w-full">
+        <div className="admin-table-scroll">
         <Table className="min-w-[820px]">
           <TableHeader className="bg-[#FDFDFF]">
             <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Name</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Email</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Phone</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">DOB</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Joined</TableHead>
-              <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Status</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Name</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Email</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Phone</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">DOB</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Joined</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Status</TableHead>
               <TableHead className="w-12 h-11 text-[13px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {query.isLoading && (
-              <TableRow className="border-b border-[#EAE6FA]/50">
-                <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+              <TableRow className="border-b border-[#EAE6FA]">
+                <TableCell colSpan={7} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {query.isError && (
-              <TableRow className="border-b border-[#EAE6FA]/50">
+              <TableRow className="border-b border-[#EAE6FA]">
                 <TableCell colSpan={7} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
             )}
             {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#EAE6FA]/50">
-                <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+              <TableRow className="border-b border-[#EAE6FA]">
+                <TableCell colSpan={7} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
                   No patients found.
                 </TableCell>
               </TableRow>
@@ -184,7 +180,7 @@ function PatientsListPage() {
             {query.data?.map((p: any) => (
               <TableRow
                 key={p.id}
-                className="cursor-pointer border-b border-[#EAE6FA]/50 hover:bg-[#F5F3FF]/40 transition-colors"
+                className="cursor-pointer border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40 transition-colors"
                 onClick={() =>
                   navigate({
                     to: "/admin/patients/$patientId",
@@ -192,18 +188,18 @@ function PatientsListPage() {
                   })
                 }
               >
-                <TableCell className="font-bold text-[#2A00A2] text-[14px]">{p.full_name || "—"}</TableCell>
-                <TableCell className="text-[#2A00A2] font-semibold text-[14px]">{p.email}</TableCell>
-                <TableCell className="text-[#2A00A2] font-semibold text-[14px]">{p.phone || "—"}</TableCell>
-                <TableCell className="text-[#2A00A2] font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
-                <TableCell className="text-[#2A00A2]/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
+                <TableCell className="font-semibold text-[#2E00AB] text-[14px]">{p.full_name || "—"}</TableCell>
+                <TableCell className="text-[#2E00AB] font-medium text-[14px]">{p.email}</TableCell>
+                <TableCell className="text-[#2E00AB] font-medium text-[14px]">{p.phone || "—"}</TableCell>
+                <TableCell className="text-[#2E00AB] font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
+                <TableCell className="text-[#2E00AB]/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
                 <TableCell>
                   <Badge 
                     variant={p.is_active ? "default" : "secondary"}
                     className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                       p.is_active 
-                        ? "bg-[#E8F5E9] text-[#6B5AE0] hover:bg-[#E8F5E9]" 
-                        : "bg-[#F5F3FF] text-[#2A00A2] hover:bg-[#F5F3FF]"
+                        ? "bg-[#E8F5E9] text-[#2E00AB] hover:bg-[#E8F5E9]" 
+                        : "bg-[#F5F3FF] text-[#2E00AB] hover:bg-[#F5F3FF]"
                     }`}
                   >
                     {p.is_active ? "Active" : "Deactivated"}
@@ -263,7 +259,7 @@ function PatientsListPage() {
           </TableBody>
         </Table>
         </div>
-      </Card>
+      </div>
 
       <AlertDialog
         open={deleteTarget !== null}

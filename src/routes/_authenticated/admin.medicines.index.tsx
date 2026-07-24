@@ -61,15 +61,13 @@ function truncate(text: string, max = 60) {
 }
 
 function formatUpdated(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 }
 
-// A package with no stripe_price_id has no Stripe price, so checkout rejects it with
-// "This plan is not available for purchase yet" — the plan looks fine here but cannot be sold.
 function unsyncedPackages(m: StoredMedicine) {
   return [...m.packages, ...m.variants.flatMap((v) => v.packages)].filter(
     (p) => !p.stripe_price_id,
@@ -106,7 +104,6 @@ function MedicinesListPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Server-side guard + Stripe archive + delete, in one call so the checks cannot be skipped.
   const deleteSafely = useServerFn(deleteMedicineSafely);
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteSafely({ data: { medicineId: id } }),
@@ -126,6 +123,9 @@ function MedicinesListPage() {
     onError: (e: Error) => toast.error(e.message, { duration: 15000 }),
   });
 
+  const syncPrices = useServerFn(syncUnpricedPackages);
+  const measureImpact = useServerFn(getMedicineDeletionImpact);
+
   const impactQuery = useQuery({
     queryKey: ["medicine-deletion-impact", confirmDelete?.id],
     queryFn: () => measureImpact({ data: { medicineId: confirmDelete!.id } }),
@@ -133,8 +133,6 @@ function MedicinesListPage() {
   });
   const impact = impactQuery.data;
 
-  const syncPrices = useServerFn(syncUnpricedPackages);
-  const measureImpact = useServerFn(getMedicineDeletionImpact);
   const syncMut = useMutation({
     mutationFn: (vars: { medicineId?: string }) =>
       syncPrices({ data: vars.medicineId ? { medicineId: vars.medicineId } : {} }),
@@ -160,29 +158,30 @@ function MedicinesListPage() {
   });
 
   const totalUnsynced = allRows.reduce((n, m) => n + unsyncedPackages(m).length, 0);
-
   const isEmpty = !query.isLoading && allRows.length === 0;
 
   return (
-    <div className="w-full p-4 sm:p-1 space-y-6 bg-white min-h-screen">
-      {/* Top Title & Primary Call-to-action bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Medicines</h2>
-          <p className="text-[14px] text-[#6B5AE0]/80 font-medium">
+    <div className="admin-page-shell space-y-5 sm:space-y-6">
+      {/* Top Header Bar */}
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h1 className="text-[24px] font-semibold leading-tight tracking-normal text-[#2E00AB] sm:text-[28px] lg:text-[32px]">
+            Medicines
+          </h1>
+          <p className="text-base font-normal leading-snug text-[#2E00AB]/80 sm:text-lg lg:text-[20px]">
             Manage the medication catalog shown to patients during onboarding.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+        <div className="flex shrink-0 items-center gap-3 self-start sm:self-auto">
           <RefreshButton
-  onClick={() => {
-    query.refetch();
-  }}
-  loading={query.isFetching}
-/>
-          <Button 
+            onClick={() => {
+              query.refetch();
+            }}
+            loading={query.isFetching}
+          />
+          <Button
             onClick={() => navigate({ to: "/admin/medicines/new" })}
-            className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-11 px-6 rounded-lg font-semibold text-[14px] gap-2 shadow-sm transition-all"
+            className="bg-[#2E00AB] hover:bg-[#220082] text-white h-[44px] px-6 rounded-[8px] font-semibold text-[14px] gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Add New Medicine
           </Button>
@@ -213,26 +212,28 @@ function MedicinesListPage() {
         </div>
       )}
 
-      {/* Filter / Inputs Controls Layer */}
+      {/* Filter / Inputs Controls Layer (Height: 54px, Bg: #F9F6FF, Radius: 12px, Border: #2E00AB 25%) */}
       {!isEmpty && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative w-full sm:max-w-md">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B5AE0]/60" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#2E00AB]/40" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by medication name or active ingredient..."
-              className="pl-10 pr-4 h-12 w-full border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+              className="pl-11 pr-4 h-[54px] w-full border-[#2E00AB]/25 bg-[#F9F6FF] text-[#2E00AB] placeholder:text-[#2E00AB]/40 rounded-[12px] focus-visible:ring-[#2E00AB] text-[14px] font-medium shadow-none"
             />
           </div>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="w-full sm:w-44 h-12 border-[#EAE6FA] bg-[#FDFDFF] text-[#6B5AE0] font-medium rounded-xl focus:ring-[#2A00A2] text-[14px]">
+            <SelectTrigger className="w-full sm:w-[180px] h-[54px] border-[#2E00AB]/25 bg-[#F9F6FF] text-[#2E00AB] font-medium rounded-[12px] focus:ring-[#2E00AB] text-[14px] shadow-none">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="border-[#EAE6FA] rounded-xl">
-              <SelectItem value="all" className="text-[#2A00A2] font-medium focus:bg-[#F3EFFF]">All Statuses</SelectItem>
+            <SelectContent className="border-[#2E00AB]/20 rounded-[12px]">
+              <SelectItem value="all" className="text-[#2E00AB] font-medium focus:bg-[#F3EFFF]">
+                All Statuses
+              </SelectItem>
               {MEDICINE_STATUSES.map((s) => (
-                <SelectItem key={s} value={s} className="text-[#2A00A2] font-medium focus:bg-[#F3EFFF]">
+                <SelectItem key={s} value={s} className="text-[#2E00AB] font-medium focus:bg-[#F3EFFF]">
                   {MEDICINE_STATUS_LABELS[s]}
                 </SelectItem>
               ))}
@@ -241,44 +242,57 @@ function MedicinesListPage() {
         </div>
       )}
 
-      {/* Primary Data Display Component */}
+      {/* Main Table Display Component */}
       {isEmpty ? (
-        <div className="border-2 border-dashed border-[#EAE6FA] bg-[#FDFDFF] rounded-xl p-12 text-center space-y-4">
-          <p className="text-base font-semibold text-[#2A00A2]">No medicines found</p>
-          <Button 
+        <div className="border-2 border-dashed border-[#2E00AB]/20 bg-[#F9F6FF] rounded-[12px] p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-[#2E00AB]">No medicines found</p>
+          <Button
             onClick={() => navigate({ to: "/admin/medicines/new" })}
-            className="bg-[#2A00A2] text-white rounded-lg px-4 h-10 font-medium"
+            className="bg-[#2E00AB] text-white rounded-lg px-4 h-10 font-medium"
           >
             <Plus className="h-4 w-4 mr-2" /> Add your first medicine
           </Button>
         </div>
       ) : (
-        <div className="border border-[#EAE6FA] rounded-xl bg-white overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <Table className="border-collapse min-w-[800px]">
-              <TableHeader className="bg-white">
-                <TableRow className="hover:bg-transparent border-b border-[#EAE6FA]">
-                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Medication Name</TableHead>
-                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Description</TableHead>
-                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Price</TableHead>
-                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
-                  <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Last Updated</TableHead>
+        <div className="overflow-hidden rounded-[12px] border border-[#2E00AB]/20 bg-white shadow-sm">
+          <div className="admin-table-scroll">
+            <Table className="min-w-[800px] border-collapse">
+              <TableHeader className="bg-[#F7F5FF]">
+                <TableRow className="hover:bg-transparent border-b border-[#2E00AB]/15">
+                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                    Medication Name
+                  </TableHead>
+                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                    Description
+                  </TableHead>
+
+                  {/* Header updated to Monthly Price per Figma */}
+                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                    Monthly Price
+                  </TableHead>
+
+                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                    Last Updated
+                  </TableHead>
                   <TableHead className="h-14 w-16 px-4 text-center" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#6B5AE0]/70">
+                    <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#2E00AB]/60">
                       Loading rows...
                     </TableCell>
                   </TableRow>
                 )}
-                
+
                 {rows.map((m: StoredMedicine) => (
                   <TableRow
                     key={m.id}
-                    className="border-b border-[#EAE6FA] bg-white hover:bg-[#F9F8FF] transition-colors cursor-pointer"
+                    className="border-b border-[#2E00AB]/15 bg-white hover:bg-[#FDFBFF] transition-colors cursor-pointer"
                     onClick={() =>
                       navigate({
                         to: "/admin/medicines/$medicineId",
@@ -287,7 +301,7 @@ function MedicinesListPage() {
                     }
                   >
                     {/* Name column */}
-                    <TableCell className="px-6 py-5 font-bold text-[15px] text-[#2A00A2] border-r border-[#EAE6FA]/60">
+                    <TableCell className="px-6 py-5 font-bold text-[15px] text-[#2E00AB]">
                       <div className="space-y-1.5">
                         <div>{m.name}</div>
                         {unsyncedPackages(m).length > 0 && (
@@ -300,23 +314,22 @@ function MedicinesListPage() {
                       </div>
                     </TableCell>
 
-                    {/* Description column - Updated to match Figma color legibility */}
-                    <TableCell className="px-6 py-5 text-[14px] font-medium max-w-xs text-[#5D22E8] border-r border-[#EAE6FA]/60 leading-relaxed">
+                    {/* Description column */}
+                    <TableCell className="px-6 py-5 text-[13px] font-medium max-w-xs text-[#2E00AB]/80 leading-relaxed">
                       {truncate(m.short_description)}
                     </TableCell>
 
                     {/* Price column */}
-                    <TableCell className="px-6 py-5 text-[15px] font-bold text-[#2A00A2] border-r border-[#EAE6FA]/60">
+                    <TableCell className="px-6 py-5 text-[15px] font-bold text-[#2E00AB]">
                       {formatFromPrice(m.from_price_cents)}
                     </TableCell>
 
                     {/* Status column */}
-                    <TableCell className="px-6 py-5 border-r border-[#EAE6FA]/60">
-                      <Badge 
-                        
-                        className={`rounded-md px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
-                          m.status === "active" 
-                            ? "bg-[#F3EFFF] text-[#5D22E8]" 
+                    <TableCell className="px-6 py-5">
+                      <Badge
+                        className={`rounded-[6px] px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
+                          m.status === "active"
+                            ? "bg-[#F0EBFF] text-[#5D22E8]"
                             : m.status === "draft"
                               ? "bg-amber-50 text-amber-700"
                               : "bg-gray-100 text-gray-500"
@@ -327,27 +340,37 @@ function MedicinesListPage() {
                     </TableCell>
 
                     {/* Updated column */}
-                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#6B5AE0] border-r border-[#EAE6FA]/60">
+                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#2E00AB]/70">
                       {formatUpdated(m.updated_at)}
                     </TableCell>
 
-                    {/* Context menu trigger column */}
+                    {/* Action trigger */}
                     <TableCell className="px-4 py-5 text-center" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-[#6B5AE0] hover:bg-[#F3EFFF]">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-md text-[#2E00AB]/70 hover:bg-[#F3EFFF]"
+                          >
                             <MoreHorizontal className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#EAE6FA] bg-white p-1">
-                          <DropdownMenuItem asChild className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]">
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-36 rounded-lg shadow-lg border border-[#2E00AB]/20 bg-white p-1"
+                        >
+                          <DropdownMenuItem
+                            asChild
+                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                          >
                             <Link to="/admin/medicines/$medicineId" params={{ medicineId: m.id }}>
                               Edit
                             </Link>
                           </DropdownMenuItem>
                           {m.status !== "active" && (
                             <DropdownMenuItem
-                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
                               onClick={() => statusMut.mutate({ id: m.id, status: "active" })}
                             >
                               Set active
@@ -355,7 +378,7 @@ function MedicinesListPage() {
                           )}
                           {m.status === "active" && (
                             <DropdownMenuItem
-                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
                               onClick={() => statusMut.mutate({ id: m.id, status: "inactive" })}
                             >
                               Set inactive
@@ -363,15 +386,15 @@ function MedicinesListPage() {
                           )}
                           {unsyncedPackages(m).length > 0 && (
                             <DropdownMenuItem
-                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
                               onClick={() => syncMut.mutate({ medicineId: m.id })}
                             >
                               Sync to Stripe
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator className="bg-[#EAE6FA] my-1" />
+                          <DropdownMenuSeparator className="bg-[#2E00AB]/15 my-1" />
                           <DropdownMenuItem
-                            className="rounded-md cursor-pointer font-medium text-[14px] text-destructive focus:bg-red-50"
+                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
                             onClick={() => setConfirmDelete({ id: m.id, name: m.name })}
                           >
                             Delete
@@ -387,19 +410,21 @@ function MedicinesListPage() {
         </div>
       )}
 
-      {/* Confirmation Modal Layer */}
+      {/* Confirmation Modal */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#EAE6FA] shadow-xl">
+        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#2E00AB]/20 shadow-xl">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[18px] font-bold text-[#2A00A2]">
+            <AlertDialogTitle className="text-[18px] font-bold text-[#2E00AB]">
               {impact?.blocked ? "Cannot delete this medicine" : "Delete medicine?"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-[#6B5AE0]/90 leading-relaxed">
+            <AlertDialogDescription className="text-sm text-[#2E00AB]/80 leading-relaxed">
               {impactQuery.isLoading
                 ? "Checking what depends on this medicine…"
                 : impact?.blocked
                   ? `"${confirmDelete?.name}" has records that would be lost or left stranded.`
-                  : `This permanently removes "${confirmDelete?.name}" and its ${impact?.packages ?? 0} plan${impact?.packages === 1 ? "" : "s"}. Their Stripe prices will be archived.`}
+                  : `This permanently removes "${confirmDelete?.name}" and its ${impact?.packages ?? 0} plan${
+                      impact?.packages === 1 ? "" : "s"
+                    }. Their Stripe prices will be archived.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -411,9 +436,9 @@ function MedicinesListPage() {
                     {impact.billingSubscriptions} patient
                     {impact.billingSubscriptions === 1 ? " is" : "s are"} still being billed.
                   </span>{" "}
-                  Deleting will <span className="font-bold">not</span> stop those charges — Stripe
-                  keeps collecting — and the subscription records would lose all trace of what they
-                  are for. Cancel or migrate them in Stripe first.
+                  Deleting will <span className="font-bold">not</span> stop those charges — Stripe keeps
+                  collecting — and the subscription records would lose all trace of what they are for. Cancel
+                  or migrate them in Stripe first.
                 </p>
               )}
               {impact.shopOrderRefs > 0 && (
@@ -426,8 +451,7 @@ function MedicinesListPage() {
                 </p>
               )}
               <p className="text-[13px] font-medium text-red-800">
-                Set the medicine inactive instead — patients stop seeing it and every record stays
-                intact.
+                Set the medicine inactive instead — patients stop seeing it and every record stays intact.
               </p>
             </div>
           )}
@@ -435,13 +459,13 @@ function MedicinesListPage() {
           {!impact?.blocked && (impact?.totalSubscriptions ?? 0) > 0 && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[13px] leading-relaxed text-amber-900">
               {impact!.totalSubscriptions} past subscription
-              {impact!.totalSubscriptions === 1 ? "" : "s"} reference this medicine. They will be
-              kept but will no longer show which medicine they were for.
+              {impact!.totalSubscriptions === 1 ? "" : "s"} reference this medicine. They will be kept but
+              will no longer show which medicine they were for.
             </p>
           )}
 
           <AlertDialogFooter className="mt-5 gap-2">
-            <AlertDialogCancel className="rounded-lg border border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]">
+            <AlertDialogCancel className="rounded-lg border border-[#2E00AB]/20 text-[#2E00AB] hover:bg-[#F9F6FF]">
               {impact?.blocked ? "Close" : "Cancel"}
             </AlertDialogCancel>
             {confirmDelete && !impact?.blocked && (
@@ -453,7 +477,7 @@ function MedicinesListPage() {
                     statusMut.mutate({ id: confirmDelete.id, status: "inactive" });
                     setConfirmDelete(null);
                   }}
-                  className="rounded-lg border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]"
+                  className="rounded-lg border-[#2E00AB]/20 text-[#2E00AB] hover:bg-[#F9F6FF]"
                 >
                   Set inactive instead
                 </Button>

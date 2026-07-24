@@ -37,6 +37,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  adminLabel,
+  adminInput,
+  adminSectionTitle,
+  adminSectionSubtitle,
+  adminCard,
+  adminBtnPrimary,
+  adminBtnSecondary,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   component: PatientDetailPage,
@@ -108,15 +117,24 @@ function PatientDetailPage() {
   });
 
   if (patient.isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading patient…</div>;
+    return (
+      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#2E00AB]/60">
+        Loading patient…
+      </div>
+    );
   }
   if (patient.isError || !patient.data) {
     return (
-      <div className="space-y-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin/patients" })}>
+      <div className="admin-page-shell space-y-3 font-['DM_Sans',sans-serif]">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/admin/patients" })}
+          className="h-9 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
-        <div className="text-sm text-destructive">
+        <div className="text-[14px] font-semibold text-[#FF4D6D]">
           {(patient.error as Error)?.message ?? "Patient not found"}
         </div>
       </div>
@@ -126,45 +144,81 @@ function PatientDetailPage() {
   const d = patient.data as any;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin/patients" })}>
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate({ to: "/admin/patients" })}
+        className="h-9 -ml-2 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+      >
         <ArrowLeft className="mr-1 h-4 w-4" /> Back to patients
       </Button>
 
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div className="flex items-center gap-3">
+      <Card className={adminCard}>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
+          <div className="flex min-w-0 items-center gap-3">
             {d.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={d.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-sm font-medium uppercase">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EAE6FA] text-sm font-semibold uppercase text-[#2E00AB]">
                 {(d.full_name || d.email || "?").slice(0, 2)}
               </div>
             )}
-            <div>
-              <CardTitle>{d.full_name || "Unnamed patient"}</CardTitle>
-              <CardDescription>{d.email}</CardDescription>
+            <div className="min-w-0 space-y-1">
+              <CardTitle className={adminSectionTitle}>{d.full_name || "Unnamed patient"}</CardTitle>
+              <CardDescription className={adminSectionSubtitle}>{d.email}</CardDescription>
             </div>
           </div>
-          <Badge variant={d.is_active ? "default" : "secondary"}>
+          <Badge
+            className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
+              d.is_active
+                ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+                : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+            }`}
+          >
             {d.is_active ? "Active" : "Deactivated"}
           </Badge>
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue="profile" className="space-y-4">
         <div className="-mx-1 overflow-x-auto px-1">
-          <TabsList className="w-max">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="intake">Intake Sessions</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsList className="h-auto w-max gap-1 rounded-[10px] border border-[#EAE6FA] bg-[#F5F3FF] p-1">
+            <TabsTrigger
+              value="profile"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+            >
+              Profile
+            </TabsTrigger>
+            <TabsTrigger
+              value="intake"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+            >
+              Intake Sessions
+            </TabsTrigger>
+            <TabsTrigger
+              value="orders"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+            >
+              Orders
+            </TabsTrigger>
+            <TabsTrigger
+              value="payments"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+            >
+              Payments
+            </TabsTrigger>
+            <TabsTrigger
+              value="account"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+            >
+              Account
+            </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="mt-0">
           <ProfileTab
             defaultValues={{
               full_name: d.full_name ?? "",
@@ -182,146 +236,208 @@ function PatientDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="intake">
+        <TabsContent value="intake" className="mt-0">
           <RelatedList
             isLoading={related.isLoading}
             error={related.error as Error | null}
             empty="No intake sessions."
           >
-            <div className="overflow-x-auto">
-            <Table className="min-w-[520px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Session</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(related.data?.sessions ?? []).map((s: any) => (
-                  <TableRow
-                    key={s.id}
-                    className="cursor-pointer"
-                    onClick={() =>
-                      navigate({ to: "/admin/intake-sessions/$sessionId", params: { sessionId: s.id } })
-                    }
-                  >
-                    <TableCell>
-                      <div className="font-medium">{s.full_name || "—"}</div>
-                      <div className="text-xs text-muted-foreground">{s.email || "—"}</div>
-                    </TableCell>
-                    <TableCell><Badge variant="secondary">{s.status}</Badge></TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(s.created_at)}</TableCell>
+            <div className="admin-table-scroll">
+              <Table className="min-w-[520px]">
+                <TableHeader className="bg-[#FDFDFF]">
+                  <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Session
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Status
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Created
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(related.data?.sessions ?? []).map((s: any) => (
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                      onClick={() =>
+                        navigate({
+                          to: "/admin/intake-sessions/$sessionId",
+                          params: { sessionId: s.id },
+                        })
+                      }
+                    >
+                      <TableCell>
+                        <div className="text-[14px] font-semibold text-[#2E00AB]">
+                          {s.full_name || "—"}
+                        </div>
+                        <div className="text-[12px] font-medium text-[#2E00AB]/60">
+                          {s.email || "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]">
+                          {s.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                        {formatDate(s.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </RelatedList>
         </TabsContent>
 
-        <TabsContent value="orders">
+        <TabsContent value="orders" className="mt-0">
           <RelatedList
             isLoading={related.isLoading}
             error={related.error as Error | null}
             empty="No orders."
           >
-            <div className="overflow-x-auto">
-            <Table className="min-w-[640px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(related.data?.orders ?? []).map((o: any) => (
-                  <TableRow
-                    key={o.id}
-                    className="cursor-pointer"
-                    onClick={() =>
-                      navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })
-                    }
-                  >
-                    <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}…</TableCell>
-                    <TableCell>{o.selected_plan_code || "—"}</TableCell>
-                    <TableCell>${Number(o.total ?? 0).toFixed(2)}</TableCell>
-                    <TableCell><Badge variant="secondary">{o.status ?? "—"}</Badge></TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(o.created_at)}</TableCell>
+            <div className="admin-table-scroll">
+              <Table className="min-w-[640px]">
+                <TableHeader className="bg-[#FDFDFF]">
+                  <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Order
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Plan
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Total
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Status
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Created
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(related.data?.orders ?? []).map((o: any) => (
+                    <TableRow
+                      key={o.id}
+                      className="cursor-pointer border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                      onClick={() =>
+                        navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })
+                      }
+                    >
+                      <TableCell className="font-mono text-xs font-medium text-[#2E00AB]">
+                        {o.id.slice(0, 8)}…
+                      </TableCell>
+                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                        {o.selected_plan_code || "—"}
+                      </TableCell>
+                      <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                        ${Number(o.total ?? 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]">
+                          {o.status ?? "—"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                        {formatDate(o.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </RelatedList>
         </TabsContent>
 
-        <TabsContent value="payments">
+        <TabsContent value="payments" className="mt-0">
           <RelatedList
             isLoading={related.isLoading}
             error={related.error as Error | null}
             empty="No payments."
           >
-            <div className="overflow-x-auto">
-            <Table className="min-w-[600px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment intent</TableHead>
-                  <TableHead>Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(related.data?.payments ?? []).map((p: any) => (
-                  <TableRow key={p.id}>
-                    <TableCell>
-                      ${((p.amount_cents ?? 0) / 100).toFixed(2)} {p.currency?.toUpperCase()}
-                    </TableCell>
-                    <TableCell><Badge variant="secondary">{p.status}</Badge></TableCell>
-                    <TableCell className="font-mono text-xs">{p.stripe_payment_intent_id ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
+            <div className="admin-table-scroll">
+              <Table className="min-w-[600px]">
+                <TableHeader className="bg-[#FDFDFF]">
+                  <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Amount
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Status
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Payment intent
+                    </TableHead>
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                      Created
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(related.data?.payments ?? []).map((p: any) => (
+                    <TableRow
+                      key={p.id}
+                      className="border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                    >
+                      <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                        ${((p.amount_cents ?? 0) / 100).toFixed(2)} {p.currency?.toUpperCase()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]">
+                          {p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-medium text-[#2E00AB]">
+                        {p.stripe_payment_intent_id ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                        {formatDate(p.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </RelatedList>
         </TabsContent>
 
-        <TabsContent value="account">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Account</CardTitle>
-              <CardDescription>Authentication metadata and admin actions.</CardDescription>
+        <TabsContent value="account" className="mt-0">
+          <Card className={adminCard}>
+            <CardHeader className="space-y-1.5 p-4 sm:p-6">
+              <CardTitle className={adminSectionTitle}>Account</CardTitle>
+              <CardDescription className={adminSectionSubtitle}>
+                Authentication metadata and admin actions.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div>
-                  <div className="text-muted-foreground">Email confirmed</div>
-                  <div>{formatDate(d.email_confirmed_at)}</div>
+            <CardContent className="space-y-4 p-4 pt-0 text-[14px] sm:p-6 sm:pt-0">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Email confirmed</div>
+                  <div className="font-medium text-[#2E00AB]">{formatDate(d.email_confirmed_at)}</div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Last sign-in</div>
-                  <div>{formatDate(d.last_sign_in_at)}</div>
+                <div className="space-y-1">
+                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Last sign-in</div>
+                  <div className="font-medium text-[#2E00AB]">{formatDate(d.last_sign_in_at)}</div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Joined</div>
-                  <div>{formatDate(d.created_at)}</div>
+                <div className="space-y-1">
+                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Joined</div>
+                  <div className="font-medium text-[#2E00AB]">{formatDate(d.created_at)}</div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Profile updated</div>
-                  <div>{formatDate(d.updated_at)}</div>
+                <div className="space-y-1">
+                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Profile updated</div>
+                  <div className="font-medium text-[#2E00AB]">{formatDate(d.updated_at)}</div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="flex flex-col gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="font-medium">Account active</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-[16px] font-medium text-[#2E00AB]">Account active</div>
+                  <div className="mt-1 text-[13px] font-normal text-[#2E00AB]/70">
                     Deactivating blocks sign-in for this patient.
                   </div>
                 </div>
@@ -329,13 +445,14 @@ function PatientDetailPage() {
                   checked={d.is_active}
                   disabled={activeMut.isPending}
                   onCheckedChange={(checked) => activeMut.mutate(checked)}
+                  className="data-[state=checked]:bg-[#2E00AB]"
                 />
               </div>
 
-              <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="flex flex-col gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="font-medium">Password reset</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-[16px] font-medium text-[#2E00AB]">Password reset</div>
+                  <div className="mt-1 text-[13px] font-normal text-[#2E00AB]/70">
                     Sends a recovery email to {d.email}.
                   </div>
                 </div>
@@ -344,6 +461,7 @@ function PatientDetailPage() {
                   size="sm"
                   disabled={resetMut.isPending}
                   onClick={() => resetMut.mutate()}
+                  className={`${adminBtnSecondary} h-10 px-4 text-[13px]`}
                 >
                   <Mail className="mr-1.5 h-4 w-4" /> Send reset email
                 </Button>
@@ -383,12 +501,14 @@ function ProfileTab({
   }, [defaultValues.full_name, defaultValues.phone, defaultValues.dob]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Profile</CardTitle>
-        <CardDescription>Update the patient's contact details.</CardDescription>
+    <Card className={adminCard}>
+      <CardHeader className="space-y-1.5 p-4 sm:p-6">
+        <CardTitle className={adminSectionTitle}>Profile</CardTitle>
+        <CardDescription className={adminSectionSubtitle}>
+          Update the patient's contact details.
+        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
         <form
           className="space-y-4"
           onSubmit={(e) => {
@@ -401,26 +521,44 @@ function ProfileTab({
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="full_name">Full name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="full_name" className={adminLabel}>
+                Full name
+              </Label>
               <Input
                 id="full_name"
                 value={full_name}
                 onChange={(e) => setFullName(e.target.value)}
                 required
+                className={adminInput}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <div className="space-y-2">
+              <Label htmlFor="phone" className={adminLabel}>
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={adminInput}
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dob">Date of birth</Label>
-              <Input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+            <div className="space-y-2">
+              <Label htmlFor="dob" className={adminLabel}>
+                Date of birth
+              </Label>
+              <Input
+                id="dob"
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className={adminInput}
+              />
             </div>
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} className={adminBtnPrimary}>
               {submitting ? "Saving…" : "Save changes"}
             </Button>
           </div>
@@ -433,7 +571,7 @@ function ProfileTab({
 function RelatedList({
   isLoading,
   error,
-  empty,
+  empty: _empty,
   children,
 }: {
   isLoading: boolean;
@@ -442,12 +580,12 @@ function RelatedList({
   children: React.ReactNode;
 }) {
   return (
-    <Card>
+    <Card className={adminCard}>
       <CardContent className="p-0">
         {isLoading ? (
-          <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+          <div className="p-6 text-[14px] font-medium text-[#2E00AB]/60">Loading…</div>
         ) : error ? (
-          <div className="p-6 text-sm text-destructive">{error.message}</div>
+          <div className="p-6 text-[14px] font-semibold text-[#FF4D6D]">{error.message}</div>
         ) : (
           <>{children}</>
         )}
@@ -469,16 +607,21 @@ function DangerZone({
 }) {
   if (!isActive) return null;
   return (
-    <div className="flex items-center justify-between rounded-md border border-destructive/40 p-3">
+    <div className="flex flex-col gap-3 rounded-[10px] border border-[#FF4D6D]/40 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <div className="font-medium text-destructive">Deactivate account</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[16px] font-medium text-[#FF4D6D]">Deactivate account</div>
+        <div className="mt-1 text-[13px] font-normal text-[#2E00AB]/70">
           Blocks {name} from signing in. Can be reversed.
         </div>
       </div>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" size="sm" disabled={disabled}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            className="h-10 rounded-[8px] border border-[#FF4D6D]/40 px-4 text-[13px] font-semibold text-[#FF4D6D] shadow-none hover:bg-[#FFF5F7] hover:text-[#FF4D6D]"
+          >
             Deactivate
           </Button>
         </AlertDialogTrigger>

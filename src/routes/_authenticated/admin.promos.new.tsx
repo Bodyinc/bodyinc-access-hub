@@ -34,14 +34,14 @@ function NewPromoPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return (
-    <div className="mx-auto max-w-2xl">
-      <PromoForm
-        mode="create"
-        submitting={mutation.isPending}
-        onSubmit={(v) => mutation.mutate(v)}
-        onCancel={() => navigate({ to: "/admin/promos" })}
-      />
-    </div>
-  );
+return (
+  <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+    <PromoForm
+      mode="create"
+      submitting={mutation.isPending}
+      onSubmit={(v) => mutation.mutate(v)}
+      onCancel={() => navigate({ to: "/admin/promos" })}
+    />
+  </div>
+);
 }

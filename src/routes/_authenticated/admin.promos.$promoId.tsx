@@ -49,14 +49,12 @@ function EditPromoPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PromoForm
-        mode="edit"
-        defaultValues={toFormValues(q.data)}
-        submitting={mutation.isPending}
-        onSubmit={(v) => mutation.mutate(v)}
-        onCancel={() => navigate({ to: "/admin/promos" })}
-      />
-    </div>
+    <PromoForm
+      mode="edit"
+      defaultValues={toFormValues(q.data)}
+      submitting={mutation.isPending}
+      onSubmit={(v) => mutation.mutate(v)}
+      onCancel={() => navigate({ to: "/admin/promos" })}
+    />
   );
 }

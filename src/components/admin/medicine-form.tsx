@@ -29,6 +29,13 @@ import {
   type MedicineFormValues,
   type MedicineStatus,
 } from "@/lib/medicines.schema";
+import {
+  adminLabel as labelClass,
+  adminInput as inputClass,
+  adminTextarea as textareaClass,
+  adminSectionTitle as sectionTitleClass,
+  adminSectionSubtitle as sectionSubtitleClass,
+} from "@/lib/admin-ui";
 
 export type MedicineFormProps = {
   defaultValues?: Partial<MedicineFormValues>;
@@ -37,7 +44,21 @@ export type MedicineFormProps = {
   onSubmit: (values: MedicineFormValues) => void | Promise<void>;
   onCancel?: () => void;
   onValuesChange?: (values: MedicineFormValues) => void;
+  showPageHeader?: boolean;
 };
+
+export function MedicineFormPageHeader({ mode }: { mode: "create" | "edit" }) {
+  return (
+    <div className="space-y-3">
+      <h1 className="admin-page-title text-[28px] font-semibold leading-[100%] tracking-normal text-[#2E00AB] sm:text-[32px]">
+        {mode === "create" ? "Add medicine" : "Edit medicine"}
+      </h1>
+      <p className="admin-page-subtitle text-[18px] font-normal leading-[100%] tracking-normal text-[#2E00AB]/80 sm:text-[20px]">
+        Product image and details shown to patients.
+      </p>
+    </div>
+  );
+}
 
 const EMPTY: MedicineFormValues = {
   name: "",
@@ -53,14 +74,6 @@ const EMPTY: MedicineFormValues = {
   requires_questionnaire: false,
   category_ids: [],
 };
-
-const labelClass = "text-[13px] font-semibold text-[#2E00AB] tracking-normal";
-
-const inputClass =
-  "h-[53px] px-4 py-[14px] border-[#EAE6FA] bg-white text-[#2E00AB] placeholder:text-[#2E00AB]/40 rounded-[6px] focus-visible:ring-[#2E00AB] text-[14px] font-normal leading-tight font-['DM_Sans',sans-serif]";
-
-const textareaClass =
-  "min-h-[90px] px-4 py-[14px] border-[#EAE6FA] bg-white text-[#2E00AB] placeholder:text-[#2E00AB]/40 rounded-[6px] focus-visible:ring-[#2E00AB] text-[14px] font-normal leading-tight font-['DM_Sans',sans-serif] resize-none";
 
 function Field({
   label,
@@ -87,6 +100,7 @@ export function MedicineForm({
   onSubmit,
   onCancel,
   onValuesChange,
+  showPageHeader = true,
 }: MedicineFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -143,31 +157,25 @@ export function MedicineForm({
 
   return (
     <form
-  onSubmit={handleSubmit(onSubmit)}
-   className="font-['DM_Sans',sans-serif] m-0 w-full min-w-0 max-w-full space-y-6 p-0"
-  noValidate
->
+      onSubmit={handleSubmit(onSubmit)}
+      className="font-['DM_Sans',sans-serif] m-0 w-full min-w-0 max-w-full space-y-6 p-0"
+      noValidate
+    >
       <div className="w-full min-w-0 max-w-full space-y-6">
-        {/* Main Details Card */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-[22px] font-bold text-[#2E00AB]">
-              {mode === "create" ? "Add medicine" : "Edit medicine"}
-            </h2>
-            <p className="text-[14px] font-normal text-[#2E00AB]/80">
-              Product image and details shown to patients.
-            </p>
-          </div>
+        {showPageHeader && <MedicineFormPageHeader mode={mode} />}
 
-          <div className="flex w-full min-w-0 flex-col items-start gap-6 md:flex-row">
-            {/* Product Image Box Container - narrower upload card */}
-            <div className="w-full max-w-[280px] shrink-0 space-y-2">
+        {/* Main Details Card */}
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6">
+          <div className="flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-stretch">
+            {/* Product Image Box Container — stretches to match fields column height on desktop */}
+            <div className="mx-auto flex w-full max-w-[280px] shrink-0 flex-col gap-2 sm:mx-0 lg:max-w-[300px]">
+              <Label className={labelClass}>Product image</Label>
               <div
-                className="flex h-[360px] w-full flex-col items-center justify-between rounded-[12px] border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-[14px]"
+                className="flex min-h-[320px] w-full flex-1 flex-col rounded-[12px] border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-[14px] lg:min-h-0"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={onDrop}
               >
-                <div className="flex aspect-[326/315] w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#EAE4FF]">
+                <div className="flex min-h-[160px] flex-1 w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#EAE4FF]">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -188,27 +196,29 @@ export function MedicineForm({
                   disabled={submitting || uploading}
                 />
 
-                <Button
-                  type="button"
-                  disabled={submitting || uploading}
-                  onClick={() => fileRef.current?.click()}
-                  className="bg-[#2E00AB] hover:bg-[#25008A] text-white font-semibold rounded-xl h-10 px-6 text-[13px] flex items-center gap-2 transition-colors"
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  {uploading
-                    ? "Uploading..."
-                    : imageUrl
-                    ? "Replace image"
-                    : "Upload image"}
-                </Button>
+                <div className="mt-3 flex shrink-0 flex-col items-center gap-2">
+                  <Button
+                    type="button"
+                    disabled={submitting || uploading}
+                    onClick={() => fileRef.current?.click()}
+                    className="flex h-10 items-center gap-2 rounded-[10px] bg-[#2E00AB] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#25008A]"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    {uploading
+                      ? "Uploading..."
+                      : imageUrl
+                      ? "Replace image"
+                      : "Upload image"}
+                  </Button>
 
-                <span className="text-[12px] font-normal text-[#2E00AB]/70">
-                  JPG, PNG, or WebP · Max 5MB
-                </span>
+                  <span className="text-center text-[12px] font-normal leading-[100%] text-[#2E00AB]/70">
+                    JPG, PNG, or WebP · Max 5MB
+                  </span>
+                </div>
               </div>
               {(errors.image_url?.message || uploadError) && (
                 <p className="text-xs text-destructive">
@@ -217,8 +227,9 @@ export function MedicineForm({
               )}
             </div>
 
-            {/* Input Fields */}
-            <div className="w-full min-w-0 flex-1 space-y-4">
+            {/* Input Fields — toggle row pinned to bottom to align with image box */}
+            <div className="flex w-full min-w-0 flex-1 flex-col justify-between gap-4">
+              <div className="space-y-4">
               <Field label="Medicine Name" error={errors.name?.message}>
                 <Input
                   {...register("name")}
@@ -254,7 +265,7 @@ export function MedicineForm({
               </Field>
 
               <div className="pt-1 space-y-4">
-                <div className="w-[140px]">
+                <div className="w-full max-w-[220px]">
                   <Field label="Status" error={errors.status?.message}>
                     <Select
                       value={status}
@@ -263,7 +274,7 @@ export function MedicineForm({
                       }
                       disabled={submitting}
                     >
-                      <SelectTrigger className="h-[53px] px-4 border-[#EAE6FA] bg-white text-[#2E00AB] rounded-[6px] text-[14px] font-normal">
+                      <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#EAE6FA] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#2E00AB] shadow-none sm:h-[53px]">
                         <SelectValue placeholder="Select Status" />
                       </SelectTrigger>
                       <SelectContent className="font-['DM_Sans',sans-serif]">
@@ -271,7 +282,7 @@ export function MedicineForm({
                           <SelectItem
                             key={s}
                             value={s}
-                            className="text-[14px] font-normal text-[#2E00AB]"
+                            className="text-[16px] font-normal text-[#2E00AB]"
                           >
                             {MEDICINE_STATUS_LABELS[s]}
                           </SelectItem>
@@ -280,28 +291,28 @@ export function MedicineForm({
                     </Select>
                   </Field>
                 </div>
+              </div>
+              </div>
 
-                {/* Clean Toggle Switch & Single-Line Label */}
-                <div className="flex min-w-0 flex-wrap items-center gap-3 pt-1">
-                  <Controller
-  control={control}
-  name="requires_questionnaire"
-  render={({ field }) => (
-    <Switch
-      id="req-qq"
-      checked={!!field.value}
-      onCheckedChange={field.onChange}
-      className="h-[34px] w-[60px] rounded-[10px] border border-[#E2DAFC] bg-[#FAF8FE] p-[3px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E00AB] data-[state=checked]:bg-[#FAF8FE] data-[state=unchecked]:bg-[#FAF8FE] [&>span]:h-[26px] [&>span]:w-[26px] [&>span]:rounded-[6px] [&>span]:transition-all [&>span]:duration-200 [&>span]:data-[state=checked]:bg-[#2E00AB] [&>span]:data-[state=unchecked]:bg-[#DCD5FA] [&>span]:data-[state=checked]:translate-x-[26px] [&>span]:data-[state=unchecked]:translate-x-0"
-    />
-  )}
+              {/* Toggle — Figma: light track, rounded-square thumb (lavender off / purple on) */}
+              <div className="flex min-w-0 items-center gap-3">
+                <Controller
+                  control={control}
+                  name="requires_questionnaire"
+                  render={({ field }) => (
+                    <Switch
+  id="req-qq"
+  checked={!!field.value}
+  onCheckedChange={field.onChange}
 />
-                  <Label
-                    htmlFor="req-qq"
-                    className="min-w-0 cursor-pointer select-none text-[14px] font-medium text-[#2E00AB]"
-                  >
-                    Requires questionnaire before checkout
-                  </Label>
-                </div>
+                  )}
+                />
+                <Label
+                  htmlFor="req-qq"
+                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
+                >
+                  Requires questionnaire before checkout
+                </Label>
               </div>
             </div>
           </div>
@@ -309,11 +320,9 @@ export function MedicineForm({
 
         {/* Target Categories */}
         <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
-          <div className="space-y-1">
-            <h3 className="text-[18px] font-bold text-[#2E00AB]">
-              Categories
-            </h3>
-            <p className="text-[13px] font-medium text-[#2E00AB]/80">
+          <div className="space-y-2">
+            <h3 className={sectionTitleClass}>Categories</h3>
+            <p className={sectionSubtitleClass}>
               Assign this medicine to one or more goal categories.
             </p>
           </div>
@@ -324,7 +333,7 @@ export function MedicineForm({
             render={({ field }) => (
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 {(categoriesQ.data ?? []).length === 0 && (
-                  <p className="text-sm text-muted-foreground font-medium py-1">
+                  <p className="text-sm text-muted-foreground font-medium py-1 col-span-1 sm:col-span-2">
                     No categories yet. Create one under Categories first.
                   </p>
                 )}
@@ -333,11 +342,11 @@ export function MedicineForm({
                   return (
                     <label
                       key={c.id}
-                      className="flex items-center gap-3 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-3.5 text-[13px] font-semibold text-[#2E00AB] cursor-pointer transition-colors hover:bg-[#F9F8FF]"
+                      className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 text-[16px] font-medium leading-[100%] text-[#2E00AB] transition-colors hover:bg-[#F9F8FF]"
                     >
                       <Checkbox
                         checked={checked}
-                        className="border-[#2E00AB]/30 data-[state=checked]:bg-[#2E00AB] data-[state=checked]:border-[#2E00AB] h-4 w-4 rounded"
+                        className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
                         onCheckedChange={(v) => {
                           const set = new Set(field.value ?? []);
                           if (v) set.add(c.id);
@@ -366,11 +375,9 @@ export function MedicineForm({
 
         {/* Important Info */}
         <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
-          <div className="space-y-1">
-            <h3 className="text-[18px] font-bold text-[#2E00AB]">
-              Important information
-            </h3>
-            <p className="text-[13px] font-medium text-[#2E00AB]/80">
+          <div className="space-y-2">
+            <h3 className={sectionTitleClass}>Important information</h3>
+            <p className={sectionSubtitleClass}>
               Bullet points shown in the Learn More modal.
             </p>
           </div>
@@ -410,9 +417,9 @@ export function MedicineForm({
 
         {/* Notice Block */}
         <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
-          <div className="space-y-1">
-            <h3 className="text-[18px] font-bold text-[#2E00AB]">Notice</h3>
-            <p className="text-[13px] font-medium text-[#2E00AB]/80">
+          <div className="space-y-2">
+            <h3 className={sectionTitleClass}>Notice</h3>
+            <p className={sectionSubtitleClass}>
               Optional footer disclaimer in the modal.
             </p>
           </div>
@@ -433,11 +440,16 @@ export function MedicineForm({
             disabled={submitting || uploading}
             className="bg-[#2E00AB] hover:bg-[#25008A] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
           >
-            {submitting
-              ? "Saving…"
-              : mode === "create"
-              ? "Create medicine"
-              : "Save changes"}
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving…
+              </>
+            ) : mode === "create" ? (
+              "Create medicine"
+            ) : (
+              "Save changes"
+            )}
           </Button>
           {onCancel && (
             <Button

@@ -24,6 +24,16 @@ import {
   COMMON_LANGUAGES,
   type ProviderFormValues,
 } from "@/lib/providers.schema";
+import {
+  adminLabel,
+  adminInput,
+  adminTextarea,
+  adminSelect,
+  adminSectionTitle,
+  adminCard,
+  adminBtnPrimary,
+  adminBtnSecondary,
+} from "@/lib/admin-ui";
 
 export type ProviderFormProps = {
   defaultValues?: Partial<ProviderFormValues>;
@@ -58,6 +68,13 @@ const EMPTY: ProviderFormValues = {
   is_active: true,
 };
 
+const fieldShell = "min-w-0 w-full";
+const inputFull = `${adminInput} w-full min-w-0 max-w-full`;
+const textareaFull = `${adminTextarea} w-full min-w-0 max-w-full`;
+const selectFull = `${adminSelect} w-full min-w-0 max-w-full`;
+const cardClass = `${adminCard} w-full min-w-0 max-w-full p-4 sm:p-6`;
+const gridClass = "grid grid-cols-1 gap-4 p-0 sm:grid-cols-2 sm:gap-6";
+
 export function ProviderForm({
   defaultValues,
   mode,
@@ -88,87 +105,97 @@ export function ProviderForm({
   return (
     <form
       onSubmit={handleSubmit((v) => onSubmit(v))}
-      className="space-y-6 w-full text-left"
+      className="m-0 w-full min-w-0 max-w-full space-y-5 overflow-x-hidden p-0 font-['DM_Sans',sans-serif] sm:space-y-6"
       noValidate
     >
-      {/* Identity Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Identity</CardTitle>
+      <Card className={cardClass}>
+        <CardHeader className="space-y-0 p-0 pb-4">
+          <CardTitle className={adminSectionTitle}>Identity</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <CardContent className={gridClass}>
           <Field label="Full name" error={errors.full_name?.message} required>
-            <Input {...register("full_name")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("full_name")} className={inputFull} />
           </Field>
           <Field label="Email" error={errors.email?.message} required>
-            <Input type="email" disabled={mode === "edit"} {...register("email")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] disabled:bg-[#FDFDFF] disabled:text-[#6B5AE0]/50" />
+            <Input
+              type="email"
+              disabled={mode === "edit"}
+              {...register("email")}
+              className={`${inputFull} disabled:bg-[#FDFDFF] disabled:opacity-60`}
+            />
           </Field>
           <Field label="Phone" error={errors.phone?.message}>
-            <Input {...register("phone")} placeholder="(555) 555-1234" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("phone")} placeholder="(555) 555-1234" className={inputFull} />
           </Field>
           <Field label="Avatar URL" error={errors.avatar_url?.message}>
-            <Input {...register("avatar_url")} placeholder="https://…" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("avatar_url")} placeholder="https://…" className={inputFull} />
           </Field>
-          <div className="sm:col-span-2">
+          <div className={`sm:col-span-2 ${fieldShell}`}>
             <Field label="Bio" error={errors.bio?.message}>
-              <Textarea rows={3} {...register("bio")} className="rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-medium text-[14px]" />
+              <Textarea rows={3} {...register("bio")} className={textareaFull} />
             </Field>
           </div>
         </CardContent>
       </Card>
 
-      {/* Licensing & Credentials Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Licensing & Credentials</CardTitle>
+      <Card className={cardClass}>
+        <CardHeader className="space-y-0 p-0 pb-4">
+          <CardTitle className={adminSectionTitle}>Licensing & Credentials</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <CardContent className={gridClass}>
           <Field label="Credentials" error={errors.credentials?.message}>
             <Select
               value={credentials ?? ""}
               onValueChange={(v) => setValue("credentials", v as any, { shouldDirty: true })}
             >
-              <SelectTrigger className="h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+              <SelectTrigger className={selectFull}>
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-[#E2DCFA]">
+              <SelectContent className="rounded-[6px] border-[#EAE6FA]">
                 {CREDENTIALS.map((c) => (
-                  <SelectItem key={c} value={c} className="font-medium text-[#2A00A2]">{c}</SelectItem>
+                  <SelectItem key={c} value={c} className="font-normal text-[#2E00AB]">
+                    {c}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field label="Specialty" error={errors.specialty?.message}>
-            <Input {...register("specialty")} placeholder="e.g. Internal Medicine" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input
+              {...register("specialty")}
+              placeholder="e.g. Internal Medicine"
+              className={inputFull}
+            />
           </Field>
           <Field label="NPI" error={errors.npi?.message}>
-            <Input {...register("npi")} placeholder="10 digits" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("npi")} placeholder="10 digits" className={inputFull} />
           </Field>
           <Field label="DEA" error={errors.dea?.message}>
-            <Input {...register("dea")} placeholder="AB1234567" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input {...register("dea")} placeholder="AB1234567" className={inputFull} />
           </Field>
           <Field label="State license number" error={errors.license_number?.message}>
-            <Input {...register("license_number")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("license_number")} className={inputFull} />
           </Field>
           <Field label="Licensed in (states)">
-            <StateMultiSelect
-              selected={licenseStates}
-              onToggle={(s) =>
-                setValue("license_states", toggleIn(licenseStates as string[], s) as any, {
-                  shouldDirty: true,
-                })
-              }
-            />
+            <div className={fieldShell}>
+              <StateMultiSelect
+                selected={licenseStates}
+                onToggle={(s) =>
+                  setValue("license_states", toggleIn(licenseStates as string[], s) as any, {
+                    shouldDirty: true,
+                  })
+                }
+              />
+            </div>
           </Field>
         </CardContent>
       </Card>
 
-      {/* Practice Parameters Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Practice</CardTitle>
+      <Card className={cardClass}>
+        <CardHeader className="space-y-0 p-0 pb-4">
+          <CardTitle className={adminSectionTitle}>Practice</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <CardContent className={gridClass}>
           <Field label="Years of experience" error={errors.years_experience?.message}>
             <Input
               type="number"
@@ -177,21 +204,21 @@ export function ProviderForm({
               {...register("years_experience", {
                 setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
               })}
-              className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]"
+              className={inputFull}
             />
           </Field>
           <Field label="Consultation types">
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="flex min-w-0 flex-wrap gap-2 pt-1">
               {CONSULTATION_TYPES.map((t) => {
                 const on = (consultationTypes as string[]).includes(t);
                 return (
                   <Badge
                     key={t}
                     variant={on ? "default" : "outline"}
-                    className={`cursor-pointer capitalize text-[13px] px-3 py-1 rounded-xl transition-all font-semibold shadow-none tracking-normal normal-case ${
-                      on 
-                        ? "bg-[#2A00A2] text-white hover:bg-[#2A00A2]" 
-                        : "border-[#E2DCFA] text-[#6B5AE0] bg-white hover:bg-[#F5F3FF]"
+                    className={`cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium shadow-none normal-case tracking-normal capitalize transition-all ${
+                      on
+                        ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+                        : "border-[#EAE6FA] bg-white text-[#2E00AB] hover:bg-[#F9F8FF]"
                     }`}
                     onClick={() =>
                       setValue(
@@ -225,100 +252,109 @@ export function ProviderForm({
             />
           </Field>
           <Field label="Practice states">
-            <StateMultiSelect
-              selected={practiceStates}
-              onToggle={(s) =>
-                setValue("practice_states", toggleIn(practiceStates as string[], s) as any, {
-                  shouldDirty: true,
-                })
-              }
-            />
+            <div className={fieldShell}>
+              <StateMultiSelect
+                selected={practiceStates}
+                onToggle={(s) =>
+                  setValue("practice_states", toggleIn(practiceStates as string[], s) as any, {
+                    shouldDirty: true,
+                  })
+                }
+              />
+            </div>
           </Field>
         </CardContent>
       </Card>
 
-      {/* Physical Address Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Address</CardTitle>
+      <Card className={cardClass}>
+        <CardHeader className="space-y-0 p-0 pb-4">
+          <CardTitle className={adminSectionTitle}>Address</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        <CardContent className={gridClass}>
+          <div className={`sm:col-span-2 ${fieldShell}`}>
             <Field label="Address line 1" error={errors.address_line1?.message}>
-              <Input {...register("address_line1")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+              <Input {...register("address_line1")} className={inputFull} />
             </Field>
           </div>
-          <div className="sm:col-span-2">
+          <div className={`sm:col-span-2 ${fieldShell}`}>
             <Field label="Address line 2" error={errors.address_line2?.message}>
-              <Input {...register("address_line2")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+              <Input {...register("address_line2")} className={inputFull} />
             </Field>
           </div>
           <Field label="City" error={errors.city?.message}>
-            <Input {...register("city")} className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input {...register("city")} className={inputFull} />
           </Field>
           <Field label="State" error={errors.state?.message}>
             <Select
               value={state ?? ""}
               onValueChange={(v) => setValue("state", v as any, { shouldDirty: true })}
             >
-              <SelectTrigger className="h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+              <SelectTrigger className={selectFull}>
                 <SelectValue placeholder="Select state" />
               </SelectTrigger>
-              <SelectContent className="max-h-72 rounded-xl border-[#E2DCFA]">
+              <SelectContent className="max-h-72 rounded-[6px] border-[#EAE6FA]">
                 {US_STATES.map((s) => (
-                  <SelectItem key={s} value={s} className="font-medium text-[#2A00A2]">{s}</SelectItem>
+                  <SelectItem key={s} value={s} className="font-normal text-[#2E00AB]">
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field label="ZIP" error={errors.zip?.message}>
-            <Input {...register("zip")} placeholder="12345 or 12345-6789" className="h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40" />
+            <Input
+              {...register("zip")}
+              placeholder="12345 or 12345-6789"
+              className={inputFull}
+            />
           </Field>
           <Field label="Country">
-            <Input {...register("country")} disabled className="h-11 rounded-xl border-[#E2DCFA] bg-[#FDFDFF] text-[#2A00A2] font-semibold text-[14px]" />
+            <Input
+              {...register("country")}
+              disabled
+              className={`${inputFull} disabled:bg-[#FDFDFF]`}
+            />
           </Field>
         </CardContent>
       </Card>
 
-      {/* Account Activation Metrics Block Component */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl p-1 sm:p-3">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-bold text-[#2A00A2]">Status</CardTitle>
+      <Card className={cardClass}>
+        <CardHeader className="space-y-0 p-0 pb-4">
+          <CardTitle className={adminSectionTitle}>Status</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between bg-[#FDFDFF]/80 border border-[#E2DCFA]/60 rounded-xl p-4">
-            <div>
-              <p className="text-[14px] font-bold text-[#2A00A2]">Active Account State</p>
-              <p className="text-[13px] text-[#6B5AE0]/70 font-medium mt-0.5">
+        <CardContent className="p-0">
+          <div className="flex min-w-0 flex-col gap-4 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-[16px] font-medium text-[#2E00AB]">Active Account State</p>
+              <p className="mt-1 break-words text-[13px] font-normal text-[#2E00AB]/80 sm:text-[14px]">
                 Inactive providers cannot sign in or manage patient consultation slots.
               </p>
             </div>
             <Switch
               checked={!!isActive}
               onCheckedChange={(v) => setValue("is_active", v, { shouldDirty: true })}
-              className="data-[state=checked]:bg-[#4A3AFF]"
+              className="shrink-0 self-start data-[state=checked]:bg-[#2E00AB] sm:self-auto"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Action Footer Navigation Control Blocks */}
-      <div className="flex items-center justify-end gap-3 pt-2">
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
         {onCancel && (
-          <Button 
-            type="button" 
-            variant="ghost" 
-            onClick={onCancel} 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
             disabled={submitting}
-            className="text-[#6B5AE0] hover:bg-[#F5F3FF] hover:text-[#2A00A2] font-bold rounded-xl h-11 px-5 transition-colors"
+            className={`${adminBtnSecondary} w-full min-w-0 sm:w-auto sm:min-w-[140px]`}
           >
             Cancel
           </Button>
         )}
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={submitting}
-          className="bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold rounded-xl h-11 px-6 shadow-sm transition-colors"
+          className={`${adminBtnPrimary} w-full min-w-0 sm:w-auto sm:min-w-[140px]`}
         >
           {submitting ? "Saving changes…" : mode === "create" ? "Create provider" : "Save changes"}
         </Button>
@@ -339,12 +375,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5 text-left">
-      <Label className="text-[13px] font-bold text-[#2A00A2]/90">
-        {label} {required && <span className="text-[#FF4D6D] ml-0.5">*</span>}
+    <div className={`${fieldShell} space-y-2 text-left`}>
+      <Label className={`${adminLabel} break-words`}>
+        {label} {required && <span className="ml-0.5 text-destructive">*</span>}
       </Label>
       {children}
-      {error && <p className="text-[12px] text-[#FF4D6D] font-medium mt-1">{error}</p>}
+      {error && <p className="mt-1 break-words text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -363,18 +399,18 @@ function ChipMultiSelect({
   onAddCustom?: (v: string) => void;
 }) {
   return (
-    <div className="space-y-3 w-full">
-      <div className="flex flex-wrap gap-2 pt-0.5">
+    <div className="w-full min-w-0 space-y-3">
+      <div className="flex min-w-0 flex-wrap gap-2 pt-0.5">
         {options.map((o) => {
           const on = selected.includes(o);
           return (
             <Badge
               key={o}
               variant={on ? "default" : "outline"}
-              className={`cursor-pointer text-[13px] px-3 py-1 rounded-xl transition-all font-semibold shadow-none tracking-normal normal-case ${
-                on 
-                  ? "bg-[#2A00A2] text-white hover:bg-[#2A00A2]" 
-                  : "border-[#E2DCFA] text-[#6B5AE0] bg-white hover:bg-[#F5F3FF]"
+              className={`cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium shadow-none normal-case tracking-normal transition-all ${
+                on
+                  ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+                  : "border-[#EAE6FA] bg-white text-[#2E00AB] hover:bg-[#F9F8FF]"
               }`}
               onClick={() => onToggle(o)}
             >
@@ -385,16 +421,23 @@ function ChipMultiSelect({
         {selected
           .filter((s) => !options.includes(s))
           .map((s) => (
-            <Badge key={s} className="bg-[#F5F3FF] text-[#4A3AFF] hover:bg-[#F5F3FF] border border-transparent font-bold text-[13px] px-3 py-1 rounded-xl gap-1 shadow-none normal-case tracking-normal">
-              {s}
-              <button type="button" onClick={() => onToggle(s)} className="ml-1 p-0.5 hover:bg-[#E2DCFA] rounded-md transition-colors">
+            <Badge
+              key={s}
+              className="max-w-full gap-1 rounded-[6px] border border-transparent bg-[#F5F3FF] px-3 py-1 text-[13px] font-medium text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#F5F3FF]"
+            >
+              <span className="truncate">{s}</span>
+              <button
+                type="button"
+                onClick={() => onToggle(s)}
+                className="ml-1 shrink-0 rounded-md p-0.5 transition-colors hover:bg-[#EAE6FA]"
+              >
                 <X className="h-3 w-3 stroke-[3]" />
               </button>
             </Badge>
           ))}
       </div>
       {allowCustom && (
-        <div className="flex gap-2">
+        <div className="w-full min-w-0">
           <Input
             placeholder="Add other language and press Enter"
             onKeyDown={(e) => {
@@ -407,7 +450,7 @@ function ChipMultiSelect({
                 }
               }
             }}
-            className="h-10 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[13px] placeholder:text-[#6B5AE0]/40 bg-white"
+            className={inputFull}
           />
         </div>
       )}

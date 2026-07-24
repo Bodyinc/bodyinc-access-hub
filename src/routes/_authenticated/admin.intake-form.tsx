@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { adminCard, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/intake-form")({
   component: () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Intake Form</CardTitle>
-        <CardDescription>
-          Configure the JotForm form ID used for patient intake. Update anytime to swap the embedded form.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">Coming soon.</CardContent>
-    </Card>
+    <div className="admin-page-shell font-['DM_Sans',sans-serif]">
+      <Card className={adminCard}>
+        <CardHeader className="space-y-2 p-4 sm:p-6">
+          <CardTitle className={adminSectionTitle}>Intake Form</CardTitle>
+          <CardDescription className={adminSectionSubtitle}>
+            Configure the JotForm form ID used for patient intake. Update anytime to swap the embedded form.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 text-[16px] text-[#2E00AB]/60 sm:p-6 sm:pt-0">Coming soon.</CardContent>
+      </Card>
+    </div>
   ),
 });

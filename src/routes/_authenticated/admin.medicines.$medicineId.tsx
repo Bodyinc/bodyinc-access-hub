@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
+import { MedicineFormPageHeader } from "@/components/admin/medicine-form";
 import { medicineQueryOptions, medicinesQueryKey } from "@/lib/query-options/medicines";
 import {
   updateMedicine,
@@ -193,62 +194,64 @@ export default function EditMedicinePage() {
   ].filter((p) => !p.stripe_price_id).length;
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden bg-white px-4 py-6 sm:px-6 xl:pl-8 xl:pr-12">
-      <div className="flex w-full min-w-0 flex-col items-start gap-6 xl:flex-row xl:gap-12">
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <div className="space-y-6">
+        <MedicineFormPageHeader mode="edit" />
 
-        {/* Left Form Panel */}
-        <div className="w-full min-w-0 max-w-full flex-1">
-          {unsyncedCount > 0 && (
-            <div className="mb-6 flex min-w-0 flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                <div className="min-w-0 space-y-0.5">
-                  <p className="text-[14px] font-bold text-amber-900">
-                    {unsyncedCount} plan{unsyncedCount === 1 ? "" : "s"} have no Stripe price
-                  </p>
-                  <p className="text-[13px] font-medium text-amber-800">
-                    Patients cannot buy them until they are synced.
-                  </p>
-                </div>
+        {unsyncedCount > 0 && (
+          <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-[14px] font-bold text-amber-900">
+                  {unsyncedCount} plan{unsyncedCount === 1 ? "" : "s"} have no Stripe price
+                </p>
+                <p className="text-[13px] font-medium text-amber-800">
+                  Patients cannot buy them until they are synced.
+                </p>
               </div>
-              <Button
-                type="button"
-                onClick={() => syncMut.mutate()}
-                disabled={syncMut.isPending}
-                className="h-11 shrink-0 rounded-lg bg-amber-600 px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-amber-700"
-              >
-                {syncMut.isPending ? "Syncing…" : "Sync to Stripe"}
-              </Button>
             </div>
-          )}
-          <Suspense fallback={<FormSkeleton />}>
-            <MedicineForm
-              key={medicineId}
-              mode="edit"
-              defaultValues={formDefaults}
-              submitting={mutation.isPending}
-              onSubmit={(values) => mutation.mutate(values)}
-              onCancel={() => navigate({ to: "/admin/medicines" })}
-              onValuesChange={handlePreviewChange}
-            />
-          </Suspense>
-        </div>
+            <Button
+              type="button"
+              onClick={() => syncMut.mutate()}
+              disabled={syncMut.isPending}
+              className="h-11 shrink-0 rounded-lg bg-amber-600 px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-amber-700"
+            >
+              {syncMut.isPending ? "Syncing…" : "Sync to Stripe"}
+            </Button>
+          </div>
+        )}
 
-        {/* Right Patient Preview Panel */}
-        <div className="w-full min-w-0 max-w-full shrink-0 xl:sticky xl:top-6 xl:mt-[44px] xl:w-[440px]">
-          <Suspense fallback={<FormSkeleton />}>
-            <MedicinePreview
-              name={preview.name}
-              short_description={preview.short_description}
-              long_description={preview.long_description}
-              image_url={preview.image_url}
-              from_price_cents={computeMedicineFromPriceCents(preview)}
-              important_info={preview.important_info}
-              notice_text={preview.notice_text}
-            />
-          </Suspense>
-        </div>
+        <div className="flex w-full min-w-0 flex-col items-start gap-6 lg:flex-row lg:gap-4">
+          <div className="min-w-0 flex-1">
+            <Suspense fallback={<FormSkeleton />}>
+              <MedicineForm
+                key={medicineId}
+                mode="edit"
+                showPageHeader={false}
+                defaultValues={formDefaults}
+                submitting={mutation.isPending}
+                onSubmit={(values) => mutation.mutate(values)}
+                onCancel={() => navigate({ to: "/admin/medicines" })}
+                onValuesChange={handlePreviewChange}
+              />
+            </Suspense>
+          </div>
 
+          <div className="w-full min-w-0 shrink-0 lg:sticky lg:top-4 lg:w-[min(100%,300px)] xl:w-[320px]">
+            <Suspense fallback={<FormSkeleton />}>
+              <MedicinePreview
+                name={preview.name}
+                short_description={preview.short_description}
+                long_description={preview.long_description}
+                image_url={preview.image_url}
+                from_price_cents={computeMedicineFromPriceCents(preview)}
+                important_info={preview.important_info}
+                notice_text={preview.notice_text}
+              />
+            </Suspense>
+          </div>
+        </div>
       </div>
     </div>
   );

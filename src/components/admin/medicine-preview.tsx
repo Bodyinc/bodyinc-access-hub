@@ -43,53 +43,50 @@ export function MedicinePreview({
   const displayPrice = formatFromPrice(from_price_cents);
 
   return (
-    <Card className="border border-[#EAE6FA] bg-white rounded-xl shadow-none overflow-hidden p-6 space-y-6 w-full">
-      {/* Title Header matching the left card structure */}
-      <div className="space-y-1">
-        <h2 className="text-[22px] font-bold text-[#1D0087]">
+    <Card className="w-full min-w-0 rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-5">
+      <div className="space-y-2">
+        <h2 className="text-[20px] font-semibold leading-[100%] tracking-normal text-[#2E00AB]">
           Patient preview
         </h2>
-        <p className="text-[14px] font-normal text-[#5527E7]/80">
+        <p className="text-[16px] font-normal leading-[100%] tracking-normal text-[#2E00AB]/80">
           Medication card and Learn More modal.
         </p>
       </div>
 
-      <div className="space-y-4 pt-2">
-        <p className="text-[14px] font-semibold text-[#1D0087]">
+      <div className="mt-6 space-y-4">
+        <p className="text-[16px] font-medium leading-[100%] text-[#2E00AB]">
           Select Your Medication
         </p>
 
-        <div className="rounded-2xl border border-[#EDEAFB] bg-[#FAF9FF] p-4">
-          <div className="flex gap-4 items-center">
+        <div className="rounded-[12px] border border-[#EAE6FA] bg-[#FAF9FF] p-3 sm:p-4">
+          <div className="flex min-w-0 items-start gap-3">
             {image_url ? (
-              <div className="h-20 w-20 shrink-0 rounded-xl bg-[#EAE4FF] border border-[#EDEAFB] overflow-hidden flex items-center justify-center p-2">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-[#EAE6FA] bg-[#EAE4FF] p-1.5 sm:h-16 sm:w-16">
                 <img
                   src={image_url}
                   alt=""
-                  className="h-full w-full object-contain rounded-lg"
+                  className="h-full w-full rounded-[6px] object-contain"
                 />
               </div>
             ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-[#EAE4FF] border border-[#EDEAFB] text-[13px] font-medium text-[#5527E7]/60">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] border border-[#EAE6FA] bg-[#EAE4FF] text-[12px] font-normal text-[#2E00AB]/60 sm:h-16 sm:w-16">
                 Image
               </div>
             )}
-            <div className="flex min-w-0 flex-1 flex-col justify-between h-full w-full">
-              <div>
-                <h3 className="text-[16px] font-semibold text-[#1D0087] leading-snug truncate">
-                  {displayName}
-                </h3>
-                <p className="mt-0.5 text-[13px] font-normal text-[#5140AB] line-clamp-2 leading-tight">
-                  {displayShort}
-                </p>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-2 w-full">
-                <div className="text-[13px] font-normal text-[#1D0087] shrink-0">
-                  <span className="font-semibold text-[14px]">{displayPrice}</span>
-                </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <h3 className="truncate text-[15px] font-semibold leading-[120%] text-[#2E00AB] sm:text-[16px]">
+                {displayName}
+              </h3>
+              <p className="mt-1 line-clamp-2 text-[13px] font-normal leading-[140%] text-[#2E00AB]/80 sm:text-[14px]">
+                {displayShort}
+              </p>
+              <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <span className="min-w-0 text-[13px] font-semibold leading-[100%] text-[#2E00AB] sm:text-[14px]">
+                  {displayPrice}
+                </span>
                 <button
                   type="button"
-                  className="text-[13px] font-semibold text-[#5527E7] underline hover:text-[#1D0087] transition-colors whitespace-nowrap shrink-0"
+                  className="shrink-0 whitespace-nowrap text-[13px] font-semibold leading-[100%] text-[#2E00AB] underline transition-colors hover:text-[#25008A] sm:text-[14px]"
                   onClick={() => setModalOpen(true)}
                 >
                   Learn More
@@ -99,42 +96,44 @@ export function MedicinePreview({
           </div>
         </div>
 
-        {/* Modal View */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-md rounded-2xl border border-[#EDEAFB] bg-white p-6 shadow-xl">
-            <DialogHeader className="space-y-1">
-              <DialogTitle className="text-[20px] font-semibold text-[#1D0087]">
+          <DialogContent className="max-w-md rounded-[12px] border border-[#EAE6FA] bg-white p-6 shadow-xl">
+            <DialogHeader className="space-y-2">
+              <DialogTitle className="text-[20px] font-semibold leading-[100%] text-[#2E00AB]">
                 {displayName}
               </DialogTitle>
-              <DialogDescription className="text-[14px] text-[#5527E7]/80 font-normal">
+              <DialogDescription className="text-[16px] font-normal leading-[140%] text-[#2E00AB]/80">
                 {displayShort}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 my-2">
+            <div className="my-2 space-y-4">
               {image_url && (
-                <div className="mx-auto h-36 w-36 rounded-xl bg-[#EAE4FF] border border-[#EDEAFB] flex items-center justify-center p-3">
+                <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-[10px] border border-[#EAE6FA] bg-[#EAE4FF] p-3">
                   <img
                     src={image_url}
                     alt=""
-                    className="h-full w-full object-contain rounded-lg"
+                    className="h-full w-full rounded-[6px] object-contain"
                   />
                 </div>
               )}
-              <p className="text-[14px] leading-relaxed text-[#1D0087]/90 font-normal">
+              <p className="text-[16px] font-normal leading-[140%] text-[#2E00AB]">
                 {displayLong}
               </p>
               {bullets.length > 0 && (
                 <ul className="space-y-2">
                   {bullets.map((text, i) => (
-                    <li key={i} className="flex gap-2 text-[13px] font-normal text-[#5527E7]">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#1D0087]" />
+                    <li
+                      key={i}
+                      className="flex gap-2 text-[14px] font-normal leading-[140%] text-[#2E00AB]/80"
+                    >
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#2E00AB]" />
                       <span>{text}</span>
                     </li>
                   ))}
                 </ul>
               )}
               {notice_text?.trim() && (
-                <p className="rounded-xl border border-[#EDEAFB] bg-[#FAF9FF] p-3 text-[12px] font-normal text-[#5140AB] leading-normal">
+                <p className="rounded-[10px] border border-[#EAE6FA] bg-[#FAF9FF] p-3 text-[14px] font-normal leading-[140%] text-[#2E00AB]/80">
                   {notice_text.trim()}
                 </p>
               )}
@@ -144,7 +143,7 @@ export function MedicinePreview({
                 type="button"
                 variant="outline"
                 onClick={() => setModalOpen(false)}
-                className="border-[#EDEAFB] bg-white hover:bg-[#FAF9FF] text-[#5527E7] h-10 px-4 rounded-lg font-medium text-[13px] transition-colors flex items-center gap-1.5 shadow-none"
+                className="flex h-10 items-center gap-1.5 rounded-[8px] border border-[#EAE6FA] bg-white px-4 text-[14px] font-medium text-[#2E00AB] shadow-none transition-colors hover:bg-[#FAF9FF]"
               >
                 <X className="h-4 w-4" /> Close preview
               </Button>

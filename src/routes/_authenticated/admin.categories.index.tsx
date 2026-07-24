@@ -51,17 +51,18 @@ function CategoriesListPage() {
   const isEmpty = !query.isLoading && rows.length === 0;
 
   return (
-    /* FIXED: Changed from 'w-full p-8 bg-white min-h-screen' to match original alignment with sidebar */
-    <div className="w-full space-y-4 text-left">
-      {/* Top Header matching Figma title sizing and custom button */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Categories (Goals)</h2>
-          <p className="text-[14px] text-[#6B5AE0]/80 font-medium">
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans']">
+      {/* Header Section */}
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#2E00AB] sm:text-[28px] lg:text-[32px]">
+            Categories (Goals)
+          </h2>
+          <p className="text-base font-normal text-[#2E00AB]/80 sm:text-lg lg:text-[20px]">
             Medication categories shown to patients as goals during intake.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-3 self-start sm:self-auto">
           <RefreshButton
             onClick={() => {
               query.refetch();
@@ -70,7 +71,7 @@ function CategoriesListPage() {
           />
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#2A00A2] hover:bg-[#1F007A] text-white h-11 px-6 rounded-lg font-semibold text-[14px] gap-2 shadow-sm"
+            className="bg-[#2E00AB] hover:bg-[#220080] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Add Category
           </Button>
@@ -78,152 +79,166 @@ function CategoriesListPage() {
       </div>
 
       {isEmpty ? (
-        <div className="border-2 border-dashed border-[#EAE6FA] bg-[#FDFDFF] rounded-xl p-12 text-center space-y-4">
-          <p className="text-base font-semibold text-[#2A00A2]">No categories found</p>
+        <div className="border border-dashed border-[#E0D4FF] bg-[#F9F8FF] rounded-2xl p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-[#2E00AB]">No categories found</p>
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#2A00A2] text-white rounded-lg px-4 h-10 font-medium"
+            className="bg-[#2E00AB] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
           >
             <Plus className="h-4 w-4 mr-2" /> Add category
           </Button>
         </div>
       ) : (
-        /* Figma Table Frame Style */
-        <div className="border border-[#EAE6FA] rounded-xl bg-white overflow-hidden shadow-sm">
-          <Table className="border-collapse">
-            <TableHeader className="bg-white">
-              <TableRow className="hover:bg-transparent border-b border-[#EAE6FA]">
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Name</TableHead>
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Slug</TableHead>
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">BMI rule</TableHead>
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Sex rule</TableHead>
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Image</TableHead>
-                <TableHead className="h-14 text-[#2A00A2] font-bold text-[15px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
-                <TableHead className="h-14 w-16 px-4 text-center" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {query.isLoading && (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#6B5AE0]/70">
-                    Loading rows...
-                  </TableCell>
-                </TableRow>
-              )}
-              
-              {rows.map((c) => {
-                return (
-                  <TableRow
-                    key={c.id}
-                    className="border-b border-[#EAE6FA] transition-all cursor-pointer group select-none bg-white hover:bg-[#F9F8FF]"
-                    onClick={() =>
-                      navigate({ to: "/admin/categories/$categoryId", params: { categoryId: c.id } })
-                    }
-                  >
-                    {/* Name column */}
-                    <TableCell className="px-6 py-5 font-semibold text-[15px] text-[#2A00A2] border-r border-[#EAE6FA]/60">
-                      {c.name}
-                    </TableCell>
-
-                    {/* Slug column */}
-                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#6B5AE0] border-r border-[#EAE6FA]/60">
-                      {c.slug}
-                    </TableCell>
-
-                    {/* BMI Rule column */}
-                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#6B5AE0] border-r border-[#EAE6FA]/60">
-                      {c.eligibility_rules.bmi_bands.length ? c.eligibility_rules.bmi_bands.join(", ") : "No Restriction"}
-                    </TableCell>
-
-                    {/* Sex Rule column */}
-                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#6B5AE0] border-r border-[#EAE6FA]/60">
-                      {c.eligibility_rules.sex.length ? c.eligibility_rules.sex.join(", ") : "All"}
-                    </TableCell>
-
-                    {/* Image column */}
-                    <TableCell className="px-6 py-5 border-r border-[#EAE6FA]/60">
-                      {c.image_url ? (
-                        <img
-                          src={c.image_url}
-                          alt={c.name}
-                          className="h-10 w-10 rounded-md object-cover border border-[#EAE6FA]"
-                        />
-                      ) : (
-                        <span className="text-[13px] text-[#6B5AE0]/60">—</span>
-                      )}
-                    </TableCell>
-
-                    {/* Status Badge column */}
-                    <TableCell className="px-6 py-5 border-r border-[#EAE6FA]/60 group-hover:border-r-transparent">
-                      <Badge 
-                        variant="secondary"
-                        className={`rounded-md px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
-                          c.is_active
-                          ? "bg-[#F3EFFF] text-[#5D22E8]"
-                          : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {c.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-
-                    {/* Actions Menu button column */}
-                    <TableCell className="px-4 py-5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-md text-[#6B5AE0] transition-all hover:bg-[#F3EFFF]"
-                          >
-                            <MoreHorizontal className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#EAE6FA] bg-white p-1">
-                          <DropdownMenuItem asChild className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]">
-                            <Link to="/admin/categories/$categoryId" params={{ categoryId: c.id }}>
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#2A00A2] focus:bg-[#F3EFFF]"
-                            onClick={() => toggleMut.mutate({ id: c.id, is_active: !c.is_active })}
-                          >
-                            {c.is_active ? "Deactivate" : "Activate"}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-[#EAE6FA] my-1" />
-                          <DropdownMenuItem
-                            className="rounded-md cursor-pointer font-medium text-[14px] text-destructive focus:bg-red-50"
-                            onClick={() => setConfirm({ id: c.id, name: c.name })}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+        /* Table Frame Container */
+        <div className="max-w-full overflow-hidden rounded-2xl border border-[#E0D4FF] bg-white shadow-none">
+          <div className="admin-table-scroll">
+            <Table className="w-full min-w-[700px] border-collapse">
+              <TableHeader className="bg-[#F9F8FF]">
+  <TableRow className="border-b border-[#E0D4FF] hover:bg-transparent">
+    <TableHead className="h-12 min-w-[140px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+      Name
+    </TableHead>
+    <TableHead className="h-12 min-w-[120px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+      Slug
+    </TableHead>
+    <TableHead className="h-12 min-w-[140px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+      BMI rule
+    </TableHead>
+    <TableHead className="h-12 min-w-[110px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+      Sex rule
+    </TableHead>
+    <TableHead className="h-12 min-w-[90px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+      Image
+    </TableHead>
+    <TableHead className="h-12 min-w-[100px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+      Status
+    </TableHead>
+    <TableHead className="h-12 w-14 px-2 text-center sm:h-14 sm:px-4" />
+  </TableRow>
+</TableHeader>
+              <TableBody>
+                {query.isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-12 text-center text-[16px] text-[#2E00AB]/70">
+                      Loading rows...
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                )}
+                
+                {rows.map((c) => {
+                  return (
+                    <TableRow
+                      key={c.id}
+                      className="border-b border-[#E0D4FF] transition-all cursor-pointer select-none bg-white hover:bg-[#F9F8FF]"
+                      onClick={() =>
+                        navigate({ to: "/admin/categories/$categoryId", params: { categoryId: c.id } })
+                      }
+                    >
+                      {/* Name column */}
+                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-medium text-[#2E00AB] sm:px-6 sm:text-lg">
+                        {c.name}
+                      </TableCell>
+
+                      {/* Slug column */}
+                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-normal text-[#2E00AB]/80 sm:px-6 sm:text-lg">
+                        {c.slug}
+                      </TableCell>
+
+                      {/* BMI Rule column */}
+                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-normal text-[#2E00AB]/80 sm:px-6 sm:text-lg">
+                        {c.eligibility_rules?.bmi_bands?.length ? c.eligibility_rules.bmi_bands.join(", ") : "No Restriction"}
+                      </TableCell>
+
+                      {/* Sex Rule column */}
+                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-normal text-[#2E00AB]/80 sm:px-6 sm:text-lg">
+                        {c.eligibility_rules?.sex?.length ? c.eligibility_rules.sex.join(", ") : "All"}
+                      </TableCell>
+
+                      {/* Image column */}
+                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 sm:px-6">
+                        {c.image_url ? (
+                          <img
+                            src={c.image_url}
+                            alt={c.name}
+                            className="h-10 w-10 rounded-[6px] object-cover border border-[#E0D4FF]"
+                          />
+                        ) : (
+                          <span className="text-[16px] text-[#2E00AB]/40">—</span>
+                        )}
+                      </TableCell>
+
+                      {/* Status Badge column */}
+                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 sm:px-6">
+                        <Badge 
+                          variant="secondary"
+                          className={`rounded-[6px] px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
+                            c.is_active
+                            ? "bg-[#F3EFFF] text-[#2E00AB]"
+                            : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {c.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Actions Menu button column */}
+                      <TableCell className="px-2 py-4 text-center sm:px-4" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 rounded-[6px] text-[#2E00AB] transition-all hover:bg-[#F3EFFF]"
+                            >
+                              <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#E0D4FF] bg-white p-1 font-['DM_Sans']">
+                            <DropdownMenuItem asChild className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]">
+                              <Link to="/admin/categories/$categoryId" params={{ categoryId: c.id }}>
+                                Edit
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              onClick={() => toggleMut.mutate({ id: c.id, is_active: !c.is_active })}
+                            >
+                              {c.is_active ? "Deactivate" : "Activate"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-[#E0D4FF] my-1" />
+                            <DropdownMenuItem
+                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              onClick={() => setConfirm({ id: c.id, name: c.name })}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
-      {/* Confirmation Modal layer layout updates */}
+      {/* Confirmation Modal */}
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#EAE6FA] shadow-xl">
+        <AlertDialogContent className="rounded-2xl max-w-sm p-6 bg-white border border-[#E0D4FF] shadow-xl font-['DM_Sans']">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[18px] font-bold text-[#2A00A2]">Delete category?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-[#6B5AE0]/90">
+            <AlertDialogTitle className="text-[18px] font-bold text-[#2E00AB]">Delete category?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-[#2E00AB]/80">
               This removes &ldquo;{confirm?.name}&rdquo; and unlinks its assignments.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-5 gap-2">
-            <AlertDialogCancel className="rounded-lg border border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]">
+            <AlertDialogCancel className="rounded-[6px] border border-[#E0D4FF] text-[#2E00AB] hover:bg-[#F9F8FF]">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-[6px] shadow-none"
               onClick={() => confirm && deleteMut.mutate(confirm.id)}
             >
               Delete

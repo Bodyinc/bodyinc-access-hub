@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
+import { MedicineFormPageHeader } from "@/components/admin/medicine-form";
 import { medicinesQueryKey } from "@/lib/query-options/medicines";
 import { createMedicine } from "@/lib/medicines.store";
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
@@ -78,34 +79,37 @@ function NewMedicinePage() {
   });
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden bg-white px-4 py-6">
-      <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
-        {/* Main Form Section */}
-        <div className="flex-1 w-full min-w-0">
-          <Suspense fallback={<FormSkeleton />}>
-            <MedicineForm
-              mode="create"
-              submitting={mutation.isPending}
-              onSubmit={(values) => mutation.mutate(values)}
-              onCancel={() => navigate({ to: "/admin/medicines" })}
-              onValuesChange={setPreviewValues}
-            />
-          </Suspense>
-        </div>
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <div className="space-y-6">
+        <MedicineFormPageHeader mode="create" />
 
-        {/* Right Preview Card Section */}
-        <div className="w-full lg:w-[410px] lg:sticky lg:top-0.5 shrink-0">
-          <Suspense fallback={<FormSkeleton />}>
-            <MedicinePreview
-              name={previewValues.name}
-              short_description={previewValues.short_description}
-              long_description={previewValues.long_description}
-              image_url={previewValues.image_url}
-              from_price_cents={computeMedicineFromPriceCents(previewValues)}
-              important_info={previewValues.important_info}
-              notice_text={previewValues.notice_text}
-            />
-          </Suspense>
+        <div className="flex w-full min-w-0 flex-col items-start gap-6 lg:flex-row lg:gap-4">
+          <div className="min-w-0 flex-1">
+            <Suspense fallback={<FormSkeleton />}>
+              <MedicineForm
+                mode="create"
+                showPageHeader={false}
+                submitting={mutation.isPending}
+                onSubmit={(values) => mutation.mutate(values)}
+                onCancel={() => navigate({ to: "/admin/medicines" })}
+                onValuesChange={setPreviewValues}
+              />
+            </Suspense>
+          </div>
+
+          <div className="w-full min-w-0 shrink-0 lg:sticky lg:top-4 lg:w-[min(100%,300px)] xl:w-[400px]">
+            <Suspense fallback={<FormSkeleton />}>
+              <MedicinePreview
+                name={previewValues.name}
+                short_description={previewValues.short_description}
+                long_description={previewValues.long_description}
+                image_url={previewValues.image_url}
+                from_price_cents={computeMedicineFromPriceCents(previewValues)}
+                important_info={previewValues.important_info}
+                notice_text={previewValues.notice_text}
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </div>

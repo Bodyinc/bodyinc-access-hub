@@ -36,15 +36,16 @@ function NewProviderPage() {
   });
 
   return (
-    <div className="mx-auto max-w-0xl">
-      <Suspense fallback={<FormSkeleton />}>
-        <ProviderForm
-          mode="create"
-          submitting={mutation.isPending}
-          onSubmit={(values) => mutation.mutate(values)}
-          onCancel={() => navigate({ to: "/admin/providers" })}
-        />
-      </Suspense>
-    </div>
+  <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+    <Suspense fallback={<FormSkeleton />}>
+      <ProviderForm
+        mode="create"
+        submitting={mutation.isPending}
+        onSubmit={(values) => mutation.mutate(values)}
+        onCancel={() => navigate({ to: "/admin/providers" })}
+      />
+    </Suspense>
+  </div>
+
   );
 }

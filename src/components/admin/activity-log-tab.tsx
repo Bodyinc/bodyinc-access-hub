@@ -53,7 +53,7 @@ export function ActivityLogTab() {
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
+      <div className="relative w-full max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6B5AE0]/50" />
         <Input
           value={search}
@@ -62,12 +62,12 @@ export function ActivityLogTab() {
             setPage(1);
           }}
           placeholder="Search by action or entity"
-          className="h-10 rounded-xl border-[#E2DCFA] bg-white pl-9 text-[14px] font-semibold text-[#2A00A2] placeholder:text-[#6B5AE0]/40 focus-visible:ring-[#4A3AFF]"
+          className="h-10 w-full rounded-[6px] border-[#E2DCFA] bg-white pl-9 text-[14px] font-semibold text-[#2A00A2] placeholder:text-[#6B5AE0]/40 focus-visible:ring-[#4A3AFF]"
         />
       </div>
 
       <Card className="w-full overflow-hidden rounded-2xl border border-[#EAE6FA] bg-white shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="admin-table-scroll">
           <Table className="min-w-[820px]">
             <TableHeader className="bg-[#FDFDFF]">
               <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
