@@ -37,6 +37,7 @@ import {
   getPatientWallet,
   listReferrals,
 } from "@/lib/referrals.functions";
+import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/referrals/")({
   component: ReferralsPage,
@@ -208,11 +209,11 @@ function ReferralsPage() {
   const rows = query.data?.rows ?? [];
 
   return (
-    <div className="w-full text-left m-0 p-0 space-y-5 max-w-none">
-      <div className="flex items-start justify-between gap-3 w-full">
-        <div className="space-y-0.5">
-          <h2 className="text-xl font-bold text-[#2A00A2] tracking-tight">Referrals</h2>
-          <p className="text-sm text-[#6B5AE0]/70 font-medium">
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h2 className={adminPageTitle}>Referrals</h2>
+          <p className={adminPageSubtitle}>
             Track who referred whom, reward status, and manage patient wallets.
           </p>
         </div>
@@ -222,47 +223,47 @@ function ReferralsPage() {
         />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total referrals" value={String(stats?.total ?? "—")} />
         <StatCard label="Pending" value={String(stats?.pending ?? "—")} />
         <StatCard label="Converted" value={String(stats?.converted ?? "—")} />
         <StatCard label="Rewards paid" value={stats ? usd(stats.rewarded_cents) : "—"} />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full">
-        <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6B5AE0]/50" />
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1 sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or code"
-            className="pl-9 h-10 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40 bg-white"
+            className={`${adminInput} pl-9`}
           />
         </div>
         <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-          <SelectTrigger className="w-40 h-10 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] shadow-none">
+          <SelectTrigger className={`${adminSelect} sm:w-40`}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-[#E2DCFA]">
-            <SelectItem value="all" className="font-medium text-[#2A00A2]">All</SelectItem>
-            <SelectItem value="pending" className="font-medium text-[#2A00A2]">Pending</SelectItem>
-            <SelectItem value="converted" className="font-medium text-[#2A00A2]">Converted</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="converted">Converted</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <Card className="w-full overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl max-w-none m-0">
-        <div className="overflow-x-auto">
+      <div className="admin-table-wrap m-0 w-full">
+        <div className="admin-table-scroll">
           <Table className="min-w-[900px]">
             <TableHeader className="bg-[#FDFDFF]">
               <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Referrer</TableHead>
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Referred friend</TableHead>
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Code</TableHead>
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Status</TableHead>
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Reward</TableHead>
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Invited</TableHead>
-                <TableHead className="text-[#2A00A2] font-bold h-11 text-[13px]">Converted</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Referrer</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Referred friend</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Code</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Status</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Reward</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Invited</TableHead>
+                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Converted</TableHead>
                 <TableHead className="w-24 h-11 text-[13px]" />
               </TableRow>
             </TableHeader>
@@ -289,32 +290,32 @@ function ReferralsPage() {
                 </TableRow>
               )}
               {rows.map((r: any) => (
-                <TableRow key={r.id} className="border-b border-[#EAE6FA]/50 hover:bg-[#F5F3FF]/40">
+                <TableRow key={r.id} className="border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40">
                   <TableCell>
-                    <p className="font-bold text-[#2A00A2] text-[14px]">{r.referrer_name ?? "—"}</p>
-                    <p className="text-xs text-[#6B5AE0]/70">{r.referrer_email}</p>
+                    <p className="font-semibold text-[#2E00AB] text-[14px]">{r.referrer_name ?? "—"}</p>
+                    <p className="text-xs text-[#2E00AB]/70">{r.referrer_email}</p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-semibold text-[#2A00A2] text-[14px]">{r.referred_name ?? "—"}</p>
-                    <p className="text-xs text-[#6B5AE0]/70">{r.referred_email}</p>
+                    <p className="font-medium text-[#2E00AB] text-[14px]">{r.referred_name ?? "—"}</p>
+                    <p className="text-xs text-[#2E00AB]/70">{r.referred_email}</p>
                   </TableCell>
-                  <TableCell className="font-mono text-[13px] text-[#2A00A2]">{r.code}</TableCell>
+                  <TableCell className="font-mono text-[13px] text-[#2E00AB]">{r.code}</TableCell>
                   <TableCell>
                     <Badge
                       className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none border border-transparent ${
                         r.status === "converted"
                           ? "bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#E8F5E9]"
-                          : "bg-[#F5F3FF] text-[#2A00A2] hover:bg-[#F5F3FF]"
+                          : "bg-[#F5F3FF] text-[#2E00AB] hover:bg-[#F5F3FF]"
                       }`}
                     >
                       {r.status === "converted" ? "Converted" : "Pending"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-semibold text-[#2A00A2] text-[14px]">
+                  <TableCell className="font-medium text-[#2E00AB] text-[14px]">
                     {r.status === "converted" ? usd(r.reward_cents) : "—"}
                   </TableCell>
-                  <TableCell className="text-[#2A00A2]/80 text-[13px]">{formatDate(r.created_at)}</TableCell>
-                  <TableCell className="text-[#2A00A2]/80 text-[13px]">{formatDate(r.converted_at)}</TableCell>
+                  <TableCell className="text-[#2E00AB]/80 text-[13px]">{formatDate(r.created_at)}</TableCell>
+                  <TableCell className="text-[#2E00AB]/80 text-[13px]">{formatDate(r.converted_at)}</TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -330,7 +331,7 @@ function ReferralsPage() {
             </TableBody>
           </Table>
         </div>
-      </Card>
+      </div>
 
       {walletUser ? <WalletDialog userId={walletUser} onClose={() => setWalletUser(null)} /> : null}
     </div>

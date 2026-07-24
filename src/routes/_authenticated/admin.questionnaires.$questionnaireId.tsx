@@ -20,6 +20,17 @@ import {
   type QQuestionType, type StoredQuestion, type StoredQuestionOption,
 } from "@/lib/questionnaires.store";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
+import {
+  adminLabel,
+  adminInput,
+  adminTextarea,
+  adminSelect,
+  adminSectionTitle,
+  adminSectionSubtitle,
+  adminCard,
+  adminBtnPrimary,
+  adminBtnSecondary,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/$questionnaireId")({
   component: EditQuestionnairePage,
@@ -82,68 +93,85 @@ function EditQuestionnairePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (dataQ.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (dataQ.isLoading) return <p className="text-sm text-[#2E00AB]/60">Loading…</p>;
   if (!dataQ.data) return <p className="text-sm text-destructive">Not found</p>;
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Questionnaire details</CardTitle>
-          <CardDescription>Update name and linked medicines.</CardDescription>
+    <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif] sm:space-y-6">
+      <Card className={adminCard}>
+        <CardHeader className="space-y-5 p-4 sm:p-6">
+          <CardTitle className={adminSectionTitle}>Questionnaire details</CardTitle>
+          <CardDescription className={adminSectionSubtitle}>
+            Update name and linked medicines.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 p-4 pt-0 sm:p-6 sm:pt-0">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+              <Label className={adminLabel}>Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} className={adminInput} />
             </div>
-            <div className="flex items-end gap-2">
-              <Switch checked={isActive} onCheckedChange={setIsActive} id="q-active" />
-              <Label htmlFor="q-active">Active</Label>
+            <div className="flex items-end gap-3">
+              <Switch
+                checked={isActive}
+                onCheckedChange={setIsActive}
+                id="q-active"
+               
+              />
+              <Label htmlFor="q-active" className="cursor-pointer select-none text-[16px] font-medium text-[#2E00AB]">
+                Active
+              </Label>
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Label className={adminLabel}>Description</Label>
+            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className={adminTextarea} />
           </div>
           <div className="space-y-2">
-            <Label>Linked goals / categories</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <Label className={adminLabel}>Linked goals / categories</Label>
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {(catsQ.data ?? []).map((m) => {
                 const checked = categoryIds.includes(m.id);
                 return (
-                  <label key={m.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
-                    <Checkbox checked={checked} onCheckedChange={(v) =>
-                      setCategoryIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id))
-                    } />
+                  <label key={m.id} className="admin-check-row">
+                    <Checkbox
+                      checked={checked}
+                      className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
+                      onCheckedChange={(v) =>
+                        setCategoryIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id))
+                      }
+                    />
                     {m.name}
                   </label>
                 );
               })}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className={adminBtnPrimary}>
               {saveMut.isPending ? "Saving…" : "Save"}
             </Button>
-            <Button variant="outline" onClick={() => navigate({ to: "/admin/questionnaires" })}>Back</Button>
+            <Button variant="outline" onClick={() => navigate({ to: "/admin/questionnaires" })} className={adminBtnSecondary}>
+              Back
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold">Questions</h3>
-        <Button size="sm" onClick={() => addMut.mutate()} disabled={addMut.isPending}>
+        <h3 className={adminSectionTitle}>Questions</h3>
+        <Button size="sm" onClick={() => addMut.mutate()} disabled={addMut.isPending} className={adminBtnPrimary}>
           <Plus className="mr-1.5 h-4 w-4" /> Add Question
         </Button>
       </div>
 
       <div className="space-y-4">
         {dataQ.data.questions.length === 0 && (
-          <Card className="border-dashed"><CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No questions yet. Click &ldquo;Add Question&rdquo;.
-          </CardContent></Card>
+          <Card className={`${adminCard} border-dashed`}>
+            <CardContent className="py-8 text-center text-[16px] text-[#2E00AB]/60">
+              No questions yet. Click &ldquo;Add Question&rdquo;.
+            </CardContent>
+          </Card>
         )}
         {dataQ.data.questions.map((q) => (
           <QuestionEditor key={q.id} question={q} questionnaireId={questionnaireId} />
@@ -206,28 +234,28 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
   const showYesNo = type === "yes_no";
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-sm text-muted-foreground">Question</CardTitle>
+    <Card className={adminCard}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
+        <CardTitle className="text-[16px] font-medium text-[#2E00AB]/60">Question</CardTitle>
         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
           onClick={() => deleteMut.mutate()}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5 p-4 pt-0 sm:p-6 sm:pt-0">
         <div className="space-y-2">
-          <Label>Prompt</Label>
-          <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+          <Label className={adminLabel}>Prompt</Label>
+          <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className={adminInput} />
         </div>
         <div className="space-y-2">
-          <Label>Helper text (optional)</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Label className={adminLabel}>Helper text (optional)</Label>
+          <Input value={description} onChange={(e) => setDescription(e.target.value)} className={adminInput} />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label className={adminLabel}>Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as QQuestionType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className={adminSelect}><SelectValue /></SelectTrigger>
               <SelectContent>
                 {Object.entries(QQUESTION_TYPE_LABELS).map(([v, l]) => (
                   <SelectItem key={v} value={v}>{l}</SelectItem>
@@ -235,15 +263,22 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end gap-2">
-            <Switch checked={required} onCheckedChange={setRequired} id={`req-${question.id}`} />
-            <Label htmlFor={`req-${question.id}`}>Required</Label>
+          <div className="flex items-end gap-3">
+            <Switch
+              checked={required}
+              onCheckedChange={setRequired}
+              id={`req-${question.id}`}
+              
+            />
+            <Label htmlFor={`req-${question.id}`} className="cursor-pointer select-none text-[16px] font-medium text-[#2E00AB]">
+              Required
+            </Label>
           </div>
           {showYesNo && (
             <div className="space-y-2">
-              <Label>Disqualify when</Label>
+              <Label className={adminLabel}>Disqualify when</Label>
               <Select value={ynDisq} onValueChange={(v) => setYnDisq(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className={adminSelect}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Never</SelectItem>
                   <SelectItem value="yes">Answer is Yes</SelectItem>
@@ -256,26 +291,30 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
 
         {showOptions && (
           <div className="space-y-2">
-            <Label>Options (check the box to mark an option as disqualifying)</Label>
+            <Label className={adminLabel}>Options (check the box to mark an option as disqualifying)</Label>
             <div className="space-y-2">
               {options.map((o, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <Input value={o.label} placeholder={`Option ${i + 1}`} onChange={(e) => {
+                  <Input value={o.label} placeholder={`Option ${i + 1}`} className={adminInput} onChange={(e) => {
                     const copy = [...options]; copy[i] = { ...copy[i], label: e.target.value }; setOptions(copy);
                   }} />
-                  <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Checkbox checked={o.is_disqualifying} onCheckedChange={(v) => {
-                      const copy = [...options]; copy[i] = { ...copy[i], is_disqualifying: !!v }; setOptions(copy);
-                    }} />
+                  <label className="admin-check-row shrink-0 border-0 p-0">
+                    <Checkbox
+                      checked={o.is_disqualifying}
+                      className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
+                      onCheckedChange={(v) => {
+                        const copy = [...options]; copy[i] = { ...copy[i], is_disqualifying: !!v }; setOptions(copy);
+                      }}
+                    />
                     Disqualifies
                   </label>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive"
                     onClick={() => setOptions(options.filter((_, idx) => idx !== i))}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={() => setOptions([...options, { label: "", is_disqualifying: false }])}>
+              <Button variant="outline" size="sm" onClick={() => setOptions([...options, { label: "", is_disqualifying: false }])} className={adminBtnSecondary}>
                 <Plus className="mr-1.5 h-4 w-4" /> Add option
               </Button>
             </div>
@@ -283,7 +322,7 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
         )}
 
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+          <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className={adminBtnPrimary}>
             {saveMut.isPending ? "Saving…" : "Save question"}
           </Button>
         </div>

@@ -49,39 +49,37 @@ function EditProviderPage() {
 
   const d = query.data as any;
   return (
-    <div className="mx-auto max-w-4xl">
-      <Suspense fallback={<FormSkeleton />}>
-        <ProviderForm
-          mode="edit"
-          submitting={mutation.isPending}
-          defaultValues={{
-            email: d.email,
-            full_name: d.full_name,
-            phone: d.phone ?? "",
-            avatar_url: d.avatar_url ?? "",
-            bio: d.bio ?? "",
-            credentials: d.credentials ?? undefined,
-            specialty: d.specialty ?? "",
-            npi: d.npi ?? "",
-            dea: d.dea ?? "",
-            license_number: d.license_number ?? "",
-            license_states: d.license_states ?? [],
-            years_experience: d.years_experience ?? undefined,
-            languages: d.languages ?? [],
-            consultation_types: d.consultation_types ?? [],
-            practice_states: d.practice_states ?? [],
-            address_line1: d.address_line1 ?? "",
-            address_line2: d.address_line2 ?? "",
-            city: d.city ?? "",
-            state: d.state ?? undefined,
-            zip: d.zip ?? "",
-            country: d.country ?? "US",
-            is_active: d.is_active,
-          }}
-          onSubmit={(values) => mutation.mutate(values)}
-          onCancel={() => navigate({ to: "/admin/providers" })}
-        />
-      </Suspense>
-    </div>
+    <Suspense fallback={<FormSkeleton />}>
+      <ProviderForm
+        mode="edit"
+        submitting={mutation.isPending}
+        defaultValues={{
+          email: d.email,
+          full_name: d.full_name,
+          phone: d.phone ?? "",
+          avatar_url: d.avatar_url ?? "",
+          bio: d.bio ?? "",
+          credentials: d.credentials ?? undefined,
+          specialty: d.specialty ?? "",
+          npi: d.npi ?? "",
+          dea: d.dea ?? "",
+          license_number: d.license_number ?? "",
+          license_states: d.license_states ?? [],
+          years_experience: d.years_experience ?? undefined,
+          languages: d.languages ?? [],
+          consultation_types: d.consultation_types ?? [],
+          practice_states: d.practice_states ?? [],
+          address_line1: d.address_line1 ?? "",
+          address_line2: d.address_line2 ?? "",
+          city: d.city ?? "",
+          state: d.state ?? undefined,
+          zip: d.zip ?? "",
+          country: d.country ?? "US",
+          is_active: d.is_active,
+        }}
+        onSubmit={(values) => mutation.mutate(values)}
+        onCancel={() => navigate({ to: "/admin/providers" })}
+      />
+    </Suspense>
   );
 }

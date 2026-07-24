@@ -27,7 +27,10 @@ type Props = {
 };
 
 const inputClass =
-  "h-11 border-[#EAE6FA] bg-[#FDFDFF] text-[#2A00A2] rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium";
+  "h-[44px] sm:h-[53px] px-4 !rounded-[6px] border border-[#EAE6FA] bg-white text-[#2E00AB] placeholder:text-[#2E00AB]/40 focus-visible:ring-1 focus-visible:ring-[#2E00AB] text-[16px] font-normal leading-[100%] shadow-none";
+
+const textareaClass =
+  "min-h-[70px] px-4 py-3 !rounded-[6px] border border-[#EAE6FA] bg-white text-[#2E00AB] placeholder:text-[#2E00AB]/40 focus-visible:ring-1 focus-visible:ring-[#2E00AB] text-[16px] font-normal leading-[140%] resize-none shadow-none";
 
 export function MedicinePackagesEditor({
   control,
@@ -50,7 +53,7 @@ export function MedicinePackagesEditor({
       )}
 
       {fields.length > 0 && (
-        <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 px-1 text-[12px] font-bold text-[#2A00A2]/70 sm:grid">
+        <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 px-1 text-[12px] font-medium text-[#2E00AB]/70 md:grid">
           <span>Duration (months)</span>
           <span>Original price ($)</span>
           <span>Sale price ($)</span>
@@ -86,7 +89,7 @@ export function MedicinePackagesEditor({
             clinical_note: "",
           } as any)
         }
-        className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2A00A2] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors disabled:opacity-50"
+        className="h-[44px] rounded-[6px] border border-[#EAE6FA] px-4 text-[14px] font-semibold text-[#2E00AB] transition-colors hover:bg-[#F9F8FF] sm:h-11"
       >
         <Plus className="mr-1.5 h-4 w-4" /> Add package
       </Button>
@@ -103,8 +106,10 @@ export function MedicinePackagesEditor({
   return (
     <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white shadow-sm">
       <CardHeader className="border-b border-[#EAE6FA] bg-white p-4 sm:p-6">
-        <CardTitle className="text-[16px] font-bold text-[#2A00A2]">Pricing packages</CardTitle>
-        <CardDescription className="text-[13px] text-[#2A00A2]/80 font-medium">
+        <CardTitle className="text-[20px] font-semibold leading-[100%] text-[#2E00AB]">
+          Pricing packages
+        </CardTitle>
+        <CardDescription className="text-[16px] font-normal leading-[100%] text-[#2E00AB]/80">
           Duration-based plans patients can buy — up to {MAX_PACKAGES_PER_MEDICINE} per medicine. The
           lowest per-month price is shown as the medicine&apos;s &ldquo;from&rdquo; price.
         </CardDescription>
@@ -138,10 +143,12 @@ function PackageRow({
   });
 
   return (
-    <div className="min-w-0 space-y-3 rounded-xl border border-[#EAE6FA] bg-[#FDFDFF] p-4">
-      <div className="grid min-w-0 grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+    <div className="min-w-0 space-y-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <div className="min-w-0 space-y-1">
-          <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]">Duration (months)</Label>
+          <Label className="text-[12px] font-medium text-[#2E00AB] md:hidden">
+            Duration (months)
+          </Label>
           <Input
             type="number"
             min={1}
@@ -155,7 +162,9 @@ function PackageRow({
           )}
         </div>
         <div className="min-w-0 space-y-1">
-          <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]/70">Original price ($)</Label>
+          <Label className="text-[12px] font-medium text-[#2E00AB]/70 md:hidden">
+            Original price ($)
+          </Label>
           <Input
             type="number"
             step="0.01"
@@ -169,7 +178,9 @@ function PackageRow({
           )}
         </div>
         <div className="min-w-0 space-y-1">
-          <Label className="sm:hidden text-[12px] font-bold text-[#2A00A2]/70">Sale price ($)</Label>
+          <Label className="text-[12px] font-medium text-[#2E00AB]/70 md:hidden">
+            Sale price ($)
+          </Label>
           <Input
             type="number"
             step="0.01"
@@ -186,7 +197,7 @@ function PackageRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-11 w-11 rounded-xl text-[#6B5AE0]/60 hover:text-destructive hover:bg-destructive/5 justify-self-end"
+          className="h-[44px] w-[44px] shrink-0 justify-self-end rounded-[6px] text-[#2E00AB]/60 hover:bg-destructive/5 hover:text-destructive sm:h-11 sm:w-11"
           disabled={submitting}
           onClick={onRemove}
         >
@@ -194,7 +205,7 @@ function PackageRow({
         </Button>
       </div>
 
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-6">
+      <div className="grid min-w-0 grid-cols-1 items-center gap-x-4 gap-y-3 md:grid-cols-[minmax(0,1fr)_auto] md:flex md:flex-wrap md:gap-x-6">
         <Controller
           control={control}
           name={`${name}.${index}.is_most_popular` as any}
@@ -204,9 +215,9 @@ function PackageRow({
                 checked={!!field.value}
                 onCheckedChange={field.onChange}
                 disabled={submitting}
-                className="data-[state=checked]:bg-[#2A00A2]"
+                
               />
-              <span className="text-[13px] font-semibold text-[#2A00A2]">Most popular</span>
+              <span className="text-[14px] font-normal text-[#2E00AB]">Most popular</span>
             </div>
           )}
         />
@@ -219,16 +230,16 @@ function PackageRow({
                 checked={field.value ?? true}
                 onCheckedChange={field.onChange}
                 disabled={submitting}
-                className="data-[state=checked]:bg-[#2A00A2]"
+                
               />
-              <span className="text-[13px] font-semibold text-[#2A00A2]">Active</span>
+              <span className="text-[14px] font-normal text-[#2E00AB]">Active</span>
             </div>
           )}
         />
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="col-span-2 flex min-w-0 items-center justify-end gap-1 text-[13px] font-semibold text-[#6B5AE0] transition-colors hover:text-[#2A00A2] sm:col-span-1 sm:ml-auto"
+          className="col-span-1 flex min-w-0 items-center justify-start gap-1 text-[14px] font-medium text-[#2E00AB] transition-colors hover:text-[#25008A] md:col-span-1 md:ml-auto md:justify-end"
         >
           Features &amp; clinical note
           <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
@@ -238,7 +249,7 @@ function PackageRow({
       {expanded && (
         <div className="space-y-3 border-t border-[#EAE6FA] pt-3">
           <div className="space-y-2">
-            <Label className="text-[12px] font-bold text-[#2A00A2]/70">Included features</Label>
+            <Label className="text-[12px] font-medium text-[#2E00AB]/70">Included features</Label>
             {fields.map((f, fi) => (
               <div key={f.id} className="flex min-w-0 items-center gap-2.5">
                 <Input
@@ -251,7 +262,7 @@ function PackageRow({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 rounded-xl text-[#2A00A2]/60 hover:text-destructive hover:bg-destructive/5 shrink-0"
+                  className="h-[44px] w-[44px] shrink-0 rounded-[6px] text-[#2E00AB]/60 hover:bg-destructive/5 hover:text-destructive sm:h-11 sm:w-11"
                   disabled={submitting}
                   onClick={() => remove(fi)}
                 >
@@ -264,19 +275,19 @@ function PackageRow({
               variant="outline"
               disabled={submitting}
               onClick={() => append({ text: "" } as any)}
-              className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2A00A2] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors"
+              className="h-10 rounded-[6px] border border-[#EAE6FA] px-4 text-[14px] font-semibold text-[#2E00AB] transition-colors hover:bg-[#F9F8FF]"
             >
               <Plus className="mr-1.5 h-4 w-4" /> Add feature
             </Button>
           </div>
           <div className="space-y-2">
-            <Label className="text-[12px] font-bold text-[#2A00A2]/70">Clinical note</Label>
+            <Label className="text-[12px] font-medium text-[#2E00AB]/70">Clinical note</Label>
             <Textarea
               {...register(`${name}.${index}.clinical_note` as any)}
               rows={2}
               placeholder="Optional disclaimer shown with this plan"
               disabled={submitting}
-              className="border-[#EAE6FA] bg-[#FDFDFF] text-[#2A00A2] rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium p-3 min-h-[70px] resize-none"
+              className={textareaClass}
             />
           </div>
         </div>

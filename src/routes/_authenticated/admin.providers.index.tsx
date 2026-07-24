@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Plus, Mail, MoreHorizontal, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -47,6 +46,7 @@ import {
   resendInvite,
   setProviderActive,
 } from "@/lib/providers.functions";
+import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect, adminBtnPrimary } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/providers/")({
   component: ProvidersListPage,
@@ -97,57 +97,54 @@ function ProvidersListPage() {
   });
 
   return (
-    <div className="space-y-6 w-full text-left">
-      {/* Top Header Section without redundant space */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-[26px] font-bold text-[#2A00A2] tracking-tight">Providers</h2>
-          <p className="text-[14px] text-[#6B5AE0]/70 font-medium mt-1">
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans']">
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h2 className={adminPageTitle}>Providers</h2>
+          <p className={`mt-1 ${adminPageSubtitle}`}>
             Manage clinical accounts, credentials, and track activation statuses.
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => navigate({ to: "/admin/providers/new" })}
-          className="bg-[#2A00A2] hover:bg-[#1E0075] text-white font-bold rounded-xl h-11 px-5 shadow-sm transition-colors self-start sm:self-center"
+          className={adminBtnPrimary}
         >
           <Plus className="mr-1.5 h-4 w-4 stroke-[3]" /> Add Provider
         </Button>
       </div>
 
-      {/* Filter and Search Utilities bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B5AE0]/50" />
+        <div className="relative min-w-0 flex-1 sm:max-w-md">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, specialty..."
-            className="pl-10 h-11 rounded-xl border-[#E2DCFA] focus-visible:ring-[#4A3AFF] focus-visible:ring-1 text-[#2A00A2] font-semibold text-[14px] placeholder:text-[#6B5AE0]/40 bg-white"
+            className={`${adminInput} pl-10`}
           />
         </div>
         <Select value={status} onValueChange={(v) => setStatus(v as any)}>
-          <SelectTrigger className="w-44 h-11 rounded-xl border-[#E2DCFA] bg-white text-[#2A00A2] font-semibold text-[14px] focus:ring-1 focus:ring-[#4A3AFF] outline-none shadow-none">
+          <SelectTrigger className={`${adminSelect} sm:w-44`}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-[#E2DCFA]">
-            <SelectItem value="all" className="font-medium text-[#2A00A2]">All Statuses</SelectItem>
-            <SelectItem value="active" className="font-medium text-[#2A00A2]">Active</SelectItem>
-            <SelectItem value="inactive" className="font-medium text-[#2A00A2]">Inactive</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Data Presentation Grid Block */}
-      <Card className="overflow-hidden border border-[#EAE6FA] bg-white shadow-sm rounded-2xl">
-        <div className="overflow-x-auto">
+      <div className="admin-table-wrap">
+        <div className="admin-table-scroll">
         <Table className="min-w-[760px]">
           <TableHeader className="bg-[#FDFDFF]">
             <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-              <TableHead className="text-[#6B5AE0]/80 font-bold text-[13px] h-12 px-6">Name</TableHead>
-              <TableHead className="text-[#6B5AE0]/80 font-bold text-[13px] h-12 px-6">Email</TableHead>
-              <TableHead className="text-[#6B5AE0]/80 font-bold text-[13px] h-12 px-6">Specialty</TableHead>
-              <TableHead className="text-[#6B5AE0]/80 font-bold text-[13px] h-12 px-6">Credentials</TableHead>
-              <TableHead className="text-[#6B5AE0]/80 font-bold text-[13px] h-12 px-6">Status</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold text-[13px] h-12 px-6">Name</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold text-[13px] h-12 px-6">Email</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold text-[13px] h-12 px-6">Specialty</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold text-[13px] h-12 px-6">Credentials</TableHead>
+              <TableHead className="text-[#2E00AB] font-semibold text-[13px] h-12 px-6">Status</TableHead>
               <TableHead className="w-12 px-6" />
             </TableRow>
           </TableHeader>
@@ -176,7 +173,7 @@ function ProvidersListPage() {
             {query.data?.map((p: any) => (
               <TableRow
                 key={p.id}
-                className="cursor-pointer border-b border-[#F4F1FE] hover:bg-[#FCDFFF]/10 transition-colors"
+                className="cursor-pointer border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40 transition-colors"
                 onClick={() =>
                   navigate({
                     to: "/admin/providers/$providerId",
@@ -184,13 +181,13 @@ function ProvidersListPage() {
                   })
                 }
               >
-                <TableCell className="font-bold text-[#2A00A2] text-[14px] py-4 px-6">{p.full_name}</TableCell>
-                <TableCell className="text-[#6B5AE0] font-medium text-[14px] py-4 px-6">{p.email}</TableCell>
-                <TableCell className="text-[#2A00A2] font-semibold text-[14px] py-4 px-6">{p.specialty ?? "—"}</TableCell>
-                <TableCell className="text-[#6B5AE0] font-medium text-[14px] py-4 px-6">{p.credentials ?? "—"}</TableCell>
+                <TableCell className="font-semibold text-[#2E00AB] text-[14px] py-4 px-6">{p.full_name}</TableCell>
+                <TableCell className="text-[#2E00AB]/70 font-medium text-[14px] py-4 px-6">{p.email}</TableCell>
+                <TableCell className="text-[#2E00AB] font-medium text-[14px] py-4 px-6">{p.specialty ?? "—"}</TableCell>
+                <TableCell className="text-[#2E00AB]/70 font-medium text-[14px] py-4 px-6">{p.credentials ?? "—"}</TableCell>
                 <TableCell className="py-4 px-6">
                   {p.is_active ? (
-                    <Badge className="bg-[#E8FFE8] hover:bg-[#E8FFE8] text-[#008A22] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                    <Badge className="bg-[#eae8ff] hover:bg-[#E8FFE8] text-[#002e8a] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
                       Active
                     </Badge>
                   ) : (
@@ -239,7 +236,7 @@ function ProvidersListPage() {
           </TableBody>
         </Table>
         </div>
-      </Card>
+      </div>
 
       {/* Confirmation Dialog System */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>

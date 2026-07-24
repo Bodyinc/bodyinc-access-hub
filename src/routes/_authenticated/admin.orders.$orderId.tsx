@@ -16,6 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getOrder } from "@/lib/orders.functions";
+import {
+  adminSectionTitle,
+  adminSectionSubtitle,
+  adminCard,
+  adminBtnSecondary,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$orderId")({
   component: OrderDetailPage,
@@ -41,14 +47,25 @@ function OrderDetailPage() {
   });
   const [changeOpen, setChangeOpen] = useState(false);
 
-  if (q.isLoading) return <div className="text-sm text-muted-foreground">Loading order…</div>;
+  if (q.isLoading) {
+    return (
+      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#2E00AB]/60">
+        Loading order…
+      </div>
+    );
+  }
   if (q.isError || !q.data) {
     return (
-      <div className="space-y-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin/orders" })}>
+      <div className="admin-page-shell space-y-3 font-['DM_Sans',sans-serif]">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/admin/orders" })}
+          className="h-9 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
-        <div className="text-sm text-destructive">
+        <div className="text-[14px] font-semibold text-[#FF4D6D]">
           {(q.error as Error)?.message ?? "Order not found"}
         </div>
       </div>
@@ -61,29 +78,49 @@ function OrderDetailPage() {
   const canChangeMedicine = ["active", "trialing", "past_due"].includes(subscription.status);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin/orders" })}>
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate({ to: "/admin/orders" })}
+        className="h-9 -ml-2 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+      >
         <ArrowLeft className="mr-1 h-4 w-4" /> Back to orders
       </Button>
 
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div>
-            <CardTitle className="font-mono text-base">{subscription.id}</CardTitle>
-            <CardDescription>{formatDate(subscription.created_at)}</CardDescription>
+      <Card className={adminCard}>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
+          <div className="min-w-0 space-y-1.5">
+            <CardTitle className={`${adminSectionTitle} font-mono text-[16px] sm:text-[18px]`}>
+              {subscription.id}
+            </CardTitle>
+            <CardDescription className={adminSectionSubtitle}>
+              {formatDate(subscription.created_at)}
+            </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {canChangeMedicine ? (
-              <Button variant="outline" size="sm" onClick={() => setChangeOpen(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setChangeOpen(true)}
+                className={`${adminBtnSecondary} h-10 px-4 text-[13px]`}
+              >
                 <Repeat className="mr-1 h-4 w-4" /> Change medicine
               </Button>
             ) : null}
-            <Badge variant={display_status === "paid" ? "default" : "secondary"}>
+            <Badge
+              className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
+                display_status === "paid"
+                  ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+                  : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+              }`}
+            >
               {display_status ?? "—"}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
+        <CardContent className="grid gap-4 p-4 pt-0 text-[14px] sm:grid-cols-2 sm:p-6 sm:pt-0">
           <Row label="Medication" value={medicine?.name ?? "—"} />
           <Row label="Variant" value={variant_name ?? "—"} />
           <Row label="Plan" value={pkg?.name ?? "—"} />
@@ -97,22 +134,27 @@ function OrderDetailPage() {
           <Row
             label="Stripe subscription"
             value={
-              <span className="font-mono text-xs">{subscription.stripe_subscription_id ?? "—"}</span>
+              <span className="font-mono text-xs text-[#2E00AB]">
+                {subscription.stripe_subscription_id ?? "—"}
+              </span>
             }
           />
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Customer</CardTitle>
+      <Card className={adminCard}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 sm:p-6">
+          <CardTitle className={adminSectionTitle}>Customer</CardTitle>
           {customer?.is_guest ? (
-            <Badge variant="secondary" title="Paid during onboarding; account not yet created">
+            <Badge
+              className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]"
+              title="Paid during onboarding; account not yet created"
+            >
               Guest — no account yet
             </Badge>
           ) : null}
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+        <CardContent className="grid gap-3 p-4 pt-0 text-[14px] sm:grid-cols-2 sm:p-6 sm:pt-0">
           {customer ? (
             <>
               <Row label="Name" value={customer.full_name || "—"} />
@@ -135,81 +177,99 @@ function OrderDetailPage() {
               />
             </>
           ) : (
-            <div className="text-muted-foreground">
+            <div className="text-[#2E00AB]/60 font-medium">
               No customer on this subscription (no linked account or intake session).
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Payments</CardTitle>
-          <CardDescription>Charges recorded for this subscription.</CardDescription>
+      <Card className={adminCard}>
+        <CardHeader className="space-y-1.5 p-4 sm:p-6">
+          <CardTitle className={adminSectionTitle}>Payments</CardTitle>
+          <CardDescription className={adminSectionSubtitle}>
+            Charges recorded for this subscription.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-          <Table className="min-w-[560px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    No payments.
-                  </TableCell>
+          <div className="admin-table-scroll">
+            <Table className="min-w-[560px]">
+              <TableHeader className="bg-[#FDFDFF]">
+                <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Amount</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Status</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Invoice</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Created</TableHead>
                 </TableRow>
-              )}
-              {payments.map((p: any) => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    {formatCurrency((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={p.status === "succeeded" ? "default" : "secondary"}>
-                      {p.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {p.raw_event?.hosted_invoice_url ? (
-                        <a
-                          href={p.raw_event.hosted_invoice_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground"
-                          aria-label="View invoice"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </a>
-                      ) : null}
-                      {p.raw_event?.invoice_pdf ? (
-                        <a
-                          href={p.raw_event.invoice_pdf}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground"
-                          aria-label="Download invoice PDF"
-                        >
-                          <Download className="h-4 w-4" />
-                        </a>
-                      ) : null}
-                      {!p.raw_event?.hosted_invoice_url && !p.raw_event?.invoice_pdf ? (
-                        <span className="font-mono text-xs">{p.stripe_invoice_id ?? "—"}</span>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {payments.length === 0 && (
+                  <TableRow className="border-b border-[#EAE6FA]">
+                    <TableCell
+                      colSpan={4}
+                      className="py-12 text-center text-[14px] font-medium text-[#2E00AB]/60"
+                    >
+                      No payments.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {payments.map((p: any) => (
+                  <TableRow
+                    key={p.id}
+                    className="border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                  >
+                    <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                      {formatCurrency((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
+                          p.status === "succeeded"
+                            ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+                            : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+                        }`}
+                      >
+                        {p.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {p.raw_event?.hosted_invoice_url ? (
+                          <a
+                            href={p.raw_event.hosted_invoice_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#2E00AB]/60 hover:text-[#2E00AB]"
+                            aria-label="View invoice"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        ) : null}
+                        {p.raw_event?.invoice_pdf ? (
+                          <a
+                            href={p.raw_event.invoice_pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#2E00AB]/60 hover:text-[#2E00AB]"
+                            aria-label="Download invoice PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        ) : null}
+                        {!p.raw_event?.hosted_invoice_url && !p.raw_event?.invoice_pdf ? (
+                          <span className="font-mono text-xs text-[#2E00AB]">
+                            {p.stripe_invoice_id ?? "—"}
+                          </span>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                      {formatDate(p.created_at)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -234,9 +294,9 @@ function OrderDetailPage() {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div>
-      <div className="text-muted-foreground">{label}</div>
-      <div>{value}</div>
+    <div className="space-y-1">
+      <div className="text-[13px] font-medium text-[#2E00AB]/60">{label}</div>
+      <div className="text-[14px] font-medium text-[#2E00AB]">{value}</div>
     </div>
   );
 }

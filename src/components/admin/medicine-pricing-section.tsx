@@ -58,7 +58,7 @@ export function MedicinePricingSection({
           variant="outline"
           disabled={submitting}
           onClick={addFirstVariant}
-          className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#6B5AE0] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors"
+          className="h-[44px] rounded-[6px] border border-[#EAE6FA] px-6 text-[14px] font-semibold text-[#2E00AB] transition-colors hover:bg-[#F9F8FF] sm:h-11"
         >
           <Layers className="mr-1.5 h-4 w-4" /> Add variants (e.g. dosages)
         </Button>
@@ -82,14 +82,14 @@ export function MedicinePricingSection({
             key={field.id}
             className="min-w-0 space-y-4 rounded-xl border border-[#E2DCFA] bg-[#FBFAFF] p-4 sm:p-5"
           >
-            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-3">
+            <div className="grid grid-cols-1 items-start gap-3 min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto]">
               <div className="min-w-0 space-y-1">
-                <Label className="text-[13px] font-bold text-[#2A00A2]">Variant name</Label>
+                <Label className="text-[16px] font-medium text-[#2E00AB]">Variant name</Label>
                 <Input
                   {...register(`variants.${vIndex}.name`)}
                   placeholder="e.g. 50mg"
                   disabled={submitting}
-                  className="h-11 border-[#EAE6FA] bg-white text-foreground rounded-xl focus-visible:ring-[#2A00A2] text-[14px] font-medium"
+                  className="h-[44px] rounded-[6px] border border-[#EAE6FA] bg-white px-4 text-[16px] font-normal text-[#2E00AB] shadow-none focus-visible:ring-1 focus-visible:ring-[#2E00AB] sm:h-[53px]"
                 />
                 {errors.variants?.[vIndex]?.name?.message && (
                   <p className="text-xs text-destructive">{errors.variants[vIndex]!.name!.message}</p>
@@ -114,7 +114,7 @@ export function MedicinePricingSection({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 rounded-xl text-[#6B5AE0]/60 hover:text-destructive hover:bg-destructive/5 mt-6"
+                className="mt-0 h-[44px] w-[44px] rounded-[6px] text-[#2E00AB]/60 hover:bg-destructive/5 hover:text-destructive min-[480px]:mt-6 sm:h-11 sm:w-11"
                 disabled={submitting}
                 onClick={() => variantsArray.remove(vIndex)}
               >
@@ -140,7 +140,7 @@ export function MedicinePricingSection({
           onClick={() =>
             variantsArray.append({ name: "", is_active: true, packages: [] } as any)
           }
-          className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2A00A2] h-11 px-6 rounded-xl font-semibold text-[14px] transition-colors"
+          className="h-[44px] rounded-[6px] border border-[#EAE6FA] px-6 text-[14px] font-semibold text-[#2E00AB] transition-colors hover:bg-[#F9F8FF] sm:h-11"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Add variant
         </Button>

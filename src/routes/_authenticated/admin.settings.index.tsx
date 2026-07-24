@@ -23,6 +23,15 @@ import {
 import { getSettings, updateSettings, type PlatformSettings } from "@/lib/settings.functions";
 import { syncShippingBatch } from "@/lib/shipping-reprice.functions";
 import { ActivityLogTab } from "@/components/admin/activity-log-tab";
+import {
+  adminPageTitle,
+  adminPageSubtitle,
+  adminLabel,
+  adminInput,
+  adminBtnPrimary,
+  adminCard,
+  adminCardPad,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/settings/")({
   component: SettingsPage,
@@ -78,27 +87,31 @@ function FeeRow({
   onToggle: (v: boolean) => void;
 }) {
   return (
-    <div className="rounded-xl border border-[#EAE6FA] bg-white p-4">
+    <div className={`${adminCard} ${adminCardPad}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-0.5">
-          <Label className="text-[14px] font-bold text-[#2A00A2]">{label}</Label>
-          <p className="text-xs text-[#6B5AE0]/70">{help}</p>
+          <Label className={adminLabel}>{label}</Label>
+          <p className="text-xs text-[#2E00AB]/70">{help}</p>
         </div>
         <div className="flex items-center gap-2 pt-1">
-          <span className="text-xs font-semibold text-[#6B5AE0]/70">
+          <span className="text-xs font-semibold text-[#2E00AB]/70">
             {enabled ? "Enabled" : "Disabled"}
           </span>
-          <Switch checked={enabled} onCheckedChange={onToggle} />
+          <Switch
+            checked={enabled}
+            onCheckedChange={onToggle}
+            className="data-[state=checked]:bg-[#2E00AB] data-[state=unchecked]:bg-[#EAE6FA]"
+          />
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2">
-        <span className="text-sm font-semibold text-[#2A00A2]">$</span>
+        <span className="text-sm font-semibold text-[#2E00AB]">$</span>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           inputMode="decimal"
           disabled={!enabled}
-          className="h-10 w-40 rounded-xl border-[#E2DCFA] text-[#2A00A2] font-semibold disabled:opacity-50"
+          className={`${adminInput} w-40 disabled:opacity-50`}
         />
       </div>
     </div>
@@ -117,12 +130,18 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-xl border border-[#EAE6FA] bg-white p-4">
-      <div className="space-y-0.5">
-        <Label className="text-[14px] font-bold text-[#2A00A2]">{label}</Label>
-        <p className="text-xs text-[#6B5AE0]/70">{help}</p>
+    <div className={`${adminCard} ${adminCardPad}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-0.5">
+          <Label className={adminLabel}>{label}</Label>
+          <p className="text-xs text-[#2E00AB]/70">{help}</p>
+        </div>
+        <Switch
+          checked={checked}
+          onCheckedChange={onChange}
+          className="mt-1 data-[state=checked]:bg-[#2E00AB] data-[state=unchecked]:bg-[#EAE6FA]"
+        />
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-1" />
     </div>
   );
 }
@@ -291,16 +310,16 @@ function SettingsPage() {
   }
 
   return (
-    <div className="w-full max-w-none space-y-5 text-left">
-      <div className="space-y-0.5">
-        <h2 className="text-xl font-bold tracking-tight text-[#2A00A2]">Settings</h2>
-        <p className="text-sm font-medium text-[#6B5AE0]/70">
+    <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <div className="min-w-0 space-y-2 sm:space-y-4">
+        <h2 className={adminPageTitle}>Settings</h2>
+        <p className={adminPageSubtitle}>
           Configure fees, referrals, and platform-wide behavior.
         </p>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="bg-[#F5F3FF] text-[#6B5AE0]">
+      <Tabs value={tab} onValueChange={setTab} className="w-full min-w-0">
+        <TabsList className="flex h-auto w-full flex-wrap bg-[#F5F3FF] text-[#2E00AB]/70 sm:w-auto">
           <TabsTrigger value="fees">Fees</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
@@ -308,7 +327,7 @@ function SettingsPage() {
         </TabsList>
 
         <TabsContent value="fees" className="mt-4">
-          <Card className="space-y-4 border border-[#EAE6FA] bg-[#FDFDFF] p-5 shadow-sm">
+          <Card className={`${adminCard} ${adminCardPad} space-y-4`}>
             {form ? (
               <>
                 <FeeRow
@@ -336,13 +355,13 @@ function SettingsPage() {
                 />
               </>
             ) : (
-              <p className="text-sm text-[#6B5AE0]/60">Loading…</p>
+              <p className="text-sm text-[#2E00AB]/60">Loading…</p>
             )}
           </Card>
         </TabsContent>
 
         <TabsContent value="referrals" className="mt-4">
-          <Card className="space-y-4 border border-[#EAE6FA] bg-[#FDFDFF] p-5 shadow-sm">
+          <Card className={`${adminCard} ${adminCardPad} space-y-4`}>
             {form ? (
               <FeeRow
                 label="Referral reward"
@@ -353,13 +372,13 @@ function SettingsPage() {
                 onToggle={(v) => set("referral_enabled", v)}
               />
             ) : (
-              <p className="text-sm text-[#6B5AE0]/60">Loading…</p>
+              <p className="text-sm text-[#2E00AB]/60">Loading…</p>
             )}
           </Card>
         </TabsContent>
 
         <TabsContent value="system" className="mt-4">
-          <Card className="space-y-4 border border-[#EAE6FA] bg-[#FDFDFF] p-5 shadow-sm">
+          <Card className={`${adminCard} ${adminCardPad} space-y-4`}>
             {form ? (
               <>
                 <ToggleRow
@@ -376,7 +395,7 @@ function SettingsPage() {
                 />
               </>
             ) : (
-              <p className="text-sm text-[#6B5AE0]/60">Loading…</p>
+              <p className="text-sm text-[#2E00AB]/60">Loading…</p>
             )}
           </Card>
         </TabsContent>
@@ -391,7 +410,7 @@ function SettingsPage() {
           <Button
             onClick={save}
             disabled={mutation.isPending}
-            className="h-10 rounded-xl bg-[#2A00A2] px-6 font-bold text-white hover:bg-[#22008A]"
+            className={adminBtnPrimary}
           >
             {mutation.isPending ? "Saving…" : "Save changes"}
           </Button>

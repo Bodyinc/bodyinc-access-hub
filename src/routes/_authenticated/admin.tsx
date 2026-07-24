@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { RoutePending } from "@/components/route-pending";
 import { isBrowser } from "@/lib/is-browser";
@@ -64,31 +64,46 @@ const TITLES: Record<string, string> = {
   "/admin/orders": "Orders",
   "/admin/intake-sessions": "Intake Sessions",
   "/admin/settings": "Settings",
+  "/admin/billing": "Billing",
+  "/admin/referrals": "Referrals",
+  "/admin/promos": "Promo Codes",
 };
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cleaned = pathname.replace(/\/$/, "");
-  const title = TITLES[cleaned] ?? "Admin";
+  const title =
+    TITLES[cleaned] ??
+    (cleaned.startsWith("/admin/medicines")
+      ? "Medicines"
+      : cleaned.startsWith("/admin/categories")
+        ? "Categories"
+        : cleaned.startsWith("/admin/questionnaires")
+          ? "Questionnaires"
+          : "Admin");
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full overflow-x-hidden bg-white">
-        <AdminSidebar />
-        <SidebarInset className="flex min-w-0 flex-1 flex-col bg-white">
-          {/* Relative header container allowing absolute trigger overlay positioning */}
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-[#F4F1FE] bg-white pl-12 pr-6">
-            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-              {/* Trigger positioned exactly over the sidebar vertical border boundary line */}
-              <SidebarTrigger className="h-7 w-7 border border-[#E2DCFA] bg-white text-[#4A3AFF] hover:bg-[#F5F3FF] rounded-lg shadow-sm transition-transform" />
-            </div>
-          </header>
+    <SidebarProvider className="font-dm-sans flex min-h-svh w-full overflow-x-hidden bg-white">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+        .font-dm-sans {
+          font-family: 'DM Sans', sans-serif !important;
+        }
+      `}</style>
 
-          <main className="min-w-0 flex-1 px-3 py-4 sm:px-6 sm:py-5">
-            <Outlet />
-          </main>
-        </SidebarInset>
-      </div>
+      <AdminSidebar />
+
+      <SidebarInset className="min-w-0 flex-1 overflow-x-hidden bg-white">
+        {/* Mobile/tablet top bar — sidebar becomes a sheet below lg */}
+        <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#EAE6FA] bg-white px-4 py-3 lg:hidden">
+          <SidebarTrigger className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] border border-[#EAE6FA] bg-[#5B21B6] text-white shadow-sm hover:bg-[#4C1D95]" />
+          <span className="truncate text-base font-semibold text-[#2E00AB]">{title}</span>
+        </div>
+
+        <main className="h-full w-full min-w-0 overflow-y-auto p-4 sm:p-6 lg:px-8 lg:pt-6 lg:pb-8">
+          <Outlet />
+        </main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }
