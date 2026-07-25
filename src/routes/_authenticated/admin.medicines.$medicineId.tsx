@@ -75,6 +75,8 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
     notice_text: m.notice_text ?? "",
     sort_order: m.sort_order,
     requires_questionnaire: m.requires_questionnaire,
+    requires_consultation: m.requires_consultation,
+    requires_followup: m.requires_followup,
     category_ids: m.category_ids,
   };
 }

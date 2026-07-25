@@ -13,27 +13,9 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-type NavItem = { title: string; url: string; exact?: boolean };
+const items = [{ title: "Requests", url: "/provider", exact: true }];
 
-const items: NavItem[] = [
-  { title: "Dashboard", url: "/admin", exact: true },
-  { title: "Categories", url: "/admin/categories" },
-  { title: "Medications", url: "/admin/medicines" },
-  { title: "Medication Rules", url: "/admin/medication-rules" },
-  { title: "Questionnaires", url: "/admin/questionnaires" },
-  { title: "Requests", url: "/admin/requests" },
-  { title: "Orders", url: "/admin/orders" },
-  { title: "Billing", url: "/admin/billing" },
-  { title: "Referrals", url: "/admin/referrals" },
-  { title: "Promo Codes", url: "/admin/promos" },
-  { title: "Providers", url: "/admin/providers" },
-  { title: "Patients", url: "/admin/patients" },
-  { title: "Intake Sessions", url: "/admin/intake-sessions" },
-  { title: "Available Slots", url: "/admin/slots" },
-  { title: "Intake Form", url: "/admin/intake-form" },
-];
-
-export function AdminSidebar() {
+export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -57,9 +39,8 @@ export function AdminSidebar() {
     <Sidebar
       collapsible="icon"
       variant="floating"
-      className="font-['DM_Sans'] border-0 bg-transparent shadow-none [&_[data-sidebar=sidebar]]: [&_[data-sidebar=sidebar]]:border [&_[data-sidebar=sidebar]]:border-[#E2DCFA] [&_[data-sidebar=sidebar]]:bg-[#F5F3FF] [&_[data-sidebar=sidebar]]:shadow-sm"
+      className="font-['DM_Sans'] border-0 bg-transparent shadow-none [&_[data-sidebar=sidebar]]:border [&_[data-sidebar=sidebar]]:border-[#E2DCFA] [&_[data-sidebar=sidebar]]:bg-[#F5F3FF] [&_[data-sidebar=sidebar]]:shadow-sm"
     >
-      {/* Desktop collapse toggle — half over the card edge */}
       <div className="absolute -right-2.5 top-6 z-50 hidden md:block">
         <SidebarTrigger className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-[#5833BC] p-5 text-white shadow-md transition-all hover:bg-[#4C1D95]">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -78,7 +59,6 @@ export function AdminSidebar() {
           />
           <div className="mt-3 h-px w-full bg-[#E2DCFA]" />
         </div>
-
         <div className="hidden h-8 w-8 items-center justify-center rounded-md bg-[#2E00AB] text-sm font-black text-white group-data-[collapsible=icon]:flex">
           B
         </div>
@@ -119,22 +99,6 @@ export function AdminSidebar() {
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive("/admin/settings")}
-                  className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#2E00AB] transition-all ${
-                    isActive("/admin/settings")
-                      ? "bg-[#EAE6FA] !text-[#2E00AB]"
-                      : "bg-transparent hover:bg-[#EAE6FA]/50 !text-[#2E00AB]"
-                  }`}
-                >
-                  <Link to="/admin/settings">
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogout}

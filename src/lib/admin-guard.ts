@@ -16,3 +16,29 @@ export async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden");
   adminUntil.set(context.userId, Date.now() + ADMIN_CACHE_TTL_MS);
 }
+
+// Allows admin OR provider. Returns which one so callers can scope a provider to their own
+// assigned rows while letting admins act on anything.
+export async function assertReviewer(
+  context: { supabase: any; userId: string },
+): Promise<"admin" | "provider"> {
+  const cached = adminUntil.get(context.userId);
+  if (cached && cached > Date.now()) return "admin";
+
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (isAdmin) {
+    adminUntil.set(context.userId, Date.now() + ADMIN_CACHE_TTL_MS);
+    return "admin";
+  }
+
+  const { data: isProvider } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "provider",
+  });
+  if (isProvider) return "provider";
+
+  throw new Error("Forbidden");
+}

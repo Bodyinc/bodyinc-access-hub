@@ -22,3 +22,4 @@ CREATE POLICY "questionnaire_categories admin write"
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 DROP TABLE IF EXISTS public.questionnaire_medicines;
+;

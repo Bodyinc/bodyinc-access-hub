@@ -72,6 +72,8 @@ const EMPTY: MedicineFormValues = {
   notice_text: "",
   sort_order: 0,
   requires_questionnaire: false,
+  requires_consultation: false,
+  requires_followup: false,
   category_ids: [],
 };
 
@@ -312,6 +314,48 @@ export function MedicineForm({
                   className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
                 >
                   Requires questionnaire before checkout
+                </Label>
+              </div>
+
+              {/* Requires provider approval before the prescription is fulfilled. */}
+              <div className="flex min-w-0 items-center gap-3">
+                <Controller
+                  control={control}
+                  name="requires_consultation"
+                  render={({ field }) => (
+                    <Switch
+                      id="req-consult"
+                      checked={!!field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label
+                  htmlFor="req-consult"
+                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
+                >
+                  Requires provider consultation &amp; approval
+                </Label>
+              </div>
+
+              {/* When on, approval is required on every renewal cycle, not just the first. */}
+              <div className="flex min-w-0 items-center gap-3">
+                <Controller
+                  control={control}
+                  name="requires_followup"
+                  render={({ field }) => (
+                    <Switch
+                      id="req-followup"
+                      checked={!!field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label
+                  htmlFor="req-followup"
+                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
+                >
+                  Requires follow-up approval each cycle
                 </Label>
               </div>
             </div>

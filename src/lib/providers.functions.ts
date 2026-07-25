@@ -48,7 +48,31 @@ export const listProviders = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+
+    const { data: def } = await context.supabase
+      .from("providers")
+      .select("id")
+      .eq("is_default", true)
+      .maybeSingle();
+    const defaultId = (def as { id?: string } | null)?.id ?? null;
+    return (rows ?? []).map((r: any) => ({ ...r, is_default: r.id === defaultId }));
+  });
+
+// Admin: mark one provider as the default (used when no consultation is needed, or when no
+// provider covers the patient's state). Only one provider can be the default at a time.
+export const setDefaultProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("providers").update({ is_default: false }).eq("is_default", true);
+    const { error } = await supabaseAdmin
+      .from("providers")
+      .update({ is_default: true })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const getProvider = createServerFn({ method: "POST" })

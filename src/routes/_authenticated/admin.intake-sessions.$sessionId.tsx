@@ -85,6 +85,37 @@ function IntakeSessionDetailPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Shipping address</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 text-sm sm:grid-cols-3">
+          <Row label="Address" value={session.street_address || "—"} />
+          <Row label="Apartment" value={session.apartment || "—"} />
+          <Row label="City" value={session.city || "—"} />
+          <Row label="State" value={session.state_code || "—"} />
+          <Row label="ZIP code" value={session.postal_code || "—"} />
+          <Row
+            label="Billing address"
+            value={
+              session.billing_same_as_shipping === false
+                ? [
+                    session.billing_street_address,
+                    session.billing_apartment,
+                    session.billing_city,
+                    session.billing_state_code,
+                    session.billing_postal_code,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "—"
+                : "Same as shipping"
+            }
+          />
+          <Row label="SMS consent" value={session.sms_consent ? "Yes" : "No"} />
+          <Row label="Marketing consent" value={session.marketing_consent ? "Yes" : "No"} />
+        </CardContent>
+      </Card>
+
       {selected_plan && (
         <Card>
           <CardHeader>

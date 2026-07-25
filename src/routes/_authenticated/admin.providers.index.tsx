@@ -45,6 +45,7 @@ import {
   listProviders,
   resendInvite,
   setProviderActive,
+  setDefaultProvider,
 } from "@/lib/providers.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect, adminBtnPrimary } from "@/lib/admin-ui";
 
@@ -58,6 +59,7 @@ function ProvidersListPage() {
   const list = useServerFn(listProviders);
   const resend = useServerFn(resendInvite);
   const setActive = useServerFn(setProviderActive);
+  const setDefault = useServerFn(setDefaultProvider);
   const del = useServerFn(deleteProvider);
 
   const [search, setSearch] = useState("");
@@ -82,6 +84,15 @@ function ProvidersListPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["providers"] });
       toast.success("Updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const setDefaultMut = useMutation({
+    mutationFn: (id: string) => setDefault({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["providers"] });
+      toast.success("Default provider set");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -181,7 +192,16 @@ function ProvidersListPage() {
                   })
                 }
               >
-                <TableCell className="font-semibold text-[#2E00AB] text-[14px] py-4 px-6">{p.full_name}</TableCell>
+                <TableCell className="font-semibold text-[#2E00AB] text-[14px] py-4 px-6">
+                  <span className="inline-flex items-center gap-2">
+                    {p.full_name}
+                    {p.is_default ? (
+                      <Badge className="bg-[#2E00AB] text-white hover:bg-[#2E00AB] border border-transparent font-bold text-[11px] px-2 py-0.5 rounded-lg shadow-none">
+                        Default
+                      </Badge>
+                    ) : null}
+                  </span>
+                </TableCell>
                 <TableCell className="text-[#2E00AB]/70 font-medium text-[14px] py-4 px-6">{p.email}</TableCell>
                 <TableCell className="text-[#2E00AB] font-medium text-[14px] py-4 px-6">{p.specialty ?? "—"}</TableCell>
                 <TableCell className="text-[#2E00AB]/70 font-medium text-[14px] py-4 px-6">{p.credentials ?? "—"}</TableCell>
@@ -221,6 +241,14 @@ function ProvidersListPage() {
                       >
                         {p.is_active ? "Deactivate Account" : "Activate Account"}
                       </DropdownMenuItem>
+                      {!p.is_default ? (
+                        <DropdownMenuItem
+                          onClick={() => setDefaultMut.mutate(p.id)}
+                          className="rounded-lg font-semibold text-[13px] text-[#2A00A2] focus:bg-[#F5F3FF] focus:text-[#2A00A2] px-3 py-2 cursor-pointer"
+                        >
+                          Set as default provider
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuSeparator className="bg-[#F4F1FE]" />
                       <DropdownMenuItem
                         className="rounded-lg font-semibold text-[13px] text-[#FF4D6D] focus:bg-[#FFE8EC] focus:text-[#FF4D6D] px-3 py-2 cursor-pointer"

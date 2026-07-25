@@ -38,6 +38,8 @@ export type StoredMedicine = {
   sort_order: number;
   is_active: boolean;
   requires_questionnaire: boolean;
+  requires_consultation: boolean;
+  requires_followup: boolean;
   category_ids: string[];
   packages: StoredMedicinePackage[];
   variants: StoredMedicineVariant[];
@@ -114,6 +116,8 @@ function rowToStored(row: any): StoredMedicine {
     sort_order: row.sort_order,
     is_active: row.is_active,
     requires_questionnaire: !!row.requires_questionnaire,
+    requires_consultation: !!row.requires_consultation,
+    requires_followup: !!row.requires_followup,
     category_ids: cats,
     packages: pkgs,
     variants,
@@ -135,6 +139,8 @@ function fromForm(values: MedicineFormValues) {
     notice_text: values.notice_text ?? null,
     sort_order: values.sort_order ?? 0,
     requires_questionnaire: !!values.requires_questionnaire,
+    requires_consultation: !!values.requires_consultation,
+    requires_followup: !!values.requires_followup,
   };
 }
 
