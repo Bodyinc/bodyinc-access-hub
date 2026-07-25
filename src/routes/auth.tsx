@@ -84,7 +84,10 @@ function AuthPage() {
     }
     clearPasswordRecoveryPending();
     await router.invalidate();
-    navigate({ to: result.role === "admin" ? "/admin" : "/dashboard" });
+    navigate({
+      to:
+        result.role === "admin" ? "/admin" : result.role === "provider" ? "/provider" : "/dashboard",
+    });
   }
 
   async function onPasswordSubmit(e: FormEvent) {

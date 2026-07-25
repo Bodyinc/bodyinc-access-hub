@@ -14,6 +14,210 @@ export type Database = {
   }
   public: {
     Tables: {
+      medication_requests: {
+        Row: {
+          billing_period_end: string | null
+          created_at: string
+          decision_at: string | null
+          decision_by: string | null
+          decision_note: string | null
+          id: string
+          kind: string
+          medicine_id: string | null
+          package_id: string | null
+          payment_id: string | null
+          provider_id: string | null
+          requires_consultation: boolean
+          session_id: string | null
+          status: string
+          stripe_invoice_id: string | null
+          stripe_refund_id: string | null
+          subscription_id: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          billing_period_end?: string | null
+          created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_note?: string | null
+          id?: string
+          kind?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          payment_id?: string | null
+          provider_id?: string | null
+          requires_consultation?: boolean
+          session_id?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_refund_id?: string | null
+          subscription_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          billing_period_end?: string | null
+          created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_note?: string | null
+          id?: string
+          kind?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          payment_id?: string | null
+          provider_id?: string | null
+          requires_consultation?: boolean
+          session_id?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_refund_id?: string | null
+          subscription_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: []
+      }
+      medication_request_events: {
+        Row: {
+          actor_role: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          request_id: string
+          status: string
+        }
+        Insert: {
+          actor_role?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          request_id: string
+          status: string
+        }
+        Update: {
+          actor_role?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      additional_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          from_package_id: string | null
+          id: string
+          paid_at: string | null
+          reason: string | null
+          request_id: string
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          to_package_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          from_package_id?: string | null
+          id?: string
+          paid_at?: string | null
+          reason?: string | null
+          request_id: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          to_package_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          from_package_id?: string | null
+          id?: string
+          paid_at?: string | null
+          reason?: string | null
+          request_id?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          to_package_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      prescriptions: {
+        Row: {
+          created_at: string
+          directions: string | null
+          document_url: string | null
+          id: string
+          medicine_id: string | null
+          medicine_name: string
+          package_id: string | null
+          provider_id: string | null
+          request_id: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          directions?: string | null
+          document_url?: string | null
+          id?: string
+          medicine_id?: string | null
+          medicine_name: string
+          package_id?: string | null
+          provider_id?: string | null
+          request_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          directions?: string | null
+          document_url?: string | null
+          id?: string
+          medicine_id?: string | null
+          medicine_name?: string
+          package_id?: string | null
+          provider_id?: string | null
+          request_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: []
+      }
       admin_activity_log: {
         Row: {
           action: string
@@ -286,6 +490,18 @@ export type Database = {
           status: Database["public"]["Enums"]["intake_session_status"]
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          street_address: string | null
+          apartment: string | null
+          city: string | null
+          postal_code: string | null
+          billing_same_as_shipping: boolean
+          billing_street_address: string | null
+          billing_apartment: string | null
+          billing_city: string | null
+          billing_state_code: string | null
+          billing_postal_code: string | null
+          sms_consent: boolean
+          marketing_consent: boolean
           updated_at: string
           weight_kg: number | null
         }
@@ -306,6 +522,18 @@ export type Database = {
           status?: Database["public"]["Enums"]["intake_session_status"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          street_address?: string | null
+          apartment?: string | null
+          city?: string | null
+          postal_code?: string | null
+          billing_same_as_shipping?: boolean
+          billing_street_address?: string | null
+          billing_apartment?: string | null
+          billing_city?: string | null
+          billing_state_code?: string | null
+          billing_postal_code?: string | null
+          sms_consent?: boolean
+          marketing_consent?: boolean
           updated_at?: string
           weight_kg?: number | null
         }
@@ -326,6 +554,18 @@ export type Database = {
           status?: Database["public"]["Enums"]["intake_session_status"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          street_address?: string | null
+          apartment?: string | null
+          city?: string | null
+          postal_code?: string | null
+          billing_same_as_shipping?: boolean
+          billing_street_address?: string | null
+          billing_apartment?: string | null
+          billing_city?: string | null
+          billing_state_code?: string | null
+          billing_postal_code?: string | null
+          sms_consent?: boolean
+          marketing_consent?: boolean
           updated_at?: string
           weight_kg?: number | null
         }
@@ -548,6 +788,8 @@ export type Database = {
           long_description: string | null
           name: string
           notice_text: string | null
+          requires_consultation: boolean
+          requires_followup: boolean
           requires_questionnaire: boolean
           short_description: string
           sort_order: number
@@ -565,6 +807,8 @@ export type Database = {
           long_description?: string | null
           name: string
           notice_text?: string | null
+          requires_consultation?: boolean
+          requires_followup?: boolean
           requires_questionnaire?: boolean
           short_description: string
           sort_order?: number
@@ -582,6 +826,8 @@ export type Database = {
           long_description?: string | null
           name?: string
           notice_text?: string | null
+          requires_consultation?: boolean
+          requires_followup?: boolean
           requires_questionnaire?: boolean
           short_description?: string
           sort_order?: number
@@ -756,6 +1002,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          apartment: string | null
           avatar_url: string | null
           city: string | null
           country: string | null
@@ -764,16 +1011,19 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          marketing_consent: boolean
           phone: string | null
           postal_code: string | null
           referral_code: string | null
           sex: Database["public"]["Enums"]["sex_type"] | null
+          sms_consent: boolean
           state_code: string | null
           street_address: string | null
           stripe_customer_id: string | null
           updated_at: string
         }
         Insert: {
+          apartment?: string | null
           avatar_url?: string | null
           city?: string | null
           country?: string | null
@@ -782,16 +1032,19 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          marketing_consent?: boolean
           phone?: string | null
           postal_code?: string | null
           referral_code?: string | null
           sex?: Database["public"]["Enums"]["sex_type"] | null
+          sms_consent?: boolean
           state_code?: string | null
           street_address?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
         }
         Update: {
+          apartment?: string | null
           avatar_url?: string | null
           city?: string | null
           country?: string | null
@@ -800,10 +1053,12 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          marketing_consent?: boolean
           phone?: string | null
           postal_code?: string | null
           referral_code?: string | null
           sex?: Database["public"]["Enums"]["sex_type"] | null
+          sms_consent?: boolean
           state_code?: string | null
           street_address?: string | null
           stripe_customer_id?: string | null
@@ -884,6 +1139,7 @@ export type Database = {
           dea: string | null
           id: string
           is_active: boolean
+          is_default: boolean
           languages: string[]
           license_number: string | null
           license_states: string[]
@@ -907,6 +1163,7 @@ export type Database = {
           dea?: string | null
           id: string
           is_active?: boolean
+          is_default?: boolean
           languages?: string[]
           license_number?: string | null
           license_states?: string[]
@@ -930,6 +1187,7 @@ export type Database = {
           dea?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean
           languages?: string[]
           license_number?: string | null
           license_states?: string[]

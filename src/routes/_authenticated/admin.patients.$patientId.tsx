@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   getPatient,
+  getPatientClinical,
   getPatientRelated,
   sendPatientPasswordReset,
   setPatientActive,
@@ -40,12 +41,14 @@ import {
 import {
   adminLabel,
   adminInput,
+  adminSelect,
   adminSectionTitle,
   adminSectionSubtitle,
   adminCard,
   adminBtnPrimary,
   adminBtnSecondary,
 } from "@/lib/admin-ui";
+import { US_STATES } from "@/lib/us-states";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   component: PatientDetailPage,
@@ -68,6 +71,7 @@ function PatientDetailPage() {
   const qc = useQueryClient();
   const get = useServerFn(getPatient);
   const getRelated = useServerFn(getPatientRelated);
+  const getClinical = useServerFn(getPatientClinical);
   const update = useServerFn(updatePatientProfile);
   const setActive = useServerFn(setPatientActive);
   const reset = useServerFn(sendPatientPasswordReset);
@@ -83,14 +87,32 @@ function PatientDetailPage() {
     enabled: !!patient.data,
   });
 
+  const clinical = useQuery({
+    queryKey: ["patients", patientId, "clinical"],
+    queryFn: () => getClinical({ data: { userId: patientId } }),
+    enabled: !!patient.data,
+  });
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["patients", patientId] });
     qc.invalidateQueries({ queryKey: ["patients"] });
   };
 
   const updateMut = useMutation({
-    mutationFn: (vars: { full_name: string; phone: string | null; dob: string | null }) =>
-      update({ data: { userId: patientId, ...vars } }),
+    mutationFn: (
+      vars: Partial<{
+        full_name: string;
+        phone: string | null;
+        dob: string | null;
+        sex: "male" | "female" | "other" | null;
+        street_address: string | null;
+        apartment: string | null;
+        city: string | null;
+        state_code: string | null;
+        postal_code: string | null;
+        country: string | null;
+      }>,
+    ) => update({ data: { userId: patientId, ...vars } }),
     onSuccess: () => {
       invalidate();
       toast.success("Profile updated");
@@ -218,12 +240,14 @@ function PatientDetailPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="profile" className="mt-0">
+        <TabsContent value="profile" className="mt-0 space-y-4">
+          <ClinicalSummaryCard data={clinical.data} loading={clinical.isLoading} />
           <ProfileTab
             defaultValues={{
               full_name: d.full_name ?? "",
               phone: d.phone ?? "",
               dob: d.dob ?? "",
+              sex: d.sex ?? "",
             }}
             submitting={updateMut.isPending}
             onSubmit={(vals) =>
@@ -231,8 +255,23 @@ function PatientDetailPage() {
                 full_name: vals.full_name,
                 phone: vals.phone || null,
                 dob: vals.dob || null,
+                sex: vals.sex || null,
               })
             }
+          />
+          <AddressCard
+            defaultValues={{
+              street_address: d.street_address ?? "",
+              apartment: d.apartment ?? "",
+              city: d.city ?? "",
+              state_code: d.state_code ?? "",
+              postal_code: d.postal_code ?? "",
+              country: d.country ?? "",
+            }}
+            smsConsent={!!d.sms_consent}
+            marketingConsent={!!d.marketing_consent}
+            submitting={updateMut.isPending}
+            onSubmit={(vals) => updateMut.mutate(vals)}
           />
         </TabsContent>
 
@@ -486,19 +525,26 @@ function ProfileTab({
   submitting,
   onSubmit,
 }: {
-  defaultValues: { full_name: string; phone: string; dob: string };
+  defaultValues: { full_name: string; phone: string; dob: string; sex: string };
   submitting: boolean;
-  onSubmit: (v: { full_name: string; phone: string; dob: string }) => void;
+  onSubmit: (v: {
+    full_name: string;
+    phone: string;
+    dob: string;
+    sex: "male" | "female" | "other" | null;
+  }) => void;
 }) {
   const [full_name, setFullName] = useState(defaultValues.full_name);
   const [phone, setPhone] = useState(defaultValues.phone);
   const [dob, setDob] = useState(defaultValues.dob);
+  const [sex, setSex] = useState(defaultValues.sex);
 
   useEffect(() => {
     setFullName(defaultValues.full_name);
     setPhone(defaultValues.phone);
     setDob(defaultValues.dob);
-  }, [defaultValues.full_name, defaultValues.phone, defaultValues.dob]);
+    setSex(defaultValues.sex);
+  }, [defaultValues.full_name, defaultValues.phone, defaultValues.dob, defaultValues.sex]);
 
   return (
     <Card className={adminCard}>
@@ -517,7 +563,12 @@ function ProfileTab({
               toast.error("Name is required");
               return;
             }
-            onSubmit({ full_name: full_name.trim(), phone: phone.trim(), dob });
+            onSubmit({
+              full_name: full_name.trim(),
+              phone: phone.trim(),
+              dob,
+              sex: (sex || null) as "male" | "female" | "other" | null,
+            });
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -556,10 +607,273 @@ function ProfileTab({
                 className={adminInput}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="sex" className={adminLabel}>
+                Sex
+              </Label>
+              <select
+                id="sex"
+                value={sex}
+                onChange={(e) => setSex(e.target.value)}
+                className={adminSelect}
+              >
+                <option value="">Not specified</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
           </div>
           <div className="flex justify-end">
             <Button type="submit" disabled={submitting} className={adminBtnPrimary}>
               {submitting ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <div className="text-[12px] font-medium text-[#2E00AB]/60">{label}</div>
+      <div className="text-[14px] font-semibold text-[#2E00AB]">{value}</div>
+    </div>
+  );
+}
+
+function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean }) {
+  const planLabel = data?.plan
+    ? [
+        data.plan.name,
+        data.plan.price != null
+          ? `$${Number(data.plan.price).toFixed(2)}/${
+              data.plan.duration_months === 1 ? "mo" : `${data.plan.duration_months} mo`
+            }`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "—";
+
+  const eligibilityBadge = data?.eligibility ? (
+    <Badge
+      className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
+        data.eligibility === "eligible"
+          ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+          : "bg-[#FDE7EC] text-[#FF4D6D] hover:bg-[#FDE7EC]"
+      }`}
+    >
+      {data.eligibility}
+    </Badge>
+  ) : (
+    "—"
+  );
+
+  return (
+    <Card className={adminCard}>
+      <CardHeader className="space-y-1.5 p-4 sm:p-6">
+        <CardTitle className={adminSectionTitle}>Clinical summary</CardTitle>
+        <CardDescription className={adminSectionSubtitle}>
+          From the patient&apos;s onboarding intake and current subscription.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+        {loading ? (
+          <div className="text-[14px] font-medium text-[#2E00AB]/60">Loading…</div>
+        ) : !data?.has_data ? (
+          <div className="text-[14px] font-medium text-[#2E00AB]/60">
+            No clinical data on file.
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Metric label="BMI" value={data.bmi != null ? String(data.bmi) : "—"} />
+            <Metric label="Goal" value={data.goal || "—"} />
+            <Metric label="Eligibility" value={eligibilityBadge} />
+            <Metric label="Current medicine" value={data.medicine_name || "—"} />
+            <Metric label="Current plan" value={planLabel} />
+            <Metric
+              label="Subscription"
+              value={<span className="capitalize">{data.subscription_status || "—"}</span>}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AddressCard({
+  defaultValues,
+  smsConsent,
+  marketingConsent,
+  submitting,
+  onSubmit,
+}: {
+  defaultValues: {
+    street_address: string;
+    apartment: string;
+    city: string;
+    state_code: string;
+    postal_code: string;
+    country: string;
+  };
+  smsConsent: boolean;
+  marketingConsent: boolean;
+  submitting: boolean;
+  onSubmit: (v: {
+    street_address: string | null;
+    apartment: string | null;
+    city: string | null;
+    state_code: string | null;
+    postal_code: string | null;
+    country: string | null;
+  }) => void;
+}) {
+  const [form, setForm] = useState(defaultValues);
+
+  useEffect(() => {
+    setForm({
+      street_address: defaultValues.street_address,
+      apartment: defaultValues.apartment,
+      city: defaultValues.city,
+      state_code: defaultValues.state_code,
+      postal_code: defaultValues.postal_code,
+      country: defaultValues.country,
+    });
+  }, [
+    defaultValues.street_address,
+    defaultValues.apartment,
+    defaultValues.city,
+    defaultValues.state_code,
+    defaultValues.postal_code,
+    defaultValues.country,
+  ]);
+
+  const set = (key: keyof typeof form, value: string) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const consentBadge = (label: string, on: boolean) => (
+    <Badge
+      className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
+        on
+          ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+          : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+      }`}
+    >
+      {label}: {on ? "Yes" : "No"}
+    </Badge>
+  );
+
+  return (
+    <Card className={adminCard}>
+      <CardHeader className="space-y-1.5 p-4 sm:p-6">
+        <CardTitle className={adminSectionTitle}>Shipping address</CardTitle>
+        <CardDescription className={adminSectionSubtitle}>
+          Delivery address captured during onboarding. Edits update the patient&apos;s profile.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit({
+              street_address: form.street_address.trim() || null,
+              apartment: form.apartment.trim() || null,
+              city: form.city.trim() || null,
+              state_code: form.state_code || null,
+              postal_code: form.postal_code.trim() || null,
+              country: form.country.trim() || null,
+            });
+          }}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="street_address" className={adminLabel}>
+                Street address
+              </Label>
+              <Input
+                id="street_address"
+                value={form.street_address}
+                onChange={(e) => set("street_address", e.target.value)}
+                className={adminInput}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="apartment" className={adminLabel}>
+                Apartment
+              </Label>
+              <Input
+                id="apartment"
+                value={form.apartment}
+                onChange={(e) => set("apartment", e.target.value)}
+                className={adminInput}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city" className={adminLabel}>
+                City
+              </Label>
+              <Input
+                id="city"
+                value={form.city}
+                onChange={(e) => set("city", e.target.value)}
+                className={adminInput}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="state_code" className={adminLabel}>
+                State
+              </Label>
+              <select
+                id="state_code"
+                value={form.state_code}
+                onChange={(e) => set("state_code", e.target.value)}
+                className={adminSelect}
+              >
+                <option value="">Not specified</option>
+                {US_STATES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="postal_code" className={adminLabel}>
+                ZIP code
+              </Label>
+              <Input
+                id="postal_code"
+                value={form.postal_code}
+                onChange={(e) => set("postal_code", e.target.value)}
+                className={adminInput}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="country" className={adminLabel}>
+                Country
+              </Label>
+              <Input
+                id="country"
+                value={form.country}
+                onChange={(e) => set("country", e.target.value)}
+                className={adminInput}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {consentBadge("SMS consent", smsConsent)}
+            {consentBadge("Marketing", marketingConsent)}
+          </div>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={submitting} className={adminBtnPrimary}>
+              {submitting ? "Saving…" : "Save address"}
             </Button>
           </div>
         </form>

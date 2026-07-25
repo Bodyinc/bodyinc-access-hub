@@ -95,7 +95,9 @@ export const getPatient = createServerFn({ method: "POST" })
 
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, email, phone, dob, avatar_url, created_at, updated_at")
+      .select(
+        "id, full_name, email, phone, dob, sex, avatar_url, street_address, apartment, city, state_code, postal_code, country, sms_consent, marketing_consent, created_at, updated_at",
+      )
       .eq("id", data.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -124,6 +126,13 @@ const profileUpdate = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
     .nullable()
     .optional(),
+  sex: z.enum(["male", "female", "other"]).nullable().optional(),
+  street_address: z.string().trim().max(255).nullable().optional(),
+  apartment: z.string().trim().max(60).nullable().optional(),
+  city: z.string().trim().max(120).nullable().optional(),
+  state_code: z.string().trim().max(2).nullable().optional(),
+  postal_code: z.string().trim().max(20).nullable().optional(),
+  country: z.string().trim().max(120).nullable().optional(),
 });
 
 export const updatePatientProfile = createServerFn({ method: "POST" })
@@ -136,6 +145,13 @@ export const updatePatientProfile = createServerFn({ method: "POST" })
     if (rest.full_name !== undefined) patch.full_name = rest.full_name;
     if (rest.phone !== undefined) patch.phone = rest.phone || null;
     if (rest.dob !== undefined) patch.dob = rest.dob || null;
+    if (rest.sex !== undefined) patch.sex = rest.sex;
+    if (rest.street_address !== undefined) patch.street_address = rest.street_address || null;
+    if (rest.apartment !== undefined) patch.apartment = rest.apartment || null;
+    if (rest.city !== undefined) patch.city = rest.city || null;
+    if (rest.state_code !== undefined) patch.state_code = rest.state_code ? rest.state_code.toUpperCase() : null;
+    if (rest.postal_code !== undefined) patch.postal_code = rest.postal_code || null;
+    if (rest.country !== undefined) patch.country = rest.country || null;
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await context.supabase
       .from("profiles")
@@ -337,5 +353,125 @@ export const getPatientRelated = createServerFn({ method: "POST" })
       orders,
       sessions: sessions ?? [],
       payments: payments ?? [],
+    };
+  });
+
+export const getPatientClinical = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => idInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const email = (profile as any)?.email ?? null;
+
+    const sessionCols =
+      "id, height_cm, weight_kg, state_code, selected_plan_id, status, created_at";
+    // The session this user claimed is the definitive one; otherwise the latest matching email.
+    let session: any = (
+      await supabaseAdmin
+        .from("intake_sessions")
+        .select(sessionCols)
+        .eq("claimed_by_user_id", data.userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).data;
+    if (!session && email) {
+      session = (
+        await supabaseAdmin
+          .from("intake_sessions")
+          .select(sessionCols)
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ).data;
+    }
+
+    const h = Number(session?.height_cm ?? 0);
+    const w = Number(session?.weight_kg ?? 0);
+    const bmi = h && w ? Number((w / ((h / 100) * (h / 100))).toFixed(1)) : null;
+
+    let goal: string | null = null;
+    let eligibility: string | null = null;
+    if (session) {
+      const [{ data: catLink }, { data: elig }] = await Promise.all([
+        supabaseAdmin
+          .from("intake_session_categories")
+          .select("medication_categories(name)")
+          .eq("session_id", session.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("intake_session_eligibility_results")
+          .select("result")
+          .eq("session_id", session.id)
+          .order("evaluated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      goal = (catLink as any)?.medication_categories?.name ?? null;
+      eligibility = (elig as any)?.result ?? null;
+    }
+
+    // Current medicine/plan: prefer the live subscription (reflects any admin medicine change),
+    // fall back to the intake session's selected plan.
+    const { data: sub } = await supabaseAdmin
+      .from("subscriptions")
+      .select("medicine_id, package_id, status")
+      .eq("user_id", data.userId)
+      .not("status", "in", "(incomplete,incomplete_expired)")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let medicineId = (sub as any)?.medicine_id ?? null;
+    const packageId = (sub as any)?.package_id ?? session?.selected_plan_id ?? null;
+    const subscriptionStatus = (sub as any)?.status ?? null;
+
+    let plan: { name: string | null; duration_months: number | null; price: number | null } | null =
+      null;
+    if (packageId) {
+      const { data: pkg } = await supabaseAdmin
+        .from("packages")
+        .select("name, duration_months, price, medicine_id")
+        .eq("id", packageId)
+        .maybeSingle();
+      if (pkg) {
+        plan = {
+          name: pkg.name,
+          duration_months: pkg.duration_months,
+          price: Number(pkg.price),
+        };
+        if (!medicineId) medicineId = (pkg as any).medicine_id;
+      }
+    }
+
+    let medicineName: string | null = null;
+    if (medicineId) {
+      const { data: med } = await supabaseAdmin
+        .from("medicines")
+        .select("name")
+        .eq("id", medicineId)
+        .maybeSingle();
+      medicineName = (med as any)?.name ?? null;
+    }
+
+    return {
+      has_data: Boolean(session || sub),
+      bmi,
+      goal,
+      eligibility,
+      state_code: session?.state_code ?? null,
+      medicine_name: medicineName,
+      plan,
+      subscription_status: subscriptionStatus,
     };
   });
