@@ -14,108 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      medication_requests: {
-        Row: {
-          billing_period_end: string | null
-          created_at: string
-          decision_at: string | null
-          decision_by: string | null
-          decision_note: string | null
-          id: string
-          kind: string
-          medicine_id: string | null
-          package_id: string | null
-          payment_id: string | null
-          provider_id: string | null
-          requires_consultation: boolean
-          session_id: string | null
-          status: string
-          stripe_invoice_id: string | null
-          stripe_refund_id: string | null
-          subscription_id: string | null
-          tracking_number: string | null
-          updated_at: string
-          user_id: string | null
-          variant_id: string | null
-        }
-        Insert: {
-          billing_period_end?: string | null
-          created_at?: string
-          decision_at?: string | null
-          decision_by?: string | null
-          decision_note?: string | null
-          id?: string
-          kind?: string
-          medicine_id?: string | null
-          package_id?: string | null
-          payment_id?: string | null
-          provider_id?: string | null
-          requires_consultation?: boolean
-          session_id?: string | null
-          status?: string
-          stripe_invoice_id?: string | null
-          stripe_refund_id?: string | null
-          subscription_id?: string | null
-          tracking_number?: string | null
-          updated_at?: string
-          user_id?: string | null
-          variant_id?: string | null
-        }
-        Update: {
-          billing_period_end?: string | null
-          created_at?: string
-          decision_at?: string | null
-          decision_by?: string | null
-          decision_note?: string | null
-          id?: string
-          kind?: string
-          medicine_id?: string | null
-          package_id?: string | null
-          payment_id?: string | null
-          provider_id?: string | null
-          requires_consultation?: boolean
-          session_id?: string | null
-          status?: string
-          stripe_invoice_id?: string | null
-          stripe_refund_id?: string | null
-          subscription_id?: string | null
-          tracking_number?: string | null
-          updated_at?: string
-          user_id?: string | null
-          variant_id?: string | null
-        }
-        Relationships: []
-      }
-      medication_request_events: {
-        Row: {
-          actor_role: string
-          created_at: string
-          created_by: string | null
-          id: string
-          note: string | null
-          request_id: string
-          status: string
-        }
-        Insert: {
-          actor_role?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          note?: string | null
-          request_id: string
-          status: string
-        }
-        Update: {
-          actor_role?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          note?: string | null
-          request_id?: string
-          status?: string
-        }
-        Relationships: []
-      }
       additional_payments: {
         Row: {
           amount_cents: number
@@ -168,55 +66,36 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
-      }
-      prescriptions: {
-        Row: {
-          created_at: string
-          directions: string | null
-          document_url: string | null
-          id: string
-          medicine_id: string | null
-          medicine_name: string
-          package_id: string | null
-          provider_id: string | null
-          request_id: string
-          status: string
-          updated_at: string
-          user_id: string | null
-          variant_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          directions?: string | null
-          document_url?: string | null
-          id?: string
-          medicine_id?: string | null
-          medicine_name: string
-          package_id?: string | null
-          provider_id?: string | null
-          request_id: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
-          variant_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          directions?: string | null
-          document_url?: string | null
-          id?: string
-          medicine_id?: string | null
-          medicine_name?: string
-          package_id?: string | null
-          provider_id?: string | null
-          request_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
-          variant_id?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "additional_payments_from_package_id_fkey"
+            columns: ["from_package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "additional_payments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "medication_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "additional_payments_to_package_id_fkey"
+            columns: ["to_package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "additional_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_activity_log: {
         Row: {
@@ -474,6 +353,14 @@ export type Database = {
       }
       intake_sessions: {
         Row: {
+          apartment: string | null
+          billing_apartment: string | null
+          billing_city: string | null
+          billing_postal_code: string | null
+          billing_same_as_shipping: boolean
+          billing_state_code: string | null
+          billing_street_address: string | null
+          city: string | null
           claimed_by_user_id: string | null
           created_at: string
           dob: string | null
@@ -482,30 +369,30 @@ export type Database = {
           full_name: string | null
           height_cm: number | null
           id: string
+          marketing_consent: boolean
           phone: string | null
+          postal_code: string | null
           selected_plan_id: string | null
           session_token: string
           sex: Database["public"]["Enums"]["sex_type"] | null
+          sms_consent: boolean
           state_code: string | null
           status: Database["public"]["Enums"]["intake_session_status"]
+          street_address: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
-          street_address: string | null
-          apartment: string | null
-          city: string | null
-          postal_code: string | null
-          billing_same_as_shipping: boolean
-          billing_street_address: string | null
-          billing_apartment: string | null
-          billing_city: string | null
-          billing_state_code: string | null
-          billing_postal_code: string | null
-          sms_consent: boolean
-          marketing_consent: boolean
           updated_at: string
           weight_kg: number | null
         }
         Insert: {
+          apartment?: string | null
+          billing_apartment?: string | null
+          billing_city?: string | null
+          billing_postal_code?: string | null
+          billing_same_as_shipping?: boolean
+          billing_state_code?: string | null
+          billing_street_address?: string | null
+          city?: string | null
           claimed_by_user_id?: string | null
           created_at?: string
           dob?: string | null
@@ -514,30 +401,30 @@ export type Database = {
           full_name?: string | null
           height_cm?: number | null
           id?: string
+          marketing_consent?: boolean
           phone?: string | null
+          postal_code?: string | null
           selected_plan_id?: string | null
           session_token: string
           sex?: Database["public"]["Enums"]["sex_type"] | null
+          sms_consent?: boolean
           state_code?: string | null
           status?: Database["public"]["Enums"]["intake_session_status"]
+          street_address?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          street_address?: string | null
-          apartment?: string | null
-          city?: string | null
-          postal_code?: string | null
-          billing_same_as_shipping?: boolean
-          billing_street_address?: string | null
-          billing_apartment?: string | null
-          billing_city?: string | null
-          billing_state_code?: string | null
-          billing_postal_code?: string | null
-          sms_consent?: boolean
-          marketing_consent?: boolean
           updated_at?: string
           weight_kg?: number | null
         }
         Update: {
+          apartment?: string | null
+          billing_apartment?: string | null
+          billing_city?: string | null
+          billing_postal_code?: string | null
+          billing_same_as_shipping?: boolean
+          billing_state_code?: string | null
+          billing_street_address?: string | null
+          city?: string | null
           claimed_by_user_id?: string | null
           created_at?: string
           dob?: string | null
@@ -546,26 +433,18 @@ export type Database = {
           full_name?: string | null
           height_cm?: number | null
           id?: string
+          marketing_consent?: boolean
           phone?: string | null
+          postal_code?: string | null
           selected_plan_id?: string | null
           session_token?: string
           sex?: Database["public"]["Enums"]["sex_type"] | null
+          sms_consent?: boolean
           state_code?: string | null
           status?: Database["public"]["Enums"]["intake_session_status"]
+          street_address?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          street_address?: string | null
-          apartment?: string | null
-          city?: string | null
-          postal_code?: string | null
-          billing_same_as_shipping?: boolean
-          billing_street_address?: string | null
-          billing_apartment?: string | null
-          billing_city?: string | null
-          billing_state_code?: string | null
-          billing_postal_code?: string | null
-          sms_consent?: boolean
-          marketing_consent?: boolean
           updated_at?: string
           weight_kg?: number | null
         }
@@ -722,6 +601,187 @@ export type Database = {
             columns: ["medicine_b_id"]
             isOneToOne: false
             referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_request_events: {
+        Row: {
+          actor_role: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          request_id: string
+          status: string
+        }
+        Insert: {
+          actor_role?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          request_id: string
+          status: string
+        }
+        Update: {
+          actor_role?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "medication_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_requests: {
+        Row: {
+          billing_period_end: string | null
+          created_at: string
+          decision_at: string | null
+          decision_by: string | null
+          decision_note: string | null
+          id: string
+          kind: string
+          medicine_id: string | null
+          package_id: string | null
+          payment_id: string | null
+          provider_id: string | null
+          requires_consultation: boolean
+          session_id: string | null
+          status: string
+          stripe_invoice_id: string | null
+          stripe_refund_id: string | null
+          subscription_id: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          billing_period_end?: string | null
+          created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_note?: string | null
+          id?: string
+          kind?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          payment_id?: string | null
+          provider_id?: string | null
+          requires_consultation?: boolean
+          session_id?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_refund_id?: string | null
+          subscription_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          billing_period_end?: string | null
+          created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_note?: string | null
+          id?: string
+          kind?: string
+          medicine_id?: string | null
+          package_id?: string | null
+          payment_id?: string | null
+          provider_id?: string | null
+          requires_consultation?: boolean
+          session_id?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_refund_id?: string | null
+          subscription_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_requests_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_requests_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "medicine_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -999,6 +1059,111 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      prescriptions: {
+        Row: {
+          created_at: string
+          directions: string | null
+          document_url: string | null
+          id: string
+          medicine_id: string | null
+          medicine_name: string
+          package_id: string | null
+          provider_id: string | null
+          request_id: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          directions?: string | null
+          document_url?: string | null
+          id?: string
+          medicine_id?: string | null
+          medicine_name: string
+          package_id?: string | null
+          provider_id?: string | null
+          request_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          directions?: string | null
+          document_url?: string | null
+          id?: string
+          medicine_id?: string | null
+          medicine_name?: string
+          package_id?: string | null
+          provider_id?: string | null
+          request_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "public_medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "medication_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "medicine_variants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
