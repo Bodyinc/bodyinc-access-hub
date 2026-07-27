@@ -1,51 +1,31 @@
 ## Goal
 
-Replace the three cascading dropdowns in the Change Medicine dialog with a scalable, side-by-side layout that shows the current plan, lets an admin quickly find a new medicine + plan (even with 250+ medicines), and previews the price difference before confirming.
+Add a "Danger zone" tab in Admin → Settings with a checklist of data groups to wipe, plus a confirm dialog before anything is deleted.
 
-## New Modal Layout
+## Checklist options (only viable groups)
 
-Wider dialog (`max-w-3xl`), two columns on md+, stacked on mobile.
+1. **Orders & requests** — medication requests + their events, prescriptions, shop checkout orders/items/events
+2. **Billing & payments** — payments, subscriptions, additional payments, refund requests, cancellation feedback, stripe events, wallet transactions
+3. **Intake sessions** — intake sessions and all their answers/eligibility/selection rows
+4. **Catalog (medicines)** — medicines, variants, packages, category↔medicine links
+5. **Categories / goals** — medication categories, questionnaire↔category links, medicine links
+6. **Questionnaires** — questionnaires, questions, options
+7. **Medication rules** — compatibility/restriction pairs
 
-```text
-┌─────────────────────── Change medicine ────────────────────────┐
-│  CURRENT PLAN                    │  NEW PLAN                    │
-│  ┌────────────────────────────┐  │  [Search medicines…]         │
-│  │ Semaglutide — 50mg         │  │  ┌────────────────────────┐  │
-│  │ Monthly plan               │  │  │ ○ Tirzepatide          │  │
-│  │ $199.00 / mo               │  │  │ ○ Metformin            │  │
-│  │ Renews Aug 21, 2026        │  │  │ ● Finasteride ✓        │  │
-│  └────────────────────────────┘  │  │ ○ Minoxidil            │  │
-│                                  │  │ … virtualized / scroll │  │
-│                                  │  └────────────────────────┘  │
-│                                  │  Variant: [50mg ▾]           │
-│                                  │  Plan:    [Monthly $210 ▾]   │
-│                                  │                              │
-│  DIFFERENCE                                                     │
-│  New price:      $210.00 / mo                                   │
-│  Current price:  $199.00 / mo                                   │
-│  Change:         +$11.00 / mo   (applies from next cycle)       │
-├──────────────────────────────────────────────────────────────── │
-│                              [Cancel]  [Confirm change]         │
-└─────────────────────────────────────────────────────────────────┘
-```
+Not offered (unsafe / would break the app): patient accounts & profiles, user roles, platform settings. I'll note this in the UI.
 
-### Behavior
+Deletion respects dependencies: selecting a "parent" group (e.g. Catalog) automatically clears dependent rows that reference it (orders/requests pointing at medicines) so no foreign-key errors — the dialog lists what will be cascaded.
 
-- Left column reads current medicine / variant / plan / price / next renewal directly from the already-fetched `getOrder` data — no extra request.
-- Right column:
-  - Text input filters the medicine list by name (case-insensitive substring). Active medicines only. Excludes the current medicine.
-  - Medicine list is a scrollable panel (`max-h-72 overflow-y-auto`) with radio-style rows so it works for 10 or 250 items. Each row shows name + "from $X/mo".
-  - Once a medicine is picked, Variant selector appears only if it has variants; Plan selector always appears with the same `planLabel` formatting used today.
-  - Selecting a medicine auto-selects the only variant/package when there's just one.
-- Difference block computes `new.price - current.price`. Handles differing `duration_months` by normalizing to per-month ($/mo) so the comparison is meaningful, and shows the raw plan price alongside. Copy notes the change applies from the next billing cycle (no charge now) — same guarantee as today's backend.
-- Confirm button disabled until a package is selected and it differs from the current one. Calls the existing `changeSubscriptionMedicine` server fn — no backend changes.
+## UI
 
-## Files
+- New "Danger zone" tab in `admin.settings.index.tsx`, styled with red accents.
+- Card with checkbox list (label + one-line "what this removes"), "Select all" toggle.
+- Delete button disabled until at least one box is checked; opens AlertDialog requiring the word `DELETE` typed to confirm.
+- On success: toast with per-group deleted counts, invalidate all admin queries.
 
-- `src/components/admin/change-medicine-dialog.tsx` — rewrite: accept `currentPackage`, `currentMedicineName`, `currentVariantName`, `currentPeriodEnd` props; new two-column layout; searchable list; difference summary.
-- `src/routes/_authenticated/admin.orders.$orderId.tsx` — pass the current-plan context (already in `q.data`) into `<ChangeMedicineDialog />`.
+## Technical
 
-## Out of Scope
-
-- Backend/Stripe logic (`changeSubscriptionMedicine`) unchanged.
-- No prorated-charge preview from Stripe's upcoming-invoice API — we intentionally don't charge at the switch, so a plain per-month diff matches the actual behavior.
+- New `src/lib/danger-zone.functions.ts`: `wipePlatformData` server fn, `requireSupabaseAuth` + `assertAdmin`, Zod-validated array of group keys, uses `supabaseAdmin` loaded inside the handler.
+- Deletes run in a fixed dependency order (children before parents), returning `{ group: count }`.
+- Writes one `admin_activity_log` entry (`action: "danger.wipe"`) recording which groups were wiped.
+- Stripe objects are NOT touched — this only clears the app database. Called out in the dialog text.
