@@ -23,6 +23,7 @@ import {
 import { getSettings, updateSettings, type PlatformSettings } from "@/lib/settings.functions";
 import { syncShippingBatch } from "@/lib/shipping-reprice.functions";
 import { ActivityLogTab } from "@/components/admin/activity-log-tab";
+import { DangerZoneTab } from "@/components/admin/danger-zone-tab";
 import {
   adminPageTitle,
   adminPageSubtitle,
@@ -324,6 +325,9 @@ function SettingsPage() {
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="audit">Audit logs</TabsTrigger>
+          <TabsTrigger value="danger" className="data-[state=active]:text-destructive">
+            Danger zone
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="fees" className="mt-4">
@@ -403,9 +407,13 @@ function SettingsPage() {
         <TabsContent value="audit" className="mt-4">
           <ActivityLogTab />
         </TabsContent>
+
+        <TabsContent value="danger" className="mt-4">
+          <DangerZoneTab />
+        </TabsContent>
       </Tabs>
 
-      {form && tab !== "audit" ? (
+      {form && tab !== "audit" && tab !== "danger" ? (
         <div className="flex justify-end">
           <Button
             onClick={save}
