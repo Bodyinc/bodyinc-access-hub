@@ -19,9 +19,9 @@ import {
 import {
   WIPE_GROUPS,
   expandGroups,
-  wipePlatformData,
   type WipeGroupKey,
-} from "@/lib/danger-zone.functions";
+} from "@/lib/danger-zone";
+import { wipePlatformData } from "@/lib/danger-zone.functions";
 
 const LABELS = Object.fromEntries(WIPE_GROUPS.map((g) => [g.key, g.label])) as Record<
   WipeGroupKey,
