@@ -150,7 +150,7 @@ export function RequestReviewPanel({
 
   if (q.isLoading) {
     return (
-      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#2E00AB]/60">
+      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#3B4759]/60">
         Loading order…
       </div>
     );
@@ -158,10 +158,10 @@ export function RequestReviewPanel({
   if (q.isError || !q.data) {
     return (
       <div className="admin-page-shell space-y-3 font-['DM_Sans',sans-serif]">
-        <Link to={backTo} className="inline-flex items-center text-[14px] font-medium text-[#2E00AB]">
+        <Link to={backTo} className="inline-flex items-center text-[14px] font-medium text-[#3B4759]">
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Link>
-        <div className="text-[14px] font-semibold text-[#FF4D6D]">
+        <div className="text-[14px] font-semibold text-[#B8684B]">
           {(q.error as Error)?.message ?? "Order not found"}
         </div>
       </div>
@@ -182,7 +182,7 @@ export function RequestReviewPanel({
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
       <Link
         to={backTo}
-        className="inline-flex h-9 items-center -ml-1 px-1 text-[14px] font-medium text-[#2E00AB] hover:opacity-80"
+        className="inline-flex h-9 items-center -ml-1 px-1 text-[14px] font-medium text-[#3B4759] hover:opacity-80"
       >
         <ArrowLeft className="mr-1 h-4 w-4" /> Back to orders
       </Link>
@@ -222,16 +222,16 @@ export function RequestReviewPanel({
           </div>
 
           {canManage ? (
-            <div className="flex flex-wrap items-end gap-2 border-t border-[#EAE6FA] pt-4">
+            <div className="flex flex-wrap items-end gap-2 border-t border-[#D5DEDD] pt-4">
               <div className="min-w-[220px] space-y-1">
-                <div className="text-[13px] font-medium text-[#2E00AB]/60">Assign / reassign provider</div>
+                <div className="text-[13px] font-medium text-[#3B4759]/60">Assign / reassign provider</div>
                 <Select value={assignId} onValueChange={setAssignId}>
-                  <SelectTrigger className="h-10 border-[#EAE6FA] text-[13px] text-[#2E00AB]">
+                  <SelectTrigger className="h-10 border-[#D5DEDD] text-[13px] text-[#3B4759]">
                     <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent className="font-['DM_Sans',sans-serif]">
                     {((providersQ.data as any[]) ?? []).map((p) => (
-                      <SelectItem key={p.id} value={p.id} className="text-[14px] text-[#2E00AB]">
+                      <SelectItem key={p.id} value={p.id} className="text-[14px] text-[#3B4759]">
                         {p.full_name}
                         {p.is_default ? " (default)" : ""}
                       </SelectItem>
@@ -244,7 +244,7 @@ export function RequestReviewPanel({
                 variant="outline"
                 disabled={!assignId || assignMut.isPending}
                 onClick={() => assignMut.mutate()}
-                className="h-10 border-[#EAE6FA] px-4 text-[13px] font-semibold text-[#2E00AB]"
+                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
               >
                 Assign
               </Button>
@@ -252,13 +252,13 @@ export function RequestReviewPanel({
           ) : null}
 
           {/* Actions */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-[#EAE6FA] pt-4">
+          <div className="flex flex-wrap items-center gap-2 border-t border-[#D5DEDD] pt-4">
             {canApprove ? (
               <Button
                 size="sm"
                 onClick={() => approveMut.mutate()}
                 disabled={approveMut.isPending}
-                className="h-10 bg-[#2E00AB] px-4 text-[13px] font-semibold text-white hover:bg-[#25008A]"
+                className="h-10 bg-[#3B4759] px-4 text-[13px] font-semibold text-white hover:bg-[#2E3745]"
               >
                 <Check className="mr-1 h-4 w-4" /> Approve
               </Button>
@@ -268,7 +268,7 @@ export function RequestReviewPanel({
                 size="sm"
                 variant="outline"
                 onClick={() => setChangeOpen(true)}
-                className="h-10 border-[#EAE6FA] px-4 text-[13px] font-semibold text-[#2E00AB]"
+                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
               >
                 <Repeat className="mr-1 h-4 w-4" /> Change medicine
               </Button>
@@ -277,7 +277,7 @@ export function RequestReviewPanel({
               <Button
                 size="sm"
                 onClick={() => setRxOpen(true)}
-                className="h-10 bg-[#2E00AB] px-4 text-[13px] font-semibold text-white hover:bg-[#25008A]"
+                className="h-10 bg-[#3B4759] px-4 text-[13px] font-semibold text-white hover:bg-[#2E3745]"
               >
                 <FileText className="mr-1 h-4 w-4" /> Generate prescription
               </Button>
@@ -292,7 +292,7 @@ export function RequestReviewPanel({
                     : advanceMut.mutate({ status: nextStep.status })
                 }
                 disabled={advanceMut.isPending}
-                className="h-10 border-[#EAE6FA] px-4 text-[13px] font-semibold text-[#2E00AB]"
+                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
               >
                 <Truck className="mr-1 h-4 w-4" /> {nextStep.label}
               </Button>
@@ -302,7 +302,7 @@ export function RequestReviewPanel({
                 size="sm"
                 variant="outline"
                 onClick={() => setRejectOpen(true)}
-                className="h-10 border-[#F3C9D3] px-4 text-[13px] font-semibold text-[#C1123B] hover:bg-[#FDE7EC]"
+                className="h-10 border-[#E7CFC3] px-4 text-[13px] font-semibold text-[#8F4A33] hover:bg-[#F6E4DA]"
               >
                 <X className="mr-1 h-4 w-4" /> Reject &amp; refund
               </Button>
@@ -326,13 +326,13 @@ export function RequestReviewPanel({
           <CardContent className="space-y-2 p-4 pt-0 text-[14px] sm:p-6 sm:pt-0">
             {additional_payments.map((ap: any) => (
               <div key={ap.id} className="flex items-center justify-between gap-3">
-                <span className="text-[#2E00AB]">
+                <span className="text-[#3B4759]">
                   {money(ap.amount_cents)} — {ap.reason ?? "Price difference"}
                 </span>
                 <Badge
                   className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case shadow-none ${
                     ap.status === "paid"
-                      ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
+                      ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
                       : "bg-[#FFF4E5] text-[#B45309] hover:bg-[#FFF4E5]"
                   }`}
                 >
@@ -351,14 +351,14 @@ export function RequestReviewPanel({
           </CardHeader>
           <CardContent className="space-y-3 p-4 pt-0 text-[14px] sm:p-6 sm:pt-0">
             {prescriptions.map((rx: any) => (
-              <div key={rx.id} className="space-y-1 rounded-lg border border-[#EAE6FA] p-3">
-                <div className="font-semibold text-[#2E00AB]">{rx.medicine_name}</div>
+              <div key={rx.id} className="space-y-1 rounded-lg border border-[#D5DEDD] p-3">
+                <div className="font-semibold text-[#3B4759]">{rx.medicine_name}</div>
                 {rx.directions ? (
-                  <div className="text-[#2E00AB]/80">{rx.directions}</div>
+                  <div className="text-[#3B4759]/80">{rx.directions}</div>
                 ) : (
-                  <div className="text-[#2E00AB]/50">Directions to be added from the template.</div>
+                  <div className="text-[#3B4759]/50">Directions to be added from the template.</div>
                 )}
-                <div className="text-[12px] text-[#2E00AB]/60">
+                <div className="text-[12px] text-[#3B4759]/60">
                   {rx.status} · {formatDate(rx.created_at)}
                 </div>
                 <div className="flex items-center gap-2 pt-1">
@@ -367,7 +367,7 @@ export function RequestReviewPanel({
                     params={{ prescriptionId: rx.id }}
                     search={{ download: false }}
                     target="_blank"
-                    className="rounded-md border border-[#2E00AB] px-3 py-1.5 text-[13px] font-semibold text-[#2E00AB] hover:bg-[#F5F3FF]"
+                    className="rounded-md border border-[#3B4759] px-3 py-1.5 text-[13px] font-semibold text-[#3B4759] hover:bg-[#E8EEED]"
                   >
                     View
                   </Link>
@@ -376,7 +376,7 @@ export function RequestReviewPanel({
                     params={{ prescriptionId: rx.id }}
                     search={{ download: true }}
                     target="_blank"
-                    className="rounded-md bg-[#2E00AB] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#25008A]"
+                    className="rounded-md bg-[#3B4759] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#2E3745]"
                   >
                     Download
                   </Link>
@@ -395,13 +395,13 @@ export function RequestReviewPanel({
           <ol className="space-y-3">
             {events.map((ev: any) => (
               <li key={ev.id} className="flex gap-3 text-[14px]">
-                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#2E00AB]" />
+                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#3B4759]" />
                 <div className="min-w-0">
-                  <div className="font-medium text-[#2E00AB]">{requestStatusLabel(ev.status)}</div>
-                  <div className="text-[12px] text-[#2E00AB]/60">
+                  <div className="font-medium text-[#3B4759]">{requestStatusLabel(ev.status)}</div>
+                  <div className="text-[12px] text-[#3B4759]/60">
                     {ev.actor_role} · {formatDate(ev.created_at)}
                   </div>
-                  {ev.note ? <div className="text-[13px] text-[#2E00AB]/80">{ev.note}</div> : null}
+                  {ev.note ? <div className="text-[13px] text-[#3B4759]/80">{ev.note}</div> : null}
                 </div>
               </li>
             ))}
@@ -432,7 +432,7 @@ export function RequestReviewPanel({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
-            <label className="text-[13px] font-medium text-[#2E00AB]">Reason (optional)</label>
+            <label className="text-[13px] font-medium text-[#3B4759]">Reason (optional)</label>
             <Textarea
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
@@ -447,7 +447,7 @@ export function RequestReviewPanel({
             <Button
               onClick={() => rejectMut.mutate()}
               disabled={rejectMut.isPending}
-              className="bg-[#C1123B] text-white hover:bg-[#A50E31]"
+              className="bg-[#8F4A33] text-white hover:bg-[#8F4A33]"
             >
               {rejectMut.isPending ? "Rejecting…" : "Reject & refund"}
             </Button>
@@ -466,7 +466,7 @@ export function RequestReviewPanel({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
-            <label className="text-[13px] font-medium text-[#2E00AB]">Directions (optional)</label>
+            <label className="text-[13px] font-medium text-[#3B4759]">Directions (optional)</label>
             <Textarea
               value={directions}
               onChange={(e) => setDirections(e.target.value)}
@@ -493,7 +493,7 @@ export function RequestReviewPanel({
             <DialogDescription>Enter the shipment tracking number, if available.</DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
-            <label className="text-[13px] font-medium text-[#2E00AB]">Tracking number</label>
+            <label className="text-[13px] font-medium text-[#3B4759]">Tracking number</label>
             <Input
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
@@ -520,8 +520,8 @@ export function RequestReviewPanel({
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <div className="text-[13px] font-medium text-[#2E00AB]/60">{label}</div>
-      <div className="text-[14px] font-medium text-[#2E00AB]">{value}</div>
+      <div className="text-[13px] font-medium text-[#3B4759]/60">{label}</div>
+      <div className="text-[14px] font-medium text-[#3B4759]">{value}</div>
     </div>
   );
 }

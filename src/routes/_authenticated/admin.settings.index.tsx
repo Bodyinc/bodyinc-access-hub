@@ -92,21 +92,21 @@ function FeeRow({
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-0.5">
           <Label className={adminLabel}>{label}</Label>
-          <p className="text-xs text-[#2E00AB]/70">{help}</p>
+          <p className="text-xs text-[#3B4759]/70">{help}</p>
         </div>
         <div className="flex items-center gap-2 pt-1">
-          <span className="text-xs font-semibold text-[#2E00AB]/70">
+          <span className="text-xs font-semibold text-[#3B4759]/70">
             {enabled ? "Enabled" : "Disabled"}
           </span>
           <Switch
             checked={enabled}
             onCheckedChange={onToggle}
-            className="data-[state=checked]:bg-[#2E00AB] data-[state=unchecked]:bg-[#EAE6FA]"
+            className="data-[state=checked]:bg-[#3B4759] data-[state=unchecked]:bg-[#D5DEDD]"
           />
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2">
-        <span className="text-sm font-semibold text-[#2E00AB]">$</span>
+        <span className="text-sm font-semibold text-[#3B4759]">$</span>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -135,12 +135,12 @@ function ToggleRow({
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-0.5">
           <Label className={adminLabel}>{label}</Label>
-          <p className="text-xs text-[#2E00AB]/70">{help}</p>
+          <p className="text-xs text-[#3B4759]/70">{help}</p>
         </div>
         <Switch
           checked={checked}
           onCheckedChange={onChange}
-          className="mt-1 data-[state=checked]:bg-[#2E00AB] data-[state=unchecked]:bg-[#EAE6FA]"
+          className="mt-1 data-[state=checked]:bg-[#3B4759] data-[state=unchecked]:bg-[#D5DEDD]"
         />
       </div>
     </div>
@@ -201,23 +201,23 @@ function ShippingSync({ unsaved }: { unsaved: boolean }) {
   }
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-xl border border-dashed border-[#E2DCFA] bg-[#FBFAFF] p-4">
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-dashed border-[#D5DEDD] bg-[#F8FBFA] p-4">
       <div className="space-y-0.5">
-        <Label className="text-[14px] font-bold text-[#2A00A2]">
+        <Label className="text-[14px] font-bold text-[#3B4759]">
           Apply to existing subscriptions
         </Label>
-        <p className="text-xs text-[#6B5AE0]/70">
+        <p className="text-xs text-[#6A9B9C]/70">
           Save the fee first. New subscriptions use the saved amount automatically; this updates the
           recurring shipping on all active subscriptions to match (adds, re-prices, or removes it).
           Changes take effect on each subscription&apos;s next renewal.
         </p>
         {unsaved ? (
-          <p className="pt-1 text-xs font-semibold text-[#FF4D6D]">
+          <p className="pt-1 text-xs font-semibold text-[#B8684B]">
             You have unsaved shipping changes — click “Save changes” first, then sync.
           </p>
         ) : null}
         {running ? (
-          <p className="pt-1 text-xs font-semibold text-[#4A3AFF]">
+          <p className="pt-1 text-xs font-semibold text-[#6A9B9C]">
             Syncing… {scanned} processed (keep this tab open)
           </p>
         ) : null}
@@ -227,17 +227,17 @@ function ShippingSync({ unsaved }: { unsaved: boolean }) {
           <Button
             variant="outline"
             disabled={running || unsaved}
-            className="h-9 shrink-0 rounded-xl border-[#E2DCFA] font-semibold text-[#2A00A2] hover:bg-[#F5F3FF]"
+            className="h-9 shrink-0 rounded-xl border-[#D5DEDD] font-semibold text-[#3B4759] hover:bg-[#E8EEED]"
           >
             {running ? "Syncing…" : "Sync now"}
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent className="rounded-2xl border-[#E2DCFA]">
+        <AlertDialogContent className="rounded-2xl border-[#D5DEDD]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-[#2A00A2]">
+            <AlertDialogTitle className="text-[#3B4759]">
               Sync shipping to active subscriptions?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[#6B5AE0]/80">
+            <AlertDialogDescription className="text-[#6A9B9C]/80">
               This updates the recurring shipping charge on every active subscription in Stripe to
               match the currently saved shipping fee. It applies from each subscription&apos;s next
               renewal. It runs in batches while this tab stays open. Make sure you&apos;ve saved the
@@ -248,7 +248,7 @@ function ShippingSync({ unsaved }: { unsaved: boolean }) {
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void runSync()}
-              className="rounded-xl bg-[#2A00A2] text-white hover:bg-[#22008A]"
+              className="rounded-xl bg-[#3B4759] text-white hover:bg-[#2E3745]"
             >
               Sync now
             </AlertDialogAction>
@@ -320,7 +320,7 @@ function SettingsPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full min-w-0">
-        <TabsList className="flex h-auto w-full flex-wrap bg-[#F5F3FF] text-[#2E00AB]/70 sm:w-auto">
+        <TabsList className="flex h-auto w-full flex-wrap bg-[#E8EEED] text-[#3B4759]/70 sm:w-auto">
           <TabsTrigger value="fees">Fees</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
@@ -359,7 +359,7 @@ function SettingsPage() {
                 />
               </>
             ) : (
-              <p className="text-sm text-[#2E00AB]/60">Loading…</p>
+              <p className="text-sm text-[#3B4759]/60">Loading…</p>
             )}
           </Card>
         </TabsContent>
@@ -376,7 +376,7 @@ function SettingsPage() {
                 onToggle={(v) => set("referral_enabled", v)}
               />
             ) : (
-              <p className="text-sm text-[#2E00AB]/60">Loading…</p>
+              <p className="text-sm text-[#3B4759]/60">Loading…</p>
             )}
           </Card>
         </TabsContent>
@@ -399,7 +399,7 @@ function SettingsPage() {
                 />
               </>
             ) : (
-              <p className="text-sm text-[#2E00AB]/60">Loading…</p>
+              <p className="text-sm text-[#3B4759]/60">Loading…</p>
             )}
           </Card>
         </TabsContent>

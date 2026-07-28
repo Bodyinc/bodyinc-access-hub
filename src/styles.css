@@ -145,9 +145,9 @@
     height: var(--app-input-height);
     font-size: var(--app-input-text);
     padding: 0 16px;
-    border: 1px solid #E0D4FF;
+    border: 1px solid #D5DEDD;
     background-color: #FFFFFF;
-    color: #2E00AB;
+    color: #3B4759;
     border-radius: 6px;
     font-weight: 500;
     width: 100%;
@@ -163,14 +163,14 @@
   .app-label {
     font-size: clamp(13px, 1.5vw, 14px);
     font-weight: 700;
-    color: #2A00A2;
+    color: #3B4759;
     display: block;
     margin-bottom: var(--app-label-gap);
   }
 
   /* Responsive Main Card Padding & Border */
   .app-card {
-    border: 1px solid #E0D4FF;
+    border: 1px solid #D5DEDD;
     background-color: #FFFFFF;
     border-radius: 12px;
     padding: var(--app-page-padding);
@@ -234,7 +234,7 @@
     font-weight: 600;
     line-height: 100%;
     letter-spacing: 0;
-    color: #2E00AB;
+    color: #3B4759;
   }
 
   @media (min-width: 640px) {
@@ -264,7 +264,7 @@
     font-weight: 600;
     line-height: 100%;
     letter-spacing: 0;
-    color: #2E00AB;
+    color: #3B4759;
   }
 
   .admin-section-subtitle {
@@ -282,7 +282,7 @@
     font-weight: 500;
     line-height: 100%;
     letter-spacing: 0;
-    color: #2E00AB;
+    color: #3B4759;
     display: block;
   }
 
@@ -290,10 +290,10 @@
     height: 44px;
     width: 100%;
     padding: 14px 16px;
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 6px !important;
     background-color: #FFFFFF;
-    color: #2E00AB;
+    color: #3B4759;
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-weight: 400;
@@ -314,17 +314,17 @@
 
   .admin-input:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 1px #2E00AB;
+    box-shadow: 0 0 0 1px #3B4759;
   }
 
   .admin-textarea {
     min-height: 80px;
     width: 100%;
     padding: 14px 16px;
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 6px !important;
     background-color: #FFFFFF;
-    color: #2E00AB;
+    color: #3B4759;
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-weight: 400;
@@ -346,7 +346,7 @@
 
   .admin-textarea:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 1px #2E00AB;
+    box-shadow: 0 0 0 1px #3B4759;
   }
 
   .admin-select {
@@ -354,10 +354,10 @@
     width: 100%;
     padding-left: 16px;
     padding-right: 16px;
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 6px !important;
     background-color: #FFFFFF;
-    color: #2E00AB;
+    color: #3B4759;
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-weight: 400;
@@ -375,7 +375,7 @@
     width: 100%;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 12px;
     background-color: #FFFFFF;
     box-shadow: none;
@@ -396,7 +396,7 @@
     padding-left: 24px;
     padding-right: 24px;
     border-radius: 8px;
-    background-color: #2E00AB;
+    background-color: #3B4759;
     color: #FFFFFF;
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
@@ -406,7 +406,7 @@
   }
 
   .admin-btn-primary:hover {
-    background-color: #25008A;
+    background-color: #2E3745;
   }
 
   @media (min-width: 640px) {
@@ -419,10 +419,10 @@
     height: 44px;
     padding-left: 24px;
     padding-right: 24px;
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 8px;
     background-color: #FFFFFF;
-    color: #2E00AB;
+    color: #3B4759;
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     font-weight: 600;
@@ -431,7 +431,7 @@
   }
 
   .admin-btn-secondary:hover {
-    background-color: #F9F8FF;
+    background-color: #F2F7F6;
   }
 
   @media (min-width: 640px) {
@@ -441,7 +441,7 @@
   }
 
   .admin-table-wrap {
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 12px;
     background-color: #FFFFFF;
     overflow: hidden;
@@ -455,9 +455,9 @@
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     font-weight: 600;
-    color: #2E00AB;
-    border-bottom: 1px solid #EAE6FA;
-    background-color: #F9F8FF;
+    color: #3B4759;
+    border-bottom: 1px solid #D5DEDD;
+    background-color: #F2F7F6;
   }
 
   @media (min-width: 640px) {
@@ -473,8 +473,8 @@
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     font-weight: 400;
-    color: #2E00AB;
-    border-bottom: 1px solid #EAE6FA;
+    color: #3B4759;
+    border-bottom: 1px solid #D5DEDD;
   }
 
   @media (min-width: 640px) {
@@ -487,20 +487,20 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid #EAE6FA;
+    border: 1px solid #D5DEDD;
     border-radius: 10px;
-    background-color: #FDFDFF;
+    background-color: #F8FBFA;
     padding: 16px;
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-weight: 500;
     line-height: 100%;
-    color: #2E00AB;
+    color: #3B4759;
     cursor: pointer;
     transition: background-color 0.15s ease;
   }
 
   .admin-check-row:hover {
-    background-color: #F9F8FF;
+    background-color: #F2F7F6;
   }
 }

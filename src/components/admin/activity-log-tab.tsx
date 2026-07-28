@@ -54,7 +54,7 @@ export function ActivityLogTab() {
   return (
     <div className="space-y-4">
       <div className="relative w-full max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6B5AE0]/50" />
+        <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6A9B9C]/50" />
         <Input
           value={search}
           onChange={(e) => {
@@ -62,19 +62,19 @@ export function ActivityLogTab() {
             setPage(1);
           }}
           placeholder="Search by action or entity"
-          className="h-10 w-full rounded-[6px] border-[#E2DCFA] bg-white pl-9 text-[14px] font-semibold text-[#2A00A2] placeholder:text-[#6B5AE0]/40 focus-visible:ring-[#4A3AFF]"
+          className="h-10 w-full rounded-[6px] border-[#D5DEDD] bg-white pl-9 text-[14px] font-semibold text-[#3B4759] placeholder:text-[#6A9B9C]/40 focus-visible:ring-[#6A9B9C]"
         />
       </div>
 
-      <Card className="w-full overflow-hidden rounded-2xl border border-[#EAE6FA] bg-white shadow-sm">
+      <Card className="w-full overflow-hidden rounded-2xl border border-[#D5DEDD] bg-white shadow-sm">
         <div className="admin-table-scroll">
           <Table className="min-w-[820px]">
-            <TableHeader className="bg-[#FDFDFF]">
-              <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                <TableHead className="h-11 text-[13px] font-bold text-[#2A00A2]">When</TableHead>
-                <TableHead className="h-11 text-[13px] font-bold text-[#2A00A2]">Admin</TableHead>
-                <TableHead className="h-11 text-[13px] font-bold text-[#2A00A2]">Action</TableHead>
-                <TableHead className="h-11 text-[13px] font-bold text-[#2A00A2]">Changes</TableHead>
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="h-11 text-[13px] font-bold text-[#3B4759]">When</TableHead>
+                <TableHead className="h-11 text-[13px] font-bold text-[#3B4759]">Admin</TableHead>
+                <TableHead className="h-11 text-[13px] font-bold text-[#3B4759]">Action</TableHead>
+                <TableHead className="h-11 text-[13px] font-bold text-[#3B4759]">Changes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -82,7 +82,7 @@ export function ActivityLogTab() {
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="py-12 text-center text-[14px] font-semibold text-[#6B5AE0]/60"
+                    className="py-12 text-center text-[14px] font-semibold text-[#6A9B9C]/60"
                   >
                     Loading…
                   </TableCell>
@@ -92,7 +92,7 @@ export function ActivityLogTab() {
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="py-12 text-center text-[14px] font-semibold text-[#FF4D6D]"
+                    className="py-12 text-center text-[14px] font-semibold text-[#B8684B]"
                   >
                     {(query.error as Error).message}
                   </TableCell>
@@ -102,23 +102,23 @@ export function ActivityLogTab() {
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="py-12 text-center text-[14px] font-semibold text-[#6B5AE0]/60"
+                    className="py-12 text-center text-[14px] font-semibold text-[#6A9B9C]/60"
                   >
                     No activity yet.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
-                <TableRow key={r.id} className="border-b border-[#EAE6FA]/50 hover:bg-[#F5F3FF]/40">
-                  <TableCell className="whitespace-nowrap text-[13px] text-[#2A00A2]/80">
+                <TableRow key={r.id} className="border-b border-[#D5DEDD]/50 hover:bg-[#E8EEED]/40">
+                  <TableCell className="whitespace-nowrap text-[13px] text-[#3B4759]/80">
                     {formatDateTime(r.created_at)}
                   </TableCell>
                   <TableCell className="text-[13px]">
-                    <p className="font-semibold text-[#2A00A2]">{r.admin_name ?? "—"}</p>
-                    <p className="text-xs text-[#6B5AE0]/70">{r.admin_email ?? ""}</p>
+                    <p className="font-semibold text-[#3B4759]">{r.admin_name ?? "—"}</p>
+                    <p className="text-xs text-[#6A9B9C]/70">{r.admin_email ?? ""}</p>
                   </TableCell>
-                  <TableCell className="font-mono text-[12px] text-[#2A00A2]">{r.action}</TableCell>
-                  <TableCell className="max-w-[420px] text-[12px] text-[#6B5AE0]/80">
+                  <TableCell className="font-mono text-[12px] text-[#3B4759]">{r.action}</TableCell>
+                  <TableCell className="max-w-[420px] text-[12px] text-[#6A9B9C]/80">
                     {summarize(r.before, r.after)}
                   </TableCell>
                 </TableRow>
@@ -135,11 +135,11 @@ export function ActivityLogTab() {
             size="sm"
             disabled={page <= 1 || query.isFetching}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="h-8 rounded-xl border-[#E2DCFA] text-[#2A00A2]"
+            className="h-8 rounded-xl border-[#D5DEDD] text-[#3B4759]"
           >
             Previous
           </Button>
-          <span className="text-[13px] font-semibold text-[#6B5AE0]/70">
+          <span className="text-[13px] font-semibold text-[#6A9B9C]/70">
             Page {page} of {totalPages}
           </span>
           <Button
@@ -147,7 +147,7 @@ export function ActivityLogTab() {
             size="sm"
             disabled={page >= totalPages || query.isFetching}
             onClick={() => setPage((p) => p + 1)}
-            className="h-8 rounded-xl border-[#E2DCFA] text-[#2A00A2]"
+            className="h-8 rounded-xl border-[#D5DEDD] text-[#3B4759]"
           >
             Next
           </Button>

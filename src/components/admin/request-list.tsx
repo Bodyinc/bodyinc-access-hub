@@ -87,7 +87,7 @@ export function RequestList({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -101,7 +101,7 @@ export function RequestList({
           </SelectTrigger>
           <SelectContent className="font-['DM_Sans',sans-serif]">
             {STATUS_FILTERS.map((s) => (
-              <SelectItem key={s.value} value={s.value} className="text-[16px] text-[#2E00AB]">
+              <SelectItem key={s.value} value={s.value} className="text-[16px] text-[#3B4759]">
                 {s.label}
               </SelectItem>
             ))}
@@ -109,30 +109,30 @@ export function RequestList({
         </Select>
       </div>
 
-      <div className="admin-card w-full min-w-0 overflow-hidden rounded-xl border border-[#EAE6FA] bg-white">
+      <div className="admin-card w-full min-w-0 overflow-hidden rounded-xl border border-[#D5DEDD] bg-white">
         <div className="admin-table-scroll">
           <Table className="min-w-[720px]">
-            <TableHeader className="bg-[#FDFDFF]">
-              <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Patient</TableHead>
-                <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Medication</TableHead>
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Patient</TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Medication</TableHead>
                 {showProvider ? (
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Provider</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Provider</TableHead>
                 ) : null}
-                <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Status</TableHead>
-                <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Created</TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Status</TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={showProvider ? 5 : 4} className="py-12 text-center text-[14px] font-medium text-[#2E00AB]/60">
+                  <TableCell colSpan={showProvider ? 5 : 4} className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={showProvider ? 5 : 4} className="py-12 text-center text-[14px] font-medium text-[#2E00AB]/60">
+                  <TableCell colSpan={showProvider ? 5 : 4} className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60">
                     No orders.
                   </TableCell>
                 </TableRow>
@@ -141,20 +141,20 @@ export function RequestList({
                   <TableRow
                     key={r.id}
                     onClick={() => onOpen(r.id)}
-                    className="cursor-pointer border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                    className="cursor-pointer border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                   >
-                    <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                    <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       <div>{r.customer_name ?? (r.is_guest ? "Guest" : "—")}</div>
-                      <div className="text-[12px] text-[#2E00AB]/60">{r.customer_email ?? ""}</div>
+                      <div className="text-[12px] text-[#3B4759]/60">{r.customer_email ?? ""}</div>
                     </TableCell>
-                    <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                    <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       {r.medicine_name}
                       {r.kind === "followup" ? (
-                        <span className="ml-2 text-[12px] text-[#2E00AB]/50">renewal</span>
+                        <span className="ml-2 text-[12px] text-[#3B4759]/50">renewal</span>
                       ) : null}
                     </TableCell>
                     {showProvider ? (
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/80">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]/80">
                         {r.provider_name ?? "Unassigned"}
                       </TableCell>
                     ) : null}
@@ -167,7 +167,7 @@ export function RequestList({
                         {requestStatusLabel(r.status)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                    <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                       {formatDate(r.created_at)}
                     </TableCell>
                   </TableRow>

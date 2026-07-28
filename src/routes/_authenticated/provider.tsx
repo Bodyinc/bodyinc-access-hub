@@ -62,9 +62,9 @@ function ProviderLayout() {
       <ProviderSidebar />
 
       <SidebarInset className="min-w-0 flex-1 overflow-x-hidden bg-white">
-        <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#EAE6FA] bg-white px-4 py-3 lg:hidden">
-          <SidebarTrigger className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] border border-[#EAE6FA] bg-[#5B21B6] text-white shadow-sm hover:bg-[#4C1D95]" />
-          <span className="truncate text-base font-semibold text-[#2E00AB]">{title}</span>
+        <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#D5DEDD] bg-white px-4 py-3 lg:hidden">
+          <SidebarTrigger className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] border border-[#D5DEDD] bg-[#6A9B9C] text-white shadow-sm hover:bg-[#5B8788]" />
+          <span className="truncate text-base font-semibold text-[#3B4759]">{title}</span>
         </div>
 
         <main className="h-full w-full min-w-0 overflow-y-auto p-4 sm:p-6 lg:px-8 lg:pt-6 lg:pb-8">

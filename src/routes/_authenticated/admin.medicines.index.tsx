@@ -165,10 +165,10 @@ function MedicinesListPage() {
       {/* Top Header Bar */}
       <div className="admin-page-header">
         <div className="min-w-0 space-y-2 sm:space-y-4">
-          <h1 className="text-[24px] font-semibold leading-tight tracking-normal text-[#2E00AB] sm:text-[28px] lg:text-[32px]">
+          <h1 className="text-[24px] font-semibold leading-tight tracking-normal text-[#3B4759] sm:text-[28px] lg:text-[32px]">
             Medicines
           </h1>
-          <p className="text-base font-normal leading-snug text-[#2E00AB]/80 sm:text-lg lg:text-[20px]">
+          <p className="text-base font-normal leading-snug text-[#3B4759]/80 sm:text-lg lg:text-[20px]">
             Manage the medication catalog shown to patients during onboarding.
           </p>
         </div>
@@ -181,7 +181,7 @@ function MedicinesListPage() {
           />
           <Button
             onClick={() => navigate({ to: "/admin/medicines/new" })}
-            className="bg-[#2E00AB] hover:bg-[#220082] text-white h-[44px] px-6 rounded-[8px] font-semibold text-[14px] gap-2 shadow-sm transition-all"
+            className="bg-[#3B4759] hover:bg-[#2E3745] text-white h-[44px] px-6 rounded-[8px] font-semibold text-[14px] gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Add New Medicine
           </Button>
@@ -212,28 +212,28 @@ function MedicinesListPage() {
         </div>
       )}
 
-      {/* Filter / Inputs Controls Layer (Height: 54px, Bg: #F9F6FF, Radius: 12px, Border: #2E00AB 25%) */}
+      {/* Filter / Inputs Controls Layer (Height: 54px, Bg: #F2F7F6, Radius: 12px, Border: #3B4759 25%) */}
       {!isEmpty && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative w-full sm:max-w-md">
-            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#2E00AB]/40" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3B4759]/40" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by medication name or active ingredient..."
-              className="pl-11 pr-4 h-[54px] w-full border-[#2E00AB]/25 bg-[#F9F6FF] text-[#2E00AB] placeholder:text-[#2E00AB]/40 rounded-[12px] focus-visible:ring-[#2E00AB] text-[14px] font-medium shadow-none"
+              className="pl-11 pr-4 h-[54px] w-full border-[#3B4759]/25 bg-[#F2F7F6] text-[#3B4759] placeholder:text-[#3B4759]/40 rounded-[12px] focus-visible:ring-[#3B4759] text-[14px] font-medium shadow-none"
             />
           </div>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="w-full sm:w-[180px] h-[54px] border-[#2E00AB]/25 bg-[#F9F6FF] text-[#2E00AB] font-medium rounded-[12px] focus:ring-[#2E00AB] text-[14px] shadow-none">
+            <SelectTrigger className="w-full sm:w-[180px] h-[54px] border-[#3B4759]/25 bg-[#F2F7F6] text-[#3B4759] font-medium rounded-[12px] focus:ring-[#3B4759] text-[14px] shadow-none">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="border-[#2E00AB]/20 rounded-[12px]">
-              <SelectItem value="all" className="text-[#2E00AB] font-medium focus:bg-[#F3EFFF]">
+            <SelectContent className="border-[#3B4759]/20 rounded-[12px]">
+              <SelectItem value="all" className="text-[#3B4759] font-medium focus:bg-[#E8EEED]">
                 All Statuses
               </SelectItem>
               {MEDICINE_STATUSES.map((s) => (
-                <SelectItem key={s} value={s} className="text-[#2E00AB] font-medium focus:bg-[#F3EFFF]">
+                <SelectItem key={s} value={s} className="text-[#3B4759] font-medium focus:bg-[#E8EEED]">
                   {MEDICINE_STATUS_LABELS[s]}
                 </SelectItem>
               ))}
@@ -244,37 +244,37 @@ function MedicinesListPage() {
 
       {/* Main Table Display Component */}
       {isEmpty ? (
-        <div className="border-2 border-dashed border-[#2E00AB]/20 bg-[#F9F6FF] rounded-[12px] p-12 text-center space-y-4">
-          <p className="text-base font-semibold text-[#2E00AB]">No medicines found</p>
+        <div className="border-2 border-dashed border-[#3B4759]/20 bg-[#F2F7F6] rounded-[12px] p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-[#3B4759]">No medicines found</p>
           <Button
             onClick={() => navigate({ to: "/admin/medicines/new" })}
-            className="bg-[#2E00AB] text-white rounded-lg px-4 h-10 font-medium"
+            className="bg-[#3B4759] text-white rounded-lg px-4 h-10 font-medium"
           >
             <Plus className="h-4 w-4 mr-2" /> Add your first medicine
           </Button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-[12px] border border-[#2E00AB]/20 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-[12px] border border-[#3B4759]/20 bg-white shadow-sm">
           <div className="admin-table-scroll">
             <Table className="min-w-[800px] border-collapse">
-              <TableHeader className="bg-[#F7F5FF]">
-                <TableRow className="hover:bg-transparent border-b border-[#2E00AB]/15">
-                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+              <TableHeader className="bg-[#F2F7F6]">
+                <TableRow className="hover:bg-transparent border-b border-[#3B4759]/15">
+                  <TableHead className="h-14 text-[#3B4759] font-bold text-[14px] px-6">
                     Medication Name
                   </TableHead>
-                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                  <TableHead className="h-14 text-[#3B4759] font-bold text-[14px] px-6">
                     Description
                   </TableHead>
 
                   {/* Header updated to Monthly Price per Figma */}
-                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                  <TableHead className="h-14 text-[#3B4759] font-bold text-[14px] px-6">
                     Monthly Price
                   </TableHead>
 
-                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                  <TableHead className="h-14 text-[#3B4759] font-bold text-[14px] px-6">
                     Status
                   </TableHead>
-                  <TableHead className="h-14 text-[#2E00AB] font-bold text-[14px] px-6">
+                  <TableHead className="h-14 text-[#3B4759] font-bold text-[14px] px-6">
                     Last Updated
                   </TableHead>
                   <TableHead className="h-14 w-16 px-4 text-center" />
@@ -283,7 +283,7 @@ function MedicinesListPage() {
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#2E00AB]/60">
+                    <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#3B4759]/60">
                       Loading rows...
                     </TableCell>
                   </TableRow>
@@ -292,7 +292,7 @@ function MedicinesListPage() {
                 {rows.map((m: StoredMedicine) => (
                   <TableRow
                     key={m.id}
-                    className="border-b border-[#2E00AB]/15 bg-white hover:bg-[#FDFBFF] transition-colors cursor-pointer"
+                    className="border-b border-[#3B4759]/15 bg-white hover:bg-[#F8FBFA] transition-colors cursor-pointer"
                     onClick={() =>
                       navigate({
                         to: "/admin/medicines/$medicineId",
@@ -301,7 +301,7 @@ function MedicinesListPage() {
                     }
                   >
                     {/* Name column */}
-                    <TableCell className="px-6 py-5 font-bold text-[15px] text-[#2E00AB]">
+                    <TableCell className="px-6 py-5 font-bold text-[15px] text-[#3B4759]">
                       <div className="space-y-1.5">
                         <div>{m.name}</div>
                         {unsyncedPackages(m).length > 0 && (
@@ -315,12 +315,12 @@ function MedicinesListPage() {
                     </TableCell>
 
                     {/* Description column */}
-                    <TableCell className="px-6 py-5 text-[13px] font-medium max-w-xs text-[#2E00AB]/80 leading-relaxed">
+                    <TableCell className="px-6 py-5 text-[13px] font-medium max-w-xs text-[#3B4759]/80 leading-relaxed">
                       {truncate(m.short_description)}
                     </TableCell>
 
                     {/* Price column */}
-                    <TableCell className="px-6 py-5 text-[15px] font-bold text-[#2E00AB]">
+                    <TableCell className="px-6 py-5 text-[15px] font-bold text-[#3B4759]">
                       {formatFromPrice(m.from_price_cents)}
                     </TableCell>
 
@@ -329,7 +329,7 @@ function MedicinesListPage() {
                       <Badge
                         className={`rounded-[6px] px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
                           m.status === "active"
-                            ? "bg-[#F0EBFF] text-[#5D22E8]"
+                            ? "bg-[#E8EEED] text-[#6A9B9C]"
                             : m.status === "draft"
                               ? "bg-amber-50 text-amber-700"
                               : "bg-gray-100 text-gray-500"
@@ -340,7 +340,7 @@ function MedicinesListPage() {
                     </TableCell>
 
                     {/* Updated column */}
-                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#2E00AB]/70">
+                    <TableCell className="px-6 py-5 text-[14px] font-medium text-[#3B4759]/70">
                       {formatUpdated(m.updated_at)}
                     </TableCell>
 
@@ -351,18 +351,18 @@ function MedicinesListPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-md text-[#2E00AB]/70 hover:bg-[#F3EFFF]"
+                            className="h-8 w-8 rounded-md text-[#3B4759]/70 hover:bg-[#E8EEED]"
                           >
                             <MoreHorizontal className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="w-36 rounded-lg shadow-lg border border-[#2E00AB]/20 bg-white p-1"
+                          className="w-36 rounded-lg shadow-lg border border-[#3B4759]/20 bg-white p-1"
                         >
                           <DropdownMenuItem
                             asChild
-                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                           >
                             <Link to="/admin/medicines/$medicineId" params={{ medicineId: m.id }}>
                               Edit
@@ -370,7 +370,7 @@ function MedicinesListPage() {
                           </DropdownMenuItem>
                           {m.status !== "active" && (
                             <DropdownMenuItem
-                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                               onClick={() => statusMut.mutate({ id: m.id, status: "active" })}
                             >
                               Set active
@@ -378,7 +378,7 @@ function MedicinesListPage() {
                           )}
                           {m.status === "active" && (
                             <DropdownMenuItem
-                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                               onClick={() => statusMut.mutate({ id: m.id, status: "inactive" })}
                             >
                               Set inactive
@@ -386,15 +386,15 @@ function MedicinesListPage() {
                           )}
                           {unsyncedPackages(m).length > 0 && (
                             <DropdownMenuItem
-                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              className="rounded-md cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                               onClick={() => syncMut.mutate({ medicineId: m.id })}
                             >
                               Sync to Stripe
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator className="bg-[#2E00AB]/15 my-1" />
+                          <DropdownMenuSeparator className="bg-[#3B4759]/15 my-1" />
                           <DropdownMenuItem
-                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                            className="rounded-md cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                             onClick={() => setConfirmDelete({ id: m.id, name: m.name })}
                           >
                             Delete
@@ -412,12 +412,12 @@ function MedicinesListPage() {
 
       {/* Confirmation Modal */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#2E00AB]/20 shadow-xl">
+        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#3B4759]/20 shadow-xl">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[18px] font-bold text-[#2E00AB]">
+            <AlertDialogTitle className="text-[18px] font-bold text-[#3B4759]">
               {impact?.blocked ? "Cannot delete this medicine" : "Delete medicine?"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-[#2E00AB]/80 leading-relaxed">
+            <AlertDialogDescription className="text-sm text-[#3B4759]/80 leading-relaxed">
               {impactQuery.isLoading
                 ? "Checking what depends on this medicine…"
                 : impact?.blocked
@@ -465,7 +465,7 @@ function MedicinesListPage() {
           )}
 
           <AlertDialogFooter className="mt-5 gap-2">
-            <AlertDialogCancel className="rounded-lg border border-[#2E00AB]/20 text-[#2E00AB] hover:bg-[#F9F6FF]">
+            <AlertDialogCancel className="rounded-lg border border-[#3B4759]/20 text-[#3B4759] hover:bg-[#F2F7F6]">
               {impact?.blocked ? "Close" : "Cancel"}
             </AlertDialogCancel>
             {confirmDelete && !impact?.blocked && (
@@ -477,7 +477,7 @@ function MedicinesListPage() {
                     statusMut.mutate({ id: confirmDelete.id, status: "inactive" });
                     setConfirmDelete(null);
                   }}
-                  className="rounded-lg border-[#2E00AB]/20 text-[#2E00AB] hover:bg-[#F9F6FF]"
+                  className="rounded-lg border-[#3B4759]/20 text-[#3B4759] hover:bg-[#F2F7F6]"
                 >
                   Set inactive instead
                 </Button>

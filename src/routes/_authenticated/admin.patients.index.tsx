@@ -121,7 +121,7 @@ function PatientsListPage() {
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1 sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -144,35 +144,35 @@ function PatientsListPage() {
       <div className="admin-table-wrap m-0 w-full">
         <div className="admin-table-scroll">
         <Table className="min-w-[820px]">
-          <TableHeader className="bg-[#FDFDFF]">
-            <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Name</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Email</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Phone</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">DOB</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Joined</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Status</TableHead>
+          <TableHeader className="bg-[#F8FBFA]">
+            <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Name</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Email</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Phone</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">DOB</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Joined</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
               <TableHead className="w-12 h-11 text-[13px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {query.isLoading && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={7} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={7} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {query.isError && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={7} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={7} className="py-12 text-center text-[#B8684B] font-semibold text-[14px]">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
             )}
             {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={7} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={7} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
                   No patients found.
                 </TableCell>
               </TableRow>
@@ -180,7 +180,7 @@ function PatientsListPage() {
             {query.data?.map((p: any) => (
               <TableRow
                 key={p.id}
-                className="cursor-pointer border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40 transition-colors"
+                className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
                 onClick={() =>
                   navigate({
                     to: "/admin/patients/$patientId",
@@ -188,18 +188,18 @@ function PatientsListPage() {
                   })
                 }
               >
-                <TableCell className="font-semibold text-[#2E00AB] text-[14px]">{p.full_name || "—"}</TableCell>
-                <TableCell className="text-[#2E00AB] font-medium text-[14px]">{p.email}</TableCell>
-                <TableCell className="text-[#2E00AB] font-medium text-[14px]">{p.phone || "—"}</TableCell>
-                <TableCell className="text-[#2E00AB] font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
-                <TableCell className="text-[#2E00AB]/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
+                <TableCell className="font-semibold text-[#3B4759] text-[14px]">{p.full_name || "—"}</TableCell>
+                <TableCell className="text-[#3B4759] font-medium text-[14px]">{p.email}</TableCell>
+                <TableCell className="text-[#3B4759] font-medium text-[14px]">{p.phone || "—"}</TableCell>
+                <TableCell className="text-[#3B4759] font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
+                <TableCell className="text-[#3B4759]/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
                 <TableCell>
                   <Badge 
                     variant={p.is_active ? "default" : "secondary"}
                     className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                       p.is_active 
-                        ? "bg-[#E8F5E9] text-[#2E00AB] hover:bg-[#E8F5E9]" 
-                        : "bg-[#F5F3FF] text-[#2E00AB] hover:bg-[#F5F3FF]"
+                        ? "bg-[#E8F5E9] text-[#3B4759] hover:bg-[#E8F5E9]" 
+                        : "bg-[#E8EEED] text-[#3B4759] hover:bg-[#E8EEED]"
                     }`}
                   >
                     {p.is_active ? "Active" : "Deactivated"}
@@ -208,13 +208,13 @@ function PatientsListPage() {
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#F5F3FF] text-[#6B5AE0] rounded-xl">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#E8EEED] text-[#6A9B9C] rounded-xl">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-[#E2DCFA] shadow-md p-1">
+                    <DropdownMenuContent align="end" className="rounded-xl border-[#D5DEDD] shadow-md p-1">
                       <DropdownMenuItem
-                        className="rounded-lg text-[#2A00A2] font-semibold text-[13px] focus:bg-[#F5F3FF] focus:text-[#2A00A2]"
+                        className="rounded-lg text-[#3B4759] font-semibold text-[13px] focus:bg-[#E8EEED] focus:text-[#3B4759]"
                         onClick={() =>
                           navigate({
                             to: "/admin/patients/$patientId",
@@ -225,16 +225,16 @@ function PatientsListPage() {
                         View Profile
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        className="rounded-lg text-[#2A00A2] font-semibold text-[13px] focus:bg-[#F5F3FF] focus:text-[#2A00A2]"
+                        className="rounded-lg text-[#3B4759] font-semibold text-[13px] focus:bg-[#E8EEED] focus:text-[#3B4759]"
                         onClick={() => resetMut.mutate(p.id)}
                       >
-                        <Mail className="mr-2 h-4 w-4 stroke-[2.5] text-[#6B5AE0]" /> Send password reset
+                        <Mail className="mr-2 h-4 w-4 stroke-[2.5] text-[#6A9B9C]" /> Send password reset
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-[#EAE6FA]" />
+                      <DropdownMenuSeparator className="bg-[#D5DEDD]" />
                       <DropdownMenuItem
-                        className={`rounded-lg font-bold text-[13px] focus:bg-[#F5F3FF] ${
+                        className={`rounded-lg font-bold text-[13px] focus:bg-[#E8EEED] ${
                           p.is_active 
-                            ? "text-[#FF4D6D] focus:text-[#FF4D6D]" 
+                            ? "text-[#B8684B] focus:text-[#B8684B]" 
                             : "text-[#2E7D32] focus:text-[#2E7D32]"
                         }`}
                         onClick={() =>
@@ -244,7 +244,7 @@ function PatientsListPage() {
                         {p.is_active ? "Deactivate" : "Reactivate"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="rounded-lg font-bold text-[13px] text-[#FF4D6D] focus:bg-[#FFF1F4] focus:text-[#FF4D6D]"
+                        className="rounded-lg font-bold text-[13px] text-[#B8684B] focus:bg-[#FBF1EC] focus:text-[#B8684B]"
                         onClick={() =>
                           setDeleteTarget({ id: p.id, label: p.full_name || p.email })
                         }
@@ -267,12 +267,12 @@ function PatientsListPage() {
           if (!open && !deleteMut.isPending) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent className="rounded-2xl border-[#E2DCFA]">
+        <AlertDialogContent className="rounded-2xl border-[#D5DEDD]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-[#2A00A2]">
+            <AlertDialogTitle className="text-[#3B4759]">
               Delete {deleteTarget?.label}?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[#6B5AE0]/80 font-medium">
+            <AlertDialogDescription className="text-[#6A9B9C]/80 font-medium">
               This permanently deletes the patient's account and cancels any active
               subscription immediately. Payment history is kept for records. The email
               becomes available for a brand-new signup. This cannot be undone.
@@ -284,7 +284,7 @@ function PatientsListPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={deleteMut.isPending}
-              className="rounded-xl bg-[#FF4D6D] text-white hover:bg-[#E63E5C]"
+              className="rounded-xl bg-[#B8684B] text-white hover:bg-[#A95C41]"
               onClick={(e) => {
                 e.preventDefault();
                 if (deleteTarget) deleteMut.mutate(deleteTarget.id);

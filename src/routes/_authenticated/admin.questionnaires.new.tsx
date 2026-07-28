@@ -102,7 +102,7 @@ function NewQuestionnairePage() {
 />
             <Label
               htmlFor="q-active"
-              className="cursor-pointer select-none text-[16px] font-medium text-[#2E00AB]"
+              className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]"
             >
               Active Status
             </Label>
@@ -120,10 +120,10 @@ function NewQuestionnairePage() {
         </CardHeader>
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
           {catsQ.isLoading && (
-            <p className="py-2 text-[14px] font-normal text-[#2E00AB]/60">Loading categories…</p>
+            <p className="py-2 text-[14px] font-normal text-[#3B4759]/60">Loading categories…</p>
           )}
           {!catsQ.isLoading && (catsQ.data ?? []).length === 0 && (
-            <p className="py-2 text-[14px] font-normal text-[#2E00AB]/60">
+            <p className="py-2 text-[14px] font-normal text-[#3B4759]/60">
               No categories found to link.
             </p>
           )}
@@ -134,7 +134,7 @@ function NewQuestionnairePage() {
                 <label key={m.id} className="admin-check-row">
                   <Checkbox
                     checked={checked}
-                    className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
+                    className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#3B4759] data-[state=checked]:bg-[#3B4759]"
                     onCheckedChange={(v) => {
                       setCategoryIds((prev) =>
                         v ? [...prev, m.id] : prev.filter((x) => x !== m.id),

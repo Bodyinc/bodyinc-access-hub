@@ -121,7 +121,7 @@ export function ProviderForm({
               type="email"
               disabled={mode === "edit"}
               {...register("email")}
-              className={`${inputFull} disabled:bg-[#FDFDFF] disabled:opacity-60`}
+              className={`${inputFull} disabled:bg-[#F8FBFA] disabled:opacity-60`}
             />
           </Field>
           <Field label="Phone" error={errors.phone?.message}>
@@ -151,9 +151,9 @@ export function ProviderForm({
               <SelectTrigger className={selectFull}>
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
-              <SelectContent className="rounded-[6px] border-[#EAE6FA]">
+              <SelectContent className="rounded-[6px] border-[#D5DEDD]">
                 {CREDENTIALS.map((c) => (
-                  <SelectItem key={c} value={c} className="font-normal text-[#2E00AB]">
+                  <SelectItem key={c} value={c} className="font-normal text-[#3B4759]">
                     {c}
                   </SelectItem>
                 ))}
@@ -217,8 +217,8 @@ export function ProviderForm({
                     variant={on ? "default" : "outline"}
                     className={`cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium shadow-none normal-case tracking-normal capitalize transition-all ${
                       on
-                        ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-                        : "border-[#EAE6FA] bg-white text-[#2E00AB] hover:bg-[#F9F8FF]"
+                        ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                        : "border-[#D5DEDD] bg-white text-[#3B4759] hover:bg-[#F2F7F6]"
                     }`}
                     onClick={() =>
                       setValue(
@@ -292,9 +292,9 @@ export function ProviderForm({
               <SelectTrigger className={selectFull}>
                 <SelectValue placeholder="Select state" />
               </SelectTrigger>
-              <SelectContent className="max-h-72 rounded-[6px] border-[#EAE6FA]">
+              <SelectContent className="max-h-72 rounded-[6px] border-[#D5DEDD]">
                 {US_STATES.map((s) => (
-                  <SelectItem key={s} value={s} className="font-normal text-[#2E00AB]">
+                  <SelectItem key={s} value={s} className="font-normal text-[#3B4759]">
                     {s}
                   </SelectItem>
                 ))}
@@ -312,7 +312,7 @@ export function ProviderForm({
             <Input
               {...register("country")}
               disabled
-              className={`${inputFull} disabled:bg-[#FDFDFF]`}
+              className={`${inputFull} disabled:bg-[#F8FBFA]`}
             />
           </Field>
         </CardContent>
@@ -323,17 +323,17 @@ export function ProviderForm({
           <CardTitle className={adminSectionTitle}>Status</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex min-w-0 flex-col gap-4 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-col gap-4 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 flex-1">
-              <p className="text-[16px] font-medium text-[#2E00AB]">Active Account State</p>
-              <p className="mt-1 break-words text-[13px] font-normal text-[#2E00AB]/80 sm:text-[14px]">
+              <p className="text-[16px] font-medium text-[#3B4759]">Active Account State</p>
+              <p className="mt-1 break-words text-[13px] font-normal text-[#3B4759]/80 sm:text-[14px]">
                 Inactive providers cannot sign in or manage patient consultation slots.
               </p>
             </div>
             <Switch
               checked={!!isActive}
               onCheckedChange={(v) => setValue("is_active", v, { shouldDirty: true })}
-              className="shrink-0 self-start data-[state=checked]:bg-[#2E00AB] sm:self-auto"
+              className="shrink-0 self-start data-[state=checked]:bg-[#3B4759] sm:self-auto"
             />
           </div>
         </CardContent>
@@ -409,8 +409,8 @@ function ChipMultiSelect({
               variant={on ? "default" : "outline"}
               className={`cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium shadow-none normal-case tracking-normal transition-all ${
                 on
-                  ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-                  : "border-[#EAE6FA] bg-white text-[#2E00AB] hover:bg-[#F9F8FF]"
+                  ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                  : "border-[#D5DEDD] bg-white text-[#3B4759] hover:bg-[#F2F7F6]"
               }`}
               onClick={() => onToggle(o)}
             >
@@ -423,13 +423,13 @@ function ChipMultiSelect({
           .map((s) => (
             <Badge
               key={s}
-              className="max-w-full gap-1 rounded-[6px] border border-transparent bg-[#F5F3FF] px-3 py-1 text-[13px] font-medium text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#F5F3FF]"
+              className="max-w-full gap-1 rounded-[6px] border border-transparent bg-[#E8EEED] px-3 py-1 text-[13px] font-medium text-[#3B4759] shadow-none normal-case tracking-normal hover:bg-[#E8EEED]"
             >
               <span className="truncate">{s}</span>
               <button
                 type="button"
                 onClick={() => onToggle(s)}
-                className="ml-1 shrink-0 rounded-md p-0.5 transition-colors hover:bg-[#EAE6FA]"
+                className="ml-1 shrink-0 rounded-md p-0.5 transition-colors hover:bg-[#D5DEDD]"
               >
                 <X className="h-3 w-3 stroke-[3]" />
               </button>

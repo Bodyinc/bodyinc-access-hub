@@ -55,10 +55,10 @@ function CategoriesListPage() {
       {/* Header Section */}
       <div className="admin-page-header">
         <div className="min-w-0 space-y-2 sm:space-y-4">
-          <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#2E00AB] sm:text-[28px] lg:text-[32px]">
+          <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#3B4759] sm:text-[28px] lg:text-[32px]">
             Categories (Goals)
           </h2>
-          <p className="text-base font-normal text-[#2E00AB]/80 sm:text-lg lg:text-[20px]">
+          <p className="text-base font-normal text-[#3B4759]/80 sm:text-lg lg:text-[20px]">
             Medication categories shown to patients as goals during intake.
           </p>
         </div>
@@ -71,7 +71,7 @@ function CategoriesListPage() {
           />
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#2E00AB] hover:bg-[#220080] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
+            className="bg-[#3B4759] hover:bg-[#2E3745] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Add Category
           </Button>
@@ -79,38 +79,38 @@ function CategoriesListPage() {
       </div>
 
       {isEmpty ? (
-        <div className="border border-dashed border-[#E0D4FF] bg-[#F9F8FF] rounded-2xl p-12 text-center space-y-4">
-          <p className="text-base font-semibold text-[#2E00AB]">No categories found</p>
+        <div className="border border-dashed border-[#D5DEDD] bg-[#F2F7F6] rounded-2xl p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-[#3B4759]">No categories found</p>
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#2E00AB] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
+            className="bg-[#3B4759] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
           >
             <Plus className="h-4 w-4 mr-2" /> Add category
           </Button>
         </div>
       ) : (
         /* Table Frame Container */
-        <div className="max-w-full overflow-hidden rounded-2xl border border-[#E0D4FF] bg-white shadow-none">
+        <div className="max-w-full overflow-hidden rounded-2xl border border-[#D5DEDD] bg-white shadow-none">
           <div className="admin-table-scroll">
             <Table className="w-full min-w-[700px] border-collapse">
-              <TableHeader className="bg-[#F9F8FF]">
-  <TableRow className="border-b border-[#E0D4FF] hover:bg-transparent">
-    <TableHead className="h-12 min-w-[140px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+              <TableHeader className="bg-[#F2F7F6]">
+  <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+    <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
       Name
     </TableHead>
-    <TableHead className="h-12 min-w-[120px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+    <TableHead className="h-12 min-w-[120px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
       Slug
     </TableHead>
-    <TableHead className="h-12 min-w-[140px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+    <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
       BMI rule
     </TableHead>
-    <TableHead className="h-12 min-w-[110px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+    <TableHead className="h-12 min-w-[110px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
       Sex rule
     </TableHead>
-    <TableHead className="h-12 min-w-[90px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+    <TableHead className="h-12 min-w-[90px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
       Image
     </TableHead>
-    <TableHead className="h-12 min-w-[100px] border-r border-[#E0D4FF] px-4 text-base font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+    <TableHead className="h-12 min-w-[100px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
       Status
     </TableHead>
     <TableHead className="h-12 w-14 px-2 text-center sm:h-14 sm:px-4" />
@@ -119,7 +119,7 @@ function CategoriesListPage() {
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-12 text-center text-[16px] text-[#2E00AB]/70">
+                    <TableCell colSpan={7} className="py-12 text-center text-[16px] text-[#3B4759]/70">
                       Loading rows...
                     </TableCell>
                   </TableRow>
@@ -129,51 +129,51 @@ function CategoriesListPage() {
                   return (
                     <TableRow
                       key={c.id}
-                      className="border-b border-[#E0D4FF] transition-all cursor-pointer select-none bg-white hover:bg-[#F9F8FF]"
+                      className="border-b border-[#D5DEDD] transition-all cursor-pointer select-none bg-white hover:bg-[#F2F7F6]"
                       onClick={() =>
                         navigate({ to: "/admin/categories/$categoryId", params: { categoryId: c.id } })
                       }
                     >
                       {/* Name column */}
-                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-medium text-[#2E00AB] sm:px-6 sm:text-lg">
+                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-medium text-[#3B4759] sm:px-6 sm:text-lg">
                         {c.name}
                       </TableCell>
 
                       {/* Slug column */}
-                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-normal text-[#2E00AB]/80 sm:px-6 sm:text-lg">
+                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {c.slug}
                       </TableCell>
 
                       {/* BMI Rule column */}
-                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-normal text-[#2E00AB]/80 sm:px-6 sm:text-lg">
+                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {c.eligibility_rules?.bmi_bands?.length ? c.eligibility_rules.bmi_bands.join(", ") : "No Restriction"}
                       </TableCell>
 
                       {/* Sex Rule column */}
-                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 text-base font-normal text-[#2E00AB]/80 sm:px-6 sm:text-lg">
+                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {c.eligibility_rules?.sex?.length ? c.eligibility_rules.sex.join(", ") : "All"}
                       </TableCell>
 
                       {/* Image column */}
-                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 sm:px-6">
+                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6">
                         {c.image_url ? (
                           <img
                             src={c.image_url}
                             alt={c.name}
-                            className="h-10 w-10 rounded-[6px] object-cover border border-[#E0D4FF]"
+                            className="h-10 w-10 rounded-[6px] object-cover border border-[#D5DEDD]"
                           />
                         ) : (
-                          <span className="text-[16px] text-[#2E00AB]/40">—</span>
+                          <span className="text-[16px] text-[#3B4759]/40">—</span>
                         )}
                       </TableCell>
 
                       {/* Status Badge column */}
-                      <TableCell className="border-r border-[#E0D4FF] px-4 py-4 sm:px-6">
+                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6">
                         <Badge 
                           variant="secondary"
                           className={`rounded-[6px] px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
                             c.is_active
-                            ? "bg-[#F3EFFF] text-[#2E00AB]"
+                            ? "bg-[#E8EEED] text-[#3B4759]"
                             : "bg-gray-100 text-gray-500"
                           }`}
                         >
@@ -188,26 +188,26 @@ function CategoriesListPage() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 rounded-[6px] text-[#2E00AB] transition-all hover:bg-[#F3EFFF]"
+                              className="h-8 w-8 rounded-[6px] text-[#3B4759] transition-all hover:bg-[#E8EEED]"
                             >
                               <MoreHorizontal className="h-5 w-5" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#E0D4FF] bg-white p-1 font-['DM_Sans']">
-                            <DropdownMenuItem asChild className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]">
+                          <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#D5DEDD] bg-white p-1 font-['DM_Sans']">
+                            <DropdownMenuItem asChild className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]">
                               <Link to="/admin/categories/$categoryId" params={{ categoryId: c.id }}>
                                 Edit
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                               onClick={() => toggleMut.mutate({ id: c.id, is_active: !c.is_active })}
                             >
                               {c.is_active ? "Deactivate" : "Activate"}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-[#E0D4FF] my-1" />
+                            <DropdownMenuSeparator className="bg-[#D5DEDD] my-1" />
                             <DropdownMenuItem
-                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#2E00AB] focus:bg-[#F3EFFF]"
+                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
                               onClick={() => setConfirm({ id: c.id, name: c.name })}
                             >
                               Delete
@@ -226,15 +226,15 @@ function CategoriesListPage() {
 
       {/* Confirmation Modal */}
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-sm p-6 bg-white border border-[#E0D4FF] shadow-xl font-['DM_Sans']">
+        <AlertDialogContent className="rounded-2xl max-w-sm p-6 bg-white border border-[#D5DEDD] shadow-xl font-['DM_Sans']">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[18px] font-bold text-[#2E00AB]">Delete category?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-[#2E00AB]/80">
+            <AlertDialogTitle className="text-[18px] font-bold text-[#3B4759]">Delete category?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-[#3B4759]/80">
               This removes &ldquo;{confirm?.name}&rdquo; and unlinks its assignments.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-5 gap-2">
-            <AlertDialogCancel className="rounded-[6px] border border-[#E0D4FF] text-[#2E00AB] hover:bg-[#F9F8FF]">
+            <AlertDialogCancel className="rounded-[6px] border border-[#D5DEDD] text-[#3B4759] hover:bg-[#F2F7F6]">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

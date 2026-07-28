@@ -98,7 +98,7 @@ export function RefundsTable() {
       {/* Search and Refresh Bar styled to match Subscriptions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B5AE0]/60" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
           <Input
             placeholder="Search by patient or reason..."
             value={search}
@@ -113,54 +113,54 @@ export function RefundsTable() {
         <div className="admin-table-scroll">
           <Table className="border-collapse min-w-[820px]">
             <TableHeader className="bg-white">
-              <TableRow className="hover:bg-transparent border-b border-[#EAE6FA]">
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Patient</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Amount</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Reason</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Invoice</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Requested</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 text-right">Actions</TableHead>
+              <TableRow className="hover:bg-transparent border-b border-[#D5DEDD]">
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Patient</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Amount</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Reason</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Invoice</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Status</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Requested</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#2E00AB]/70">
+                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#3B4759]/70">
                     Loading rows...
                   </TableCell>
                 </TableRow>
               )}
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#2E00AB]/70">
+                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#3B4759]/70">
                     No refund requests.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
-                <TableRow key={r.id} className="border-b border-[#EAE6FA] hover:bg-[#F9F8FF] transition-colors">
-                  <TableCell className="px-6 py-4 border-r border-[#EAE6FA]">
-                    <div className="font-semibold text-[14px] text-[#2E00AB]">{r.customer_name ?? "—"}</div>
-                    <div className="text-[12px] font-medium text-[#2E00AB]/70">{r.customer_email ?? "—"}</div>
+                <TableRow key={r.id} className="border-b border-[#D5DEDD] hover:bg-[#F2F7F6] transition-colors">
+                  <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
+                    <div className="font-semibold text-[14px] text-[#3B4759]">{r.customer_name ?? "—"}</div>
+                    <div className="text-[12px] font-medium text-[#3B4759]/70">{r.customer_email ?? "—"}</div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#2E00AB] border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#3B4759] border-r border-[#D5DEDD]">
                     {formatCurrency(r.amount)}
                   </TableCell>
-                  <TableCell className="px-6 py-4 max-w-[220px] border-r border-[#EAE6FA]">
-                    <span className="text-[14px] font-medium text-[#2E00AB]/80">{r.reason || "—"}</span>
+                  <TableCell className="px-6 py-4 max-w-[220px] border-r border-[#D5DEDD]">
+                    <span className="text-[14px] font-medium text-[#3B4759]/80">{r.reason || "—"}</span>
                     {r.admin_note ? (
-                      <span className="block text-[12px] font-medium text-[#2E00AB]/70 mt-1">Note: {r.admin_note}</span>
+                      <span className="block text-[12px] font-medium text-[#3B4759]/70 mt-1">Note: {r.admin_note}</span>
                     ) : null}
                   </TableCell>
-                  <TableCell className="px-6 py-4 border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
                     <div className="flex items-center gap-2">
                       {r.invoice_url ? (
                         <a
                           href={r.invoice_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#2E00AB]/70 hover:text-[#2E00AB] transition-colors"
+                          className="text-[#3B4759]/70 hover:text-[#3B4759] transition-colors"
                           aria-label="View invoice"
                         >
                           <Eye className="h-4 w-4" />
@@ -171,31 +171,31 @@ export function RefundsTable() {
                           href={r.invoice_pdf_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#2E00AB]/70 hover:text-[#2E00AB] transition-colors"
+                          className="text-[#3B4759]/70 hover:text-[#3B4759] transition-colors"
                           aria-label="Download invoice PDF"
                         >
                           <Download className="h-4 w-4" />
                         </a>
                       ) : null}
                       {!r.invoice_url && !r.invoice_pdf_url ? (
-                        <span className="text-[#2E00AB]/50">—</span>
+                        <span className="text-[#3B4759]/50">—</span>
                       ) : null}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
                     <Badge
                       className={`rounded-md px-3 py-1 text-[12px] font-bold shadow-none border ${
                         r.status === "approved"
-                          ? "bg-[#2E00AB] border-transparent text-white"
+                          ? "bg-[#3B4759] border-transparent text-white"
                           : r.status === "rejected"
                             ? "bg-red-50 border-red-200 text-red-700"
-                            : "bg-[#FAF9FF] border-[#EAE6FA] text-[#2E00AB]/70"
+                            : "bg-[#F2F7F6] border-[#D5DEDD] text-[#3B4759]/70"
                       }`}
                     >
                       {r.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#2E00AB]/70 border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#3B4759]/70 border-r border-[#D5DEDD]">
                     {formatDate(r.created_at)}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right">
@@ -205,7 +205,7 @@ export function RefundsTable() {
                           size="sm"
                           onClick={() => onApprove(r.id)}
                           disabled={busyId === r.id}
-                          className="bg-[#2E00AB] hover:bg-[#25008A] text-white font-semibold rounded-lg text-xs"
+                          className="bg-[#3B4759] hover:bg-[#2E3745] text-white font-semibold rounded-lg text-xs"
                         >
                           Approve
                         </Button>
@@ -217,13 +217,13 @@ export function RefundsTable() {
                             setNote("");
                           }}
                           disabled={busyId === r.id}
-                          className="border-[#EAE6FA] text-[#2E00AB]/70 hover:bg-[#F9F8FF] font-semibold rounded-lg text-xs"
+                          className="border-[#D5DEDD] text-[#3B4759]/70 hover:bg-[#F2F7F6] font-semibold rounded-lg text-xs"
                         >
                           Reject
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-xs font-semibold text-[#2E00AB]/60">Resolved</span>
+                      <span className="text-xs font-semibold text-[#3B4759]/60">Resolved</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -235,10 +235,10 @@ export function RefundsTable() {
 
       {/* Reject Modal styled to match Figma design guidelines */}
       <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
-        <DialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#EAE6FA] shadow-xl">
+        <DialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#D5DEDD] shadow-xl">
           <DialogHeader className="space-y-1">
-            <DialogTitle className="text-[18px] font-bold text-[#2A00A2]">Reject refund request</DialogTitle>
-            <DialogDescription className="text-sm text-[#6B5AE0]/90 leading-relaxed">
+            <DialogTitle className="text-[18px] font-bold text-[#3B4759]">Reject refund request</DialogTitle>
+            <DialogDescription className="text-sm text-[#6A9B9C]/90 leading-relaxed">
               {rejecting
                 ? `Reject the ${formatCurrency(rejecting.amount)} refund for ${
                     rejecting.customer_email ?? "this patient"
@@ -252,14 +252,14 @@ export function RefundsTable() {
             placeholder="Reason for rejecting (optional)..."
             rows={4}
             maxLength={500}
-            className="border-[#EAE6FA] bg-[#FDFDFF] text-foreground placeholder:text-[#6B5AE0]/40 rounded-xl focus-visible:ring-[#2A00A2] text-[14px] mt-2 resize-none"
+            className="border-[#D5DEDD] bg-[#F8FBFA] text-foreground placeholder:text-[#6A9B9C]/40 rounded-xl focus-visible:ring-[#3B4759] text-[14px] mt-2 resize-none"
           />
           <DialogFooter className="mt-5 gap-2">
             <Button 
               variant="outline" 
               onClick={() => setRejecting(null)} 
               disabled={busyId !== null}
-              className="rounded-lg border border-[#EAE6FA] text-[#6B5AE0] hover:bg-[#F9F8FF]"
+              className="rounded-lg border border-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F2F7F6]"
             >
               Cancel
             </Button>

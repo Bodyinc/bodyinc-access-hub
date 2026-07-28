@@ -49,7 +49,7 @@ function OrderDetailPage() {
 
   if (q.isLoading) {
     return (
-      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#2E00AB]/60">
+      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#3B4759]/60">
         Loading order…
       </div>
     );
@@ -61,11 +61,11 @@ function OrderDetailPage() {
           variant="ghost"
           size="sm"
           onClick={() => navigate({ to: "/admin/orders" })}
-          className="h-9 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+          className="h-9 px-2 text-[14px] font-medium text-[#3B4759] hover:bg-[#E8EEED] hover:text-[#3B4759]"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
-        <div className="text-[14px] font-semibold text-[#FF4D6D]">
+        <div className="text-[14px] font-semibold text-[#B8684B]">
           {(q.error as Error)?.message ?? "Order not found"}
         </div>
       </div>
@@ -83,7 +83,7 @@ function OrderDetailPage() {
         variant="ghost"
         size="sm"
         onClick={() => navigate({ to: "/admin/orders" })}
-        className="h-9 -ml-2 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+        className="h-9 -ml-2 px-2 text-[14px] font-medium text-[#3B4759] hover:bg-[#E8EEED] hover:text-[#3B4759]"
       >
         <ArrowLeft className="mr-1 h-4 w-4" /> Back to orders
       </Button>
@@ -112,8 +112,8 @@ function OrderDetailPage() {
             <Badge
               className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
                 display_status === "paid"
-                  ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-                  : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+                  ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                  : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
               }`}
             >
               {display_status ?? "—"}
@@ -134,7 +134,7 @@ function OrderDetailPage() {
           <Row
             label="Stripe subscription"
             value={
-              <span className="font-mono text-xs text-[#2E00AB]">
+              <span className="font-mono text-xs text-[#3B4759]">
                 {subscription.stripe_subscription_id ?? "—"}
               </span>
             }
@@ -147,7 +147,7 @@ function OrderDetailPage() {
           <CardTitle className={adminSectionTitle}>Customer</CardTitle>
           {customer?.is_guest ? (
             <Badge
-              className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]"
+              className="rounded-lg border border-transparent bg-[#D5DEDD] px-2.5 py-0.5 text-[12px] font-semibold text-[#3B4759] shadow-none normal-case tracking-normal hover:bg-[#D5DEDD]"
               title="Paid during onboarding; account not yet created"
             >
               Guest — no account yet
@@ -177,7 +177,7 @@ function OrderDetailPage() {
               />
             </>
           ) : (
-            <div className="text-[#2E00AB]/60 font-medium">
+            <div className="text-[#3B4759]/60 font-medium">
               No customer on this subscription (no linked account or intake session).
             </div>
           )}
@@ -194,20 +194,20 @@ function OrderDetailPage() {
         <CardContent className="p-0">
           <div className="admin-table-scroll">
             <Table className="min-w-[560px]">
-              <TableHeader className="bg-[#FDFDFF]">
-                <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Amount</TableHead>
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Status</TableHead>
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Invoice</TableHead>
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">Created</TableHead>
+              <TableHeader className="bg-[#F8FBFA]">
+                <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Amount</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Status</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Invoice</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payments.length === 0 && (
-                  <TableRow className="border-b border-[#EAE6FA]">
+                  <TableRow className="border-b border-[#D5DEDD]">
                     <TableCell
                       colSpan={4}
-                      className="py-12 text-center text-[14px] font-medium text-[#2E00AB]/60"
+                      className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60"
                     >
                       No payments.
                     </TableCell>
@@ -216,17 +216,17 @@ function OrderDetailPage() {
                 {payments.map((p: any) => (
                   <TableRow
                     key={p.id}
-                    className="border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                    className="border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                   >
-                    <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                    <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       {formatCurrency((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}
                     </TableCell>
                     <TableCell>
                       <Badge
                         className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
                           p.status === "succeeded"
-                            ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-                            : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+                            ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                            : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
                         }`}
                       >
                         {p.status}
@@ -239,7 +239,7 @@ function OrderDetailPage() {
                             href={p.raw_event.hosted_invoice_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#2E00AB]/60 hover:text-[#2E00AB]"
+                            className="text-[#3B4759]/60 hover:text-[#3B4759]"
                             aria-label="View invoice"
                           >
                             <Eye className="h-4 w-4" />
@@ -250,20 +250,20 @@ function OrderDetailPage() {
                             href={p.raw_event.invoice_pdf}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#2E00AB]/60 hover:text-[#2E00AB]"
+                            className="text-[#3B4759]/60 hover:text-[#3B4759]"
                             aria-label="Download invoice PDF"
                           >
                             <Download className="h-4 w-4" />
                           </a>
                         ) : null}
                         {!p.raw_event?.hosted_invoice_url && !p.raw_event?.invoice_pdf ? (
-                          <span className="font-mono text-xs text-[#2E00AB]">
+                          <span className="font-mono text-xs text-[#3B4759]">
                             {p.stripe_invoice_id ?? "—"}
                           </span>
                         ) : null}
                       </div>
                     </TableCell>
-                    <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                    <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                       {formatDate(p.created_at)}
                     </TableCell>
                   </TableRow>
@@ -295,8 +295,8 @@ function OrderDetailPage() {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <div className="text-[13px] font-medium text-[#2E00AB]/60">{label}</div>
-      <div className="text-[14px] font-medium text-[#2E00AB]">{value}</div>
+      <div className="text-[13px] font-medium text-[#3B4759]/60">{label}</div>
+      <div className="text-[14px] font-medium text-[#3B4759]">{value}</div>
     </div>
   );
 }

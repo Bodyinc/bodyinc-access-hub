@@ -86,19 +86,19 @@ function QuestionnairesListPage() {
         <Card className={adminCard}>
           <div className="admin-table-scroll">
             <Table className="w-full min-w-[680px] border-collapse">
-              <TableHeader className="border-b border-[#EAE6FA] bg-[#FAF9FF]">
+              <TableHeader className="border-b border-[#D5DEDD] bg-[#F2F7F6]">
                 <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Name</TableHead>
-                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Questions</TableHead>
-                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Linked goals</TableHead>
-                  <TableHead className="h-12 border-r border-[#EAE6FA] px-4 text-[13px] font-medium text-[#2E00AB] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Status</TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Name</TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Questions</TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Linked goals</TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Status</TableHead>
                   <TableHead className="h-12 w-14 px-2 sm:h-14 sm:px-4 lg:px-8" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center font-medium text-[#2E00AB]/60">
+                    <TableCell colSpan={5} className="py-12 text-center font-medium text-[#3B4759]/60">
                       Loading records…
                     </TableCell>
                   </TableRow>
@@ -106,24 +106,24 @@ function QuestionnairesListPage() {
                 {rows.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="cursor-pointer border-b border-[#EAE6FA] last:border-none hover:bg-[#FAF9FF]/20 transition-colors"
+                    className="cursor-pointer border-b border-[#D5DEDD] last:border-none hover:bg-[#F2F7F6]/20 transition-colors"
                     onClick={() => navigate({ to: "/admin/questionnaires/$questionnaireId", params: { questionnaireId: r.id } })}
                   >
-                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 text-[14px] font-semibold text-[#2E00AB] sm:px-6 sm:py-5 lg:px-8">
+                    <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-[14px] font-semibold text-[#3B4759] sm:px-6 sm:py-5 lg:px-8">
                       {r.name}
                     </TableCell>
-                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 text-[14px] font-normal text-[#2E00AB]/80 sm:px-6 sm:py-5 lg:px-8">
+                    <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-[14px] font-normal text-[#3B4759]/80 sm:px-6 sm:py-5 lg:px-8">
                       {r.question_count}
                     </TableCell>
-                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 text-[14px] font-normal text-[#2E00AB]/80 sm:px-6 sm:py-5 lg:px-8">
+                    <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-[14px] font-normal text-[#3B4759]/80 sm:px-6 sm:py-5 lg:px-8">
                       {r.category_ids.length}
                     </TableCell>
-                    <TableCell className="border-r border-[#EAE6FA] px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+                    <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
                       <Badge
                         className={`px-3.5 py-1 rounded-[6px] text-[13px] font-medium tracking-normal normal-case border shadow-none ${
                           r.is_active
-                            ? "bg-[#F3F0FF] text-[#2E00AB] border-transparent"
-                            : "bg-white text-[#2E00AB]/50 border-[#EAE6FA]"
+                            ? "bg-[#E8EEED] text-[#3B4759] border-transparent"
+                            : "bg-white text-[#3B4759]/50 border-[#D5DEDD]"
                         }`}
                       >
                         {r.is_active ? "Active" : "Inactive"}
@@ -132,17 +132,17 @@ function QuestionnairesListPage() {
                     <TableCell className="px-2 py-4 text-right sm:px-4 sm:py-5 lg:px-8" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E00AB]/70 hover:bg-[#F3F0FF] rounded-lg transition-colors">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#3B4759]/70 hover:bg-[#E8EEED] rounded-lg transition-colors">
                             <MoreHorizontal className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl border-[#EAE6FA] p-1 shadow-md bg-white">
-                          <DropdownMenuItem asChild className="rounded-lg font-medium text-[#2E00AB] focus:bg-[#F3F0FF] focus:text-[#2E00AB] cursor-pointer">
+                        <DropdownMenuContent align="end" className="rounded-xl border-[#D5DEDD] p-1 shadow-md bg-white">
+                          <DropdownMenuItem asChild className="rounded-lg font-medium text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] cursor-pointer">
                             <Link to="/admin/questionnaires/$questionnaireId" params={{ questionnaireId: r.id }}>Edit</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-[#FAF9FF]" />
+                          <DropdownMenuSeparator className="bg-[#F2F7F6]" />
                           <DropdownMenuItem
-                            className="rounded-lg font-medium text-[#FF5A79] focus:bg-[#FFE8EC] focus:text-[#FF5A79] cursor-pointer"
+                            className="rounded-lg font-medium text-[#C4785C] focus:bg-[#F6E4DA] focus:text-[#C4785C] cursor-pointer"
                             onClick={() => setConfirm({ id: r.id, name: r.name })}
                           >
                             Delete
@@ -159,7 +159,7 @@ function QuestionnairesListPage() {
       )}
 
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent className="rounded-2xl border border-[#EAE6FA] bg-white p-6 max-w-[440px] shadow-xl">
+        <AlertDialogContent className="rounded-2xl border border-[#D5DEDD] bg-white p-6 max-w-[440px] shadow-xl">
           <AlertDialogHeader className="space-y-1">
             <AlertDialogTitle className={adminPageTitle}>
               Delete questionnaire?
@@ -169,11 +169,11 @@ function QuestionnairesListPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex items-center gap-2 pt-2 w-full">
-            <AlertDialogCancel className="flex-1 text-[#5527E7] hover:bg-[#F3F0FF] hover:text-[#1D0087] font-semibold rounded-xl h-11 transition-colors border-none bg-transparent shadow-none mt-0">
+            <AlertDialogCancel className="flex-1 text-[#6A9B9C] hover:bg-[#E8EEED] hover:text-[#2E3745] font-semibold rounded-xl h-11 transition-colors border-none bg-transparent shadow-none mt-0">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
-              className="flex-1 bg-[#FF5A79] hover:bg-[#E24A67] text-white font-bold rounded-xl h-11 px-5 shadow-none transition-colors border-none"
+              className="flex-1 bg-[#C4785C] hover:bg-[#A95C41] text-white font-bold rounded-xl h-11 px-5 shadow-none transition-colors border-none"
               onClick={() => confirm && deleteMut.mutate(confirm.id)}
             >
               Delete

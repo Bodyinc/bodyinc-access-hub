@@ -104,11 +104,11 @@ export function PromoForm({
                 <SelectTrigger className={selectFull}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-[6px] border-[#EAE6FA]">
-                  <SelectItem value="amount" className="text-[#2E00AB]">
+                <SelectContent className="rounded-[6px] border-[#D5DEDD]">
+                  <SelectItem value="amount" className="text-[#3B4759]">
                     Fixed amount ($)
                   </SelectItem>
-                  <SelectItem value="percent" className="text-[#2E00AB]">
+                  <SelectItem value="percent" className="text-[#3B4759]">
                     Percent (%)
                   </SelectItem>
                 </SelectContent>
@@ -224,17 +224,17 @@ function Toggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 flex-col gap-3 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1">
-        <p className="break-words text-[16px] font-medium text-[#2E00AB]">{label}</p>
-        <p className="mt-1 break-words text-[13px] font-normal text-[#2E00AB]/80 sm:text-[14px]">
+        <p className="break-words text-[16px] font-medium text-[#3B4759]">{label}</p>
+        <p className="mt-1 break-words text-[13px] font-normal text-[#3B4759]/80 sm:text-[14px]">
           {desc}
         </p>
       </div>
       <Switch
         checked={checked}
         onCheckedChange={onChange}
-        className="shrink-0 self-start data-[state=checked]:bg-[#2E00AB] sm:self-auto"
+        className="shrink-0 self-start data-[state=checked]:bg-[#3B4759] sm:self-auto"
       />
     </div>
   );
