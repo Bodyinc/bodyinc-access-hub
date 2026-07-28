@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/rea
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProviderSidebar } from "@/components/provider/provider-sidebar";
 import { RoutePending } from "@/components/route-pending";
-import { NotificationBell } from "@/components/notifications/notification-bell";
 import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,6 +48,7 @@ const TITLES: Record<string, string> = {
   "/provider/requests": "My Requests",
   "/provider/queue": "Unassigned queue",
   "/provider/patients": "My Patients",
+  "/provider/notifications": "Notifications",
   "/provider/profile": "My Profile",
 };
 
@@ -76,13 +76,6 @@ function ProviderLayout() {
         <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#D5DEDD] bg-white px-4 py-3 lg:hidden">
           <SidebarTrigger className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] border border-[#D5DEDD] bg-[#6A9B9C] text-white shadow-sm hover:bg-[#5B8788]" />
           <span className="truncate text-base font-semibold text-[#3B4759]">{title}</span>
-          <div className="ml-auto">
-            <NotificationBell />
-          </div>
-        </div>
-
-        <div className="sticky top-0 z-20 hidden items-center justify-end border-b border-[#D5DEDD] bg-white px-4 py-3 lg:flex lg:px-8">
-          <NotificationBell />
         </div>
 
         <main className="h-full w-full min-w-0 overflow-y-auto p-4 sm:p-6 lg:px-8 lg:pt-6 lg:pb-8">

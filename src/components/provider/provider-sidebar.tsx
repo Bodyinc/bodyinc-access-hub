@@ -1,6 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotifications } from "@/lib/use-notifications";
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +18,7 @@ const items = [
   { title: "Dashboard", url: "/provider", exact: true },
   { title: "My Requests", url: "/provider/requests" },
   { title: "Unassigned queue", url: "/provider/queue" },
+  { title: "Notifications", url: "/provider/notifications", badge: true },
   { title: "My Patients", url: "/provider/patients" },
   { title: "My Profile", url: "/provider/profile" },
 ];
@@ -25,6 +27,7 @@ export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { unread } = useNotifications();
 
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
@@ -90,6 +93,14 @@ export function ProviderSidebar() {
                     >
                       <Link to={item.url}>
                         <span className="truncate">{item.title}</span>
+                        {item.badge && unread > 0 && (
+                          <>
+                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#B8684B] px-1.5 text-[11px] font-semibold text-white group-data-[collapsible=icon]:hidden">
+                              {unread > 9 ? "9+" : unread}
+                            </span>
+                            <span className="hidden h-2 w-2 shrink-0 rounded-full bg-[#B8684B] group-data-[collapsible=icon]:block" />
+                          </>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
