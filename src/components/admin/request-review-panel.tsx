@@ -422,6 +422,8 @@ export function RequestReviewPanel({
         </Card>
       ) : null}
 
+      <RequestNotes requestId={requestId} />
+
       <Card className={adminCard}>
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className={adminSectionTitle}>Status history</CardTitle>
