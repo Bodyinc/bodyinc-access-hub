@@ -21,7 +21,6 @@ import { Route as AuthenticatedProviderIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
 import { Route as AuthenticatedProviderRequestIdRouteImport } from './routes/_authenticated/provider.$requestId'
-import { Route as AuthenticatedAdminSlotsRouteImport } from './routes/_authenticated/admin.slots'
 import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin.requests'
 import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_authenticated/admin.questionnaires'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
@@ -30,7 +29,6 @@ import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authenticated/admin.medicines'
 import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/_authenticated/admin.medication-rules'
 import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_authenticated/admin.intake-sessions'
-import { Route as AuthenticatedAdminIntakeFormRouteImport } from './routes/_authenticated/admin.intake-form'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
@@ -123,11 +121,6 @@ const AuthenticatedProviderRequestIdRoute =
     path: '/$requestId',
     getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
-const AuthenticatedAdminSlotsRoute = AuthenticatedAdminSlotsRouteImport.update({
-  id: '/slots',
-  path: '/slots',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
 const AuthenticatedAdminRequestsRoute =
   AuthenticatedAdminRequestsRouteImport.update({
     id: '/requests',
@@ -174,12 +167,6 @@ const AuthenticatedAdminIntakeSessionsRoute =
   AuthenticatedAdminIntakeSessionsRouteImport.update({
     id: '/intake-sessions',
     path: '/intake-sessions',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminIntakeFormRoute =
-  AuthenticatedAdminIntakeFormRouteImport.update({
-    id: '/intake-form',
-    path: '/intake-form',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminCategoriesRoute =
@@ -367,7 +354,6 @@ export interface FileRoutesByFullPath {
   '/provider': typeof AuthenticatedProviderRouteWithChildren
   '/admin/billing': typeof AuthenticatedAdminBillingRouteWithChildren
   '/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
-  '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   '/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
@@ -376,7 +362,6 @@ export interface FileRoutesByFullPath {
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   '/admin/requests': typeof AuthenticatedAdminRequestsRouteWithChildren
-  '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/provider/$requestId': typeof AuthenticatedProviderRequestIdRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -415,8 +400,6 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
-  '/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/provider/$requestId': typeof AuthenticatedProviderRequestIdRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -461,7 +444,6 @@ export interface FileRoutesById {
   '/_authenticated/provider': typeof AuthenticatedProviderRouteWithChildren
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRouteWithChildren
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
-  '/_authenticated/admin/intake-form': typeof AuthenticatedAdminIntakeFormRoute
   '/_authenticated/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
   '/_authenticated/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   '/_authenticated/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
@@ -470,7 +452,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/_authenticated/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   '/_authenticated/admin/requests': typeof AuthenticatedAdminRequestsRouteWithChildren
-  '/_authenticated/admin/slots': typeof AuthenticatedAdminSlotsRoute
   '/_authenticated/provider/$requestId': typeof AuthenticatedProviderRequestIdRoute
   '/_authenticated/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -515,7 +496,6 @@ export interface FileRouteTypes {
     | '/provider'
     | '/admin/billing'
     | '/admin/categories'
-    | '/admin/intake-form'
     | '/admin/intake-sessions'
     | '/admin/medication-rules'
     | '/admin/medicines'
@@ -524,7 +504,6 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/questionnaires'
     | '/admin/requests'
-    | '/admin/slots'
     | '/provider/$requestId'
     | '/rx/$prescriptionId'
     | '/admin/'
@@ -563,8 +542,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/dashboard'
-    | '/admin/intake-form'
-    | '/admin/slots'
     | '/provider/$requestId'
     | '/rx/$prescriptionId'
     | '/admin'
@@ -608,7 +585,6 @@ export interface FileRouteTypes {
     | '/_authenticated/provider'
     | '/_authenticated/admin/billing'
     | '/_authenticated/admin/categories'
-    | '/_authenticated/admin/intake-form'
     | '/_authenticated/admin/intake-sessions'
     | '/_authenticated/admin/medication-rules'
     | '/_authenticated/admin/medicines'
@@ -617,7 +593,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/questionnaires'
     | '/_authenticated/admin/requests'
-    | '/_authenticated/admin/slots'
     | '/_authenticated/provider/$requestId'
     | '/_authenticated/rx/$prescriptionId'
     | '/_authenticated/admin/'
@@ -745,13 +720,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProviderRequestIdRouteImport
       parentRoute: typeof AuthenticatedProviderRoute
     }
-    '/_authenticated/admin/slots': {
-      id: '/_authenticated/admin/slots'
-      path: '/slots'
-      fullPath: '/admin/slots'
-      preLoaderRoute: typeof AuthenticatedAdminSlotsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/requests': {
       id: '/_authenticated/admin/requests'
       path: '/requests'
@@ -806,13 +774,6 @@ declare module '@tanstack/react-router' {
       path: '/intake-sessions'
       fullPath: '/admin/intake-sessions'
       preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/intake-form': {
-      id: '/_authenticated/admin/intake-form'
-      path: '/intake-form'
-      fullPath: '/admin/intake-form'
-      preLoaderRoute: typeof AuthenticatedAdminIntakeFormRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/categories': {
@@ -1202,7 +1163,6 @@ const AuthenticatedAdminRequestsRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRouteWithChildren
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRouteWithChildren
-  AuthenticatedAdminIntakeFormRoute: typeof AuthenticatedAdminIntakeFormRoute
   AuthenticatedAdminIntakeSessionsRoute: typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
   AuthenticatedAdminMedicationRulesRoute: typeof AuthenticatedAdminMedicationRulesRouteWithChildren
   AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRouteWithChildren
@@ -1211,7 +1171,6 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRouteWithChildren
   AuthenticatedAdminQuestionnairesRoute: typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   AuthenticatedAdminRequestsRoute: typeof AuthenticatedAdminRequestsRouteWithChildren
-  AuthenticatedAdminSlotsRoute: typeof AuthenticatedAdminSlotsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminPromosPromoIdRoute: typeof AuthenticatedAdminPromosPromoIdRoute
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
@@ -1224,7 +1183,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRouteWithChildren,
   AuthenticatedAdminCategoriesRoute:
     AuthenticatedAdminCategoriesRouteWithChildren,
-  AuthenticatedAdminIntakeFormRoute: AuthenticatedAdminIntakeFormRoute,
   AuthenticatedAdminIntakeSessionsRoute:
     AuthenticatedAdminIntakeSessionsRouteWithChildren,
   AuthenticatedAdminMedicationRulesRoute:
@@ -1238,7 +1196,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminQuestionnairesRoute:
     AuthenticatedAdminQuestionnairesRouteWithChildren,
   AuthenticatedAdminRequestsRoute: AuthenticatedAdminRequestsRouteWithChildren,
-  AuthenticatedAdminSlotsRoute: AuthenticatedAdminSlotsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminPromosPromoIdRoute: AuthenticatedAdminPromosPromoIdRoute,
   AuthenticatedAdminPromosNewRoute: AuthenticatedAdminPromosNewRoute,
