@@ -643,6 +643,44 @@ export type Database = {
           },
         ]
       }
+      medication_request_notes: {
+        Row: {
+          author_id: string
+          author_role: string
+          body: string
+          created_at: string
+          id: string
+          request_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          author_role?: string
+          body: string
+          created_at?: string
+          id?: string
+          request_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          author_role?: string
+          body?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_request_notes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "medication_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medication_requests: {
         Row: {
           billing_period_end: string | null
