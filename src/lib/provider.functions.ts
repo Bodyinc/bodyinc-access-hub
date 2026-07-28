@@ -487,8 +487,8 @@ export const getMyProviderProfile = createServerFn({ method: "POST" })
       languages: (prov.languages ?? []) as string[],
       consultation_types: (prov.consultation_types ?? []) as string[],
       years_experience: prov.years_experience ?? null,
-      // Read-only, admin-controlled:
       license_states: (prov.license_states ?? []) as string[],
+      // Read-only, admin-controlled:
       license_number: prov.license_number ?? null,
       npi: prov.npi ?? null,
       dea: prov.dea ?? null,
@@ -505,9 +505,13 @@ const profileInput = z.object({
   years_experience: z.number().int().min(0).max(80).nullable().optional(),
   languages: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
   consultation_types: z.array(z.string().trim().min(1).max(60)).max(10).optional(),
+  license_states: z
+    .array(z.string().trim().length(2).regex(/^[A-Za-z]{2}$/))
+    .max(60)
+    .optional(),
 });
 
-// A practitioner may edit their own presentation fields only. Licence states, NPI, DEA, licence
+// A practitioner may edit their presentation fields plus their licensed states. NPI, DEA, licence
 // number and active status stay admin-controlled and are never read from this input.
 export const updateMyProviderProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -532,6 +536,13 @@ export const updateMyProviderProfile = createServerFn({ method: "POST" })
         years_experience: data.years_experience ?? null,
         languages: data.languages ?? [],
         consultation_types: data.consultation_types ?? [],
+        ...(data.license_states
+          ? {
+              license_states: Array.from(
+                new Set(data.license_states.map((s) => s.toUpperCase())),
+              ),
+            }
+          : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", me);
