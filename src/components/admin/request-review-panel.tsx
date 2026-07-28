@@ -33,6 +33,7 @@ import {
   assignRequestProvider,
 } from "@/lib/requests.functions";
 import { listProviders } from "@/lib/providers.functions";
+import { claimRequest } from "@/lib/provider.functions";
 import {
   requestStatusLabel,
   requestStatusTone,
@@ -41,6 +42,7 @@ import {
 } from "@/lib/request-status";
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
+import { RequestNotes } from "@/components/admin/request-notes";
 
 function money(cents: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
@@ -56,10 +58,16 @@ export function RequestReviewPanel({
   requestId,
   backTo,
   canManage = false,
+  clinicalOnly = false,
+  canClaim = false,
 }: {
   requestId: string;
   backTo: string;
   canManage?: boolean;
+  /** Practitioner view: hide patient contact / billing details. */
+  clinicalOnly?: boolean;
+  /** Practitioner view: allow claiming an unassigned order. */
+  canClaim?: boolean;
 }) {
   const qc = useQueryClient();
   const get = useServerFn(getRequest);
@@ -69,6 +77,7 @@ export function RequestReviewPanel({
   const advance = useServerFn(advanceRequestStatus);
   const assign = useServerFn(assignRequestProvider);
   const listProv = useServerFn(listProviders);
+  const claim = useServerFn(claimRequest);
 
   const q = useQuery({
     queryKey: ["request", requestId],
@@ -95,6 +104,17 @@ export function RequestReviewPanel({
     onSuccess: () => {
       toast.success("Provider assigned.");
       setAssignId("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const claimMut = useMutation({
+    mutationFn: () => claim({ data: { requestId } }),
+    onSuccess: () => {
+      toast.success("Order claimed — it's now assigned to you.");
+      qc.invalidateQueries({ queryKey: ["provider-claimable"] });
+      qc.invalidateQueries({ queryKey: ["provider-dashboard"] });
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -209,12 +229,17 @@ export function RequestReviewPanel({
         <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
           <div className="grid gap-4 text-[14px] sm:grid-cols-2">
             <Row label="Patient" value={patient?.name ?? (patient?.is_guest ? "Guest — no account yet" : "—")} />
-            <Row label="Email" value={patient?.email ?? "—"} />
+            {clinicalOnly ? null : <Row label="Email" value={patient?.email ?? "—"} />}
             <Row label="State" value={patient?.state_code ?? "—"} />
             <Row label="Assigned provider" value={provider?.full_name ?? "Unassigned"} />
             <Row label="Medication" value={medicine?.name ?? "—"} />
             <Row label="Plan" value={pkg?.name ?? "—"} />
-            <Row label="Plan price" value={pkg?.price != null ? `$${Number(pkg.price).toFixed(2)}` : "—"} />
+            {clinicalOnly ? null : (
+              <Row
+                label="Plan price"
+                value={pkg?.price != null ? `$${Number(pkg.price).toFixed(2)}` : "—"}
+              />
+            )}
             <Row label="Needs approval" value={request.requires_consultation ? "Yes" : "No (auto)"} />
             {request.tracking_number ? (
               <Row label="Tracking #" value={request.tracking_number} />
@@ -253,6 +278,16 @@ export function RequestReviewPanel({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 border-t border-[#D5DEDD] pt-4">
+            {canClaim && !provider ? (
+              <Button
+                size="sm"
+                onClick={() => claimMut.mutate()}
+                disabled={claimMut.isPending}
+                className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
+              >
+                {claimMut.isPending ? "Claiming…" : "Claim this order"}
+              </Button>
+            ) : null}
             {canApprove ? (
               <Button
                 size="sm"
@@ -387,6 +422,8 @@ export function RequestReviewPanel({
         </Card>
       ) : null}
 
+      <RequestNotes requestId={requestId} />
+
       <Card className={adminCard}>
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className={adminSectionTitle}>Status history</CardTitle>
@@ -414,6 +451,7 @@ export function RequestReviewPanel({
         open={changeOpen}
         onOpenChange={setChangeOpen}
         onChanged={refresh}
+        currentMedicineId={medicine?.id ?? request.medicine_id ?? null}
         current={{
           medicineName: medicine?.name ?? null,
           planName: pkg?.name ?? null,

@@ -14,6 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -22,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
+import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import { changeRequestMedicine } from "@/lib/requests.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
 
@@ -49,20 +53,25 @@ export function RequestChangeMedicineDialog({
   onOpenChange,
   onChanged,
   current,
+  currentMedicineId,
 }: {
   requestId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChanged: () => void;
   current: RequestChangeCurrent;
+  currentMedicineId?: string | null;
 }) {
   const medicinesQ = useQuery(medicinesQueryOptions());
+  const categoriesQ = useQuery(categoriesQueryOptions());
   const change = useServerFn(changeRequestMedicine);
 
   const [search, setSearch] = useState("");
   const [medicineId, setMedicineId] = useState<string>("");
   const [variantId, setVariantId] = useState<string>("");
   const [packageId, setPackageId] = useState<string>("");
+  const [allowOtherCategory, setAllowOtherCategory] = useState(false);
+  const [categoryReason, setCategoryReason] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -70,6 +79,8 @@ export function RequestChangeMedicineDialog({
       setMedicineId("");
       setVariantId("");
       setPackageId("");
+      setAllowOtherCategory(false);
+      setCategoryReason("");
     }
   }, [open]);
 
@@ -78,11 +89,31 @@ export function RequestChangeMedicineDialog({
     [medicinesQ.data],
   );
 
+  // Same-category first: practitioners switch within a treatment category by default, and must
+  // opt in (with a clinical reason) to move a patient to a different category.
+  const currentCategoryIds = useMemo(() => {
+    const m = medicines.find((x) => x.id === currentMedicineId);
+    return new Set(m?.category_ids ?? []);
+  }, [medicines, currentMedicineId]);
+
+  const inSameCategory = (m: { id: string; category_ids: string[] }) =>
+    currentCategoryIds.size === 0 || m.category_ids.some((c) => currentCategoryIds.has(c));
+
+  const categoryNames = useMemo(() => {
+    const map = new Map((categoriesQ.data ?? []).map((c) => [c.id, c.name] as const));
+    return Array.from(currentCategoryIds)
+      .map((id) => map.get(id))
+      .filter(Boolean) as string[];
+  }, [categoriesQ.data, currentCategoryIds]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return medicines;
-    return medicines.filter((m) => m.name.toLowerCase().includes(s));
-  }, [medicines, search]);
+    return medicines
+      .filter((m) => m.id !== currentMedicineId)
+      .filter((m) => allowOtherCategory || inSameCategory(m))
+      .filter((m) => !s || m.name.toLowerCase().includes(s));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicines, search, allowOtherCategory, currentCategoryIds, currentMedicineId]);
 
   const medicine = medicines.find((m) => m.id === medicineId) ?? null;
   const hasVariants = (medicine?.variants.length ?? 0) > 0;
@@ -119,8 +150,18 @@ export function RequestChangeMedicineDialog({
   const diff =
     selectedPkg && current.price != null ? selectedPkg.price - current.price : null;
 
+  const isCrossCategory = !!medicine && currentCategoryIds.size > 0 && !inSameCategory(medicine);
+  const reasonMissing = isCrossCategory && categoryReason.trim().length < 10;
+
   const mutation = useMutation({
-    mutationFn: () => change({ data: { requestId, packageId } }),
+    mutationFn: () =>
+      change({
+        data: {
+          requestId,
+          packageId,
+          crossCategoryReason: isCrossCategory ? categoryReason.trim() : undefined,
+        },
+      }),
     onSuccess: (res: any) => {
       toast.success(
         res?.status === "awaiting_additional_payment"
@@ -133,7 +174,7 @@ export function RequestChangeMedicineDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const canSubmit = !!selectedPkg && !mutation.isPending;
+  const canSubmit = !!selectedPkg && !mutation.isPending && !reasonMissing;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,6 +199,15 @@ export function RequestChangeMedicineDialog({
               <div className="text-lg font-bold text-foreground">
                 {current.price != null ? money(current.price) : "—"}
               </div>
+              {categoryNames.length > 0 ? (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {categoryNames.map((n) => (
+                    <Badge key={n} variant="secondary" className="text-[11px]">
+                      {n}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -165,6 +215,24 @@ export function RequestChangeMedicineDialog({
             <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               New medicine
             </div>
+
+            {currentCategoryIds.size > 0 ? (
+              <div className="flex items-center justify-between gap-2 rounded-md border px-3 py-2">
+                <Label htmlFor="allow-other-cat" className="text-xs font-normal leading-snug">
+                  Show medicines from other categories
+                </Label>
+                <Switch
+                  id="allow-other-cat"
+                  checked={allowOtherCategory}
+                  onCheckedChange={(v) => {
+                    setAllowOtherCategory(v);
+                    setMedicineId("");
+                    setVariantId("");
+                    setPackageId("");
+                  }}
+                />
+              </div>
+            ) : null}
 
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -185,6 +253,7 @@ export function RequestChangeMedicineDialog({
               ) : (
                 filtered.map((m) => {
                   const selected = m.id === medicineId;
+                  const other = !inSameCategory(m);
                   return (
                     <button
                       key={m.id}
@@ -196,6 +265,9 @@ export function RequestChangeMedicineDialog({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">{m.name}</div>
+                        {other ? (
+                          <div className="text-[11px] text-muted-foreground">Other category</div>
+                        ) : null}
                       </div>
                       {selected ? <Check className="h-4 w-4 text-primary shrink-0" /> : null}
                     </button>
@@ -203,6 +275,24 @@ export function RequestChangeMedicineDialog({
                 })
               )}
             </div>
+
+            {isCrossCategory ? (
+              <div className="space-y-1 rounded-md border border-[#B8684B]/40 bg-[#B8684B]/5 p-3">
+                <Label className="text-xs font-semibold text-[#8F4A33]">
+                  Clinical reason for changing treatment category
+                </Label>
+                <Textarea
+                  value={categoryReason}
+                  onChange={(e) => setCategoryReason(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Explain why this patient should move to a different treatment category…"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Required (min. 10 characters). This is recorded on the order timeline and notes.
+                </p>
+              </div>
+            ) : null}
 
             {hasVariants ? (
               <div className="space-y-1">
