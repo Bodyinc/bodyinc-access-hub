@@ -1,31 +1,40 @@
-## Goal
+# Re-theme the admin panel
 
-Add a "Danger zone" tab in Admin → Settings with a checklist of data groups to wipe, plus a confirm dialog before anything is deleted.
+## New palette and roles
 
-## Checklist options (only viable groups)
+| Hex | Role |
+| --- | --- |
+| `#E8EEED` | Page/surface tint, table headers, hover rows |
+| `#6A9B9C` | Primary brand (sidebar active, links, focus rings, primary accents) |
+| `#E3E084` | Call-to-action / highlight (primary buttons, badges), with dark ink text |
+| `#B8684B` | Secondary accent / warning-ish highlights, chips |
+| `#3B4759` (with `4D` = 30% alpha for borders/muted) | Ink text color and hairline borders |
 
-1. **Orders & requests** — medication requests + their events, prescriptions, shop checkout orders/items/events
-2. **Billing & payments** — payments, subscriptions, additional payments, refund requests, cancellation feedback, stripe events, wallet transactions
-3. **Intake sessions** — intake sessions and all their answers/eligibility/selection rows
-4. **Catalog (medicines)** — medicines, variants, packages, category↔medicine links
-5. **Categories / goals** — medication categories, questionnaire↔category links, medicine links
-6. **Questionnaires** — questionnaires, questions, options
-7. **Medication rules** — compatibility/restriction pairs
+Text goes from purple `#2E00AB` to slate ink `#3B4759`; borders from `#EAE6FA` to `rgba(59,71,89,0.18–0.30)`; white cards stay white on an `#E8EEED` page background.
 
-Not offered (unsafe / would break the app): patient accounts & profiles, user roles, platform settings. I'll note this in the UI.
+## What gets changed
 
-Deletion respects dependencies: selecting a "parent" group (e.g. Catalog) automatically clears dependent rows that reference it (orders/requests pointing at medicines) so no foreign-key errors — the dialog lists what will be cascaded.
+1. **`src/styles.css` — single source of truth**
+   - Add the five hexes as CSS variables (`--sand`, `--ink`, `--teal`, `--clay`, `--mist`) plus derived hover/soft shades.
+   - Re-point the shadcn tokens (`--background`, `--foreground`, `--primary`, `--secondary`, `--muted`, `--accent`, `--border`, `--input`, `--ring`, `--sidebar*`, `--brand*`) to the new palette in OKLCH so every shadcn component follows automatically.
+   - Rewrite the hardcoded purple inside the `.admin-*` component classes (title, subtitle, label, input, textarea, select, card, buttons, table head/cell, check row) to use the new variables.
 
-## UI
+2. **`src/lib/admin-ui.ts`** — replace the inline `#2E00AB` / `#EAE6FA` in the shared class tokens with the new variable-driven classes.
 
-- New "Danger zone" tab in `admin.settings.index.tsx`, styled with red accents.
-- Card with checkbox list (label + one-line "what this removes"), "Select all" toggle.
-- Delete button disabled until at least one box is checked; opens AlertDialog requiring the word `DELETE` typed to confirm.
-- On success: toast with per-group deleted counts, invalidate all admin queries.
+3. **Component + route sweep (~40 files)** — replace remaining literal purple hexes with the new tokens/semantic classes in:
+   - Admin components: sidebar, refresh button, medicine form / preview / pricing / packages editor, category form, promo form, provider form, state multi-select, request list, request review panel, refunds table, subscriptions table, activity log tab.
+   - Admin routes: layout (`admin.tsx` header + mobile bar), dashboard, medicines, categories, questionnaires, medication rules, patients, providers, orders, intake sessions, intake form, promos, referrals, billing, settings, slots.
+   - Shared/other: `request-status.ts` badge colors, `ui/sidebar.tsx`, `ui/switch.tsx`, provider sidebar, provider layout, `rx.$prescriptionId`.
 
-## Technical
+4. **Contrast pass** — `#E3E084` buttons use ink `#3B4759` text (never white); `#6A9B9C` and `#B8684B` fills use white text. Status badges get a consistent tinted-background + ink-text treatment.
 
-- New `src/lib/danger-zone.functions.ts`: `wipePlatformData` server fn, `requireSupabaseAuth` + `assertAdmin`, Zod-validated array of group keys, uses `supabaseAdmin` loaded inside the handler.
-- Deletes run in a fixed dependency order (children before parents), returning `{ group: count }`.
-- Writes one `admin_activity_log` entry (`action: "danger.wipe"`) recording which groups were wiped.
-- Stripe objects are NOT touched — this only clears the app database. Called out in the dialog text.
+5. **Verification** — typecheck, then screenshot a few admin pages (dashboard, medicines list, edit medicine, orders) at desktop and mobile widths to confirm no leftover purple and no contrast regressions.
+
+## Scope notes
+
+- Admin panel only — the patient-facing dashboard in your screenshot is not re-skinned in this pass unless you want it included.
+- Layout, spacing and functionality are untouched; this is purely color.
+
+## Technical details
+
+Colors are defined once in `src/styles.css` under `:root` and mapped through `@theme inline`, so future tweaks are one-file edits. Hardcoded hex literals in components are replaced by Tailwind classes backed by those tokens (`bg-brand`, `text-foreground`, `border-border`, etc.) rather than new literals.
