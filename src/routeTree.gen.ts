@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './ro
 import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
 import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
 import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
+import { Route as AuthenticatedProviderRequestsRequestIdRouteImport } from './routes/_authenticated/provider.requests.$requestId'
 import { Route as AuthenticatedAdminRequestsRequestIdRouteImport } from './routes/_authenticated/admin.requests.$requestId'
 import { Route as AuthenticatedAdminQuestionnairesNewRouteImport } from './routes/_authenticated/admin.questionnaires.new'
 import { Route as AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport } from './routes/_authenticated/admin.questionnaires.$questionnaireId'
@@ -252,6 +253,12 @@ const AuthenticatedAdminBillingIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAdminBillingRoute,
   } as any)
+const AuthenticatedProviderRequestsRequestIdRoute =
+  AuthenticatedProviderRequestsRequestIdRouteImport.update({
+    id: '/requests/$requestId',
+    path: '/requests/$requestId',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
 const AuthenticatedAdminRequestsRequestIdRoute =
   AuthenticatedAdminRequestsRequestIdRouteImport.update({
     id: '/$requestId',
@@ -372,6 +379,7 @@ export interface FileRoutesByFullPath {
   '/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
   '/admin/requests/$requestId': typeof AuthenticatedAdminRequestsRequestIdRoute
+  '/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
@@ -409,6 +417,7 @@ export interface FileRoutesByTo {
   '/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
   '/admin/requests/$requestId': typeof AuthenticatedAdminRequestsRequestIdRoute
+  '/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/admin/billing': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsIndexRoute
@@ -460,6 +469,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/questionnaires/$questionnaireId': typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRoute
   '/_authenticated/admin/questionnaires/new': typeof AuthenticatedAdminQuestionnairesNewRoute
   '/_authenticated/admin/requests/$requestId': typeof AuthenticatedAdminRequestsRequestIdRoute
+  '/_authenticated/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/_authenticated/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/_authenticated/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/_authenticated/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
@@ -511,6 +521,7 @@ export interface FileRouteTypes {
     | '/admin/questionnaires/$questionnaireId'
     | '/admin/questionnaires/new'
     | '/admin/requests/$requestId'
+    | '/provider/requests/$requestId'
     | '/admin/billing/'
     | '/admin/categories/'
     | '/admin/intake-sessions/'
@@ -548,6 +559,7 @@ export interface FileRouteTypes {
     | '/admin/questionnaires/$questionnaireId'
     | '/admin/questionnaires/new'
     | '/admin/requests/$requestId'
+    | '/provider/requests/$requestId'
     | '/admin/billing'
     | '/admin/categories'
     | '/admin/intake-sessions'
@@ -598,6 +610,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/questionnaires/$questionnaireId'
     | '/_authenticated/admin/questionnaires/new'
     | '/_authenticated/admin/requests/$requestId'
+    | '/_authenticated/provider/requests/$requestId'
     | '/_authenticated/admin/billing/'
     | '/_authenticated/admin/categories/'
     | '/_authenticated/admin/intake-sessions/'
@@ -860,6 +873,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/billing/'
       preLoaderRoute: typeof AuthenticatedAdminBillingIndexRouteImport
       parentRoute: typeof AuthenticatedAdminBillingRoute
+    }
+    '/_authenticated/provider/requests/$requestId': {
+      id: '/_authenticated/provider/requests/$requestId'
+      path: '/requests/$requestId'
+      fullPath: '/provider/requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedProviderRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
     }
     '/_authenticated/admin/requests/$requestId': {
       id: '/_authenticated/admin/requests/$requestId'
@@ -1189,10 +1209,13 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedProviderRouteChildren {
   AuthenticatedProviderIndexRoute: typeof AuthenticatedProviderIndexRoute
+  AuthenticatedProviderRequestsRequestIdRoute: typeof AuthenticatedProviderRequestsRequestIdRoute
 }
 
 const AuthenticatedProviderRouteChildren: AuthenticatedProviderRouteChildren = {
   AuthenticatedProviderIndexRoute: AuthenticatedProviderIndexRoute,
+  AuthenticatedProviderRequestsRequestIdRoute:
+    AuthenticatedProviderRequestsRequestIdRoute,
 }
 
 const AuthenticatedProviderRouteWithChildren =
