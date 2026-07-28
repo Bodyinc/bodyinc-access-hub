@@ -20,7 +20,6 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedProviderIndexRouteImport } from './routes/_authenticated/provider.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
-import { Route as AuthenticatedProviderRequestIdRouteImport } from './routes/_authenticated/provider.$requestId'
 import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin.requests'
 import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_authenticated/admin.questionnaires'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
@@ -114,12 +113,6 @@ const AuthenticatedRxPrescriptionIdRoute =
     id: '/rx/$prescriptionId',
     path: '/rx/$prescriptionId',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProviderRequestIdRoute =
-  AuthenticatedProviderRequestIdRouteImport.update({
-    id: '/$requestId',
-    path: '/$requestId',
-    getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
 const AuthenticatedAdminRequestsRoute =
   AuthenticatedAdminRequestsRouteImport.update({
@@ -362,7 +355,6 @@ export interface FileRoutesByFullPath {
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   '/admin/requests': typeof AuthenticatedAdminRequestsRouteWithChildren
-  '/provider/$requestId': typeof AuthenticatedProviderRequestIdRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/provider/': typeof AuthenticatedProviderIndexRoute
@@ -400,7 +392,6 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/provider/$requestId': typeof AuthenticatedProviderRequestIdRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/provider': typeof AuthenticatedProviderIndexRoute
@@ -452,7 +443,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/_authenticated/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   '/_authenticated/admin/requests': typeof AuthenticatedAdminRequestsRouteWithChildren
-  '/_authenticated/provider/$requestId': typeof AuthenticatedProviderRequestIdRoute
   '/_authenticated/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/provider/': typeof AuthenticatedProviderIndexRoute
@@ -504,7 +494,6 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/questionnaires'
     | '/admin/requests'
-    | '/provider/$requestId'
     | '/rx/$prescriptionId'
     | '/admin/'
     | '/provider/'
@@ -542,7 +531,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/dashboard'
-    | '/provider/$requestId'
     | '/rx/$prescriptionId'
     | '/admin'
     | '/provider'
@@ -593,7 +581,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/questionnaires'
     | '/_authenticated/admin/requests'
-    | '/_authenticated/provider/$requestId'
     | '/_authenticated/rx/$prescriptionId'
     | '/_authenticated/admin/'
     | '/_authenticated/provider/'
@@ -712,13 +699,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/rx/$prescriptionId'
       preLoaderRoute: typeof AuthenticatedRxPrescriptionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/provider/$requestId': {
-      id: '/_authenticated/provider/$requestId'
-      path: '/$requestId'
-      fullPath: '/provider/$requestId'
-      preLoaderRoute: typeof AuthenticatedProviderRequestIdRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
     }
     '/_authenticated/admin/requests': {
       id: '/_authenticated/admin/requests'
@@ -1208,12 +1188,10 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedProviderRouteChildren {
-  AuthenticatedProviderRequestIdRoute: typeof AuthenticatedProviderRequestIdRoute
   AuthenticatedProviderIndexRoute: typeof AuthenticatedProviderIndexRoute
 }
 
 const AuthenticatedProviderRouteChildren: AuthenticatedProviderRouteChildren = {
-  AuthenticatedProviderRequestIdRoute: AuthenticatedProviderRequestIdRoute,
   AuthenticatedProviderIndexRoute: AuthenticatedProviderIndexRoute,
 }
 
