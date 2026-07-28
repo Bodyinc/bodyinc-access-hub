@@ -1,27 +1,20 @@
 ## Goal
+Replace the static "Practitioner dashboard" heading with a time-aware greeting.
 
-Move notifications out of the top-right bell and into a proper **Notifications** item in the practitioner sidebar.
+## Behaviour
+Greeting is computed on the client from the practitioner's local time:
 
-## Changes
+```text
+05:00–11:59  Good morning
+12:00–16:59  Good afternoon
+17:00–20:59  Good evening
+21:00–04:59  Working late
+```
 
-**1. Remove the header bell**
-- Delete the bell from both the mobile and desktop headers in the practitioner layout. The desktop header row exists only to hold the bell, so it goes away entirely; the mobile header keeps its menu button and page title.
-- Delete the old bell component file.
+Heading text: `Good morning` (plus first name when available, e.g. `Good morning, Dr. Chen`). Subtitle stays "Your workload at a glance."
 
-**2. Add "Notifications" to the sidebar**
-- New sidebar item between "Unassigned queue" and "My Patients" (order can be adjusted).
-- Shows a small unread count badge next to the label when there are unread notifications; the badge stays visible as a dot when the sidebar is collapsed to icons.
-- The count comes from the same live-updating query as before, so it still updates instantly when a new alert arrives.
-
-**3. New Notifications page (`/provider/notifications`)**
-- Full-page list of the latest 50 notifications, unread ones visually highlighted.
-- "Mark all read" action at the top.
-- Clicking a notification marks it read and opens the linked order.
-- Empty state: "You're all caught up."
-- Added to the layout's page-title map so the header shows "Notifications".
-
-## Technical detail
-
-- Extract the existing fetch + realtime subscription into a shared `useNotifications()` hook so the sidebar badge and the page share one query cache key and one Supabase channel (avoids duplicate subscriptions).
-- Server functions `listMyNotifications` / `markNotificationsRead` stay unchanged.
-- New files: `src/lib/use-notifications.ts`, `src/routes/_authenticated/provider.notifications.tsx`. Edited: `provider.tsx`, `provider-sidebar.tsx`. Removed: `src/components/notifications/notification-bell.tsx`.
+## Technical notes
+- Edit `src/routes/_authenticated/provider.index.tsx` only.
+- Compute greeting in a `useState` + `useEffect` (set after mount) so SSR/hydration don't mismatch; render the plain title until hydrated.
+- Re-evaluate on an interval (every 60s) so a long-open tab rolls over correctly.
+- Name comes from the existing provider dashboard query if it already returns one; otherwise the greeting renders without a name.
