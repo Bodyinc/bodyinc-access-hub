@@ -1,61 +1,31 @@
-## Practitioner Portal
+## Goal
 
-Today the provider portal has a single screen: "Requests", listing only orders already assigned to them, reusing the admin review panel in read-mostly mode. This plan turns it into a real workspace.
+A notification bell in the practitioner portal that alerts you in-app when:
+- a new request is ready to review (assigned to you, status `pending_review`)
+- you are assigned/claim a patient order (`provider_assigned`)
+- an order changes state and needs attention (`awaiting_additional_payment`) or is approved (`approved`)
 
-### Navigation (provider sidebar)
+## What gets built
 
-```text
-Dashboard      counts + today's work
-Requests       orders assigned to me
-Unassigned     open orders I can claim
-Patients       patients from my assigned orders
-My profile     bio, credentials, languages, avatar
-```
+**1. Database (one migration)**
 
-### 1. Dashboard
+New table `public.notifications`:
+- `user_id` (recipient), `type`, `title`, `body`, `link` (in-app path, e.g. `/provider/requests/<id>`), `entity_id`, `read_at`
+- Grants: `select`/`update` to `authenticated`, all to `service_role`
+- RLS: a user reads and marks read only their own rows; inserts happen server-side only
+- Added to the realtime publication so the bell updates live
 
-Landing page at `/provider` with cards: Pending review, Awaiting additional payment, Approved (awaiting prescription), Prescribed today, and Unassigned/claimable count. Each card links into the matching filtered list. Requests list moves to `/provider/requests`.
+Trigger on `medication_requests`: on insert and on status/provider change, insert a notification for the assigned provider (skipping the actor's own action where the provider changed it themselves). Statuses mapped: `pending_review` → "Ready to review", `provider_assigned` → "New patient assigned", `approved` → "Consultation approved", `awaiting_additional_payment` → "Needs attention".
 
-### 2. Unassigned queue + self-assign
+**2. Server functions** (`src/lib/notifications.functions.ts`)
+- `listMyNotifications` — recent 50 + unread count
+- `markNotificationsRead` — one or all
 
-New provider-scoped list of medication orders with no provider yet. A provider only sees orders whose patient state is covered by their own `license_states`, so they can't claim patients they aren't licensed for. "Claim" assigns that single order to them (`provider_id = me`) and writes a `provider_assigned` event to the order timeline. Claiming is rejected if someone else already took it.
+**3. UI**
+- `src/components/notifications/notification-bell.tsx` — bell icon with unread badge, popover list (title, body, relative time, unread dot), click navigates to the linked order and marks read, "Mark all read" action
+- Realtime subscription in a `useEffect` (cleaned up on unmount) invalidating the query on new rows
+- Mounted in the practitioner portal header (`src/routes/_authenticated/provider.tsx`), styled with the existing sand/teal/ink theme
 
-### 3. Patients tab
+## Notes
 
-Lists distinct patients drawn from orders assigned to the provider, with a debounced search bar (name or patient reference). Opening a patient shows a clinical-only profile:
-
-- Shown: first/full name, sex, age/DOB, state, height/weight/BMI, intake questionnaire answers, eligibility results, order history, prescriptions, statuses.
-- Hidden: email, phone, street/billing address, Stripe IDs, payment amounts, refunds, promo/wallet data.
-
-The hiding is enforced server-side — new provider-scoped functions that select only clinical columns, never the admin `getPatient`/`getPatientRelated` functions (those stay admin-only).
-
-### 4. Change medicine — same category, or explicitly across categories
-
-The medicine picker in the review panel gains a category-aware mode for providers:
-
-- Default: only medicines sharing a category with the current medicine are selectable.
-- A "Change category" toggle unlocks the full catalogue, requires picking the new category and typing a clinical reason (min ~10 chars), and records both the old→new category and the reason on the order timeline.
-- Existing price-difference behaviour is unchanged: a dearer switch raises an additional payment request, a cheaper one credits the next cycle.
-
-Server-side the same rule is enforced: cross-category changes without a reason are rejected.
-
-### 5. Approve consultation
-
-Already possible; this makes it first-class — an "Approve consultation" action on `pending_review` orders with an optional note, plus a visible "Reject & refund" path. Prescription generation and fulfilment steps stay as they are today.
-
-### 6. Clinical notes on an order
-
-A notes thread on each order: provider or admin adds a note, shown newest-first with author and timestamp, visible to providers assigned to the order and to all admins. Not visible to patients.
-
-### 7. Provider profile
-
-`/provider/profile` lets a provider edit their own bio, credentials, specialty, languages, consultation types, and avatar. Licence states, NPI, DEA, licence number, and active status stay admin-only (read-only display).
-
----
-
-### Technical notes
-
-- New `src/lib/provider.functions.ts` holding provider-scoped server functions (`providerDashboardCounts`, `listClaimableRequests`, `claimRequest`, `listMyPatients`, `getMyPatientClinical`, `getMyProviderProfile`, `updateMyProviderProfile`), each behind `requireSupabaseAuth` plus a `assertProvider`-style guard, with all patient reads projecting a fixed clinical column allowlist.
-- `changeRequestMedicine` in `src/lib/requests.functions.ts` gains optional `categoryChange` + `reason`, validated server-side against `medication_category_medicines`.
-- One migration: a `medication_request_notes` table (request_id, author_id, author_role, body, timestamps) with GRANTs and RLS — admins full access, providers limited to orders assigned to them, patients no access.
-- New routes under `src/routes/_authenticated/provider.*`; sidebar items added in `src/components/provider/provider-sidebar.tsx`; existing `RequestReviewPanel` extended rather than forked, keeping the current teal/ink theme.
+Notifications are in-app only — no email or push. The same bell can be dropped into the admin shell later with no extra backend work, since the table is keyed by recipient user.
