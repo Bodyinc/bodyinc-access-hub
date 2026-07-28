@@ -755,3 +755,62 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
     );
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Clinical notes (internal): visible to admins and to the assigned practitioner.
+// ---------------------------------------------------------------------------
+
+export const listRequestNotes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const role = await assertReviewer(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "id, provider_id");
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("medication_request_notes")
+      .select("id, body, author_id, author_role, created_at")
+      .eq("request_id", data.requestId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const authorIds = Array.from(
+      new Set(((rows ?? []) as any[]).map((r) => r.author_id).filter(Boolean)),
+    );
+    const { data: profiles } = authorIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", authorIds)
+      : { data: [] as any[] };
+    const nameMap = new Map((profiles ?? []).map((p: any) => [p.id, p.full_name]));
+
+    return ((rows ?? []) as any[]).map((r) => ({
+      id: r.id,
+      body: r.body,
+      author_role: r.author_role,
+      author_name: nameMap.get(r.author_id) ?? "Team member",
+      is_mine: r.author_id === context.userId,
+      created_at: r.created_at,
+    }));
+  });
+
+export const addRequestNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ requestId: z.string().uuid(), body: z.string().trim().min(1).max(4000) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const role = await assertReviewer(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "id, provider_id");
+
+    const { error } = await supabaseAdmin.from("medication_request_notes").insert({
+      request_id: data.requestId,
+      author_id: context.userId,
+      author_role: role,
+      body: data.body,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
