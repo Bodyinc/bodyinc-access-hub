@@ -134,7 +134,7 @@ function NewQuestionnairePage() {
                 <label key={m.id} className="admin-check-row">
                   <Checkbox
                     checked={checked}
-                    className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#3B4759] data-[state=checked]:bg-[#3B4759]"
+                    className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                     onCheckedChange={(v) => {
                       setCategoryIds((prev) =>
                         v ? [...prev, m.id] : prev.filter((x) => x !== m.id),

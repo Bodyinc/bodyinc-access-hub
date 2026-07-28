@@ -423,8 +423,8 @@
     padding-left: 24px;
     padding-right: 24px;
     border-radius: 8px;
-    background-color: var(--sand);
-    color: var(--ink);
+    background-color: var(--teal);
+    color: #FFFFFF;
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     font-weight: 600;
@@ -433,7 +433,7 @@
   }
 
   .admin-btn-primary:hover {
-    background-color: var(--sand-strong);
+    background-color: var(--teal-strong);
   }
 
   @media (min-width: 640px) {

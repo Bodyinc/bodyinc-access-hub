@@ -104,7 +104,7 @@ export function MedicinePricingSection({
                       checked={sw.value ?? true}
                       onCheckedChange={sw.onChange}
                       disabled={submitting}
-                      className="data-[state=checked]:bg-[#3B4759]"
+                      className="data-[state=checked]:bg-[#6A9B9C]"
                     />
                     <span className="text-[11px] font-semibold text-[#6A9B9C]/70">Active</span>
                   </div>

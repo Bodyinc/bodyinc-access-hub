@@ -181,7 +181,7 @@ function MedicinesListPage() {
           />
           <Button
             onClick={() => navigate({ to: "/admin/medicines/new" })}
-            className="bg-[#3B4759] hover:bg-[#2E3745] text-white h-[44px] px-6 rounded-[8px] font-semibold text-[14px] gap-2 shadow-sm transition-all"
+            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-[44px] px-6 rounded-[8px] font-semibold text-[14px] gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Add New Medicine
           </Button>
@@ -221,14 +221,14 @@ function MedicinesListPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by medication name or active ingredient..."
-              className="pl-11 pr-4 h-[54px] w-full border-[#3B4759]/25 bg-[#F2F7F6] text-[#3B4759] placeholder:text-[#3B4759]/40 rounded-[12px] focus-visible:ring-[#3B4759] text-[14px] font-medium shadow-none"
+              className="pl-11 pr-4 h-[54px] w-full border-[#6A9B9C]/25 bg-[#F2F7F6] text-[#3B4759] placeholder:text-[#3B4759]/40 rounded-[12px] focus-visible:ring-[#3B4759] text-[14px] font-medium shadow-none"
             />
           </div>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="w-full sm:w-[180px] h-[54px] border-[#3B4759]/25 bg-[#F2F7F6] text-[#3B4759] font-medium rounded-[12px] focus:ring-[#3B4759] text-[14px] shadow-none">
+            <SelectTrigger className="w-full sm:w-[180px] h-[54px] border-[#6A9B9C]/25 bg-[#F2F7F6] text-[#3B4759] font-medium rounded-[12px] focus:ring-[#3B4759] text-[14px] shadow-none">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="border-[#3B4759]/20 rounded-[12px]">
+            <SelectContent className="border-[#6A9B9C]/20 rounded-[12px]">
               <SelectItem value="all" className="text-[#3B4759] font-medium focus:bg-[#E8EEED]">
                 All Statuses
               </SelectItem>
@@ -244,21 +244,21 @@ function MedicinesListPage() {
 
       {/* Main Table Display Component */}
       {isEmpty ? (
-        <div className="border-2 border-dashed border-[#3B4759]/20 bg-[#F2F7F6] rounded-[12px] p-12 text-center space-y-4">
+        <div className="border-2 border-dashed border-[#6A9B9C]/20 bg-[#F2F7F6] rounded-[12px] p-12 text-center space-y-4">
           <p className="text-base font-semibold text-[#3B4759]">No medicines found</p>
           <Button
             onClick={() => navigate({ to: "/admin/medicines/new" })}
-            className="bg-[#3B4759] text-white rounded-lg px-4 h-10 font-medium"
+            className="bg-[#6A9B9C] text-white rounded-lg px-4 h-10 font-medium"
           >
             <Plus className="h-4 w-4 mr-2" /> Add your first medicine
           </Button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-[12px] border border-[#3B4759]/20 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-[12px] border border-[#6A9B9C]/20 bg-white shadow-sm">
           <div className="admin-table-scroll">
             <Table className="min-w-[800px] border-collapse">
               <TableHeader className="bg-[#F2F7F6]">
-                <TableRow className="hover:bg-transparent border-b border-[#3B4759]/15">
+                <TableRow className="hover:bg-transparent border-b border-[#6A9B9C]/15">
                   <TableHead className="h-14 text-[#3B4759] font-bold text-[14px] px-6">
                     Medication Name
                   </TableHead>
@@ -292,7 +292,7 @@ function MedicinesListPage() {
                 {rows.map((m: StoredMedicine) => (
                   <TableRow
                     key={m.id}
-                    className="border-b border-[#3B4759]/15 bg-white hover:bg-[#F8FBFA] transition-colors cursor-pointer"
+                    className="border-b border-[#6A9B9C]/15 bg-white hover:bg-[#F8FBFA] transition-colors cursor-pointer"
                     onClick={() =>
                       navigate({
                         to: "/admin/medicines/$medicineId",
@@ -358,7 +358,7 @@ function MedicinesListPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="w-36 rounded-lg shadow-lg border border-[#3B4759]/20 bg-white p-1"
+                          className="w-36 rounded-lg shadow-lg border border-[#6A9B9C]/20 bg-white p-1"
                         >
                           <DropdownMenuItem
                             asChild
@@ -412,7 +412,7 @@ function MedicinesListPage() {
 
       {/* Confirmation Modal */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#3B4759]/20 shadow-xl">
+        <AlertDialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#6A9B9C]/20 shadow-xl">
           <AlertDialogHeader className="space-y-1">
             <AlertDialogTitle className="text-[18px] font-bold text-[#3B4759]">
               {impact?.blocked ? "Cannot delete this medicine" : "Delete medicine?"}
@@ -465,7 +465,7 @@ function MedicinesListPage() {
           )}
 
           <AlertDialogFooter className="mt-5 gap-2">
-            <AlertDialogCancel className="rounded-lg border border-[#3B4759]/20 text-[#3B4759] hover:bg-[#F2F7F6]">
+            <AlertDialogCancel className="rounded-lg border border-[#6A9B9C]/20 text-[#3B4759] hover:bg-[#F2F7F6]">
               {impact?.blocked ? "Close" : "Cancel"}
             </AlertDialogCancel>
             {confirmDelete && !impact?.blocked && (
@@ -477,7 +477,7 @@ function MedicinesListPage() {
                     statusMut.mutate({ id: confirmDelete.id, status: "inactive" });
                     setConfirmDelete(null);
                   }}
-                  className="rounded-lg border-[#3B4759]/20 text-[#3B4759] hover:bg-[#F2F7F6]"
+                  className="rounded-lg border-[#6A9B9C]/20 text-[#3B4759] hover:bg-[#F2F7F6]"
                 >
                   Set inactive instead
                 </Button>

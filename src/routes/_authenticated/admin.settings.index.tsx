@@ -101,7 +101,7 @@ function FeeRow({
           <Switch
             checked={enabled}
             onCheckedChange={onToggle}
-            className="data-[state=checked]:bg-[#3B4759] data-[state=unchecked]:bg-[#D5DEDD]"
+            className="data-[state=checked]:bg-[#6A9B9C] data-[state=unchecked]:bg-[#D5DEDD]"
           />
         </div>
       </div>
@@ -140,7 +140,7 @@ function ToggleRow({
         <Switch
           checked={checked}
           onCheckedChange={onChange}
-          className="mt-1 data-[state=checked]:bg-[#3B4759] data-[state=unchecked]:bg-[#D5DEDD]"
+          className="mt-1 data-[state=checked]:bg-[#6A9B9C] data-[state=unchecked]:bg-[#D5DEDD]"
         />
       </div>
     </div>
@@ -248,7 +248,7 @@ function ShippingSync({ unsaved }: { unsaved: boolean }) {
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void runSync()}
-              className="rounded-xl bg-[#3B4759] text-white hover:bg-[#2E3745]"
+              className="rounded-xl bg-[#6A9B9C] text-white hover:bg-[#5B8788]"
             >
               Sync now
             </AlertDialogAction>

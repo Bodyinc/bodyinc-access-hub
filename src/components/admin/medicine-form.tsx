@@ -203,7 +203,7 @@ export function MedicineForm({
                     type="button"
                     disabled={submitting || uploading}
                     onClick={() => fileRef.current?.click()}
-                    className="flex h-10 items-center gap-2 rounded-[10px] bg-[#3B4759] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#2E3745]"
+                    className="flex h-10 items-center gap-2 rounded-[10px] bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#5B8788]"
                   >
                     {uploading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -390,7 +390,7 @@ export function MedicineForm({
                     >
                       <Checkbox
                         checked={checked}
-                        className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#3B4759] data-[state=checked]:bg-[#3B4759]"
+                        className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                         onCheckedChange={(v) => {
                           const set = new Set(field.value ?? []);
                           if (v) set.add(c.id);
@@ -482,7 +482,7 @@ export function MedicineForm({
           <Button
             type="submit"
             disabled={submitting || uploading}
-            className="bg-[#3B4759] hover:bg-[#2E3745] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
+            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
           >
             {submitting ? (
               <>

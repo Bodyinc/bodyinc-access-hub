@@ -217,7 +217,7 @@ export function ProviderForm({
                     variant={on ? "default" : "outline"}
                     className={`cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium shadow-none normal-case tracking-normal capitalize transition-all ${
                       on
-                        ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                        ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
                         : "border-[#D5DEDD] bg-white text-[#3B4759] hover:bg-[#F2F7F6]"
                     }`}
                     onClick={() =>
@@ -333,7 +333,7 @@ export function ProviderForm({
             <Switch
               checked={!!isActive}
               onCheckedChange={(v) => setValue("is_active", v, { shouldDirty: true })}
-              className="shrink-0 self-start data-[state=checked]:bg-[#3B4759] sm:self-auto"
+              className="shrink-0 self-start data-[state=checked]:bg-[#6A9B9C] sm:self-auto"
             />
           </div>
         </CardContent>
@@ -409,7 +409,7 @@ function ChipMultiSelect({
               variant={on ? "default" : "outline"}
               className={`cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium shadow-none normal-case tracking-normal transition-all ${
                 on
-                  ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                  ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
                   : "border-[#D5DEDD] bg-white text-[#3B4759] hover:bg-[#F2F7F6]"
               }`}
               onClick={() => onToggle(o)}

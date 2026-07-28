@@ -121,7 +121,7 @@ export function SubscriptionsTable() {
                       <Badge
                         className={`rounded-md px-3 py-1 text-[12px] font-bold shadow-none border ${
                           r.status === "active" || r.status === "trialing"
-                            ? "bg-[#3B4759] border-transparent text-white"
+                            ? "bg-[#6A9B9C] border-transparent text-white"
                             : "bg-white border-[#D5DEDD] text-[#3B4759]"
                         }`}
                       >

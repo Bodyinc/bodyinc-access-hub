@@ -195,7 +195,7 @@ function PatientDetailPage() {
           <Badge
             className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
               d.is_active
-                ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
                 : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
             }`}
           >
@@ -484,7 +484,7 @@ function PatientDetailPage() {
                   checked={d.is_active}
                   disabled={activeMut.isPending}
                   onCheckedChange={(checked) => activeMut.mutate(checked)}
-                  className="data-[state=checked]:bg-[#3B4759]"
+                  className="data-[state=checked]:bg-[#6A9B9C]"
                 />
               </div>
 
@@ -662,7 +662,7 @@ function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean })
     <Badge
       className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
         data.eligibility === "eligible"
-          ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+          ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
           : "bg-[#F6E4DA] text-[#B8684B] hover:bg-[#F6E4DA]"
       }`}
     >
@@ -759,7 +759,7 @@ function AddressCard({
     <Badge
       className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
         on
-          ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+          ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
           : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
       }`}
     >

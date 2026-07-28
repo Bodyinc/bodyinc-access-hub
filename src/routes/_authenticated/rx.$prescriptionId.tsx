@@ -72,7 +72,7 @@ function RxPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-lg bg-[#3B4759] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2E3745]"
+            className="rounded-lg bg-[#6A9B9C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5B8788]"
           >
             Download / Print
           </button>

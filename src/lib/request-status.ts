@@ -44,7 +44,7 @@ export function requestStatusTone(status: string): Tone {
 export const REQUEST_STATUS_BADGE: Record<Tone, string> = {
   attention: "bg-[#FFF4E5] text-[#B45309] hover:bg-[#FFF4E5]",
   progress: "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]",
-  success: "bg-[#3B4759] text-white hover:bg-[#3B4759]",
+  success: "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]",
   danger: "bg-[#F6E4DA] text-[#8F4A33] hover:bg-[#F6E4DA]",
   muted: "bg-[#E8EEED] text-[#3B4759]/70 hover:bg-[#E8EEED]",
 };

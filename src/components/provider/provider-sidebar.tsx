@@ -59,7 +59,7 @@ export function ProviderSidebar() {
           />
           <div className="mt-3 h-px w-full bg-[#D5DEDD]" />
         </div>
-        <div className="hidden h-8 w-8 items-center justify-center rounded-md bg-[#3B4759] text-sm font-black text-white group-data-[collapsible=icon]:flex">
+        <div className="hidden h-8 w-8 items-center justify-center rounded-md bg-[#6A9B9C] text-sm font-black text-white group-data-[collapsible=icon]:flex">
           B
         </div>
       </SidebarHeader>

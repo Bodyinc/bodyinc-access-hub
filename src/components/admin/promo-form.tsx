@@ -234,7 +234,7 @@ function Toggle({
       <Switch
         checked={checked}
         onCheckedChange={onChange}
-        className="shrink-0 self-start data-[state=checked]:bg-[#3B4759] sm:self-auto"
+        className="shrink-0 self-start data-[state=checked]:bg-[#6A9B9C] sm:self-auto"
       />
     </div>
   );

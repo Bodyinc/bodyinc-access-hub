@@ -287,7 +287,7 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
                             <label key={b} className="flex items-center gap-3 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3.5 text-[14px] font-medium text-[#6A9B9C] cursor-pointer transition-colors hover:bg-[#F2F7F6]">
                               <Checkbox
                                 checked={checked}
-                                className="border-[#6A9B9C]/40 data-[state=checked]:bg-[#3B4759] data-[state=checked]:border-[#3B4759] h-4 w-4 rounded"
+                                className="border-[#6A9B9C]/40 data-[state=checked]:bg-[#6A9B9C] data-[state=checked]:border-[#6A9B9C] h-4 w-4 rounded"
                                 onCheckedChange={(v) => {
                                   const set = new Set(field.value ?? []);
                                   if (v) set.add(b);
@@ -317,7 +317,7 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
                             <label key={s} className="flex items-center gap-3 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3.5 text-[14px] font-medium text-[#6A9B9C] cursor-pointer transition-colors hover:bg-[#F2F7F6]">
                               <Checkbox
                                 checked={checked}
-                                className="border-[#6A9B9C]/40 data-[state=checked]:bg-[#3B4759] data-[state=checked]:border-[#3B4759] h-4 w-4 rounded"
+                                className="border-[#6A9B9C]/40 data-[state=checked]:bg-[#6A9B9C] data-[state=checked]:border-[#6A9B9C] h-4 w-4 rounded"
                                 onCheckedChange={(v) => {
                                   const set = new Set(field.value ?? []);
                                   if (v) set.add(s);
@@ -391,7 +391,7 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
           <Button 
             type="submit" 
             disabled={submitting}
-            className="h-11 min-w-[140px] rounded-[8px] bg-[#3B4759] px-6 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-[#2E3745] sm:h-[53px]"
+            className="h-11 min-w-[140px] rounded-[8px] bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-[#5B8788] sm:h-[53px]"
           >
             {submitting ? "Saving…" : mode === "create" ? "Create category" : "Save changes"}
           </Button>

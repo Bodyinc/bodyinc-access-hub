@@ -33,7 +33,7 @@ export const adminCard =
 export const adminCardPad = "admin-card-pad p-4 sm:p-6";
 
 export const adminBtnPrimary =
-  "admin-btn-primary h-11 sm:h-[53px] rounded-[8px] bg-[#3B4759] hover:bg-[#2E3745] px-6 text-[14px] font-semibold text-white shadow-none";
+  "admin-btn-primary h-11 sm:h-[53px] rounded-[8px] bg-[#6A9B9C] hover:bg-[#5B8788] px-6 text-[14px] font-semibold text-white shadow-none";
 
 export const adminBtnSecondary =
   "admin-btn-secondary h-11 sm:h-[53px] rounded-[8px] border border-[#D5DEDD] bg-white hover:bg-[#F2F7F6] px-6 text-[14px] font-semibold text-[#3B4759] shadow-none";

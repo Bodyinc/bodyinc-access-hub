@@ -104,7 +104,7 @@ function PromosListPage() {
                 <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">{discountLabel(p)}</TableCell>
                 <TableCell>
                   {p.auto_apply ? (
-                    <Badge className="bg-[#3B4759] text-white hover:bg-[#3B4759] font-semibold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent">
+                    <Badge className="bg-[#6A9B9C] text-white hover:bg-[#6A9B9C] font-semibold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent">
                       Auto
                     </Badge>
                   ) : (

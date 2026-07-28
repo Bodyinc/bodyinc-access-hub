@@ -136,7 +136,7 @@ function WalletDialog({
             <Button
               disabled={adjustMut.isPending}
               onClick={() => submit(1)}
-              className="h-10 rounded-xl bg-[#3B4759] text-white hover:bg-[#2E3745]"
+              className="h-10 rounded-xl bg-[#6A9B9C] text-white hover:bg-[#5B8788]"
             >
               Add credit
             </Button>

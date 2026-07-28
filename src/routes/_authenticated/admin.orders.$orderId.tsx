@@ -112,7 +112,7 @@ function OrderDetailPage() {
             <Badge
               className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
                 display_status === "paid"
-                  ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                  ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
                   : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
               }`}
             >
@@ -225,7 +225,7 @@ function OrderDetailPage() {
                       <Badge
                         className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
                           p.status === "succeeded"
-                            ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                            ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
                             : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
                         }`}
                       >

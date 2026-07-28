@@ -196,7 +196,7 @@ function ProvidersListPage() {
                   <span className="inline-flex items-center gap-2">
                     {p.full_name}
                     {p.is_default ? (
-                      <Badge className="bg-[#3B4759] text-white hover:bg-[#3B4759] border border-transparent font-bold text-[11px] px-2 py-0.5 rounded-lg shadow-none">
+                      <Badge className="bg-[#6A9B9C] text-white hover:bg-[#6A9B9C] border border-transparent font-bold text-[11px] px-2 py-0.5 rounded-lg shadow-none">
                         Default
                       </Badge>
                     ) : null}

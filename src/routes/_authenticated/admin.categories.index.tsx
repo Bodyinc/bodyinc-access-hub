@@ -71,7 +71,7 @@ function CategoriesListPage() {
           />
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#3B4759] hover:bg-[#2E3745] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
+            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Add Category
           </Button>
@@ -83,7 +83,7 @@ function CategoriesListPage() {
           <p className="text-base font-semibold text-[#3B4759]">No categories found</p>
           <Button 
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#3B4759] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
+            className="bg-[#6A9B9C] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
           >
             <Plus className="h-4 w-4 mr-2" /> Add category
           </Button>

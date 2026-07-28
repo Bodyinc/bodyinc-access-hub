@@ -186,7 +186,7 @@ export function RefundsTable() {
                     <Badge
                       className={`rounded-md px-3 py-1 text-[12px] font-bold shadow-none border ${
                         r.status === "approved"
-                          ? "bg-[#3B4759] border-transparent text-white"
+                          ? "bg-[#6A9B9C] border-transparent text-white"
                           : r.status === "rejected"
                             ? "bg-red-50 border-red-200 text-red-700"
                             : "bg-[#F2F7F6] border-[#D5DEDD] text-[#3B4759]/70"
@@ -205,7 +205,7 @@ export function RefundsTable() {
                           size="sm"
                           onClick={() => onApprove(r.id)}
                           disabled={busyId === r.id}
-                          className="bg-[#3B4759] hover:bg-[#2E3745] text-white font-semibold rounded-lg text-xs"
+                          className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white font-semibold rounded-lg text-xs"
                         >
                           Approve
                         </Button>

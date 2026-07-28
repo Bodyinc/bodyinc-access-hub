@@ -258,7 +258,7 @@ export function RequestReviewPanel({
                 size="sm"
                 onClick={() => approveMut.mutate()}
                 disabled={approveMut.isPending}
-                className="h-10 bg-[#3B4759] px-4 text-[13px] font-semibold text-white hover:bg-[#2E3745]"
+                className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
               >
                 <Check className="mr-1 h-4 w-4" /> Approve
               </Button>
@@ -277,7 +277,7 @@ export function RequestReviewPanel({
               <Button
                 size="sm"
                 onClick={() => setRxOpen(true)}
-                className="h-10 bg-[#3B4759] px-4 text-[13px] font-semibold text-white hover:bg-[#2E3745]"
+                className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
               >
                 <FileText className="mr-1 h-4 w-4" /> Generate prescription
               </Button>
@@ -332,7 +332,7 @@ export function RequestReviewPanel({
                 <Badge
                   className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case shadow-none ${
                     ap.status === "paid"
-                      ? "bg-[#3B4759] text-white hover:bg-[#3B4759]"
+                      ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
                       : "bg-[#FFF4E5] text-[#B45309] hover:bg-[#FFF4E5]"
                   }`}
                 >
@@ -367,7 +367,7 @@ export function RequestReviewPanel({
                     params={{ prescriptionId: rx.id }}
                     search={{ download: false }}
                     target="_blank"
-                    className="rounded-md border border-[#3B4759] px-3 py-1.5 text-[13px] font-semibold text-[#3B4759] hover:bg-[#E8EEED]"
+                    className="rounded-md border border-[#6A9B9C] px-3 py-1.5 text-[13px] font-semibold text-[#3B4759] hover:bg-[#E8EEED]"
                   >
                     View
                   </Link>
@@ -376,7 +376,7 @@ export function RequestReviewPanel({
                     params={{ prescriptionId: rx.id }}
                     search={{ download: true }}
                     target="_blank"
-                    className="rounded-md bg-[#3B4759] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#2E3745]"
+                    className="rounded-md bg-[#6A9B9C] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
                   >
                     Download
                   </Link>
@@ -395,7 +395,7 @@ export function RequestReviewPanel({
           <ol className="space-y-3">
             {events.map((ev: any) => (
               <li key={ev.id} className="flex gap-3 text-[14px]">
-                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#3B4759]" />
+                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#6A9B9C]" />
                 <div className="min-w-0">
                   <div className="font-medium text-[#3B4759]">{requestStatusLabel(ev.status)}</div>
                   <div className="text-[12px] text-[#3B4759]/60">
