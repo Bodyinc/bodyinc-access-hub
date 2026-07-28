@@ -19,16 +19,16 @@ function BillingPage() {
       </div>
 
       <Tabs defaultValue="subscriptions" className="w-full min-w-0">
-        <TabsList className="inline-flex h-auto w-full flex-wrap gap-1 rounded-xl border border-[#EAE6FA] bg-[#FAF9FF] p-1 sm:w-auto">
+        <TabsList className="inline-flex h-auto w-full flex-wrap gap-1 rounded-xl border border-[#D5DEDD] bg-[#F2F7F6] p-1 sm:w-auto">
           <TabsTrigger
             value="subscriptions"
-            className="rounded-lg px-4 py-2 text-[13px] font-semibold text-[#2E00AB]/70 data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm transition-all"
+            className="rounded-lg px-4 py-2 text-[13px] font-semibold text-[#3B4759]/70 data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm transition-all"
           >
             Subscriptions
           </TabsTrigger>
           <TabsTrigger
             value="refunds"
-            className="rounded-lg px-4 py-2 text-[13px] font-semibold text-[#2E00AB]/70 data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm transition-all"
+            className="rounded-lg px-4 py-2 text-[13px] font-semibold text-[#3B4759]/70 data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm transition-all"
           >
             Refunds
           </TabsTrigger>

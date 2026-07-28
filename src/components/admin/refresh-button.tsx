@@ -14,13 +14,13 @@ export function RefreshButton({ onClick, loading }: { onClick: () => void; loadi
     px-5
     gap-2
     rounded-xl
-    border-[#E2DCFA]
+    border-[#D5DEDD]
     bg-white
-    text-[#2A00A2]
+    text-[#3B4759]
     font-medium
     shadow-sm
-    hover:bg-[#F8F6FF]
-    hover:border-[#D7CCFA]
+    hover:bg-[#F2F7F6]
+    hover:border-[#C3D2D1]
   "
 >
   <RefreshCw

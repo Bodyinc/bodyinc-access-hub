@@ -57,11 +57,11 @@ export function AdminSidebar() {
     <Sidebar
       collapsible="icon"
       variant="floating"
-      className="font-['DM_Sans'] border-0 bg-transparent shadow-none [&_[data-sidebar=sidebar]]: [&_[data-sidebar=sidebar]]:border [&_[data-sidebar=sidebar]]:border-[#E2DCFA] [&_[data-sidebar=sidebar]]:bg-[#F5F3FF] [&_[data-sidebar=sidebar]]:shadow-sm"
+      className="font-['DM_Sans'] border-0 bg-transparent shadow-none [&_[data-sidebar=sidebar]]: [&_[data-sidebar=sidebar]]:border [&_[data-sidebar=sidebar]]:border-[#D5DEDD] [&_[data-sidebar=sidebar]]:bg-[#E8EEED] [&_[data-sidebar=sidebar]]:shadow-sm"
     >
       {/* Desktop collapse toggle — half over the card edge */}
       <div className="absolute -right-2.5 top-6 z-50 hidden md:block">
-        <SidebarTrigger className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-[#5833BC] p-5 text-white shadow-md transition-all hover:bg-[#4C1D95]">
+        <SidebarTrigger className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-[#5B8788] p-5 text-white shadow-md transition-all hover:bg-[#5B8788]">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="2" y="2" width="16" height="16" rx="2" stroke="white" strokeWidth="2" fill="none" />
             <line x1="8" y1="2" x2="8" y2="18" stroke="white" strokeWidth="2" />
@@ -76,10 +76,10 @@ export function AdminSidebar() {
             alt="Body Inc"
             className="h-auto max-h-[60px] w-full max-w-[160px] object-contain sm:max-w-[190px]"
           />
-          <div className="mt-3 h-px w-full bg-[#E2DCFA]" />
+          <div className="mt-3 h-px w-full bg-[#D5DEDD]" />
         </div>
 
-        <div className="hidden h-8 w-8 items-center justify-center rounded-md bg-[#2E00AB] text-sm font-black text-white group-data-[collapsible=icon]:flex">
+        <div className="hidden h-8 w-8 items-center justify-center rounded-md bg-[#6A9B9C] text-sm font-black text-white group-data-[collapsible=icon]:flex">
           B
         </div>
       </SidebarHeader>
@@ -96,10 +96,10 @@ export function AdminSidebar() {
                       asChild
                       isActive={active}
                       tooltip={item.title}
-                      className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#2E00AB] transition-all ${
+                      className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#3B4759] transition-all ${
                         active
-                          ? "bg-[#EAE6FA] !text-[#2E00AB]"
-                          : "bg-transparent hover:bg-[#EAE6FA]/80 !text-[#2E00AB]"
+                          ? "bg-[#D5DEDD] !text-[#3B4759]"
+                          : "bg-transparent hover:bg-[#D5DEDD]/80 !text-[#3B4759]"
                       }`}
                     >
                       <Link to={item.url}>
@@ -115,7 +115,7 @@ export function AdminSidebar() {
 
         <SidebarGroup className="mt-auto flex-shrink-0 p-0 group-data-[collapsible=icon]:hidden">
           <div className="my-2 px-3">
-            <div className="h-px w-full bg-[#E2DCFA]" />
+            <div className="h-px w-full bg-[#D5DEDD]" />
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
@@ -123,10 +123,10 @@ export function AdminSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={isActive("/admin/settings")}
-                  className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#2E00AB] transition-all ${
+                  className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#3B4759] transition-all ${
                     isActive("/admin/settings")
-                      ? "bg-[#EAE6FA] !text-[#2E00AB]"
-                      : "bg-transparent hover:bg-[#EAE6FA]/50 !text-[#2E00AB]"
+                      ? "bg-[#D5DEDD] !text-[#3B4759]"
+                      : "bg-transparent hover:bg-[#D5DEDD]/50 !text-[#3B4759]"
                   }`}
                 >
                   <Link to="/admin/settings">
@@ -138,7 +138,7 @@ export function AdminSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogout}
-                  className="flex h-8 w-full cursor-pointer items-center rounded-[6px] px-3 text-[14px] font-medium text-[#2E00AB] transition-all hover:bg-[#EAE6FA]/50 !text-[#2E00AB]"
+                  className="flex h-8 w-full cursor-pointer items-center rounded-[6px] px-3 text-[14px] font-medium text-[#3B4759] transition-all hover:bg-[#D5DEDD]/50 !text-[#3B4759]"
                 >
                   <span>Logout</span>
                 </SidebarMenuButton>

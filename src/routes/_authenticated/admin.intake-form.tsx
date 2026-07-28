@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/admin/intake-form")({
             Configure the JotForm form ID used for patient intake. Update anytime to swap the embedded form.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 pt-0 text-[16px] text-[#2E00AB]/60 sm:p-6 sm:pt-0">Coming soon.</CardContent>
+        <CardContent className="p-4 pt-0 text-[16px] text-[#3B4759]/60 sm:p-6 sm:pt-0">Coming soon.</CardContent>
       </Card>
     </div>
   ),

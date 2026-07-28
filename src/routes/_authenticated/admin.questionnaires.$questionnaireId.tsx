@@ -93,7 +93,7 @@ function EditQuestionnairePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (dataQ.isLoading) return <p className="text-sm text-[#2E00AB]/60">Loading…</p>;
+  if (dataQ.isLoading) return <p className="text-sm text-[#3B4759]/60">Loading…</p>;
   if (!dataQ.data) return <p className="text-sm text-destructive">Not found</p>;
 
   return (
@@ -118,7 +118,7 @@ function EditQuestionnairePage() {
                 id="q-active"
                
               />
-              <Label htmlFor="q-active" className="cursor-pointer select-none text-[16px] font-medium text-[#2E00AB]">
+              <Label htmlFor="q-active" className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]">
                 Active
               </Label>
             </div>
@@ -136,7 +136,7 @@ function EditQuestionnairePage() {
                   <label key={m.id} className="admin-check-row">
                     <Checkbox
                       checked={checked}
-                      className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
+                      className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                       onCheckedChange={(v) =>
                         setCategoryIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id))
                       }
@@ -168,7 +168,7 @@ function EditQuestionnairePage() {
       <div className="space-y-4">
         {dataQ.data.questions.length === 0 && (
           <Card className={`${adminCard} border-dashed`}>
-            <CardContent className="py-8 text-center text-[16px] text-[#2E00AB]/60">
+            <CardContent className="py-8 text-center text-[16px] text-[#3B4759]/60">
               No questions yet. Click &ldquo;Add Question&rdquo;.
             </CardContent>
           </Card>
@@ -236,7 +236,7 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
   return (
     <Card className={adminCard}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
-        <CardTitle className="text-[16px] font-medium text-[#2E00AB]/60">Question</CardTitle>
+        <CardTitle className="text-[16px] font-medium text-[#3B4759]/60">Question</CardTitle>
         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
           onClick={() => deleteMut.mutate()}>
           <Trash2 className="h-4 w-4" />
@@ -270,7 +270,7 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
               id={`req-${question.id}`}
               
             />
-            <Label htmlFor={`req-${question.id}`} className="cursor-pointer select-none text-[16px] font-medium text-[#2E00AB]">
+            <Label htmlFor={`req-${question.id}`} className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]">
               Required
             </Label>
           </div>
@@ -301,7 +301,7 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
                   <label className="admin-check-row shrink-0 border-0 p-0">
                     <Checkbox
                       checked={o.is_disqualifying}
-                      className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
+                      className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                       onCheckedChange={(v) => {
                         const copy = [...options]; copy[i] = { ...copy[i], is_disqualifying: !!v }; setOptions(copy);
                       }}

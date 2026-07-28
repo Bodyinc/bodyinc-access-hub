@@ -58,9 +58,9 @@ function formatDate(iso?: string | null) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="flex-1 rounded-2xl border border-[#EAE6FA] bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#6B5AE0]/70">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-[#2A00A2]">{value}</p>
+    <Card className="flex-1 rounded-2xl border border-[#D5DEDD] bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#6A9B9C]/70">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-[#3B4759]">{value}</p>
     </Card>
   );
 }
@@ -110,14 +110,14 @@ function WalletDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="rounded-2xl border-[#E2DCFA]">
+      <DialogContent className="rounded-2xl border-[#D5DEDD]">
         <DialogHeader>
-          <DialogTitle className="text-[#2A00A2]">
+          <DialogTitle className="text-[#3B4759]">
             Wallet — {wallet.data?.user.full_name ?? wallet.data?.user.email ?? "Patient"}
           </DialogTitle>
-          <DialogDescription className="text-[#6B5AE0]/80">
+          <DialogDescription className="text-[#6A9B9C]/80">
             Balance:{" "}
-            <span className="font-bold text-[#2A00A2]">
+            <span className="font-bold text-[#3B4759]">
               {wallet.data ? usd(wallet.data.balance_cents) : "…"}
             </span>{" "}
             — credit is applied automatically to the patient's next bill.
@@ -131,12 +131,12 @@ function WalletDialog({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Amount (USD)"
               inputMode="decimal"
-              className="h-10 rounded-xl border-[#E2DCFA]"
+              className="h-10 rounded-xl border-[#D5DEDD]"
             />
             <Button
               disabled={adjustMut.isPending}
               onClick={() => submit(1)}
-              className="h-10 rounded-xl bg-[#2A00A2] text-white hover:bg-[#22008A]"
+              className="h-10 rounded-xl bg-[#6A9B9C] text-white hover:bg-[#5B8788]"
             >
               Add credit
             </Button>
@@ -144,7 +144,7 @@ function WalletDialog({
               disabled={adjustMut.isPending}
               onClick={() => submit(-1)}
               variant="outline"
-              className="h-10 rounded-xl border-[#FF4D6D]/40 text-[#FF4D6D] hover:bg-[#FFF1F4]"
+              className="h-10 rounded-xl border-[#B8684B]/40 text-[#B8684B] hover:bg-[#FBF1EC]"
             >
               Deduct
             </Button>
@@ -153,22 +153,22 @@ function WalletDialog({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optional)"
-            className="h-10 rounded-xl border-[#E2DCFA]"
+            className="h-10 rounded-xl border-[#D5DEDD]"
           />
         </div>
 
-        <div className="max-h-56 overflow-y-auto rounded-xl border border-[#EAE6FA]">
+        <div className="max-h-56 overflow-y-auto rounded-xl border border-[#D5DEDD]">
           <Table>
             <TableBody>
               {(wallet.data?.transactions ?? []).map((t: any) => (
-                <TableRow key={t.id} className="border-b border-[#EAE6FA]/50">
-                  <TableCell className="text-[13px] text-[#2A00A2]/80">
+                <TableRow key={t.id} className="border-b border-[#D5DEDD]/50">
+                  <TableCell className="text-[13px] text-[#3B4759]/80">
                     {t.description ?? t.type}
-                    <span className="ml-2 text-xs text-[#6B5AE0]/60">{formatDate(t.created_at)}</span>
+                    <span className="ml-2 text-xs text-[#6A9B9C]/60">{formatDate(t.created_at)}</span>
                   </TableCell>
                   <TableCell
                     className={`text-right text-[13px] font-bold ${
-                      t.amount_cents >= 0 ? "text-emerald-700" : "text-[#FF4D6D]"
+                      t.amount_cents >= 0 ? "text-emerald-700" : "text-[#B8684B]"
                     }`}
                   >
                     {t.amount_cents >= 0 ? "+" : "−"}
@@ -178,7 +178,7 @@ function WalletDialog({
               ))}
               {wallet.data && wallet.data.transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell className="py-6 text-center text-[13px] text-[#6B5AE0]/60">
+                  <TableCell className="py-6 text-center text-[13px] text-[#6A9B9C]/60">
                     No wallet activity yet.
                   </TableCell>
                 </TableRow>
@@ -232,7 +232,7 @@ function ReferralsPage() {
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1 sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -255,72 +255,72 @@ function ReferralsPage() {
       <div className="admin-table-wrap m-0 w-full">
         <div className="admin-table-scroll">
           <Table className="min-w-[900px]">
-            <TableHeader className="bg-[#FDFDFF]">
-              <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Referrer</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Referred friend</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Code</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Status</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Reward</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Invited</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Converted</TableHead>
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Referrer</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Referred friend</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Code</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Reward</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Invited</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Converted</TableHead>
                 <TableHead className="w-24 h-11 text-[13px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+                  <TableCell colSpan={8} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
                     Loading…
                   </TableCell>
                 </TableRow>
               )}
               {query.isError && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
+                  <TableCell colSpan={8} className="py-12 text-center text-[#B8684B] font-semibold text-[14px]">
                     {(query.error as Error).message}
                   </TableCell>
                 </TableRow>
               )}
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+                  <TableCell colSpan={8} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
                     No referrals yet.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r: any) => (
-                <TableRow key={r.id} className="border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40">
+                <TableRow key={r.id} className="border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40">
                   <TableCell>
-                    <p className="font-semibold text-[#2E00AB] text-[14px]">{r.referrer_name ?? "—"}</p>
-                    <p className="text-xs text-[#2E00AB]/70">{r.referrer_email}</p>
+                    <p className="font-semibold text-[#3B4759] text-[14px]">{r.referrer_name ?? "—"}</p>
+                    <p className="text-xs text-[#3B4759]/70">{r.referrer_email}</p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-medium text-[#2E00AB] text-[14px]">{r.referred_name ?? "—"}</p>
-                    <p className="text-xs text-[#2E00AB]/70">{r.referred_email}</p>
+                    <p className="font-medium text-[#3B4759] text-[14px]">{r.referred_name ?? "—"}</p>
+                    <p className="text-xs text-[#3B4759]/70">{r.referred_email}</p>
                   </TableCell>
-                  <TableCell className="font-mono text-[13px] text-[#2E00AB]">{r.code}</TableCell>
+                  <TableCell className="font-mono text-[13px] text-[#3B4759]">{r.code}</TableCell>
                   <TableCell>
                     <Badge
                       className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none border border-transparent ${
                         r.status === "converted"
                           ? "bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#E8F5E9]"
-                          : "bg-[#F5F3FF] text-[#2E00AB] hover:bg-[#F5F3FF]"
+                          : "bg-[#E8EEED] text-[#3B4759] hover:bg-[#E8EEED]"
                       }`}
                     >
                       {r.status === "converted" ? "Converted" : "Pending"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium text-[#2E00AB] text-[14px]">
+                  <TableCell className="font-medium text-[#3B4759] text-[14px]">
                     {r.status === "converted" ? usd(r.reward_cents) : "—"}
                   </TableCell>
-                  <TableCell className="text-[#2E00AB]/80 text-[13px]">{formatDate(r.created_at)}</TableCell>
-                  <TableCell className="text-[#2E00AB]/80 text-[13px]">{formatDate(r.converted_at)}</TableCell>
+                  <TableCell className="text-[#3B4759]/80 text-[13px]">{formatDate(r.created_at)}</TableCell>
+                  <TableCell className="text-[#3B4759]/80 text-[13px]">{formatDate(r.converted_at)}</TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 rounded-xl text-[#6B5AE0] hover:bg-[#F5F3FF] text-[12px] font-bold"
+                      className="h-8 rounded-xl text-[#6A9B9C] hover:bg-[#E8EEED] text-[12px] font-bold"
                       onClick={() => setWalletUser(r.referrer_user_id)}
                     >
                       <Wallet className="mr-1 h-3.5 w-3.5" /> Wallet

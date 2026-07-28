@@ -67,7 +67,7 @@ function IntakeSessionsListPage() {
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-0 flex-1 sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -102,35 +102,35 @@ function IntakeSessionsListPage() {
       <div className="admin-table-wrap m-0 w-full">
         <div className="admin-table-scroll">
           <Table className="min-w-[720px]">
-            <TableHeader className="bg-[#FDFDFF]">
-              <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Name</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Email</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">State</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Sex</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Plan</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Status</TableHead>
-                <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Created</TableHead>
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Name</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Email</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">State</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Sex</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Plan</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {q.isLoading && (
-                <TableRow className="border-b border-[#EAE6FA]/50">
-                  <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+                <TableRow className="border-b border-[#D5DEDD]/50">
+                  <TableCell colSpan={7} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
                     Loading…
                   </TableCell>
                 </TableRow>
               )}
               {q.isError && (
-                <TableRow className="border-b border-[#EAE6FA]/50">
-                  <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0] font-semibold text-[14px]">
+                <TableRow className="border-b border-[#D5DEDD]/50">
+                  <TableCell colSpan={7} className="py-12 text-center text-[#6A9B9C] font-semibold text-[14px]">
                     {(q.error as Error).message}
                   </TableCell>
                 </TableRow>
               )}
               {!q.isLoading && q.data?.length === 0 && (
-                <TableRow className="border-b border-[#EAE6FA]/50">
-                  <TableCell colSpan={7} className="py-12 text-center text-[#6B5AE0]/60 font-semibold text-[14px]">
+                <TableRow className="border-b border-[#D5DEDD]/50">
+                  <TableCell colSpan={7} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
                     No sessions found.
                   </TableCell>
                 </TableRow>
@@ -138,24 +138,24 @@ function IntakeSessionsListPage() {
               {q.data?.map((s: any) => (
                 <TableRow
                   key={s.id}
-                  className="cursor-pointer border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40 transition-colors"
+                  className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
                   onClick={() =>
                     navigate({ to: "/admin/intake-sessions/$sessionId", params: { sessionId: s.id } })
                   }
                 >
-                  <TableCell className="font-semibold text-[#2E00AB] text-[14px]">
+                  <TableCell className="font-semibold text-[#3B4759] text-[14px]">
                     {s.full_name || "—"}
                   </TableCell>
-                  <TableCell className="text-[#2E00AB]/70 font-medium text-[14px]">
+                  <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
                     {s.email || "—"}
                   </TableCell>
-                  <TableCell className="text-[#2E00AB] font-medium text-[14px]">
+                  <TableCell className="text-[#3B4759] font-medium text-[14px]">
                     {s.state_code || "—"}
                   </TableCell>
-                  <TableCell className="capitalize text-[#2E00AB]/70 font-medium text-[14px]">
+                  <TableCell className="capitalize text-[#3B4759]/70 font-medium text-[14px]">
                     {s.sex || "—"}
                   </TableCell>
-                  <TableCell className="text-[#2E00AB] font-medium text-[14px]">
+                  <TableCell className="text-[#3B4759] font-medium text-[14px]">
                     {s.plan_name || "—"}
                   </TableCell>
                   <TableCell>
@@ -163,18 +163,18 @@ function IntakeSessionsListPage() {
                       variant="secondary"
                       className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                         s.status === "completed"
-                          ? "bg-[#F3E5F5] text-[#6B5AE0] hover:bg-[#F3E5F5]"
+                          ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
                           : s.status === "payment_pending"
-                          ? "bg-[#F3E5F5] text-[#6B5AE0] hover:bg-[#F3E5F5]"
+                          ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
                           : s.status === "abandoned"
-                          ? "bg-[#F3E5F5] text-[#6B5AE0] hover:bg-[#F3E5F5]"
-                          : "bg-[#F3E5F5] text-[#6B5AE0] hover:bg-[#F3E5F5]"
+                          ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
+                          : "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
                       }`}
                     >
                       {s.status ?? "—"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-[#2E00AB]/70 font-medium text-[14px]">
+                  <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
                     {formatDate(s.created_at)}
                   </TableCell>
                 </TableRow>

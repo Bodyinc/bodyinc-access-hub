@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/admin/slots")({
             Define consultation availability windows. Patients see them adjusted to their current location's timezone.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 pt-0 text-[16px] text-[#2E00AB]/60 sm:p-6 sm:pt-0">Coming soon.</CardContent>
+        <CardContent className="p-4 pt-0 text-[16px] text-[#3B4759]/60 sm:p-6 sm:pt-0">Coming soon.</CardContent>
       </Card>
     </div>
   ),

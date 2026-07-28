@@ -140,7 +140,7 @@ function PatientDetailPage() {
 
   if (patient.isLoading) {
     return (
-      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#2E00AB]/60">
+      <div className="admin-page-shell font-['DM_Sans',sans-serif] text-[14px] font-medium text-[#3B4759]/60">
         Loading patient…
       </div>
     );
@@ -152,11 +152,11 @@ function PatientDetailPage() {
           variant="ghost"
           size="sm"
           onClick={() => navigate({ to: "/admin/patients" })}
-          className="h-9 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+          className="h-9 px-2 text-[14px] font-medium text-[#3B4759] hover:bg-[#E8EEED] hover:text-[#3B4759]"
         >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
-        <div className="text-[14px] font-semibold text-[#FF4D6D]">
+        <div className="text-[14px] font-semibold text-[#B8684B]">
           {(patient.error as Error)?.message ?? "Patient not found"}
         </div>
       </div>
@@ -171,7 +171,7 @@ function PatientDetailPage() {
         variant="ghost"
         size="sm"
         onClick={() => navigate({ to: "/admin/patients" })}
-        className="h-9 -ml-2 px-2 text-[14px] font-medium text-[#2E00AB] hover:bg-[#F5F3FF] hover:text-[#2E00AB]"
+        className="h-9 -ml-2 px-2 text-[14px] font-medium text-[#3B4759] hover:bg-[#E8EEED] hover:text-[#3B4759]"
       >
         <ArrowLeft className="mr-1 h-4 w-4" /> Back to patients
       </Button>
@@ -183,7 +183,7 @@ function PatientDetailPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={d.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EAE6FA] text-sm font-semibold uppercase text-[#2E00AB]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#D5DEDD] text-sm font-semibold uppercase text-[#3B4759]">
                 {(d.full_name || d.email || "?").slice(0, 2)}
               </div>
             )}
@@ -195,8 +195,8 @@ function PatientDetailPage() {
           <Badge
             className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
               d.is_active
-                ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-                : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+                ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
+                : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
             }`}
           >
             {d.is_active ? "Active" : "Deactivated"}
@@ -206,34 +206,34 @@ function PatientDetailPage() {
 
       <Tabs defaultValue="profile" className="space-y-4">
         <div className="-mx-1 overflow-x-auto px-1">
-          <TabsList className="h-auto w-max gap-1 rounded-[10px] border border-[#EAE6FA] bg-[#F5F3FF] p-1">
+          <TabsList className="h-auto w-max gap-1 rounded-[10px] border border-[#D5DEDD] bg-[#E8EEED] p-1">
             <TabsTrigger
               value="profile"
-              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
             >
               Profile
             </TabsTrigger>
             <TabsTrigger
               value="intake"
-              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
             >
               Intake Sessions
             </TabsTrigger>
             <TabsTrigger
               value="orders"
-              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
             >
               Orders
             </TabsTrigger>
             <TabsTrigger
               value="payments"
-              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
             >
               Payments
             </TabsTrigger>
             <TabsTrigger
               value="account"
-              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#2E00AB] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#2E00AB] data-[state=active]:shadow-sm"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
             >
               Account
             </TabsTrigger>
@@ -283,15 +283,15 @@ function PatientDetailPage() {
           >
             <div className="admin-table-scroll">
               <Table className="min-w-[520px]">
-                <TableHeader className="bg-[#FDFDFF]">
-                  <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                <TableHeader className="bg-[#F8FBFA]">
+                  <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Session
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Status
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Created
                     </TableHead>
                   </TableRow>
@@ -300,7 +300,7 @@ function PatientDetailPage() {
                   {(related.data?.sessions ?? []).map((s: any) => (
                     <TableRow
                       key={s.id}
-                      className="cursor-pointer border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                      className="cursor-pointer border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                       onClick={() =>
                         navigate({
                           to: "/admin/intake-sessions/$sessionId",
@@ -309,19 +309,19 @@ function PatientDetailPage() {
                       }
                     >
                       <TableCell>
-                        <div className="text-[14px] font-semibold text-[#2E00AB]">
+                        <div className="text-[14px] font-semibold text-[#3B4759]">
                           {s.full_name || "—"}
                         </div>
-                        <div className="text-[12px] font-medium text-[#2E00AB]/60">
+                        <div className="text-[12px] font-medium text-[#3B4759]/60">
                           {s.email || "—"}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]">
+                        <Badge className="rounded-lg border border-transparent bg-[#D5DEDD] px-2.5 py-0.5 text-[12px] font-semibold text-[#3B4759] shadow-none normal-case tracking-normal hover:bg-[#D5DEDD]">
                           {s.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                         {formatDate(s.created_at)}
                       </TableCell>
                     </TableRow>
@@ -340,21 +340,21 @@ function PatientDetailPage() {
           >
             <div className="admin-table-scroll">
               <Table className="min-w-[640px]">
-                <TableHeader className="bg-[#FDFDFF]">
-                  <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                <TableHeader className="bg-[#F8FBFA]">
+                  <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Order
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Plan
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Total
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Status
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Created
                     </TableHead>
                   </TableRow>
@@ -363,26 +363,26 @@ function PatientDetailPage() {
                   {(related.data?.orders ?? []).map((o: any) => (
                     <TableRow
                       key={o.id}
-                      className="cursor-pointer border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                      className="cursor-pointer border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                       onClick={() =>
                         navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })
                       }
                     >
-                      <TableCell className="font-mono text-xs font-medium text-[#2E00AB]">
+                      <TableCell className="font-mono text-xs font-medium text-[#3B4759]">
                         {o.id.slice(0, 8)}…
                       </TableCell>
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                         {o.selected_plan_code || "—"}
                       </TableCell>
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]">
                         ${Number(o.total ?? 0).toFixed(2)}
                       </TableCell>
                       <TableCell>
-                        <Badge className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]">
+                        <Badge className="rounded-lg border border-transparent bg-[#D5DEDD] px-2.5 py-0.5 text-[12px] font-semibold text-[#3B4759] shadow-none normal-case tracking-normal hover:bg-[#D5DEDD]">
                           {o.status ?? "—"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                         {formatDate(o.created_at)}
                       </TableCell>
                     </TableRow>
@@ -401,18 +401,18 @@ function PatientDetailPage() {
           >
             <div className="admin-table-scroll">
               <Table className="min-w-[600px]">
-                <TableHeader className="bg-[#FDFDFF]">
-                  <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                <TableHeader className="bg-[#F8FBFA]">
+                  <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Amount
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Status
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Payment intent
                     </TableHead>
-                    <TableHead className="h-11 text-[13px] font-semibold text-[#2E00AB]">
+                    <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                       Created
                     </TableHead>
                   </TableRow>
@@ -421,20 +421,20 @@ function PatientDetailPage() {
                   {(related.data?.payments ?? []).map((p: any) => (
                     <TableRow
                       key={p.id}
-                      className="border-b border-[#EAE6FA] transition-colors hover:bg-[#F5F3FF]/40"
+                      className="border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                     >
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]">
                         ${((p.amount_cents ?? 0) / 100).toFixed(2)} {p.currency?.toUpperCase()}
                       </TableCell>
                       <TableCell>
-                        <Badge className="rounded-lg border border-transparent bg-[#EAE6FA] px-2.5 py-0.5 text-[12px] font-semibold text-[#2E00AB] shadow-none normal-case tracking-normal hover:bg-[#EAE6FA]">
+                        <Badge className="rounded-lg border border-transparent bg-[#D5DEDD] px-2.5 py-0.5 text-[12px] font-semibold text-[#3B4759] shadow-none normal-case tracking-normal hover:bg-[#D5DEDD]">
                           {p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-xs font-medium text-[#2E00AB]">
+                      <TableCell className="font-mono text-xs font-medium text-[#3B4759]">
                         {p.stripe_payment_intent_id ?? "—"}
                       </TableCell>
-                      <TableCell className="text-[14px] font-medium text-[#2E00AB]/70">
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                         {formatDate(p.created_at)}
                       </TableCell>
                     </TableRow>
@@ -456,27 +456,27 @@ function PatientDetailPage() {
             <CardContent className="space-y-4 p-4 pt-0 text-[14px] sm:p-6 sm:pt-0">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Email confirmed</div>
-                  <div className="font-medium text-[#2E00AB]">{formatDate(d.email_confirmed_at)}</div>
+                  <div className="text-[13px] font-medium text-[#3B4759]/60">Email confirmed</div>
+                  <div className="font-medium text-[#3B4759]">{formatDate(d.email_confirmed_at)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Last sign-in</div>
-                  <div className="font-medium text-[#2E00AB]">{formatDate(d.last_sign_in_at)}</div>
+                  <div className="text-[13px] font-medium text-[#3B4759]/60">Last sign-in</div>
+                  <div className="font-medium text-[#3B4759]">{formatDate(d.last_sign_in_at)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Joined</div>
-                  <div className="font-medium text-[#2E00AB]">{formatDate(d.created_at)}</div>
+                  <div className="text-[13px] font-medium text-[#3B4759]/60">Joined</div>
+                  <div className="font-medium text-[#3B4759]">{formatDate(d.created_at)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[13px] font-medium text-[#2E00AB]/60">Profile updated</div>
-                  <div className="font-medium text-[#2E00AB]">{formatDate(d.updated_at)}</div>
+                  <div className="text-[13px] font-medium text-[#3B4759]/60">Profile updated</div>
+                  <div className="font-medium text-[#3B4759]">{formatDate(d.updated_at)}</div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-[16px] font-medium text-[#2E00AB]">Account active</div>
-                  <div className="mt-1 text-[13px] font-normal text-[#2E00AB]/70">
+                  <div className="text-[16px] font-medium text-[#3B4759]">Account active</div>
+                  <div className="mt-1 text-[13px] font-normal text-[#3B4759]/70">
                     Deactivating blocks sign-in for this patient.
                   </div>
                 </div>
@@ -484,14 +484,14 @@ function PatientDetailPage() {
                   checked={d.is_active}
                   disabled={activeMut.isPending}
                   onCheckedChange={(checked) => activeMut.mutate(checked)}
-                  className="data-[state=checked]:bg-[#2E00AB]"
+                  className="data-[state=checked]:bg-[#6A9B9C]"
                 />
               </div>
 
-              <div className="flex flex-col gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-[16px] font-medium text-[#2E00AB]">Password reset</div>
-                  <div className="mt-1 text-[13px] font-normal text-[#2E00AB]/70">
+                  <div className="text-[16px] font-medium text-[#3B4759]">Password reset</div>
+                  <div className="mt-1 text-[13px] font-normal text-[#3B4759]/70">
                     Sends a recovery email to {d.email}.
                   </div>
                 </div>
@@ -638,8 +638,8 @@ function ProfileTab({
 function Metric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <div className="text-[12px] font-medium text-[#2E00AB]/60">{label}</div>
-      <div className="text-[14px] font-semibold text-[#2E00AB]">{value}</div>
+      <div className="text-[12px] font-medium text-[#3B4759]/60">{label}</div>
+      <div className="text-[14px] font-semibold text-[#3B4759]">{value}</div>
     </div>
   );
 }
@@ -662,8 +662,8 @@ function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean })
     <Badge
       className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
         data.eligibility === "eligible"
-          ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-          : "bg-[#FDE7EC] text-[#FF4D6D] hover:bg-[#FDE7EC]"
+          ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
+          : "bg-[#F6E4DA] text-[#B8684B] hover:bg-[#F6E4DA]"
       }`}
     >
       {data.eligibility}
@@ -682,9 +682,9 @@ function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean })
       </CardHeader>
       <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
         {loading ? (
-          <div className="text-[14px] font-medium text-[#2E00AB]/60">Loading…</div>
+          <div className="text-[14px] font-medium text-[#3B4759]/60">Loading…</div>
         ) : !data?.has_data ? (
-          <div className="text-[14px] font-medium text-[#2E00AB]/60">
+          <div className="text-[14px] font-medium text-[#3B4759]/60">
             No clinical data on file.
           </div>
         ) : (
@@ -759,8 +759,8 @@ function AddressCard({
     <Badge
       className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
         on
-          ? "bg-[#2E00AB] text-white hover:bg-[#2E00AB]"
-          : "bg-[#EAE6FA] text-[#2E00AB] hover:bg-[#EAE6FA]"
+          ? "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]"
+          : "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]"
       }`}
     >
       {label}: {on ? "Yes" : "No"}
@@ -897,9 +897,9 @@ function RelatedList({
     <Card className={adminCard}>
       <CardContent className="p-0">
         {isLoading ? (
-          <div className="p-6 text-[14px] font-medium text-[#2E00AB]/60">Loading…</div>
+          <div className="p-6 text-[14px] font-medium text-[#3B4759]/60">Loading…</div>
         ) : error ? (
-          <div className="p-6 text-[14px] font-semibold text-[#FF4D6D]">{error.message}</div>
+          <div className="p-6 text-[14px] font-semibold text-[#B8684B]">{error.message}</div>
         ) : (
           <>{children}</>
         )}
@@ -921,10 +921,10 @@ function DangerZone({
 }) {
   if (!isActive) return null;
   return (
-    <div className="flex flex-col gap-3 rounded-[10px] border border-[#FF4D6D]/40 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-[10px] border border-[#B8684B]/40 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <div className="text-[16px] font-medium text-[#FF4D6D]">Deactivate account</div>
-        <div className="mt-1 text-[13px] font-normal text-[#2E00AB]/70">
+        <div className="text-[16px] font-medium text-[#B8684B]">Deactivate account</div>
+        <div className="mt-1 text-[13px] font-normal text-[#3B4759]/70">
           Blocks {name} from signing in. Can be reversed.
         </div>
       </div>
@@ -934,7 +934,7 @@ function DangerZone({
             variant="outline"
             size="sm"
             disabled={disabled}
-            className="h-10 rounded-[8px] border border-[#FF4D6D]/40 px-4 text-[13px] font-semibold text-[#FF4D6D] shadow-none hover:bg-[#FFF5F7] hover:text-[#FF4D6D]"
+            className="h-10 rounded-[8px] border border-[#B8684B]/40 px-4 text-[13px] font-semibold text-[#B8684B] shadow-none hover:bg-[#FBF1EC] hover:text-[#B8684B]"
           >
             Deactivate
           </Button>

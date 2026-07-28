@@ -71,7 +71,7 @@ function OrdersListPage() {
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1 sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/40" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/40" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -95,34 +95,34 @@ function OrdersListPage() {
       <div className="admin-table-wrap m-0 w-full max-w-none">
         <div className="admin-table-scroll">
         <Table className="min-w-[720px]">
-          <TableHeader className="bg-[#FDFDFF]">
-            <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Order</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Customer</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Item</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Amount</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Status</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Created</TableHead>
+          <TableHeader className="bg-[#F8FBFA]">
+            <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Order</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Customer</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Item</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Amount</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {query.isLoading && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={6} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {query.isError && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#FF4D6D] font-semibold text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={6} className="py-12 text-center text-[#B8684B] font-semibold text-[14px]">
                   {(query.error as Error).message}
                 </TableCell>
               </TableRow>
             )}
             {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={6} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -130,30 +130,30 @@ function OrdersListPage() {
             {query.data?.map((o: any) => (
               <TableRow
                 key={o.id}
-                className="cursor-pointer border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40 transition-colors"
+                className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
                 onClick={() => navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })}
               >
-                <TableCell className="font-mono text-xs text-[#2E00AB]/70 font-medium">
+                <TableCell className="font-mono text-xs text-[#3B4759]/70 font-medium">
                   {o.id.slice(0, 8)}…
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-[#2E00AB] text-[14px]">{o.customer_name || "—"}</span>
+                    <span className="font-semibold text-[#3B4759] text-[14px]">{o.customer_name || "—"}</span>
                     {o.is_guest ? (
                       <span
-                        className="rounded bg-[#F3EFFF] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6B5AE0]"
+                        className="rounded bg-[#E8EEED] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6A9B9C]"
                         title="Paid during onboarding; account not yet created"
                       >
                         Guest
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-[12px] text-[#2E00AB]/70 font-medium">{o.customer_email || "—"}</div>
+                  <div className="text-[12px] text-[#3B4759]/70 font-medium">{o.customer_email || "—"}</div>
                 </TableCell>
-                <TableCell className="max-w-[220px] truncate text-[#2E00AB] font-medium text-[14px]">
+                <TableCell className="max-w-[220px] truncate text-[#3B4759] font-medium text-[14px]">
                   {o.item_name}
                 </TableCell>
-                <TableCell className="text-[#2E00AB] font-semibold text-[14px]">
+                <TableCell className="text-[#3B4759] font-semibold text-[14px]">
                   {o.amount != null ? formatCurrency(o.amount) : "—"}
                 </TableCell>
                 <TableCell>
@@ -161,16 +161,16 @@ function OrdersListPage() {
                     variant={o.status === "paid" ? "default" : "secondary"}
                     className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
                       o.status === "paid"
-                        ? "bg-[#e9e8f5] text-[#6B5AE0] hover:bg-[#E8F5E9]"
+                        ? "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#E8F5E9]"
                         : o.status === "canceled"
-                        ? "bg-[#ebecff] text-[#6B5AE0] hover:bg-[#FFEBEE]"
-                        : "bg-[#e9e0ff] text-[#6B5AE0] hover:bg-[#FFF3E0]"
+                        ? "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F6E4DA]"
+                        : "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#FFF3E0]"
                     }`}
                   >
                     {o.status ?? "—"}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-[#2E00AB]/70 font-medium text-[14px]">
+                <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
                   {formatDate(o.created_at)}
                 </TableCell>
               </TableRow>

@@ -65,7 +65,7 @@ export function SubscriptionsTable() {
       {/* Search and Refresh Bar styled to Figma mockup */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2E00AB]/60" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/60" />
           <Input
             placeholder="Search by patient or plan..."
             value={search}
@@ -80,49 +80,49 @@ export function SubscriptionsTable() {
         <div className="admin-table-scroll">
           <Table className="border-collapse min-w-[720px]">
             <TableHeader className="bg-white">
-              <TableRow className="hover:bg-transparent border-b border-[#EAE6FA]">
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Patient</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Plan</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Amount</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Status</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6 border-r border-[#EAE6FA]">Next billing</TableHead>
-                <TableHead className="h-14 text-[#2E00AB] font-semibold text-[14px] px-6">Cancellation</TableHead>
+              <TableRow className="hover:bg-transparent border-b border-[#D5DEDD]">
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Patient</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Plan</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Amount</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Status</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Next billing</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6">Cancellation</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#2E00AB]/70">
+                  <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#3B4759]/70">
                     Loading rows...
                   </TableCell>
                 </TableRow>
               )}
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#2E00AB]/70">
+                  <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#3B4759]/70">
                     No subscriptions found.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
-                <TableRow key={r.id} className="border-b border-[#EAE6FA] hover:bg-[#F9F8FF] transition-colors">
-                  <TableCell className="px-6 py-4 border-r border-[#EAE6FA]">
-                    <div className="font-semibold text-[14px] text-[#2E00AB]">{r.customer_name ?? "—"}</div>
-                    <div className="text-[12px] font-medium text-[#2E00AB]/70">{r.customer_email ?? "—"}</div>
+                <TableRow key={r.id} className="border-b border-[#D5DEDD] hover:bg-[#F2F7F6] transition-colors">
+                  <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
+                    <div className="font-semibold text-[14px] text-[#3B4759]">{r.customer_name ?? "—"}</div>
+                    <div className="text-[12px] font-medium text-[#3B4759]/70">{r.customer_email ?? "—"}</div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#2E00AB]/80 border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#3B4759]/80 border-r border-[#D5DEDD]">
                     {r.plan_name}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#2E00AB] border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#3B4759] border-r border-[#D5DEDD]">
                     {formatCurrency(r.amount)}
                   </TableCell>
-                  <TableCell className="px-6 py-4 border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
                     <div className="flex flex-col gap-1 items-start">
                       <Badge
                         className={`rounded-md px-3 py-1 text-[12px] font-bold shadow-none border ${
                           r.status === "active" || r.status === "trialing"
-                            ? "bg-[#2E00AB] border-transparent text-white"
-                            : "bg-white border-[#EAE6FA] text-[#2E00AB]"
+                            ? "bg-[#6A9B9C] border-transparent text-white"
+                            : "bg-white border-[#D5DEDD] text-[#3B4759]"
                         }`}
                       >
                         {r.status}
@@ -134,25 +134,25 @@ export function SubscriptionsTable() {
                   </TableCell>
 
                   {/* Next billing date */}
-                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#2E00AB] border-r border-[#EAE6FA]">
+                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#3B4759] border-r border-[#D5DEDD]">
                     {formatDate(r.current_period_end)}
                   </TableCell>
 
                   {/* Cancellation Reason Column */}
                   <TableCell className="px-6 py-4 max-w-[220px]">
                     {r.cancellation_reasons?.length ? (
-                      <div className="text-[13px] font-medium text-[#2E00AB]">
+                      <div className="text-[13px] font-medium text-[#3B4759]">
                         <span>
                           {r.cancellation_reasons
                             .map((id: string) => CANCELLATION_LABELS[id] ?? id)
                             .join(", ")}
                         </span>
                         {r.cancellation_note ? (
-                          <span className="block text-[12px] italic text-[#2E00AB]/70 mt-0.5">“{r.cancellation_note}”</span>
+                          <span className="block text-[12px] italic text-[#3B4759]/70 mt-0.5">“{r.cancellation_note}”</span>
                         ) : null}
                       </div>
                     ) : (
-                      <span className="text-[#2E00AB]/50">—</span>
+                      <span className="text-[#3B4759]/50">—</span>
                     )}
                   </TableCell>
                 </TableRow>

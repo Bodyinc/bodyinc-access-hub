@@ -37,12 +37,12 @@ function RxPage() {
   }, [download, q.data]);
 
   if (q.isLoading) {
-    return <div className="p-8 text-[14px] text-[#2E00AB]/60 font-['DM_Sans',sans-serif]">Loading…</div>;
+    return <div className="p-8 text-[14px] text-[#3B4759]/60 font-['DM_Sans',sans-serif]">Loading…</div>;
   }
   if (q.isError || !q.data) {
     return (
       <div className="p-8 font-['DM_Sans',sans-serif]">
-        <div className="text-[14px] font-semibold text-[#FF4D6D]">
+        <div className="text-[14px] font-semibold text-[#B8684B]">
           {(q.error as Error)?.message ?? "Prescription not found"}
         </div>
       </div>
@@ -59,32 +59,32 @@ function RxPage() {
   };
 
   return (
-    <div className="min-h-svh bg-[#FAF8FF] p-4 font-['DM_Sans',sans-serif] print:bg-white print:p-0">
+    <div className="min-h-svh bg-[#F2F7F6] p-4 font-['DM_Sans',sans-serif] print:bg-white print:p-0">
       <div className="mx-auto max-w-2xl">
         <div className="mb-4 flex items-center justify-between print:hidden">
           <button
             type="button"
             onClick={() => router.history.back()}
-            className="text-sm font-medium text-[#2E00AB] hover:opacity-80"
+            className="text-sm font-medium text-[#3B4759] hover:opacity-80"
           >
             ← Back
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-lg bg-[#2E00AB] px-4 py-2 text-sm font-semibold text-white hover:bg-[#25008A]"
+            className="rounded-lg bg-[#6A9B9C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5B8788]"
           >
             Download / Print
           </button>
         </div>
 
-        <div className="rounded-xl border border-[#E6DEFF] bg-white p-8 print:border-0 print:p-0">
-          <div className="flex items-start justify-between border-b border-[#E6DEFF] pb-4">
+        <div className="rounded-xl border border-[#D5DEDD] bg-white p-8 print:border-0 print:p-0">
+          <div className="flex items-start justify-between border-b border-[#D5DEDD] pb-4">
             <div>
-              <div className="text-lg font-bold text-[#2E00AB]">Body Inc</div>
-              <div className="text-xs uppercase tracking-wide text-[#2E00AB]/60">Prescription</div>
+              <div className="text-lg font-bold text-[#3B4759]">Body Inc</div>
+              <div className="text-xs uppercase tracking-wide text-[#3B4759]/60">Prescription</div>
             </div>
-            <div className="text-right text-xs text-[#2E00AB]/70">
+            <div className="text-right text-xs text-[#3B4759]/70">
               <div>Date: {formatDate(rx.createdAt)}</div>
               <div className="font-mono">Rx: {rx.id.slice(0, 8)}</div>
             </div>
@@ -92,26 +92,26 @@ function RxPage() {
 
           <div className="mt-5 grid grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="text-xs font-medium uppercase text-[#2E00AB]/50">Patient</div>
-              <div className="text-[#2E00AB]">{rx.patientName}</div>
+              <div className="text-xs font-medium uppercase text-[#3B4759]/50">Patient</div>
+              <div className="text-[#3B4759]">{rx.patientName}</div>
             </div>
             <div>
-              <div className="text-xs font-medium uppercase text-[#2E00AB]/50">
+              <div className="text-xs font-medium uppercase text-[#3B4759]/50">
                 Prescribing provider
               </div>
-              <div className="text-[#2E00AB]">{rx.providerName ?? "—"}</div>
+              <div className="text-[#3B4759]">{rx.providerName ?? "—"}</div>
             </div>
           </div>
 
           <div className="mt-6">
-            <div className="text-xs font-medium uppercase text-[#2E00AB]/50">Medication</div>
-            <div className="text-lg font-semibold text-[#2E00AB]">{rx.medicineName}</div>
+            <div className="text-xs font-medium uppercase text-[#3B4759]/50">Medication</div>
+            <div className="text-lg font-semibold text-[#3B4759]">{rx.medicineName}</div>
             {rx.directions ? (
-              <div className="mt-1 text-sm text-[#2E00AB]/80">{rx.directions}</div>
+              <div className="mt-1 text-sm text-[#3B4759]/80">{rx.directions}</div>
             ) : null}
           </div>
 
-          <div className="mt-10 border-t border-[#E6DEFF] pt-4 text-xs text-[#2E00AB]/50">
+          <div className="mt-10 border-t border-[#D5DEDD] pt-4 text-xs text-[#3B4759]/50">
             This prescription was generated electronically by Body Inc.
           </div>
         </div>

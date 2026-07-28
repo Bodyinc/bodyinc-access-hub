@@ -67,27 +67,27 @@ function PromosListPage() {
       <div className="admin-table-wrap m-0 w-full">
         <div className="admin-table-scroll">
         <Table className="min-w-[720px]">
-          <TableHeader className="bg-[#FDFDFF]">
-            <TableRow className="border-b border-[#EAE6FA] hover:bg-transparent">
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Code</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Discount</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Auto-apply</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Redeemed</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px]">Expires</TableHead>
-              <TableHead className="text-[#2E00AB] font-semibold h-11 text-[13px] w-20">Active</TableHead>
+          <TableHeader className="bg-[#F8FBFA]">
+            <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Code</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Discount</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Auto-apply</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Redeemed</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Expires</TableHead>
+              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px] w-20">Active</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {query.isLoading && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={6} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#EAE6FA]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#2E00AB]/60 font-medium text-[14px]">
+              <TableRow className="border-b border-[#D5DEDD]">
+                <TableCell colSpan={6} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
                   No promo codes yet.
                 </TableCell>
               </TableRow>
@@ -95,32 +95,32 @@ function PromosListPage() {
             {query.data?.map((p: any) => (
               <TableRow
                 key={p.id}
-                className="cursor-pointer border-b border-[#EAE6FA] hover:bg-[#F5F3FF]/40 transition-colors"
+                className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
                 onClick={() =>
                   navigate({ to: "/admin/promos/$promoId", params: { promoId: p.id } })
                 }
               >
-                <TableCell className="font-semibold text-[#2E00AB] text-[14px]">{p.code}</TableCell>
-                <TableCell className="text-[#2E00AB]/70 font-medium text-[14px]">{discountLabel(p)}</TableCell>
+                <TableCell className="font-semibold text-[#3B4759] text-[14px]">{p.code}</TableCell>
+                <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">{discountLabel(p)}</TableCell>
                 <TableCell>
                   {p.auto_apply ? (
-                    <Badge className="bg-[#2E00AB] text-white hover:bg-[#2E00AB] font-semibold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent">
+                    <Badge className="bg-[#6A9B9C] text-white hover:bg-[#6A9B9C] font-semibold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent">
                       Auto
                     </Badge>
                   ) : (
-                    <span className="text-[#2E00AB]/40 font-medium">—</span>
+                    <span className="text-[#3B4759]/40 font-medium">—</span>
                   )}
                 </TableCell>
-                <TableCell className="text-[#2E00AB] font-medium text-[14px]">
+                <TableCell className="text-[#3B4759] font-medium text-[14px]">
                   {p.times_redeemed}
                   {p.max_redemptions != null ? (
-                    <span className="text-[#2E00AB]/60 font-medium"> / {p.max_redemptions}</span>
+                    <span className="text-[#3B4759]/60 font-medium"> / {p.max_redemptions}</span>
                   ) : (
                     ""
                   )}
                 </TableCell>
-                <TableCell className="text-[#2E00AB]/70 font-medium text-[14px]">
-                  {p.redeem_by ? String(p.redeem_by).slice(0, 10) : <span className="text-[#2E00AB]/40">—</span>}
+                <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
+                  {p.redeem_by ? String(p.redeem_by).slice(0, 10) : <span className="text-[#3B4759]/40">—</span>}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Switch

@@ -50,10 +50,10 @@ export type MedicineFormProps = {
 export function MedicineFormPageHeader({ mode }: { mode: "create" | "edit" }) {
   return (
     <div className="space-y-3">
-      <h1 className="admin-page-title text-[28px] font-semibold leading-[100%] tracking-normal text-[#2E00AB] sm:text-[32px]">
+      <h1 className="admin-page-title text-[28px] font-semibold leading-[100%] tracking-normal text-[#3B4759] sm:text-[32px]">
         {mode === "create" ? "Add medicine" : "Edit medicine"}
       </h1>
-      <p className="admin-page-subtitle text-[18px] font-normal leading-[100%] tracking-normal text-[#2E00AB]/80 sm:text-[20px]">
+      <p className="admin-page-subtitle text-[18px] font-normal leading-[100%] tracking-normal text-[#3B4759]/80 sm:text-[20px]">
         Product image and details shown to patients.
       </p>
     </div>
@@ -167,17 +167,17 @@ export function MedicineForm({
         {showPageHeader && <MedicineFormPageHeader mode={mode} />}
 
         {/* Main Details Card */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6">
           <div className="flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-stretch">
             {/* Product Image Box Container — stretches to match fields column height on desktop */}
             <div className="mx-auto flex w-full max-w-[280px] shrink-0 flex-col gap-2 sm:mx-0 lg:max-w-[300px]">
               <Label className={labelClass}>Product image</Label>
               <div
-                className="flex min-h-[320px] w-full flex-1 flex-col rounded-[12px] border border-dashed border-[#EAE6FA] bg-[#FDFDFF] p-[14px] lg:min-h-0"
+                className="flex min-h-[320px] w-full flex-1 flex-col rounded-[12px] border border-dashed border-[#D5DEDD] bg-[#F8FBFA] p-[14px] lg:min-h-0"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={onDrop}
               >
-                <div className="flex min-h-[160px] flex-1 w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#EAE4FF]">
+                <div className="flex min-h-[160px] flex-1 w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#D5DEDD]">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -185,7 +185,7 @@ export function MedicineForm({
                       className="max-h-full max-w-full object-contain"
                     />
                   ) : (
-                    <ImageIcon className="h-12 w-12 text-[#2E00AB]/40" />
+                    <ImageIcon className="h-12 w-12 text-[#3B4759]/40" />
                   )}
                 </div>
 
@@ -203,7 +203,7 @@ export function MedicineForm({
                     type="button"
                     disabled={submitting || uploading}
                     onClick={() => fileRef.current?.click()}
-                    className="flex h-10 items-center gap-2 rounded-[10px] bg-[#2E00AB] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#25008A]"
+                    className="flex h-10 items-center gap-2 rounded-[10px] bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#5B8788]"
                   >
                     {uploading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -217,7 +217,7 @@ export function MedicineForm({
                       : "Upload image"}
                   </Button>
 
-                  <span className="text-center text-[12px] font-normal leading-[100%] text-[#2E00AB]/70">
+                  <span className="text-center text-[12px] font-normal leading-[100%] text-[#3B4759]/70">
                     JPG, PNG, or WebP · Max 5MB
                   </span>
                 </div>
@@ -276,7 +276,7 @@ export function MedicineForm({
                       }
                       disabled={submitting}
                     >
-                      <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#EAE6FA] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#2E00AB] shadow-none sm:h-[53px]">
+                      <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#3B4759] shadow-none sm:h-[53px]">
                         <SelectValue placeholder="Select Status" />
                       </SelectTrigger>
                       <SelectContent className="font-['DM_Sans',sans-serif]">
@@ -284,7 +284,7 @@ export function MedicineForm({
                           <SelectItem
                             key={s}
                             value={s}
-                            className="text-[16px] font-normal text-[#2E00AB]"
+                            className="text-[16px] font-normal text-[#3B4759]"
                           >
                             {MEDICINE_STATUS_LABELS[s]}
                           </SelectItem>
@@ -311,7 +311,7 @@ export function MedicineForm({
                 />
                 <Label
                   htmlFor="req-qq"
-                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
+                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#3B4759]"
                 >
                   Requires questionnaire before checkout
                 </Label>
@@ -332,7 +332,7 @@ export function MedicineForm({
                 />
                 <Label
                   htmlFor="req-consult"
-                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
+                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#3B4759]"
                 >
                   Requires provider consultation &amp; approval
                 </Label>
@@ -353,7 +353,7 @@ export function MedicineForm({
                 />
                 <Label
                   htmlFor="req-followup"
-                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#2E00AB]"
+                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#3B4759]"
                 >
                   Requires follow-up approval each cycle
                 </Label>
@@ -363,7 +363,7 @@ export function MedicineForm({
         </Card>
 
         {/* Target Categories */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-2">
             <h3 className={sectionTitleClass}>Categories</h3>
             <p className={sectionSubtitleClass}>
@@ -386,11 +386,11 @@ export function MedicineForm({
                   return (
                     <label
                       key={c.id}
-                      className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-[#EAE6FA] bg-[#FDFDFF] p-4 text-[16px] font-medium leading-[100%] text-[#2E00AB] transition-colors hover:bg-[#F9F8FF]"
+                      className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4 text-[16px] font-medium leading-[100%] text-[#3B4759] transition-colors hover:bg-[#F2F7F6]"
                     >
                       <Checkbox
                         checked={checked}
-                        className="h-5 w-5 rounded-[4px] border-[#EAE6FA] data-[state=checked]:border-[#2E00AB] data-[state=checked]:bg-[#2E00AB]"
+                        className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                         onCheckedChange={(v) => {
                           const set = new Set(field.value ?? []);
                           if (v) set.add(c.id);
@@ -418,7 +418,7 @@ export function MedicineForm({
         />
 
         {/* Important Info */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-2">
             <h3 className={sectionTitleClass}>Important information</h3>
             <p className={sectionSubtitleClass}>
@@ -439,7 +439,7 @@ export function MedicineForm({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 h-[53px] w-[53px] rounded-xl text-[#2E00AB]/60 hover:text-destructive hover:bg-destructive/5"
+                  className="shrink-0 h-[53px] w-[53px] rounded-xl text-[#3B4759]/60 hover:text-destructive hover:bg-destructive/5"
                   disabled={submitting}
                   onClick={() => remove(index)}
                 >
@@ -452,7 +452,7 @@ export function MedicineForm({
               variant="outline"
               disabled={submitting}
               onClick={() => append({ text: "" })}
-              className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2E00AB] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors mt-1"
+              className="border-[#D5DEDD] hover:bg-[#F2F7F6] text-[#3B4759] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors mt-1"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" /> Add bullet
             </Button>
@@ -460,7 +460,7 @@ export function MedicineForm({
         </Card>
 
         {/* Notice Block */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#EAE6FA] bg-white p-4 shadow-none sm:p-6 space-y-4">
+        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-2">
             <h3 className={sectionTitleClass}>Notice</h3>
             <p className={sectionSubtitleClass}>
@@ -482,7 +482,7 @@ export function MedicineForm({
           <Button
             type="submit"
             disabled={submitting || uploading}
-            className="bg-[#2E00AB] hover:bg-[#25008A] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
+            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
           >
             {submitting ? (
               <>
@@ -501,7 +501,7 @@ export function MedicineForm({
               variant="outline"
               onClick={onCancel}
               disabled={submitting}
-              className="border-[#EAE6FA] hover:bg-[#F9F8FF] text-[#2E00AB] h-11 px-8 rounded-xl font-semibold text-[14px] transition-colors"
+              className="border-[#D5DEDD] hover:bg-[#F2F7F6] text-[#3B4759] h-11 px-8 rounded-xl font-semibold text-[14px] transition-colors"
             >
               Cancel
             </Button>
