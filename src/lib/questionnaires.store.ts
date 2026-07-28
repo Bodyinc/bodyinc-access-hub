@@ -109,8 +109,33 @@ async function syncQuestionnaireCategories(questionnaireId: string, categoryIds:
       category_id: cid,
     }));
     const { error } = await supabase.from("questionnaire_categories").insert(rows as any);
-    if (error) throw new Error(error.message);
+    if (error) {
+      if ((error as any).code === "23505") {
+        throw new Error(
+          "One of the selected categories is already linked to another questionnaire. A category can only have one questionnaire.",
+        );
+      }
+      throw new Error(error.message);
+    }
   }
+}
+
+export type QuestionnaireCategoryLink = {
+  category_id: string;
+  questionnaire_id: string;
+  questionnaire_name: string;
+};
+
+export async function listCategoryLinks(): Promise<QuestionnaireCategoryLink[]> {
+  const { data, error } = await supabase
+    .from("questionnaire_categories")
+    .select("category_id, questionnaire_id, questionnaires(name)");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: any) => ({
+    category_id: String(r.category_id),
+    questionnaire_id: String(r.questionnaire_id),
+    questionnaire_name: r.questionnaires?.name ?? "another questionnaire",
+  }));
 }
 
 export async function createQuestionnaire(input: {
