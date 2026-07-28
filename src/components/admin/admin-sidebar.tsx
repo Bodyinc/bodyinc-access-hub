@@ -29,8 +29,6 @@ const items: NavItem[] = [
   { title: "Providers", url: "/admin/providers" },
   { title: "Patients", url: "/admin/patients" },
   { title: "Intake Sessions", url: "/admin/intake-sessions" },
-  { title: "Available Slots", url: "/admin/slots" },
-  { title: "Intake Form", url: "/admin/intake-form" },
 ];
 
 export function AdminSidebar() {
