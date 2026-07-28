@@ -44,13 +44,23 @@ export const Route = createFileRoute("/_authenticated/provider")({
 });
 
 const TITLES: Record<string, string> = {
-  "/provider": "Requests",
+  "/provider": "Dashboard",
+  "/provider/requests": "My Requests",
+  "/provider/queue": "Unassigned queue",
+  "/provider/patients": "My Patients",
+  "/provider/profile": "My Profile",
 };
 
 function ProviderLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const cleaned = pathname.replace(/\/$/, "");
-  const title = TITLES[cleaned] ?? (cleaned.startsWith("/provider") ? "Requests" : "Provider");
+  const title =
+    TITLES[cleaned] ??
+    (cleaned.startsWith("/provider/patients")
+      ? "My Patients"
+      : cleaned.startsWith("/provider/requests")
+        ? "My Requests"
+        : "Provider");
 
   return (
     <SidebarProvider className="font-dm-sans flex min-h-svh w-full overflow-x-hidden bg-white">

@@ -21,6 +21,7 @@ import { Route as AuthenticatedProviderIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
 import { Route as AuthenticatedProviderQueueRouteImport } from './routes/_authenticated/provider.queue'
+import { Route as AuthenticatedProviderProfileRouteImport } from './routes/_authenticated/provider.profile'
 import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin.requests'
 import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_authenticated/admin.questionnaires'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
@@ -123,6 +124,12 @@ const AuthenticatedProviderQueueRoute =
   AuthenticatedProviderQueueRouteImport.update({
     id: '/queue',
     path: '/queue',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
+const AuthenticatedProviderProfileRoute =
+  AuthenticatedProviderProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
     getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
 const AuthenticatedAdminRequestsRoute =
@@ -390,6 +397,7 @@ export interface FileRoutesByFullPath {
   '/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   '/admin/requests': typeof AuthenticatedAdminRequestsRouteWithChildren
+  '/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -488,6 +497,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRouteWithChildren
   '/_authenticated/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesRouteWithChildren
   '/_authenticated/admin/requests': typeof AuthenticatedAdminRequestsRouteWithChildren
+  '/_authenticated/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/_authenticated/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/_authenticated/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/questionnaires'
     | '/admin/requests'
+    | '/provider/profile'
     | '/provider/queue'
     | '/rx/$prescriptionId'
     | '/admin/'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/dashboard'
+    | '/provider/profile'
     | '/provider/queue'
     | '/rx/$prescriptionId'
     | '/admin'
@@ -641,6 +653,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/questionnaires'
     | '/_authenticated/admin/requests'
+    | '/_authenticated/provider/profile'
     | '/_authenticated/provider/queue'
     | '/_authenticated/rx/$prescriptionId'
     | '/_authenticated/admin/'
@@ -770,6 +783,13 @@ declare module '@tanstack/react-router' {
       path: '/queue'
       fullPath: '/provider/queue'
       preLoaderRoute: typeof AuthenticatedProviderQueueRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
+    }
+    '/_authenticated/provider/profile': {
+      id: '/_authenticated/provider/profile'
+      path: '/profile'
+      fullPath: '/provider/profile'
+      preLoaderRoute: typeof AuthenticatedProviderProfileRouteImport
       parentRoute: typeof AuthenticatedProviderRoute
     }
     '/_authenticated/admin/requests': {
@@ -1288,6 +1308,7 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedProviderRouteChildren {
+  AuthenticatedProviderProfileRoute: typeof AuthenticatedProviderProfileRoute
   AuthenticatedProviderQueueRoute: typeof AuthenticatedProviderQueueRoute
   AuthenticatedProviderIndexRoute: typeof AuthenticatedProviderIndexRoute
   AuthenticatedProviderPatientsPatientKeyRoute: typeof AuthenticatedProviderPatientsPatientKeyRoute
@@ -1297,6 +1318,7 @@ interface AuthenticatedProviderRouteChildren {
 }
 
 const AuthenticatedProviderRouteChildren: AuthenticatedProviderRouteChildren = {
+  AuthenticatedProviderProfileRoute: AuthenticatedProviderProfileRoute,
   AuthenticatedProviderQueueRoute: AuthenticatedProviderQueueRoute,
   AuthenticatedProviderIndexRoute: AuthenticatedProviderIndexRoute,
   AuthenticatedProviderPatientsPatientKeyRoute:
