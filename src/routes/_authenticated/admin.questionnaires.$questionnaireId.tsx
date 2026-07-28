@@ -12,12 +12,23 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  createQuestion, deleteQuestion, getQuestionnaire, QQUESTION_TYPE_LABELS,
-  replaceQuestionOptions, updateQuestion, updateQuestionnaire,
-  type QQuestionType, type StoredQuestion, type StoredQuestionOption,
+  createQuestion,
+  deleteQuestion,
+  getQuestionnaire,
+  QQUESTION_TYPE_LABELS,
+  replaceQuestionOptions,
+  updateQuestion,
+  updateQuestionnaire,
+  type QQuestionType,
+  type StoredQuestion,
+  type StoredQuestionOption,
 } from "@/lib/questionnaires.store";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import {
@@ -33,6 +44,13 @@ import {
 } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/$questionnaireId")({
+  head: () => ({
+    meta: [
+      { title: "Edit questionnaire · Body Inc Admin" },
+      { name: "description", content: "Edit questionnaire — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: EditQuestionnairePage,
 });
 
@@ -66,9 +84,13 @@ function EditQuestionnairePage() {
   }, [dataQ.data?.questionnaire]);
 
   const saveMut = useMutation({
-    mutationFn: () => updateQuestionnaire(questionnaireId, {
-      name: name.trim(), description: description.trim() || null, is_active: isActive, category_ids: categoryIds,
-    }),
+    mutationFn: () =>
+      updateQuestionnaire(questionnaireId, {
+        name: name.trim(),
+        description: description.trim() || null,
+        is_active: isActive,
+        category_ids: categoryIds,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
@@ -84,7 +106,7 @@ function EditQuestionnairePage() {
         prompt: "New question",
         question_type: "yes_no",
         is_required: true,
-        sort_order: (dataQ.data?.questions.length ?? 0),
+        sort_order: dataQ.data?.questions.length ?? 0,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
@@ -109,23 +131,30 @@ function EditQuestionnairePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className={adminLabel}>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} className={adminInput} />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={adminInput}
+              />
             </div>
             <div className="flex items-end gap-3">
-              <Switch
-                checked={isActive}
-                onCheckedChange={setIsActive}
-                id="q-active"
-               
-              />
-              <Label htmlFor="q-active" className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]">
+              <Switch checked={isActive} onCheckedChange={setIsActive} id="q-active" />
+              <Label
+                htmlFor="q-active"
+                className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]"
+              >
                 Active
               </Label>
             </div>
           </div>
           <div className="space-y-2">
             <Label className={adminLabel}>Description</Label>
-            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className={adminTextarea} />
+            <Textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={adminTextarea}
+            />
           </div>
           <div className="space-y-2">
             <Label className={adminLabel}>Linked goals / categories</Label>
@@ -138,7 +167,9 @@ function EditQuestionnairePage() {
                       checked={checked}
                       className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                       onCheckedChange={(v) =>
-                        setCategoryIds((prev) => v ? [...prev, m.id] : prev.filter((x) => x !== m.id))
+                        setCategoryIds((prev) =>
+                          v ? [...prev, m.id] : prev.filter((x) => x !== m.id),
+                        )
                       }
                     />
                     {m.name}
@@ -148,10 +179,18 @@ function EditQuestionnairePage() {
             </div>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className={adminBtnPrimary}>
+            <Button
+              onClick={() => saveMut.mutate()}
+              disabled={saveMut.isPending}
+              className={adminBtnPrimary}
+            >
               {saveMut.isPending ? "Saving…" : "Save"}
             </Button>
-            <Button variant="outline" onClick={() => navigate({ to: "/admin/questionnaires" })} className={adminBtnSecondary}>
+            <Button
+              variant="outline"
+              onClick={() => navigate({ to: "/admin/questionnaires" })}
+              className={adminBtnSecondary}
+            >
               Back
             </Button>
           </div>
@@ -160,7 +199,12 @@ function EditQuestionnairePage() {
 
       <div className="flex items-center justify-between">
         <h3 className={adminSectionTitle}>Questions</h3>
-        <Button size="sm" onClick={() => addMut.mutate()} disabled={addMut.isPending} className={adminBtnPrimary}>
+        <Button
+          size="sm"
+          onClick={() => addMut.mutate()}
+          disabled={addMut.isPending}
+          className={adminBtnPrimary}
+        >
           <Plus className="mr-1.5 h-4 w-4" /> Add Question
         </Button>
       </div>
@@ -181,18 +225,30 @@ function EditQuestionnairePage() {
   );
 }
 
-function QuestionEditor({ question, questionnaireId }: { question: StoredQuestion; questionnaireId: string }) {
+function QuestionEditor({
+  question,
+  questionnaireId,
+}: {
+  question: StoredQuestion;
+  questionnaireId: string;
+}) {
   const qc = useQueryClient();
   const [prompt, setPrompt] = useState(question.prompt);
   const [description, setDescription] = useState(question.description ?? "");
   const [type, setType] = useState<QQuestionType>(question.question_type);
   const [required, setRequired] = useState(question.is_required);
   const [ynDisq, setYnDisq] = useState<"none" | "yes" | "no">(
-    (question.disqualify_rules as any)?.if_yes ? "yes" :
-    (question.disqualify_rules as any)?.if_no ? "no" : "none",
+    (question.disqualify_rules as any)?.if_yes
+      ? "yes"
+      : (question.disqualify_rules as any)?.if_no
+        ? "no"
+        : "none",
   );
   const [options, setOptions] = useState<Array<{ label: string; is_disqualifying: boolean }>>(
-    question.options.map((o: StoredQuestionOption) => ({ label: o.label, is_disqualifying: o.is_disqualifying })),
+    question.options.map((o: StoredQuestionOption) => ({
+      label: o.label,
+      is_disqualifying: o.is_disqualifying,
+    })),
   );
 
   const saveMut = useMutation({
@@ -205,11 +261,18 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
         sort_order: question.sort_order,
         disqualify_rules:
           type === "yes_no"
-            ? (ynDisq === "yes" ? { if_yes: true } : ynDisq === "no" ? { if_no: true } : {})
+            ? ynDisq === "yes"
+              ? { if_yes: true }
+              : ynDisq === "no"
+                ? { if_no: true }
+                : {}
             : {},
       });
       if (type === "single_choice" || type === "multi_choice") {
-        await replaceQuestionOptions(question.id, options.filter((o) => o.label.trim()));
+        await replaceQuestionOptions(
+          question.id,
+          options.filter((o) => o.label.trim()),
+        );
       } else {
         await replaceQuestionOptions(question.id, []);
       }
@@ -237,40 +300,54 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
     <Card className={adminCard}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:p-6 sm:pb-3">
         <CardTitle className="text-[16px] font-medium text-[#3B4759]/60">Question</CardTitle>
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
-          onClick={() => deleteMut.mutate()}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 text-destructive"
+          onClick={() => deleteMut.mutate()}
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardHeader>
       <CardContent className="space-y-5 p-4 pt-0 sm:p-6 sm:pt-0">
         <div className="space-y-2">
           <Label className={adminLabel}>Prompt</Label>
-          <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className={adminInput} />
+          <Input
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className={adminInput}
+          />
         </div>
         <div className="space-y-2">
           <Label className={adminLabel}>Helper text (optional)</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} className={adminInput} />
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={adminInput}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label className={adminLabel}>Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as QQuestionType)}>
-              <SelectTrigger className={adminSelect}><SelectValue /></SelectTrigger>
+              <SelectTrigger className={adminSelect}>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {Object.entries(QQUESTION_TYPE_LABELS).map(([v, l]) => (
-                  <SelectItem key={v} value={v}>{l}</SelectItem>
+                  <SelectItem key={v} value={v}>
+                    {l}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-end gap-3">
-            <Switch
-              checked={required}
-              onCheckedChange={setRequired}
-              id={`req-${question.id}`}
-              
-            />
-            <Label htmlFor={`req-${question.id}`} className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]">
+            <Switch checked={required} onCheckedChange={setRequired} id={`req-${question.id}`} />
+            <Label
+              htmlFor={`req-${question.id}`}
+              className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]"
+            >
               Required
             </Label>
           </div>
@@ -278,7 +355,9 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
             <div className="space-y-2">
               <Label className={adminLabel}>Disqualify when</Label>
               <Select value={ynDisq} onValueChange={(v) => setYnDisq(v as any)}>
-                <SelectTrigger className={adminSelect}><SelectValue /></SelectTrigger>
+                <SelectTrigger className={adminSelect}>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Never</SelectItem>
                   <SelectItem value="yes">Answer is Yes</SelectItem>
@@ -291,30 +370,50 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
 
         {showOptions && (
           <div className="space-y-2">
-            <Label className={adminLabel}>Options (check the box to mark an option as disqualifying)</Label>
+            <Label className={adminLabel}>
+              Options (check the box to mark an option as disqualifying)
+            </Label>
             <div className="space-y-2">
               {options.map((o, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <Input value={o.label} placeholder={`Option ${i + 1}`} className={adminInput} onChange={(e) => {
-                    const copy = [...options]; copy[i] = { ...copy[i], label: e.target.value }; setOptions(copy);
-                  }} />
+                  <Input
+                    value={o.label}
+                    placeholder={`Option ${i + 1}`}
+                    className={adminInput}
+                    onChange={(e) => {
+                      const copy = [...options];
+                      copy[i] = { ...copy[i], label: e.target.value };
+                      setOptions(copy);
+                    }}
+                  />
                   <label className="admin-check-row shrink-0 border-0 p-0">
                     <Checkbox
                       checked={o.is_disqualifying}
                       className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                       onCheckedChange={(v) => {
-                        const copy = [...options]; copy[i] = { ...copy[i], is_disqualifying: !!v }; setOptions(copy);
+                        const copy = [...options];
+                        copy[i] = { ...copy[i], is_disqualifying: !!v };
+                        setOptions(copy);
                       }}
                     />
                     Disqualifies
                   </label>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive"
-                    onClick={() => setOptions(options.filter((_, idx) => idx !== i))}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-destructive"
+                    onClick={() => setOptions(options.filter((_, idx) => idx !== i))}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={() => setOptions([...options, { label: "", is_disqualifying: false }])} className={adminBtnSecondary}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOptions([...options, { label: "", is_disqualifying: false }])}
+                className={adminBtnSecondary}
+              >
                 <Plus className="mr-1.5 h-4 w-4" /> Add option
               </Button>
             </div>
@@ -322,7 +421,12 @@ function QuestionEditor({ question, questionnaireId }: { question: StoredQuestio
         )}
 
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className={adminBtnPrimary}>
+          <Button
+            size="sm"
+            onClick={() => saveMut.mutate()}
+            disabled={saveMut.isPending}
+            className={adminBtnPrimary}
+          >
             {saveMut.isPending ? "Saving…" : "Save question"}
           </Button>
         </div>

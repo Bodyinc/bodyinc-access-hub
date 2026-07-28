@@ -24,28 +24,16 @@ import {
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { changeSubscriptionMedicine } from "@/lib/orders.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
-
-function money(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatDate, formatDollars } from "@/lib/format";
 
 function planLabel(p: StoredMedicinePackage) {
   const dur = p.duration_months === 1 ? "Monthly" : `${p.duration_months}-Month`;
-  return `${dur} — ${money(p.price)}${p.duration_months > 1 ? ` (every ${p.duration_months} mo)` : "/mo"}`;
+  return `${dur} — ${formatDollars(p.price)}${p.duration_months > 1 ? ` (every ${p.duration_months} mo)` : "/mo"}`;
 }
 
 function perMonth(price: number, durationMonths: number) {
   const d = Math.max(1, Number(durationMonths) || 1);
   return price / d;
-}
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 export type ChangeMedicineCurrent = {
@@ -104,10 +92,10 @@ export function ChangeMedicineDialog({
     () => (medicine?.variants ?? []).filter((v) => v.is_active),
     [medicine],
   );
-  const variant = hasVariants ? activeVariants.find((v) => v.id === variantId) ?? null : null;
+  const variant = hasVariants ? (activeVariants.find((v) => v.id === variantId) ?? null) : null;
 
   const packages = useMemo(() => {
-    const list = hasVariants ? variant?.packages ?? [] : medicine?.packages ?? [];
+    const list = hasVariants ? (variant?.packages ?? []) : (medicine?.packages ?? []);
     return list.filter((p) => p.is_active && p.stripe_price_id);
   }, [hasVariants, variant, medicine]);
 
@@ -138,8 +126,7 @@ export function ChangeMedicineDialog({
       ? perMonth(current.price, current.durationMonths)
       : null;
   const newPerMo = selectedPkg ? perMonth(selectedPkg.price, selectedPkg.duration_months) : null;
-  const diffPerMo =
-    currentPerMo != null && newPerMo != null ? newPerMo - currentPerMo : null;
+  const diffPerMo = currentPerMo != null && newPerMo != null ? newPerMo - currentPerMo : null;
 
   const mutation = useMutation({
     mutationFn: () => change({ data: { orderId, packageId } }),
@@ -174,17 +161,18 @@ export function ChangeMedicineDialog({
               <div className="font-semibold text-foreground">
                 {current.medicineName ?? "—"}
                 {current.variantName ? (
-                  <span className="text-muted-foreground font-normal"> · {current.variantName}</span>
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    · {current.variantName}
+                  </span>
                 ) : null}
               </div>
               <div className="text-muted-foreground">{current.planName ?? "—"}</div>
               <div className="text-lg font-bold text-foreground">
-                {current.price != null ? money(current.price) : "—"}
+                {current.price != null ? formatDollars(current.price) : "—"}
                 {current.durationMonths ? (
                   <span className="text-xs font-medium text-muted-foreground">
-                    {current.durationMonths === 1
-                      ? " /mo"
-                      : ` / ${current.durationMonths} mo`}
+                    {current.durationMonths === 1 ? " /mo" : ` / ${current.durationMonths} mo`}
                   </span>
                 ) : null}
               </div>
@@ -219,8 +207,7 @@ export function ChangeMedicineDialog({
               ) : (
                 filtered.map((m) => {
                   const selected = m.id === medicineId;
-                  const fromPrice =
-                    m.from_price_cents != null ? m.from_price_cents / 100 : null;
+                  const fromPrice = m.from_price_cents != null ? m.from_price_cents / 100 : null;
                   return (
                     <button
                       key={m.id}
@@ -234,7 +221,7 @@ export function ChangeMedicineDialog({
                         <div className="font-medium truncate">{m.name}</div>
                         {fromPrice != null ? (
                           <div className="text-xs text-muted-foreground">
-                            from {money(fromPrice)}/mo
+                            from {formatDollars(fromPrice)}/mo
                           </div>
                         ) : null}
                       </div>
@@ -304,7 +291,7 @@ export function ChangeMedicineDialog({
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">New price</span>
               <span className="font-medium">
-                {money(selectedPkg.price)}
+                {formatDollars(selectedPkg.price)}
                 <span className="text-xs text-muted-foreground">
                   {selectedPkg.duration_months === 1
                     ? " /mo"
@@ -315,12 +302,10 @@ export function ChangeMedicineDialog({
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Current price</span>
               <span className="font-medium">
-                {current.price != null ? money(current.price) : "—"}
+                {current.price != null ? formatDollars(current.price) : "—"}
                 {current.durationMonths ? (
                   <span className="text-xs text-muted-foreground">
-                    {current.durationMonths === 1
-                      ? " /mo"
-                      : ` / ${current.durationMonths} mo`}
+                    {current.durationMonths === 1 ? " /mo" : ` / ${current.durationMonths} mo`}
                   </span>
                 ) : null}
               </span>
@@ -338,7 +323,7 @@ export function ChangeMedicineDialog({
                   }`}
                 >
                   {diffPerMo > 0 ? "+" : diffPerMo < 0 ? "−" : ""}
-                  {money(Math.abs(diffPerMo))}/mo
+                  {formatDollars(Math.abs(diffPerMo))}/mo
                 </span>
               </div>
             ) : null}

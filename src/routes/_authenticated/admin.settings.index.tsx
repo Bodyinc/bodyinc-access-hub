@@ -35,6 +35,13 @@ import {
 } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/settings/")({
+  head: () => ({
+    meta: [
+      { title: "Settings · Body Inc Admin" },
+      { name: "description", content: "Settings — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: SettingsPage,
 });
 
@@ -314,9 +321,7 @@ function SettingsPage() {
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
       <div className="min-w-0 space-y-2 sm:space-y-4">
         <h2 className={adminPageTitle}>Settings</h2>
-        <p className={adminPageSubtitle}>
-          Configure fees, referrals, and platform-wide behavior.
-        </p>
+        <p className={adminPageSubtitle}>Configure fees, referrals, and platform-wide behavior.</p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full min-w-0">
@@ -415,11 +420,7 @@ function SettingsPage() {
 
       {form && tab !== "audit" && tab !== "danger" ? (
         <div className="flex justify-end">
-          <Button
-            onClick={save}
-            disabled={mutation.isPending}
-            className={adminBtnPrimary}
-          >
+          <Button onClick={save} disabled={mutation.isPending} className={adminBtnPrimary}>
             {mutation.isPending ? "Saving…" : "Save changes"}
           </Button>
         </div>

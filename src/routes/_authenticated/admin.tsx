@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { RoutePending } from "@/components/route-pending";
 import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
+import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -22,25 +23,19 @@ export const Route = createFileRoute("/_authenticated/admin")({
       const { data } = await supabase.auth.getSession();
       if (!data.session?.user) throw redirect({ to: "/auth" });
 
-      const cacheKey = `bi_portal_role:${data.session.user.id}`;
-      try {
-        role = sessionStorage.getItem(cacheKey) ?? undefined;
-      } catch {}
+      const userId = data.session.user.id;
+      role = readCachedPortalRole(userId) ?? undefined;
 
       if (!role) {
         const { data: fetched, error: roleError } = await supabase.rpc("get_user_portal", {
-          _user_id: data.session.user.id,
+          _user_id: userId,
         });
         if (roleError) {
           console.error("[admin] get_user_portal failed:", roleError);
           throw redirect({ to: "/auth" });
         }
         role = (fetched as string) ?? undefined;
-        if (role) {
-          try {
-            sessionStorage.setItem(cacheKey, role);
-          } catch {}
-        }
+        cachePortalRole(userId, role);
       }
     }
 

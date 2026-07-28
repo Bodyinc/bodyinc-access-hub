@@ -16,11 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  WIPE_GROUPS,
-  expandGroups,
-  type WipeGroupKey,
-} from "@/lib/danger-zone";
+import { WIPE_GROUPS, expandGroups, type WipeGroupKey } from "@/lib/danger-zone";
 import { wipePlatformData } from "@/lib/danger-zone.functions";
 
 const LABELS = Object.fromEntries(WIPE_GROUPS.map((g) => [g.key, g.label])) as Record<

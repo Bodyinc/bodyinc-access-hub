@@ -28,7 +28,10 @@ export const medicinePackageSchema = z
       .number()
       .int()
       .min(1, "Duration must be at least 1 month")
-      .max(MAX_PACKAGE_DURATION_MONTHS, `Duration must be ${MAX_PACKAGE_DURATION_MONTHS} months or fewer`),
+      .max(
+        MAX_PACKAGE_DURATION_MONTHS,
+        `Duration must be ${MAX_PACKAGE_DURATION_MONTHS} months or fewer`,
+      ),
     original_price: z.coerce
       .number()
       .min(0, "Original price must be 0 or greater")
@@ -63,7 +66,10 @@ export const medicineVariantSchema = z.object({
   is_active: z.boolean().default(true),
   packages: z
     .array(medicinePackageSchema)
-    .max(MAX_PACKAGES_PER_MEDICINE, `A variant can have at most ${MAX_PACKAGES_PER_MEDICINE} packages`)
+    .max(
+      MAX_PACKAGES_PER_MEDICINE,
+      `A variant can have at most ${MAX_PACKAGES_PER_MEDICINE} packages`,
+    )
     .default([]),
 });
 
@@ -90,7 +96,10 @@ export const medicineFormSchema = z.object({
     .transform((v) => (v ? v : undefined)),
   packages: z
     .array(medicinePackageSchema)
-    .max(MAX_PACKAGES_PER_MEDICINE, `A medicine can have at most ${MAX_PACKAGES_PER_MEDICINE} packages`)
+    .max(
+      MAX_PACKAGES_PER_MEDICINE,
+      `A medicine can have at most ${MAX_PACKAGES_PER_MEDICINE} packages`,
+    )
     .default([]),
   variants: z.array(medicineVariantSchema).default([]),
   status: z.enum(MEDICINE_STATUSES).default("draft"),

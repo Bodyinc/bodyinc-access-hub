@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 const listInput = z
   .object({
     search: z.string().trim().max(200).optional(),
@@ -149,7 +148,8 @@ export const updatePatientProfile = createServerFn({ method: "POST" })
     if (rest.street_address !== undefined) patch.street_address = rest.street_address || null;
     if (rest.apartment !== undefined) patch.apartment = rest.apartment || null;
     if (rest.city !== undefined) patch.city = rest.city || null;
-    if (rest.state_code !== undefined) patch.state_code = rest.state_code ? rest.state_code.toUpperCase() : null;
+    if (rest.state_code !== undefined)
+      patch.state_code = rest.state_code ? rest.state_code.toUpperCase() : null;
     if (rest.postal_code !== undefined) patch.postal_code = rest.postal_code || null;
     if (rest.country !== undefined) patch.country = rest.country || null;
     if (Object.keys(patch).length === 0) return { ok: true };

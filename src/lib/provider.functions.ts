@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertProvider } from "@/lib/provider-guard";
+import { ageFromDob, bmiFrom } from "@/lib/format";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -21,24 +22,6 @@ const OPEN_STATUSES = [
   "sent_to_pharmacy",
   "dispatched",
 ];
-
-function bmiOf(height_cm: unknown, weight_kg: unknown): number | null {
-  const h = Number(height_cm ?? 0);
-  const w = Number(weight_kg ?? 0);
-  if (!h || !w) return null;
-  return Number((w / ((h / 100) * (h / 100))).toFixed(1));
-}
-
-function ageOf(dob: unknown): number | null {
-  if (!dob) return null;
-  const d = new Date(String(dob));
-  if (Number.isNaN(d.getTime())) return null;
-  const now = new Date();
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
-  return age;
-}
 
 // Patient keys are "u_<user id>" for account holders and "s_<intake session id>" for guests.
 function parsePatientKey(key: string): { kind: "user" | "session"; id: string } {
@@ -122,7 +105,10 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
       ? supabaseAdmin.from("profiles").select("id, full_name, state_code").in("id", userIds)
       : Promise.resolve({ data: [] as any[] }),
     sessionIds.length
-      ? supabaseAdmin.from("intake_sessions").select("id, full_name, state_code").in("id", sessionIds)
+      ? supabaseAdmin
+          .from("intake_sessions")
+          .select("id, full_name, state_code")
+          .in("id", sessionIds)
       : Promise.resolve({ data: [] as any[] }),
     medIds.length
       ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
@@ -189,7 +175,9 @@ export const claimRequest = createServerFn({ method: "POST" })
 
     const claimable = await loadClaimable(supabaseAdmin, me);
     if (!claimable.some((r) => r.id === data.requestId)) {
-      throw new Error("This order is no longer available to claim, or is outside your licensed states.");
+      throw new Error(
+        "This order is no longer available to claim, or is outside your licensed states.",
+      );
     }
 
     const { data: updated, error } = await supabaseAdmin
@@ -231,7 +219,12 @@ export const listMyPatients = createServerFn({ method: "POST" })
     const list = (rows ?? []) as any[];
     const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
     const sessionIds = Array.from(
-      new Set(list.filter((r) => !r.user_id).map((r) => r.session_id).filter(Boolean)),
+      new Set(
+        list
+          .filter((r) => !r.user_id)
+          .map((r) => r.session_id)
+          .filter(Boolean),
+      ),
     );
     const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
@@ -268,7 +261,7 @@ export const listMyPatients = createServerFn({ method: "POST" })
         name: src.full_name ?? "Patient",
         is_guest: !p,
         sex: src.sex ?? null,
-        age: ageOf(src.dob),
+        age: ageFromDob(src.dob),
         state_code: src.state_code ?? null,
         latest_medicine: medMap.get(r.medicine_id) ?? "—",
         latest_status: r.status,
@@ -284,7 +277,9 @@ export const listMyPatients = createServerFn({ method: "POST" })
         (p) =>
           p.name.toLowerCase().includes(s) ||
           String(p.latest_medicine).toLowerCase().includes(s) ||
-          String(p.state_code ?? "").toLowerCase().includes(s) ||
+          String(p.state_code ?? "")
+            .toLowerCase()
+            .includes(s) ||
           p.key.toLowerCase().includes(s),
       );
     }
@@ -306,7 +301,9 @@ export const getMyPatient = createServerFn({ method: "POST" })
     const scopeCol = kind === "user" ? "user_id" : "session_id";
     const { data: myOrders } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, medicine_id, package_id, kind, status, requires_consultation, created_at, session_id, user_id")
+      .select(
+        "id, medicine_id, package_id, kind, status, requires_consultation, created_at, session_id, user_id",
+      )
       .eq("provider_id", me)
       .eq(scopeCol, id)
       .order("created_at", { ascending: false })
@@ -408,9 +405,9 @@ export const getMyPatient = createServerFn({ method: "POST" })
         const value =
           chosen.length > 0
             ? chosen.join(", ")
-            : r.answer_text ??
+            : (r.answer_text ??
               (r.answer_number != null ? String(r.answer_number) : null) ??
-              (r.answer_boolean != null ? (r.answer_boolean ? "Yes" : "No") : null);
+              (r.answer_boolean != null ? (r.answer_boolean ? "Yes" : "No") : null));
         return {
           id: r.id,
           prompt: r.questionnaire_questions?.prompt ?? "Question",
@@ -446,11 +443,11 @@ export const getMyPatient = createServerFn({ method: "POST" })
         name: src.full_name ?? "Patient",
         is_guest: kind === "session",
         sex: src.sex ?? null,
-        age: ageOf(src.dob),
+        age: ageFromDob(src.dob),
         state_code: src.state_code ?? null,
         height_cm: session?.height_cm ?? null,
         weight_kg: session?.weight_kg ?? null,
-        bmi: bmiOf(session?.height_cm, session?.weight_kg),
+        bmi: bmiFrom(session?.height_cm, session?.weight_kg),
       },
       goals,
       eligibility,
@@ -513,7 +510,13 @@ const profileInput = z.object({
   languages: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
   consultation_types: z.array(z.string().trim().min(1).max(60)).max(10).optional(),
   license_states: z
-    .array(z.string().trim().length(2).regex(/^[A-Za-z]{2}$/))
+    .array(
+      z
+        .string()
+        .trim()
+        .length(2)
+        .regex(/^[A-Za-z]{2}$/),
+    )
     .max(60)
     .optional(),
 });
@@ -545,9 +548,7 @@ export const updateMyProviderProfile = createServerFn({ method: "POST" })
         consultation_types: data.consultation_types ?? [],
         ...(data.license_states
           ? {
-              license_states: Array.from(
-                new Set(data.license_states.map((s) => s.toUpperCase())),
-              ),
+              license_states: Array.from(new Set(data.license_states.map((s) => s.toUpperCase()))),
             }
           : {}),
         updated_at: new Date().toISOString(),

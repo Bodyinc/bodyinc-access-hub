@@ -62,9 +62,7 @@ function ProviderNotificationsPage() {
               />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium text-[#3B4759]">{n.title}</span>
-                {n.body && (
-                  <span className="mt-0.5 block text-xs text-[#3B4759]/70">{n.body}</span>
-                )}
+                {n.body && <span className="mt-0.5 block text-xs text-[#3B4759]/70">{n.body}</span>}
                 <span className="mt-1 block text-[11px] text-[#3B4759]/50">
                   {timeAgo(n.created_at)}
                 </span>

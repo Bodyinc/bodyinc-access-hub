@@ -77,15 +77,7 @@ const EMPTY: MedicineFormValues = {
   category_ids: [],
 };
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: ReactNode;
-}) {
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
     <div className="flex w-full min-w-0 flex-col gap-2">
       <Label className={labelClass}>{label}</Label>
@@ -210,11 +202,7 @@ export function MedicineForm({
                     ) : (
                       <Upload className="h-4 w-4" />
                     )}
-                    {uploading
-                      ? "Uploading..."
-                      : imageUrl
-                      ? "Replace image"
-                      : "Upload image"}
+                    {uploading ? "Uploading..." : imageUrl ? "Replace image" : "Upload image"}
                   </Button>
 
                   <span className="text-center text-[12px] font-normal leading-[100%] text-[#3B4759]/70">
@@ -232,68 +220,60 @@ export function MedicineForm({
             {/* Input Fields — toggle row pinned to bottom to align with image box */}
             <div className="flex w-full min-w-0 flex-1 flex-col justify-between gap-4">
               <div className="space-y-4">
-              <Field label="Medicine Name" error={errors.name?.message}>
-                <Input
-                  {...register("name")}
-                  placeholder="e.g. GLP-1 Compound"
-                  disabled={submitting}
-                  className={inputClass}
-                />
-              </Field>
+                <Field label="Medicine Name" error={errors.name?.message}>
+                  <Input
+                    {...register("name")}
+                    placeholder="e.g. GLP-1 Compound"
+                    disabled={submitting}
+                    className={inputClass}
+                  />
+                </Field>
 
-              <Field
-                label="Short description"
-                error={errors.short_description?.message}
-              >
-                <Input
-                  {...register("short_description")}
-                  placeholder="Shown on the medication card"
-                  disabled={submitting}
-                  className={inputClass}
-                />
-              </Field>
+                <Field label="Short description" error={errors.short_description?.message}>
+                  <Input
+                    {...register("short_description")}
+                    placeholder="Shown on the medication card"
+                    disabled={submitting}
+                    className={inputClass}
+                  />
+                </Field>
 
-              <Field
-                label="Long description"
-                error={errors.long_description?.message}
-              >
-                <Textarea
-                  {...register("long_description")}
-                  rows={3}
-                  placeholder="Full description in the Learn More modal"
-                  disabled={submitting}
-                  className={textareaClass}
-                />
-              </Field>
+                <Field label="Long description" error={errors.long_description?.message}>
+                  <Textarea
+                    {...register("long_description")}
+                    rows={3}
+                    placeholder="Full description in the Learn More modal"
+                    disabled={submitting}
+                    className={textareaClass}
+                  />
+                </Field>
 
-              <div className="pt-1 space-y-4">
-                <div className="w-full max-w-[220px]">
-                  <Field label="Status" error={errors.status?.message}>
-                    <Select
-                      value={status}
-                      onValueChange={(v) =>
-                        setValue("status", v as MedicineStatus)
-                      }
-                      disabled={submitting}
-                    >
-                      <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#3B4759] shadow-none sm:h-[53px]">
-                        <SelectValue placeholder="Select Status" />
-                      </SelectTrigger>
-                      <SelectContent className="font-['DM_Sans',sans-serif]">
-                        {MEDICINE_STATUSES.map((s) => (
-                          <SelectItem
-                            key={s}
-                            value={s}
-                            className="text-[16px] font-normal text-[#3B4759]"
-                          >
-                            {MEDICINE_STATUS_LABELS[s]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
+                <div className="pt-1 space-y-4">
+                  <div className="w-full max-w-[220px]">
+                    <Field label="Status" error={errors.status?.message}>
+                      <Select
+                        value={status}
+                        onValueChange={(v) => setValue("status", v as MedicineStatus)}
+                        disabled={submitting}
+                      >
+                        <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#3B4759] shadow-none sm:h-[53px]">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent className="font-['DM_Sans',sans-serif]">
+                          {MEDICINE_STATUSES.map((s) => (
+                            <SelectItem
+                              key={s}
+                              value={s}
+                              className="text-[16px] font-normal text-[#3B4759]"
+                            >
+                              {MEDICINE_STATUS_LABELS[s]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
                 </div>
-              </div>
               </div>
 
               {/* Toggle — Figma: light track, rounded-square thumb (lavender off / purple on) */}
@@ -302,11 +282,7 @@ export function MedicineForm({
                   control={control}
                   name="requires_questionnaire"
                   render={({ field }) => (
-                    <Switch
-  id="req-qq"
-  checked={!!field.value}
-  onCheckedChange={field.onChange}
-/>
+                    <Switch id="req-qq" checked={!!field.value} onCheckedChange={field.onChange} />
                   )}
                 />
                 <Label
@@ -421,9 +397,7 @@ export function MedicineForm({
         <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-2">
             <h3 className={sectionTitleClass}>Important information</h3>
-            <p className={sectionSubtitleClass}>
-              Bullet points shown in the Learn More modal.
-            </p>
+            <p className={sectionSubtitleClass}>Bullet points shown in the Learn More modal.</p>
           </div>
 
           <div className="space-y-3">
@@ -463,9 +437,7 @@ export function MedicineForm({
         <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
           <div className="space-y-2">
             <h3 className={sectionTitleClass}>Notice</h3>
-            <p className={sectionSubtitleClass}>
-              Optional footer disclaimer in the modal.
-            </p>
+            <p className={sectionSubtitleClass}>Optional footer disclaimer in the modal.</p>
           </div>
 
           <Textarea

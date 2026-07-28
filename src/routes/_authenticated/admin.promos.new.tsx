@@ -6,6 +6,13 @@ import { PromoForm, type PromoFormValues } from "@/components/admin/promo-form";
 import { createPromo } from "@/lib/promos.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/promos/new")({
+  head: () => ({
+    meta: [
+      { title: "New promo code · Body Inc Admin" },
+      { name: "description", content: "New promo code — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: NewPromoPage,
 });
 
@@ -34,14 +41,14 @@ function NewPromoPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-return (
-  <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
-    <PromoForm
-      mode="create"
-      submitting={mutation.isPending}
-      onSubmit={(v) => mutation.mutate(v)}
-      onCancel={() => navigate({ to: "/admin/promos" })}
-    />
-  </div>
-);
+  return (
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <PromoForm
+        mode="create"
+        submitting={mutation.isPending}
+        onSubmit={(v) => mutation.mutate(v)}
+        onCancel={() => navigate({ to: "/admin/promos" })}
+      />
+    </div>
+  );
 }

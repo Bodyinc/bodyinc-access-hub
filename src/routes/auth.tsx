@@ -86,7 +86,11 @@ function AuthPage() {
     await router.invalidate();
     navigate({
       to:
-        result.role === "admin" ? "/admin" : result.role === "provider" ? "/provider" : "/dashboard",
+        result.role === "admin"
+          ? "/admin"
+          : result.role === "provider"
+            ? "/provider"
+            : "/dashboard",
     });
   }
 
@@ -167,9 +171,7 @@ function AuthPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl">Sign In</CardTitle>
-          <CardDescription>
-            Body Inc — Practitioner & Admin portal
-          </CardDescription>
+          <CardDescription>Body Inc — Practitioner & Admin portal</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="password" className="w-full">
@@ -191,9 +193,7 @@ function AuthPage() {
                     disabled={pwSubmitting}
                     required
                   />
-                  {pwErrors.email && (
-                    <p className="text-sm text-destructive">{pwErrors.email}</p>
-                  )}
+                  {pwErrors.email && <p className="text-sm text-destructive">{pwErrors.email}</p>}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -241,9 +241,7 @@ function AuthPage() {
                       disabled={otpSubmitting}
                       required
                     />
-                    {otpEmailError && (
-                      <p className="text-sm text-destructive">{otpEmailError}</p>
-                    )}
+                    {otpEmailError && <p className="text-sm text-destructive">{otpEmailError}</p>}
                   </div>
                   {portalError && <PortalErrorBox error={portalError} />}
                   <Button type="submit" className="w-full" disabled={otpSubmitting}>
@@ -305,11 +303,7 @@ function AuthPage() {
   );
 }
 
-function PortalErrorBox({
-  error,
-}: {
-  error: { message: string; redirectUrl?: string };
-}) {
+function PortalErrorBox({ error }: { error: { message: string; redirectUrl?: string } }) {
   return (
     <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
       <p className="text-foreground">{error.message}</p>

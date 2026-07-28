@@ -19,6 +19,13 @@ const MedicinePreview = lazy(() =>
 );
 
 export const Route = createFileRoute("/_authenticated/admin/medicines/new")({
+  head: () => ({
+    meta: [
+      { title: "New medicine · Body Inc Admin" },
+      { name: "description", content: "New medicine — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: NewMedicinePage,
 });
 

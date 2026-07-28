@@ -48,19 +48,18 @@ import {
   setPatientActive,
 } from "@/lib/patients.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
+import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/")({
+  head: () => ({
+    meta: [
+      { title: "Patients · Body Inc Admin" },
+      { name: "description", content: "Patients — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: PatientsListPage,
 });
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function PatientsListPage() {
   const navigate = useNavigate();
@@ -143,121 +142,158 @@ function PatientsListPage() {
 
       <div className="admin-table-wrap m-0 w-full">
         <div className="admin-table-scroll">
-        <Table className="min-w-[820px]">
-          <TableHeader className="bg-[#F8FBFA]">
-            <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Name</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Email</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Phone</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">DOB</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Joined</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
-              <TableHead className="w-12 h-11 text-[13px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading && (
-              <TableRow className="border-b border-[#D5DEDD]">
-                <TableCell colSpan={7} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
-                  Loading…
-                </TableCell>
+          <Table className="min-w-[820px]">
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Name
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Email
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Phone
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">DOB</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Joined
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Status
+                </TableHead>
+                <TableHead className="w-12 h-11 text-[13px]" />
               </TableRow>
-            )}
-            {query.isError && (
-              <TableRow className="border-b border-[#D5DEDD]">
-                <TableCell colSpan={7} className="py-12 text-center text-[#B8684B] font-semibold text-[14px]">
-                  {(query.error as Error).message}
-                </TableCell>
-              </TableRow>
-            )}
-            {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#D5DEDD]">
-                <TableCell colSpan={7} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
-                  No patients found.
-                </TableCell>
-              </TableRow>
-            )}
-            {query.data?.map((p: any) => (
-              <TableRow
-                key={p.id}
-                className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
-                onClick={() =>
-                  navigate({
-                    to: "/admin/patients/$patientId",
-                    params: { patientId: p.id },
-                  })
-                }
-              >
-                <TableCell className="font-semibold text-[#3B4759] text-[14px]">{p.full_name || "—"}</TableCell>
-                <TableCell className="text-[#3B4759] font-medium text-[14px]">{p.email}</TableCell>
-                <TableCell className="text-[#3B4759] font-medium text-[14px]">{p.phone || "—"}</TableCell>
-                <TableCell className="text-[#3B4759] font-medium text-[14px]">{formatDate(p.dob)}</TableCell>
-                <TableCell className="text-[#3B4759]/80 font-medium text-[14px]">{formatDate(p.created_at)}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={p.is_active ? "default" : "secondary"}
-                    className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
-                      p.is_active 
-                        ? "bg-[#E8F5E9] text-[#3B4759] hover:bg-[#E8F5E9]" 
-                        : "bg-[#E8EEED] text-[#3B4759] hover:bg-[#E8EEED]"
-                    }`}
+            </TableHeader>
+            <TableBody>
+              {query.isLoading && (
+                <TableRow className="border-b border-[#D5DEDD]">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]"
                   >
-                    {p.is_active ? "Active" : "Deactivated"}
-                  </Badge>
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#E8EEED] text-[#6A9B9C] rounded-xl">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-[#D5DEDD] shadow-md p-1">
-                      <DropdownMenuItem
-                        className="rounded-lg text-[#3B4759] font-semibold text-[13px] focus:bg-[#E8EEED] focus:text-[#3B4759]"
-                        onClick={() =>
-                          navigate({
-                            to: "/admin/patients/$patientId",
-                            params: { patientId: p.id },
-                          })
-                        }
+                    Loading…
+                  </TableCell>
+                </TableRow>
+              )}
+              {query.isError && (
+                <TableRow className="border-b border-[#D5DEDD]">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[#B8684B] font-semibold text-[14px]"
+                  >
+                    {(query.error as Error).message}
+                  </TableCell>
+                </TableRow>
+              )}
+              {!query.isLoading && query.data?.length === 0 && (
+                <TableRow className="border-b border-[#D5DEDD]">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]"
+                  >
+                    No patients found.
+                  </TableCell>
+                </TableRow>
+              )}
+              {query.data?.map((p: any) => (
+                <TableRow
+                  key={p.id}
+                  className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onClick={() =>
+                    navigate({
+                      to: "/admin/patients/$patientId",
+                      params: { patientId: p.id },
+                    })
+                  }
+                >
+                  <TableCell className="font-semibold text-[#3B4759] text-[14px]">
+                    {p.full_name || "—"}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759] font-medium text-[14px]">
+                    {p.email}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759] font-medium text-[14px]">
+                    {p.phone || "—"}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759] font-medium text-[14px]">
+                    {formatDate(p.dob)}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759]/80 font-medium text-[14px]">
+                    {formatDate(p.created_at)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={p.is_active ? "default" : "secondary"}
+                      className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
+                        p.is_active
+                          ? "bg-[#E8F5E9] text-[#3B4759] hover:bg-[#E8F5E9]"
+                          : "bg-[#E8EEED] text-[#3B4759] hover:bg-[#E8EEED]"
+                      }`}
+                    >
+                      {p.is_active ? "Active" : "Deactivated"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-[#E8EEED] text-[#6A9B9C] rounded-xl"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="rounded-xl border-[#D5DEDD] shadow-md p-1"
                       >
-                        View Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="rounded-lg text-[#3B4759] font-semibold text-[13px] focus:bg-[#E8EEED] focus:text-[#3B4759]"
-                        onClick={() => resetMut.mutate(p.id)}
-                      >
-                        <Mail className="mr-2 h-4 w-4 stroke-[2.5] text-[#6A9B9C]" /> Send password reset
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-[#D5DEDD]" />
-                      <DropdownMenuItem
-                        className={`rounded-lg font-bold text-[13px] focus:bg-[#E8EEED] ${
-                          p.is_active 
-                            ? "text-[#B8684B] focus:text-[#B8684B]" 
-                            : "text-[#2E7D32] focus:text-[#2E7D32]"
-                        }`}
-                        onClick={() =>
-                          activeMut.mutate({ userId: p.id, is_active: !p.is_active })
-                        }
-                      >
-                        {p.is_active ? "Deactivate" : "Reactivate"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="rounded-lg font-bold text-[13px] text-[#B8684B] focus:bg-[#FBF1EC] focus:text-[#B8684B]"
-                        onClick={() =>
-                          setDeleteTarget({ id: p.id, label: p.full_name || p.email })
-                        }
-                      >
-                        <Trash2 className="mr-2 h-4 w-4 stroke-[2.5]" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                        <DropdownMenuItem
+                          className="rounded-lg text-[#3B4759] font-semibold text-[13px] focus:bg-[#E8EEED] focus:text-[#3B4759]"
+                          onClick={() =>
+                            navigate({
+                              to: "/admin/patients/$patientId",
+                              params: { patientId: p.id },
+                            })
+                          }
+                        >
+                          View Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="rounded-lg text-[#3B4759] font-semibold text-[13px] focus:bg-[#E8EEED] focus:text-[#3B4759]"
+                          onClick={() => resetMut.mutate(p.id)}
+                        >
+                          <Mail className="mr-2 h-4 w-4 stroke-[2.5] text-[#6A9B9C]" /> Send
+                          password reset
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-[#D5DEDD]" />
+                        <DropdownMenuItem
+                          className={`rounded-lg font-bold text-[13px] focus:bg-[#E8EEED] ${
+                            p.is_active
+                              ? "text-[#B8684B] focus:text-[#B8684B]"
+                              : "text-[#2E7D32] focus:text-[#2E7D32]"
+                          }`}
+                          onClick={() =>
+                            activeMut.mutate({ userId: p.id, is_active: !p.is_active })
+                          }
+                        >
+                          {p.is_active ? "Deactivate" : "Reactivate"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="rounded-lg font-bold text-[13px] text-[#B8684B] focus:bg-[#FBF1EC] focus:text-[#B8684B]"
+                          onClick={() =>
+                            setDeleteTarget({ id: p.id, label: p.full_name || p.email })
+                          }
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 stroke-[2.5]" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -273,9 +309,9 @@ function PatientsListPage() {
               Delete {deleteTarget?.label}?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[#6A9B9C]/80 font-medium">
-              This permanently deletes the patient's account and cancels any active
-              subscription immediately. Payment history is kept for records. The email
-              becomes available for a brand-new signup. This cannot be undone.
+              This permanently deletes the patient's account and cancels any active subscription
+              immediately. Payment history is kept for records. The email becomes available for a
+              brand-new signup. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

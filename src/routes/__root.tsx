@@ -16,6 +16,7 @@ import {
   getPasswordRecoveryRedirectUrl,
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
+import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import { supabase } from "@/integrations/supabase/client";
 
 const LazyToaster = lazy(() =>
@@ -166,11 +167,7 @@ function RootComponent() {
 
       if (event === "SIGNED_OUT") {
         clearPasswordRecoveryPending();
-        try {
-          for (const k of Object.keys(sessionStorage)) {
-            if (k.startsWith("bi_portal_role:")) sessionStorage.removeItem(k);
-          }
-        } catch {}
+        clearCachedPortalRoles();
       }
       router.invalidate();
     });

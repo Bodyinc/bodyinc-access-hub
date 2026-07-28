@@ -10,9 +10,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMyProviderProfile, updateMyProviderProfile } from "@/lib/provider.functions";
 import { StateMultiSelect } from "@/components/admin/state-multi-select";
-import { adminCard, adminInput, adminPageTitle, adminPageSubtitle, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
+import {
+  adminCard,
+  adminInput,
+  adminPageTitle,
+  adminPageSubtitle,
+  adminSectionTitle,
+  adminSectionSubtitle,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/provider/profile")({
+  head: () => ({
+    meta: [
+      { title: "My profile · Body Inc Practitioner" },
+      { name: "description", content: "My profile — Practitioner area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ProviderProfilePage,
 });
 

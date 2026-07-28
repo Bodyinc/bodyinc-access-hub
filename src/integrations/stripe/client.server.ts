@@ -8,7 +8,9 @@ let _stripe: Stripe | undefined;
 export function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
-    throw new Error("Missing STRIPE_SECRET_KEY. Add it to the admin .env to sync catalog to Stripe.");
+    throw new Error(
+      "Missing STRIPE_SECRET_KEY. Add it to the admin .env to sync catalog to Stripe.",
+    );
   }
   if (!_stripe) _stripe = new Stripe(key);
   return _stripe;

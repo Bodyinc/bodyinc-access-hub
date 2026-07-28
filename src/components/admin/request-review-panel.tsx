@@ -43,16 +43,7 @@ import {
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { RequestNotes } from "@/components/admin/request-notes";
-
-function money(cents: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    (cents ?? 0) / 100,
-  );
-}
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString();
-}
+import { formatCents, formatDateTimeFull } from "@/lib/format";
 
 export function RequestReviewPanel({
   requestId,
@@ -157,8 +148,10 @@ export function RequestReviewPanel({
   });
 
   const advanceMut = useMutation({
-    mutationFn: (vars: { status: "sent_to_pharmacy" | "dispatched" | "delivered"; trackingNumber?: string }) =>
-      advance({ data: { requestId, ...vars } }),
+    mutationFn: (vars: {
+      status: "sent_to_pharmacy" | "dispatched" | "delivered";
+      trackingNumber?: string;
+    }) => advance({ data: { requestId, ...vars } }),
     onSuccess: () => {
       toast.success("Status updated.");
       setTrackOpen(false);
@@ -178,7 +171,10 @@ export function RequestReviewPanel({
   if (q.isError || !q.data) {
     return (
       <div className="admin-page-shell space-y-3 font-['DM_Sans',sans-serif]">
-        <Link to={backTo} className="inline-flex items-center text-[14px] font-medium text-[#3B4759]">
+        <Link
+          to={backTo}
+          className="inline-flex items-center text-[14px] font-medium text-[#3B4759]"
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Link>
         <div className="text-[14px] font-semibold text-[#B8684B]">
@@ -188,8 +184,16 @@ export function RequestReviewPanel({
     );
   }
 
-  const { request, patient, medicine, package: pkg, provider, events, prescriptions, additional_payments } =
-    q.data as any;
+  const {
+    request,
+    patient,
+    medicine,
+    package: pkg,
+    provider,
+    events,
+    prescriptions,
+    additional_payments,
+  } = q.data as any;
 
   const status: string = request.status;
   const canApprove = status === "pending_review";
@@ -215,7 +219,7 @@ export function RequestReviewPanel({
             </CardTitle>
             <CardDescription className={adminSectionSubtitle}>
               {request.kind === "followup" ? "Renewal order" : "Initial order"} ·{" "}
-              {formatDate(request.created_at)}
+              {formatDateTimeFull(request.created_at)}
             </CardDescription>
           </div>
           <Badge
@@ -228,7 +232,10 @@ export function RequestReviewPanel({
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
           <div className="grid gap-4 text-[14px] sm:grid-cols-2">
-            <Row label="Patient" value={patient?.name ?? (patient?.is_guest ? "Guest — no account yet" : "—")} />
+            <Row
+              label="Patient"
+              value={patient?.name ?? (patient?.is_guest ? "Guest — no account yet" : "—")}
+            />
             {clinicalOnly ? null : <Row label="Email" value={patient?.email ?? "—"} />}
             <Row label="State" value={patient?.state_code ?? "—"} />
             <Row label="Assigned provider" value={provider?.full_name ?? "Unassigned"} />
@@ -240,7 +247,10 @@ export function RequestReviewPanel({
                 value={pkg?.price != null ? `$${Number(pkg.price).toFixed(2)}` : "—"}
               />
             )}
-            <Row label="Needs approval" value={request.requires_consultation ? "Yes" : "No (auto)"} />
+            <Row
+              label="Needs approval"
+              value={request.requires_consultation ? "Yes" : "No (auto)"}
+            />
             {request.tracking_number ? (
               <Row label="Tracking #" value={request.tracking_number} />
             ) : null}
@@ -249,7 +259,9 @@ export function RequestReviewPanel({
           {canManage ? (
             <div className="flex flex-wrap items-end gap-2 border-t border-[#D5DEDD] pt-4">
               <div className="min-w-[220px] space-y-1">
-                <div className="text-[13px] font-medium text-[#3B4759]/60">Assign / reassign provider</div>
+                <div className="text-[13px] font-medium text-[#3B4759]/60">
+                  Assign / reassign provider
+                </div>
                 <Select value={assignId} onValueChange={setAssignId}>
                   <SelectTrigger className="h-10 border-[#D5DEDD] text-[13px] text-[#3B4759]">
                     <SelectValue placeholder="Select a provider" />
@@ -362,7 +374,7 @@ export function RequestReviewPanel({
             {additional_payments.map((ap: any) => (
               <div key={ap.id} className="flex items-center justify-between gap-3">
                 <span className="text-[#3B4759]">
-                  {money(ap.amount_cents)} — {ap.reason ?? "Price difference"}
+                  {formatCents(ap.amount_cents)} — {ap.reason ?? "Price difference"}
                 </span>
                 <Badge
                   className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case shadow-none ${
@@ -394,7 +406,7 @@ export function RequestReviewPanel({
                   <div className="text-[#3B4759]/50">Directions to be added from the template.</div>
                 )}
                 <div className="text-[12px] text-[#3B4759]/60">
-                  {rx.status} · {formatDate(rx.created_at)}
+                  {rx.status} · {formatDateTimeFull(rx.created_at)}
                 </div>
                 <div className="flex items-center gap-2 pt-1">
                   <Link
@@ -436,7 +448,7 @@ export function RequestReviewPanel({
                 <div className="min-w-0">
                   <div className="font-medium text-[#3B4759]">{requestStatusLabel(ev.status)}</div>
                   <div className="text-[12px] text-[#3B4759]/60">
-                    {ev.actor_role} · {formatDate(ev.created_at)}
+                    {ev.actor_role} · {formatDateTimeFull(ev.created_at)}
                   </div>
                   {ev.note ? <div className="text-[13px] text-[#3B4759]/80">{ev.note}</div> : null}
                 </div>
@@ -543,7 +555,9 @@ export function RequestReviewPanel({
               Cancel
             </Button>
             <Button
-              onClick={() => advanceMut.mutate({ status: "dispatched", trackingNumber: tracking || undefined })}
+              onClick={() =>
+                advanceMut.mutate({ status: "dispatched", trackingNumber: tracking || undefined })
+              }
               disabled={advanceMut.isPending}
             >
               {advanceMut.isPending ? "Saving…" : "Mark dispatched"}

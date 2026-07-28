@@ -7,10 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { listRequestNotes, addRequestNote } from "@/lib/requests.functions";
 import { adminCard, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
-
-function formatDate(iso?: string | null) {
-  return iso ? new Date(iso).toLocaleString() : "—";
-}
+import { formatDateTimeFull } from "@/lib/format";
 
 // Internal clinical notes on an order — visible to admins and the assigned practitioner only.
 export function RequestNotes({ requestId }: { requestId: string }) {
@@ -54,7 +51,7 @@ export function RequestNotes({ requestId }: { requestId: string }) {
               <li key={n.id} className="rounded-lg border border-[#D5DEDD] bg-[#E8EEED]/40 p-3">
                 <div className="whitespace-pre-wrap text-[14px] text-[#3B4759]">{n.body}</div>
                 <div className="pt-1 text-[12px] text-[#3B4759]/60">
-                  {n.author_name} · {n.author_role} · {formatDate(n.created_at)}
+                  {n.author_name} · {n.author_role} · {formatDateTimeFull(n.created_at)}
                 </div>
               </li>
             ))}

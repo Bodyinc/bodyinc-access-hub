@@ -53,6 +53,13 @@ import {
 } from "@/lib/medicines.schema";
 
 export const Route = createFileRoute("/_authenticated/admin/medicines/")({
+  head: () => ({
+    meta: [
+      { title: "Medicines · Body Inc Admin" },
+      { name: "description", content: "Medicines — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: MedicinesListPage,
 });
 
@@ -96,7 +103,8 @@ function MedicinesListPage() {
   });
 
   const statusMut = useMutation({
-    mutationFn: (vars: { id: string; status: MedicineStatus }) => setMedicineActive(vars.id, vars.status),
+    mutationFn: (vars: { id: string; status: MedicineStatus }) =>
+      setMedicineActive(vars.id, vars.status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       toast.success("Status updated");
@@ -233,7 +241,11 @@ function MedicinesListPage() {
                 All Statuses
               </SelectItem>
               {MEDICINE_STATUSES.map((s) => (
-                <SelectItem key={s} value={s} className="text-[#3B4759] font-medium focus:bg-[#E8EEED]">
+                <SelectItem
+                  key={s}
+                  value={s}
+                  className="text-[#3B4759] font-medium focus:bg-[#E8EEED]"
+                >
                   {MEDICINE_STATUS_LABELS[s]}
                 </SelectItem>
               ))}
@@ -283,7 +295,10 @@ function MedicinesListPage() {
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#3B4759]/60">
+                    <TableCell
+                      colSpan={6}
+                      className="py-12 text-center text-[15px] text-[#3B4759]/60"
+                    >
                       Loading rows...
                     </TableCell>
                   </TableRow>
@@ -345,7 +360,10 @@ function MedicinesListPage() {
                     </TableCell>
 
                     {/* Action trigger */}
-                    <TableCell className="px-4 py-5 text-center" onClick={(e) => e.stopPropagation()}>
+                    <TableCell
+                      className="px-4 py-5 text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -436,9 +454,9 @@ function MedicinesListPage() {
                     {impact.billingSubscriptions} patient
                     {impact.billingSubscriptions === 1 ? " is" : "s are"} still being billed.
                   </span>{" "}
-                  Deleting will <span className="font-bold">not</span> stop those charges — Stripe keeps
-                  collecting — and the subscription records would lose all trace of what they are for. Cancel
-                  or migrate them in Stripe first.
+                  Deleting will <span className="font-bold">not</span> stop those charges — Stripe
+                  keeps collecting — and the subscription records would lose all trace of what they
+                  are for. Cancel or migrate them in Stripe first.
                 </p>
               )}
               {impact.shopOrderRefs > 0 && (
@@ -451,7 +469,8 @@ function MedicinesListPage() {
                 </p>
               )}
               <p className="text-[13px] font-medium text-red-800">
-                Set the medicine inactive instead — patients stop seeing it and every record stays intact.
+                Set the medicine inactive instead — patients stop seeing it and every record stays
+                intact.
               </p>
             </div>
           )}
@@ -459,8 +478,8 @@ function MedicinesListPage() {
           {!impact?.blocked && (impact?.totalSubscriptions ?? 0) > 0 && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[13px] leading-relaxed text-amber-900">
               {impact!.totalSubscriptions} past subscription
-              {impact!.totalSubscriptions === 1 ? "" : "s"} reference this medicine. They will be kept but
-              will no longer show which medicine they were for.
+              {impact!.totalSubscriptions === 1 ? "" : "s"} reference this medicine. They will be
+              kept but will no longer show which medicine they were for.
             </p>
           )}
 

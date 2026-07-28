@@ -4,7 +4,6 @@ import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 import { archiveInStripe, BILLING_SUBSCRIPTION_STATUSES } from "@/lib/stripe-objects";
 
-
 const syncInput = z.object({ medicineId: z.string().uuid() });
 const deleteInput = z.object({ medicineId: z.string().uuid() });
 
@@ -21,19 +20,22 @@ async function measureDeletionImpact(
   medicineId: string,
 ): Promise<MedicineDeletionImpact> {
   const countOf = async (table: string, apply: (q: any) => any) => {
-    const { count } = await apply(supabaseAdmin.from(table).select("id", { count: "exact", head: true }));
+    const { count } = await apply(
+      supabaseAdmin.from(table).select("id", { count: "exact", head: true }),
+    );
     return count ?? 0;
   };
 
-  const [billingSubscriptions, totalSubscriptions, orders, orderItems, packages] = await Promise.all([
-    countOf("subscriptions", (q) =>
-      q.eq("medicine_id", medicineId).in("status", BILLING_SUBSCRIPTION_STATUSES),
-    ),
-    countOf("subscriptions", (q) => q.eq("medicine_id", medicineId)),
-    countOf("shop_checkout_orders", (q) => q.eq("medicine_id", medicineId)),
-    countOf("shop_checkout_order_items", (q) => q.eq("medicine_id", medicineId)),
-    countOf("packages", (q) => q.eq("medicine_id", medicineId)),
-  ]);
+  const [billingSubscriptions, totalSubscriptions, orders, orderItems, packages] =
+    await Promise.all([
+      countOf("subscriptions", (q) =>
+        q.eq("medicine_id", medicineId).in("status", BILLING_SUBSCRIPTION_STATUSES),
+      ),
+      countOf("subscriptions", (q) => q.eq("medicine_id", medicineId)),
+      countOf("shop_checkout_orders", (q) => q.eq("medicine_id", medicineId)),
+      countOf("shop_checkout_order_items", (q) => q.eq("medicine_id", medicineId)),
+      countOf("packages", (q) => q.eq("medicine_id", medicineId)),
+    ]);
 
   const shopOrderRefs = orders + orderItems;
   return {
@@ -83,9 +85,16 @@ export const deleteMedicineSafely = createServerFn({ method: "POST" })
     }
 
     const [{ data: medicine }, { data: packages }, { data: variants }] = await Promise.all([
-      supabaseAdmin.from("medicines").select("stripe_product_id").eq("id", data.medicineId).maybeSingle(),
+      supabaseAdmin
+        .from("medicines")
+        .select("stripe_product_id")
+        .eq("id", data.medicineId)
+        .maybeSingle(),
       supabaseAdmin.from("packages").select("stripe_price_id").eq("medicine_id", data.medicineId),
-      supabaseAdmin.from("medicine_variants").select("stripe_product_id").eq("medicine_id", data.medicineId),
+      supabaseAdmin
+        .from("medicine_variants")
+        .select("stripe_product_id")
+        .eq("medicine_id", data.medicineId),
     ]);
 
     const archiveResult = await archiveInStripe(
@@ -100,7 +109,11 @@ export const deleteMedicineSafely = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("medicines").delete().eq("id", data.medicineId);
     if (error) throw new Error(error.message);
 
-    return { ok: true as const, archived: archiveResult.archived, archiveFailed: archiveResult.failed };
+    return {
+      ok: true as const,
+      archived: archiveResult.archived,
+      archiveFailed: archiveResult.failed,
+    };
   });
 
 // Creates or updates the Stripe Product that a medicine maps to, storing its id.

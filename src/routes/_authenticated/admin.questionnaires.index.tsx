@@ -8,19 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteQuestionnaire, listQuestionnaires } from "@/lib/questionnaires.store";
 import { adminPageTitle, adminPageSubtitle, adminBtnPrimary, adminCard } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/")({
+  head: () => ({
+    meta: [
+      { title: "Questionnaires · Body Inc Admin" },
+      { name: "description", content: "Questionnaires — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: QuestionnairesListPage,
 });
 
@@ -88,17 +110,28 @@ function QuestionnairesListPage() {
             <Table className="w-full min-w-[680px] border-collapse">
               <TableHeader className="border-b border-[#D5DEDD] bg-[#F2F7F6]">
                 <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Name</TableHead>
-                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Questions</TableHead>
-                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Linked goals</TableHead>
-                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Status</TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                    Name
+                  </TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                    Questions
+                  </TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                    Linked goals
+                  </TableHead>
+                  <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                    Status
+                  </TableHead>
                   <TableHead className="h-12 w-14 px-2 sm:h-14 sm:px-4 lg:px-8" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center font-medium text-[#3B4759]/60">
+                    <TableCell
+                      colSpan={5}
+                      className="py-12 text-center font-medium text-[#3B4759]/60"
+                    >
                       Loading records…
                     </TableCell>
                   </TableRow>
@@ -107,7 +140,12 @@ function QuestionnairesListPage() {
                   <TableRow
                     key={r.id}
                     className="cursor-pointer border-b border-[#D5DEDD] last:border-none hover:bg-[#F2F7F6]/20 transition-colors"
-                    onClick={() => navigate({ to: "/admin/questionnaires/$questionnaireId", params: { questionnaireId: r.id } })}
+                    onClick={() =>
+                      navigate({
+                        to: "/admin/questionnaires/$questionnaireId",
+                        params: { questionnaireId: r.id },
+                      })
+                    }
                   >
                     <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-[14px] font-semibold text-[#3B4759] sm:px-6 sm:py-5 lg:px-8">
                       {r.name}
@@ -129,16 +167,34 @@ function QuestionnairesListPage() {
                         {r.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-2 py-4 text-right sm:px-4 sm:py-5 lg:px-8" onClick={(e) => e.stopPropagation()}>
+                    <TableCell
+                      className="px-2 py-4 text-right sm:px-4 sm:py-5 lg:px-8"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#3B4759]/70 hover:bg-[#E8EEED] rounded-lg transition-colors">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-[#3B4759]/70 hover:bg-[#E8EEED] rounded-lg transition-colors"
+                          >
                             <MoreHorizontal className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl border-[#D5DEDD] p-1 shadow-md bg-white">
-                          <DropdownMenuItem asChild className="rounded-lg font-medium text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] cursor-pointer">
-                            <Link to="/admin/questionnaires/$questionnaireId" params={{ questionnaireId: r.id }}>Edit</Link>
+                        <DropdownMenuContent
+                          align="end"
+                          className="rounded-xl border-[#D5DEDD] p-1 shadow-md bg-white"
+                        >
+                          <DropdownMenuItem
+                            asChild
+                            className="rounded-lg font-medium text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] cursor-pointer"
+                          >
+                            <Link
+                              to="/admin/questionnaires/$questionnaireId"
+                              params={{ questionnaireId: r.id }}
+                            >
+                              Edit
+                            </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-[#F2F7F6]" />
                           <DropdownMenuItem
@@ -161,9 +217,7 @@ function QuestionnairesListPage() {
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
         <AlertDialogContent className="rounded-2xl border border-[#D5DEDD] bg-white p-6 max-w-[440px] shadow-xl">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className={adminPageTitle}>
-              Delete questionnaire?
-            </AlertDialogTitle>
+            <AlertDialogTitle className={adminPageTitle}>Delete questionnaire?</AlertDialogTitle>
             <AlertDialogDescription className={adminPageSubtitle}>
               &ldquo;{confirm?.name}&rdquo; and all its questions will be permanently removed.
             </AlertDialogDescription>
@@ -172,7 +226,7 @@ function QuestionnairesListPage() {
             <AlertDialogCancel className="flex-1 text-[#6A9B9C] hover:bg-[#E8EEED] hover:text-[#2E3745] font-semibold rounded-xl h-11 transition-colors border-none bg-transparent shadow-none mt-0">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               className="flex-1 bg-[#C4785C] hover:bg-[#A95C41] text-white font-bold rounded-xl h-11 px-5 shadow-none transition-colors border-none"
               onClick={() => confirm && deleteMut.mutate(confirm.id)}
             >

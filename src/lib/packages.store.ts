@@ -38,9 +38,15 @@ function rowToStored(row: any): StoredPackage {
     original_price: Number(row.original_price),
     price: Number(row.price),
     is_most_popular: row.is_most_popular,
-    features: feat.map((v: unknown) =>
-      typeof v === "string" ? v : typeof v === "object" && v && "text" in v ? String((v as any).text ?? "") : "",
-    ).filter(Boolean),
+    features: feat
+      .map((v: unknown) =>
+        typeof v === "string"
+          ? v
+          : typeof v === "object" && v && "text" in v
+            ? String((v as any).text ?? "")
+            : "",
+      )
+      .filter(Boolean),
     clinical_note: row.clinical_note,
     sort_order: row.sort_order,
     is_active: row.is_active,
@@ -119,8 +125,14 @@ export async function createPackage(values: PackageFormValues): Promise<{ id: st
   return { id: data.id };
 }
 
-export async function updatePackage(id: string, values: PackageFormValues): Promise<{ id: string }> {
-  const { error } = await supabase.from("packages").update(fromForm(values) as any).eq("id", id);
+export async function updatePackage(
+  id: string,
+  values: PackageFormValues,
+): Promise<{ id: string }> {
+  const { error } = await supabase
+    .from("packages")
+    .update(fromForm(values) as any)
+    .eq("id", id);
   if (error) throw new Error(error.message);
   return { id };
 }

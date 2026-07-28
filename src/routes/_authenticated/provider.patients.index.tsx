@@ -19,6 +19,13 @@ import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/l
 import { adminPageTitle, adminPageSubtitle, adminInput } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/provider/patients/")({
+  head: () => ({
+    meta: [
+      { title: "My patients · Body Inc Practitioner" },
+      { name: "description", content: "My patients — Practitioner area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ProviderPatientsPage,
 });
 
@@ -85,7 +92,10 @@ function ProviderPatientsPage() {
                   key={p.key}
                   className="cursor-pointer"
                   onClick={() =>
-                    navigate({ to: "/provider/patients/$patientKey", params: { patientKey: p.key } })
+                    navigate({
+                      to: "/provider/patients/$patientKey",
+                      params: { patientKey: p.key },
+                    })
                   }
                 >
                   <TableCell className="font-medium text-[#3B4759]">

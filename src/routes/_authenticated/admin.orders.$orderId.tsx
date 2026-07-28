@@ -22,20 +22,18 @@ import {
   adminCard,
   adminBtnSecondary,
 } from "@/lib/admin-ui";
+import { formatDateTimeFull, formatDollars } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$orderId")({
+  head: () => ({
+    meta: [
+      { title: "Order details · Body Inc Admin" },
+      { name: "description", content: "Order details — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: OrderDetailPage,
 });
-
-function formatCurrency(n: number | string | null | undefined) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    Number(n ?? 0),
-  );
-}
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString();
-}
 
 function OrderDetailPage() {
   const { orderId } = Route.useParams();
@@ -72,8 +70,15 @@ function OrderDetailPage() {
     );
   }
 
-  const { subscription, package: pkg, variant_name, medicine, customer, payments, display_status } =
-    q.data as any;
+  const {
+    subscription,
+    package: pkg,
+    variant_name,
+    medicine,
+    customer,
+    payments,
+    display_status,
+  } = q.data as any;
 
   const canChangeMedicine = ["active", "trialing", "past_due"].includes(subscription.status);
 
@@ -95,7 +100,7 @@ function OrderDetailPage() {
               {subscription.id}
             </CardTitle>
             <CardDescription className={adminSectionSubtitle}>
-              {formatDate(subscription.created_at)}
+              {formatDateTimeFull(subscription.created_at)}
             </CardDescription>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -124,13 +129,16 @@ function OrderDetailPage() {
           <Row label="Medication" value={medicine?.name ?? "—"} />
           <Row label="Variant" value={variant_name ?? "—"} />
           <Row label="Plan" value={pkg?.name ?? "—"} />
-          <Row label="Plan price" value={pkg ? formatCurrency(pkg.price) : "—"} />
+          <Row label="Plan price" value={pkg ? formatDollars(pkg.price) : "—"} />
           <Row
             label="Billing cycle"
             value={pkg?.duration_months ? `Every ${pkg.duration_months} month(s)` : "—"}
           />
-          <Row label="Renews on" value={formatDate(subscription.current_period_end)} />
-          <Row label="Auto-renew" value={subscription.cancel_at_period_end ? "No (canceling)" : "Yes"} />
+          <Row label="Renews on" value={formatDateTimeFull(subscription.current_period_end)} />
+          <Row
+            label="Auto-renew"
+            value={subscription.cancel_at_period_end ? "No (canceling)" : "Yes"}
+          />
           <Row
             label="Stripe subscription"
             value={
@@ -171,8 +179,7 @@ function OrderDetailPage() {
                     customer.country,
                   ]
                     .filter(Boolean)
-                    .join(", ") ||
-                  (customer.is_guest ? "Captured after account setup" : "—")
+                    .join(", ") || (customer.is_guest ? "Captured after account setup" : "—")
                 }
               />
             </>
@@ -196,10 +203,18 @@ function OrderDetailPage() {
             <Table className="min-w-[560px]">
               <TableHeader className="bg-[#F8FBFA]">
                 <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Amount</TableHead>
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Status</TableHead>
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Invoice</TableHead>
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Created</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    Amount
+                  </TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    Invoice
+                  </TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    Created
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -219,7 +234,7 @@ function OrderDetailPage() {
                     className="border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                   >
                     <TableCell className="text-[14px] font-medium text-[#3B4759]">
-                      {formatCurrency((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}
+                      {formatDollars((p.amount_cents ?? 0) / 100)} {p.currency?.toUpperCase()}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -264,7 +279,7 @@ function OrderDetailPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
-                      {formatDate(p.created_at)}
+                      {formatDateTimeFull(p.created_at)}
                     </TableCell>
                   </TableRow>
                 ))}

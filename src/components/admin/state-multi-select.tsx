@@ -1,6 +1,12 @@
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { US_STATES } from "@/lib/us-states";
 
 export function StateMultiSelect({

@@ -16,7 +16,9 @@ export type StoredRelationship = {
 export async function listRelationships(): Promise<StoredRelationship[]> {
   const { data, error } = await supabase
     .from("medication_relationships")
-    .select("*, medicine_a:medicines!medication_relationships_medicine_a_id_fkey(name), medicine_b:medicines!medication_relationships_medicine_b_id_fkey(name)")
+    .select(
+      "*, medicine_a:medicines!medication_relationships_medicine_a_id_fkey(name), medicine_b:medicines!medication_relationships_medicine_b_id_fkey(name)",
+    )
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r: any) => ({

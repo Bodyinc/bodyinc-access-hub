@@ -5,10 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
-    meta: [
-      { title: "Practitioner Dashboard — Body Inc" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Practitioner Dashboard — Body Inc" }, { name: "robots", content: "noindex" }],
   }),
   component: DashboardPage,
 });

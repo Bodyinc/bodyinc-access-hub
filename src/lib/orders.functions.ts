@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 // A subscription is the canonical record of every purchase (onboarding + shop). "active" is
 // shown as "paid"; incomplete subscriptions are unconfirmed and hidden from the default view.
 function displayStatus(subStatus: string): string {
@@ -49,34 +48,41 @@ export const listOrders = createServerFn({ method: "POST" })
     const subIds = rows.map((r: any) => r.stripe_subscription_id).filter(Boolean);
     // Guest onboarding orders (no account yet) carry the customer only on their intake session.
     const sessionIds = Array.from(
-      new Set(rows.filter((r: any) => !r.user_id).map((r: any) => r.session_id).filter(Boolean)),
+      new Set(
+        rows
+          .filter((r: any) => !r.user_id)
+          .map((r: any) => r.session_id)
+          .filter(Boolean),
+      ),
     );
 
-    const [{ data: profiles }, { data: pkgs }, { data: meds }, { data: payments }, { data: sessions }] =
-      await Promise.all([
-        userIds.length
-          ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
-          : Promise.resolve({ data: [] as any[] }),
-        pkgIds.length
-          ? supabaseAdmin.from("packages").select("id, name").in("id", pkgIds)
-          : Promise.resolve({ data: [] as any[] }),
-        medIds.length
-          ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
-          : Promise.resolve({ data: [] as any[] }),
-        subIds.length
-          ? supabaseAdmin
-              .from("payments")
-              .select("stripe_subscription_id, amount_cents, status, created_at")
-              .in("stripe_subscription_id", subIds)
-              .order("created_at", { ascending: true })
-          : Promise.resolve({ data: [] as any[] }),
-        sessionIds.length
-          ? supabaseAdmin
-              .from("intake_sessions")
-              .select("id, full_name, email")
-              .in("id", sessionIds)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
+    const [
+      { data: profiles },
+      { data: pkgs },
+      { data: meds },
+      { data: payments },
+      { data: sessions },
+    ] = await Promise.all([
+      userIds.length
+        ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+      pkgIds.length
+        ? supabaseAdmin.from("packages").select("id, name").in("id", pkgIds)
+        : Promise.resolve({ data: [] as any[] }),
+      medIds.length
+        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        : Promise.resolve({ data: [] as any[] }),
+      subIds.length
+        ? supabaseAdmin
+            .from("payments")
+            .select("stripe_subscription_id, amount_cents, status, created_at")
+            .in("stripe_subscription_id", subIds)
+            .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [] as any[] }),
+      sessionIds.length
+        ? supabaseAdmin.from("intake_sessions").select("id, full_name, email").in("id", sessionIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
 
     const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     const pkgMap = new Map((pkgs ?? []).map((p: any) => [p.id, p]));
@@ -177,7 +183,11 @@ export const getOrder = createServerFn({ method: "POST" })
 
     const effectiveMedicineId = sub.medicine_id ?? (pkg as any)?.medicine_id ?? null;
     const { data: med } = effectiveMedicineId
-      ? await supabaseAdmin.from("medicines").select("name").eq("id", effectiveMedicineId).maybeSingle()
+      ? await supabaseAdmin
+          .from("medicines")
+          .select("name")
+          .eq("id", effectiveMedicineId)
+          .maybeSingle()
       : { data: null as any };
 
     const customer = profile
@@ -247,7 +257,9 @@ export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
     if (!pkg) throw new Error("Selected plan not found.");
     if (!pkg.is_active) throw new Error("Selected plan is inactive.");
     if (!pkg.stripe_price_id) {
-      throw new Error("This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.");
+      throw new Error(
+        "This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.",
+      );
     }
 
     const { applyPackageChangeToSubscription } = await import("@/lib/subscription-reschedule");

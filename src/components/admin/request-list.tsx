@@ -22,12 +22,9 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listRequests } from "@/lib/requests.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import {
-  requestStatusLabel,
-  requestStatusTone,
-  REQUEST_STATUS_BADGE,
-} from "@/lib/request-status";
+import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
+import { formatDateTime } from "@/lib/format";
 
 const STATUS_FILTERS = [
   { value: "open", label: "Open" },
@@ -40,17 +37,6 @@ const STATUS_FILTERS = [
   { value: "delivered", label: "Delivered" },
   { value: "rejected", label: "Rejected" },
 ];
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function RequestList({
   title,
@@ -114,25 +100,41 @@ export function RequestList({
           <Table className="min-w-[720px]">
             <TableHeader className="bg-[#F8FBFA]">
               <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Patient</TableHead>
-                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Medication</TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                  Patient
+                </TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                  Medication
+                </TableHead>
                 {showProvider ? (
-                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Provider</TableHead>
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    Provider
+                  </TableHead>
                 ) : null}
-                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Status</TableHead>
-                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">Created</TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                  Status
+                </TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                  Created
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={showProvider ? 5 : 4} className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60">
+                  <TableCell
+                    colSpan={showProvider ? 5 : 4}
+                    className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60"
+                  >
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={showProvider ? 5 : 4} className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60">
+                  <TableCell
+                    colSpan={showProvider ? 5 : 4}
+                    className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60"
+                  >
                     No orders.
                   </TableCell>
                 </TableRow>
@@ -168,7 +170,7 @@ export function RequestList({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
-                      {formatDate(r.created_at)}
+                      {formatDateTime(r.created_at)}
                     </TableCell>
                   </TableRow>
                 ))

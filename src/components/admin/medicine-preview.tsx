@@ -116,9 +116,7 @@ export function MedicinePreview({
                   />
                 </div>
               )}
-              <p className="text-[16px] font-normal leading-[140%] text-[#3B4759]">
-                {displayLong}
-              </p>
+              <p className="text-[16px] font-normal leading-[140%] text-[#3B4759]">{displayLong}</p>
               {bullets.length > 0 && (
                 <ul className="space-y-2">
                   {bullets.map((text, i) => (

@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 // The confirmation_secret API flow does not store a payment_intent on our payments row
 // nor embed one on the invoice directly — it lives under invoice.payments[].payment.
 async function resolvePaymentIntentForPayment(stripe: any, payment: any): Promise<string | null> {
@@ -27,7 +26,8 @@ function invoiceUrls(rawEvent: any): { invoiceUrl: string | null; invoicePdfUrl:
     return { invoiceUrl: null, invoicePdfUrl: null };
   }
   return {
-    invoiceUrl: typeof rawEvent.hosted_invoice_url === "string" ? rawEvent.hosted_invoice_url : null,
+    invoiceUrl:
+      typeof rawEvent.hosted_invoice_url === "string" ? rawEvent.hosted_invoice_url : null,
     invoicePdfUrl: typeof rawEvent.invoice_pdf === "string" ? rawEvent.invoice_pdf : null,
   };
 }
@@ -156,10 +156,7 @@ export const listRefunds = createServerFn({ method: "POST" })
         ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
         : Promise.resolve({ data: [] as any[] }),
       payIds.length
-        ? supabaseAdmin
-            .from("payments")
-            .select("id, stripe_invoice_id, raw_event")
-            .in("id", payIds)
+        ? supabaseAdmin.from("payments").select("id, stripe_invoice_id, raw_event").in("id", payIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 

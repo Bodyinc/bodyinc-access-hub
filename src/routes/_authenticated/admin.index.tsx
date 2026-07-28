@@ -2,6 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Admin dashboard · Body Inc Admin" },
+      { name: "description", content: "Admin dashboard — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: AdminDashboard,
 });
 
@@ -10,7 +17,9 @@ function AdminDashboard() {
     <div className="admin-page-shell space-y-5 sm:space-y-6">
       <div>
         <h2 className="text-[24px] font-semibold sm:text-2xl">Welcome, Administrator</h2>
-        <p className="text-muted-foreground text-sm sm:text-base">Overview of platform activity will appear here.</p>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Overview of platform activity will appear here.
+        </p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {["Patients", "Providers", "Consultations", "Orders"].map((label) => (

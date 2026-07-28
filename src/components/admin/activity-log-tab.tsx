@@ -15,17 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listActivityLog } from "@/lib/activity-log.functions";
-
-function formatDateTime(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatDateTime } from "@/lib/format";
 
 function summarize(before: unknown, after: unknown) {
   const a = (after ?? {}) as Record<string, unknown>;

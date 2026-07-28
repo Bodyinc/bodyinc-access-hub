@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 const listInput = z
   .object({
     search: z.string().trim().max(200).optional(),
@@ -46,7 +45,7 @@ export const listIntakeSessions = createServerFn({ method: "POST" })
 
     return (rows ?? []).map((r: any) => ({
       ...r,
-      plan_name: r.selected_plan_id ? pkgMap.get(r.selected_plan_id) ?? null : null,
+      plan_name: r.selected_plan_id ? (pkgMap.get(r.selected_plan_id) ?? null) : null,
     }));
   });
 

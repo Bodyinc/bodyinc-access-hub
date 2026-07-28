@@ -4,7 +4,6 @@ import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 import { archiveInStripe } from "@/lib/stripe-objects";
 
-
 const syncInput = z.object({ packageId: z.string().uuid() });
 const bulkSyncInput = z.object({ medicineId: z.string().uuid().optional() });
 const archiveInput = z.object({
@@ -12,7 +11,6 @@ const archiveInput = z.object({
   productIds: z.array(z.string()).default([]),
 });
 const archiveMedicineInput = z.object({ medicineId: z.string().uuid() });
-
 
 // Creates/updates the Stripe Product (per medicine) and recurring Price (per package),
 // then stores their ids back on the rows. Stripe Prices are immutable, so a changed

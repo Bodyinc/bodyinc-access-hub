@@ -7,6 +7,16 @@ import { providerDashboard } from "@/lib/provider.functions";
 import { adminCard, adminPageTitle, adminPageSubtitle } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/provider/")({
+  head: () => ({
+    meta: [
+      { title: "Practitioner dashboard · Body Inc Practitioner" },
+      {
+        name: "description",
+        content: "Practitioner dashboard — Practitioner area of the Body Inc portal.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ProviderDashboard,
 });
 
@@ -36,7 +46,9 @@ function ProviderDashboard() {
   const q = useQuery({ queryKey: ["provider-dashboard"], queryFn: () => get({}) });
   const d = (q.data as any) ?? {};
 
-  const heading = greeting ? `${greeting}${d.full_name ? `, ${d.full_name}` : ""}` : "Practitioner dashboard";
+  const heading = greeting
+    ? `${greeting}${d.full_name ? `, ${d.full_name}` : ""}`
+    : "Practitioner dashboard";
 
   const tiles: { label: string; value: number; hint: string; to: string }[] = [
     {
@@ -86,7 +98,12 @@ function ProviderDashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((t) => (
-          <button key={t.label} type="button" onClick={() => navigate({ to: t.to })} className="text-left">
+          <button
+            key={t.label}
+            type="button"
+            onClick={() => navigate({ to: t.to })}
+            className="text-left"
+          >
             <Card className={`${adminCard} h-full transition-colors hover:bg-[#E8EEED]/50`}>
               <CardContent className="space-y-1 p-5">
                 <div className="text-[13px] font-medium text-[#3B4759]/60">{t.label}</div>

@@ -47,9 +47,22 @@ import {
   setProviderActive,
   setDefaultProvider,
 } from "@/lib/providers.functions";
-import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect, adminBtnPrimary } from "@/lib/admin-ui";
+import {
+  adminPageTitle,
+  adminPageSubtitle,
+  adminInput,
+  adminSelect,
+  adminBtnPrimary,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/providers/")({
+  head: () => ({
+    meta: [
+      { title: "Practitioners · Body Inc Admin" },
+      { name: "description", content: "Practitioners — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ProvidersListPage,
 });
 
@@ -148,121 +161,153 @@ function ProvidersListPage() {
 
       <div className="admin-table-wrap">
         <div className="admin-table-scroll">
-        <Table className="min-w-[760px]">
-          <TableHeader className="bg-[#F8FBFA]">
-            <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-              <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">Name</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">Email</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">Specialty</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">Credentials</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">Status</TableHead>
-              <TableHead className="w-12 px-6" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="text-center text-[#6A9B9C]/60 font-medium py-12">
-                  Loading provider records…
-                </TableCell>
+          <Table className="min-w-[760px]">
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
+                  Name
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
+                  Email
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
+                  Specialty
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
+                  Credentials
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
+                  Status
+                </TableHead>
+                <TableHead className="w-12 px-6" />
               </TableRow>
-            )}
-            {query.isError && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="text-center text-[#B8684B] font-semibold py-12">
-                  {(query.error as Error).message}
-                </TableCell>
-              </TableRow>
-            )}
-            {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="text-center text-[#6A9B9C]/60 font-medium py-12">
-                  No active provider accounts found matching criteria.
-                </TableCell>
-              </TableRow>
-            )}
-            {query.data?.map((p: any) => (
-              <TableRow
-                key={p.id}
-                className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
-                onClick={() =>
-                  navigate({
-                    to: "/admin/providers/$providerId",
-                    params: { providerId: p.id },
-                  })
-                }
-              >
-                <TableCell className="font-semibold text-[#3B4759] text-[14px] py-4 px-6">
-                  <span className="inline-flex items-center gap-2">
-                    {p.full_name}
-                    {p.is_default ? (
-                      <Badge className="bg-[#6A9B9C] text-white hover:bg-[#6A9B9C] border border-transparent font-bold text-[11px] px-2 py-0.5 rounded-lg shadow-none">
-                        Default
+            </TableHeader>
+            <TableBody>
+              {query.isLoading && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-[#6A9B9C]/60 font-medium py-12"
+                  >
+                    Loading provider records…
+                  </TableCell>
+                </TableRow>
+              )}
+              {query.isError && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={6} className="text-center text-[#B8684B] font-semibold py-12">
+                    {(query.error as Error).message}
+                  </TableCell>
+                </TableRow>
+              )}
+              {!query.isLoading && query.data?.length === 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-[#6A9B9C]/60 font-medium py-12"
+                  >
+                    No active provider accounts found matching criteria.
+                  </TableCell>
+                </TableRow>
+              )}
+              {query.data?.map((p: any) => (
+                <TableRow
+                  key={p.id}
+                  className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onClick={() =>
+                    navigate({
+                      to: "/admin/providers/$providerId",
+                      params: { providerId: p.id },
+                    })
+                  }
+                >
+                  <TableCell className="font-semibold text-[#3B4759] text-[14px] py-4 px-6">
+                    <span className="inline-flex items-center gap-2">
+                      {p.full_name}
+                      {p.is_default ? (
+                        <Badge className="bg-[#6A9B9C] text-white hover:bg-[#6A9B9C] border border-transparent font-bold text-[11px] px-2 py-0.5 rounded-lg shadow-none">
+                          Default
+                        </Badge>
+                      ) : null}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-[#3B4759]/70 font-medium text-[14px] py-4 px-6">
+                    {p.email}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759] font-medium text-[14px] py-4 px-6">
+                    {p.specialty ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759]/70 font-medium text-[14px] py-4 px-6">
+                    {p.credentials ?? "—"}
+                  </TableCell>
+                  <TableCell className="py-4 px-6">
+                    {p.is_active ? (
+                      <Badge className="bg-[#D5DEDD] hover:bg-[#E8FFE8] text-[#2E3745] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                        Active
                       </Badge>
-                    ) : null}
-                  </span>
-                </TableCell>
-                <TableCell className="text-[#3B4759]/70 font-medium text-[14px] py-4 px-6">{p.email}</TableCell>
-                <TableCell className="text-[#3B4759] font-medium text-[14px] py-4 px-6">{p.specialty ?? "—"}</TableCell>
-                <TableCell className="text-[#3B4759]/70 font-medium text-[14px] py-4 px-6">{p.credentials ?? "—"}</TableCell>
-                <TableCell className="py-4 px-6">
-                  {p.is_active ? (
-                    <Badge className="bg-[#D5DEDD] hover:bg-[#E8FFE8] text-[#2E3745] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-[#FBF1EC] hover:bg-[#FBF1EC] text-[#B8684B] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
-                      Inactive
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="py-4 px-6" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-[#6A9B9C] hover:text-[#3B4759] hover:bg-[#E8EEED]">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-[#D5DEDD] p-1 shadow-md bg-white">
-                      <DropdownMenuItem asChild className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer">
-                        <Link to="/admin/providers/$providerId" params={{ providerId: p.id }}>
-                          Edit Details
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => resendMut.mutate(p.id)}
-                        className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
+                    ) : (
+                      <Badge className="bg-[#FBF1EC] hover:bg-[#FBF1EC] text-[#B8684B] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                        Inactive
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-4 px-6" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg text-[#6A9B9C] hover:text-[#3B4759] hover:bg-[#E8EEED]"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="rounded-xl border-[#D5DEDD] p-1 shadow-md bg-white"
                       >
-                        <Mail className="mr-2 h-4 w-4 text-[#6A9B9C]" /> Resend invite
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => activeMut.mutate({ id: p.id, is_active: !p.is_active })}
-                        className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
-                      >
-                        {p.is_active ? "Deactivate Account" : "Activate Account"}
-                      </DropdownMenuItem>
-                      {!p.is_default ? (
                         <DropdownMenuItem
-                          onClick={() => setDefaultMut.mutate(p.id)}
+                          asChild
                           className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
                         >
-                          Set as default provider
+                          <Link to="/admin/providers/$providerId" params={{ providerId: p.id }}>
+                            Edit Details
+                          </Link>
                         </DropdownMenuItem>
-                      ) : null}
-                      <DropdownMenuSeparator className="bg-[#E8EEED]" />
-                      <DropdownMenuItem
-                        className="rounded-lg font-semibold text-[13px] text-[#B8684B] focus:bg-[#F6E4DA] focus:text-[#B8684B] px-3 py-2 cursor-pointer"
-                        onClick={() => setConfirmDelete({ id: p.id, name: p.full_name })}
-                      >
-                        Delete Permanent
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                        <DropdownMenuItem
+                          onClick={() => resendMut.mutate(p.id)}
+                          className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
+                        >
+                          <Mail className="mr-2 h-4 w-4 text-[#6A9B9C]" /> Resend invite
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => activeMut.mutate({ id: p.id, is_active: !p.is_active })}
+                          className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
+                        >
+                          {p.is_active ? "Deactivate Account" : "Activate Account"}
+                        </DropdownMenuItem>
+                        {!p.is_default ? (
+                          <DropdownMenuItem
+                            onClick={() => setDefaultMut.mutate(p.id)}
+                            className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
+                          >
+                            Set as default provider
+                          </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenuSeparator className="bg-[#E8EEED]" />
+                        <DropdownMenuItem
+                          className="rounded-lg font-semibold text-[13px] text-[#B8684B] focus:bg-[#F6E4DA] focus:text-[#B8684B] px-3 py-2 cursor-pointer"
+                          onClick={() => setConfirmDelete({ id: p.id, name: p.full_name })}
+                        >
+                          Delete Permanent
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -270,9 +315,14 @@ function ProvidersListPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent className="rounded-2xl border-[#D5DEDD] max-w-md p-6 bg-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-bold text-[#3B4759]">Delete provider context?</AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-bold text-[#3B4759]">
+              Delete provider context?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-[14px] text-[#6A9B9C]/80 font-medium leading-relaxed mt-2">
-              This action configuration permanently removes <span className="font-bold text-[#3B4759]">{confirmDelete?.name}</span>'s records, credentials, and platform track access metrics. This profile termination path cannot be undone.
+              This action configuration permanently removes{" "}
+              <span className="font-bold text-[#3B4759]">{confirmDelete?.name}</span>'s records,
+              credentials, and platform track access metrics. This profile termination path cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-2">

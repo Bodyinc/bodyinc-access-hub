@@ -86,9 +86,15 @@ export async function createCategory(values: CategoryFormValues): Promise<{ id: 
   return { id: data.id };
 }
 
-export async function updateCategory(id: string, values: CategoryFormValues): Promise<{ id: string }> {
+export async function updateCategory(
+  id: string,
+  values: CategoryFormValues,
+): Promise<{ id: string }> {
   const payload = fromForm(values);
-  const { error } = await supabase.from("medication_categories").update(payload as any).eq("id", id);
+  const { error } = await supabase
+    .from("medication_categories")
+    .update(payload as any)
+    .eq("id", id);
   if (error) throw new Error(error.message);
   return { id };
 }

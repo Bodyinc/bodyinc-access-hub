@@ -2,6 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequestList } from "@/components/admin/request-list";
 
 export const Route = createFileRoute("/_authenticated/admin/requests/")({
+  head: () => ({
+    meta: [
+      { title: "Requests · Body Inc Admin" },
+      { name: "description", content: "Requests — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: AdminRequestsPage,
 });
 
