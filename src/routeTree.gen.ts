@@ -30,6 +30,7 @@ import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/
 import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_authenticated/admin.intake-sessions'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
+import { Route as AuthenticatedProviderRequestsIndexRouteImport } from './routes/_authenticated/provider.requests.index'
 import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
 import { Route as AuthenticatedAdminRequestsIndexRouteImport } from './routes/_authenticated/admin.requests.index'
 import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
@@ -174,6 +175,12 @@ const AuthenticatedAdminBillingRoute =
     id: '/billing',
     path: '/billing',
     getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedProviderRequestsIndexRoute =
+  AuthenticatedProviderRequestsIndexRouteImport.update({
+    id: '/requests/',
+    path: '/requests/',
+    getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
 const AuthenticatedAdminSettingsIndexRoute =
   AuthenticatedAdminSettingsIndexRouteImport.update({
@@ -393,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
   '/admin/requests/': typeof AuthenticatedAdminRequestsIndexRoute
   '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
+  '/provider/requests/': typeof AuthenticatedProviderRequestsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -431,6 +439,7 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AuthenticatedAdminReferralsIndexRoute
   '/admin/requests': typeof AuthenticatedAdminRequestsIndexRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
+  '/provider/requests': typeof AuthenticatedProviderRequestsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -483,6 +492,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
   '/_authenticated/admin/requests/': typeof AuthenticatedAdminRequestsIndexRoute
   '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
+  '/_authenticated/provider/requests/': typeof AuthenticatedProviderRequestsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/admin/referrals/'
     | '/admin/requests/'
     | '/admin/settings/'
+    | '/provider/requests/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -573,6 +584,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/requests'
     | '/admin/settings'
+    | '/provider/requests'
   id:
     | '__root__'
     | '/'
@@ -624,6 +636,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals/'
     | '/_authenticated/admin/requests/'
     | '/_authenticated/admin/settings/'
+    | '/_authenticated/provider/requests/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -782,6 +795,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/billing'
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/provider/requests/': {
+      id: '/_authenticated/provider/requests/'
+      path: '/requests'
+      fullPath: '/provider/requests/'
+      preLoaderRoute: typeof AuthenticatedProviderRequestsIndexRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
     }
     '/_authenticated/admin/settings/': {
       id: '/_authenticated/admin/settings/'
@@ -1210,12 +1230,15 @@ const AuthenticatedAdminRouteWithChildren =
 interface AuthenticatedProviderRouteChildren {
   AuthenticatedProviderIndexRoute: typeof AuthenticatedProviderIndexRoute
   AuthenticatedProviderRequestsRequestIdRoute: typeof AuthenticatedProviderRequestsRequestIdRoute
+  AuthenticatedProviderRequestsIndexRoute: typeof AuthenticatedProviderRequestsIndexRoute
 }
 
 const AuthenticatedProviderRouteChildren: AuthenticatedProviderRouteChildren = {
   AuthenticatedProviderIndexRoute: AuthenticatedProviderIndexRoute,
   AuthenticatedProviderRequestsRequestIdRoute:
     AuthenticatedProviderRequestsRequestIdRoute,
+  AuthenticatedProviderRequestsIndexRoute:
+    AuthenticatedProviderRequestsIndexRoute,
 }
 
 const AuthenticatedProviderRouteWithChildren =
