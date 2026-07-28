@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { providerDashboard } from "@/lib/provider.functions";
 import { adminCard, adminPageTitle, adminPageSubtitle } from "@/lib/admin-ui";
@@ -9,8 +10,28 @@ export const Route = createFileRoute("/_authenticated/provider/")({
   component: ProviderDashboard,
 });
 
+function greetingFor(date: Date) {
+  const h = date.getHours();
+  if (h >= 5 && h < 12) return "Good morning";
+  if (h >= 12 && h < 17) return "Good afternoon";
+  if (h >= 17 && h < 21) return "Good evening";
+  return "Working late";
+}
+
+function useTimeGreeting() {
+  const [greeting, setGreeting] = useState<string | null>(null);
+  useEffect(() => {
+    const update = () => setGreeting(greetingFor(new Date()));
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return greeting;
+}
+
 function ProviderDashboard() {
   const navigate = useNavigate();
+  const greeting = useTimeGreeting();
   const get = useServerFn(providerDashboard);
   const q = useQuery({ queryKey: ["provider-dashboard"], queryFn: () => get({}) });
   const d = (q.data as any) ?? {};
@@ -57,7 +78,7 @@ function ProviderDashboard() {
   return (
     <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif]">
       <div className="space-y-1">
-        <h1 className={adminPageTitle}>Practitioner dashboard</h1>
+        <h1 className={adminPageTitle}>{greeting ?? "Practitioner dashboard"}</h1>
         <p className={adminPageSubtitle}>Your workload at a glance.</p>
       </div>
 
