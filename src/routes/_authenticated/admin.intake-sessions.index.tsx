@@ -24,21 +24,18 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listIntakeSessions } from "@/lib/intake-sessions.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
+import { formatDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/intake-sessions/")({
+  head: () => ({
+    meta: [
+      { title: "Intake sessions · Body Inc Admin" },
+      { name: "description", content: "Intake sessions — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: IntakeSessionsListPage,
 });
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function IntakeSessionsListPage() {
   const navigate = useNavigate();
@@ -104,33 +101,54 @@ function IntakeSessionsListPage() {
           <Table className="min-w-[720px]">
             <TableHeader className="bg-[#F8FBFA]">
               <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Name</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Email</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">State</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Name
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Email
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  State
+                </TableHead>
                 <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Sex</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Plan</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Created</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Plan
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Status
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Created
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {q.isLoading && (
                 <TableRow className="border-b border-[#D5DEDD]/50">
-                  <TableCell colSpan={7} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]"
+                  >
                     Loading…
                   </TableCell>
                 </TableRow>
               )}
               {q.isError && (
                 <TableRow className="border-b border-[#D5DEDD]/50">
-                  <TableCell colSpan={7} className="py-12 text-center text-[#6A9B9C] font-semibold text-[14px]">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[#6A9B9C] font-semibold text-[14px]"
+                  >
                     {(q.error as Error).message}
                   </TableCell>
                 </TableRow>
               )}
               {!q.isLoading && q.data?.length === 0 && (
                 <TableRow className="border-b border-[#D5DEDD]/50">
-                  <TableCell colSpan={7} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]"
+                  >
                     No sessions found.
                   </TableCell>
                 </TableRow>
@@ -140,7 +158,10 @@ function IntakeSessionsListPage() {
                   key={s.id}
                   className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
                   onClick={() =>
-                    navigate({ to: "/admin/intake-sessions/$sessionId", params: { sessionId: s.id } })
+                    navigate({
+                      to: "/admin/intake-sessions/$sessionId",
+                      params: { sessionId: s.id },
+                    })
                   }
                 >
                   <TableCell className="font-semibold text-[#3B4759] text-[14px]">
@@ -165,17 +186,17 @@ function IntakeSessionsListPage() {
                         s.status === "completed"
                           ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
                           : s.status === "payment_pending"
-                          ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
-                          : s.status === "abandoned"
-                          ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
-                          : "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
+                            ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
+                            : s.status === "abandoned"
+                              ? "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
+                              : "bg-[#F3E5F5] text-[#6A9B9C] hover:bg-[#F3E5F5]"
                       }`}
                     >
                       {s.status ?? "—"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
-                    {formatDate(s.created_at)}
+                    {formatDateTime(s.created_at)}
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,10 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { RoutePending } from "@/components/route-pending";
-import {
-  getPasswordRecoveryRedirectUrl,
-  isPasswordRecoveryPending,
-} from "@/lib/password-recovery";
+import { getPasswordRecoveryRedirectUrl, isPasswordRecoveryPending } from "@/lib/password-recovery";
+import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -37,11 +35,7 @@ function HomePage() {
 
       const user = data.session?.user;
 
-      if (
-        user &&
-        isPasswordRecoveryPending() &&
-        window.location.pathname !== "/reset-password"
-      ) {
+      if (user && isPasswordRecoveryPending() && window.location.pathname !== "/reset-password") {
         window.location.replace("/reset-password");
         return;
       }
@@ -51,11 +45,7 @@ function HomePage() {
         return;
       }
 
-      const cacheKey = `bi_portal_role:${user.id}`;
-      let role: string | null = null;
-      try {
-        role = sessionStorage.getItem(cacheKey);
-      } catch {}
+      let role = readCachedPortalRole(user.id);
 
       if (!role) {
         const { data: fetched, error } = await supabase.rpc("get_user_portal", {
@@ -68,11 +58,7 @@ function HomePage() {
           return;
         }
         role = (fetched as string | null) ?? null;
-        if (role) {
-          try {
-            sessionStorage.setItem(cacheKey, role);
-          } catch {}
-        }
+        cachePortalRole(user.id, role);
       }
 
       if (!active) return;

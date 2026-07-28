@@ -1,10 +1,5 @@
 import { useState } from "react";
-import {
-  useFieldArray,
-  Controller,
-  type Control,
-  type UseFormRegister,
-} from "react-hook-form";
+import { useFieldArray, Controller, type Control, type UseFormRegister } from "react-hook-form";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,8 +105,8 @@ export function MedicinePackagesEditor({
           Pricing packages
         </CardTitle>
         <CardDescription className="text-[16px] font-normal leading-[100%] text-[#3B4759]/80">
-          Duration-based plans patients can buy — up to {MAX_PACKAGES_PER_MEDICINE} per medicine. The
-          lowest per-month price is shown as the medicine&apos;s &ldquo;from&rdquo; price.
+          Duration-based plans patients can buy — up to {MAX_PACKAGES_PER_MEDICINE} per medicine.
+          The lowest per-month price is shown as the medicine&apos;s &ldquo;from&rdquo; price.
         </CardDescription>
       </CardHeader>
       <CardContent className="min-w-0 p-4 sm:p-6">{body}</CardContent>
@@ -215,7 +210,6 @@ function PackageRow({
                 checked={!!field.value}
                 onCheckedChange={field.onChange}
                 disabled={submitting}
-                
               />
               <span className="text-[14px] font-normal text-[#3B4759]">Most popular</span>
             </div>
@@ -230,7 +224,6 @@ function PackageRow({
                 checked={field.value ?? true}
                 onCheckedChange={field.onChange}
                 disabled={submitting}
-                
               />
               <span className="text-[14px] font-normal text-[#3B4759]">Active</span>
             </div>

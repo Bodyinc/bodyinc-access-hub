@@ -302,11 +302,7 @@ export function ProviderForm({
             </Select>
           </Field>
           <Field label="ZIP" error={errors.zip?.message}>
-            <Input
-              {...register("zip")}
-              placeholder="12345 or 12345-6789"
-              className={inputFull}
-            />
+            <Input {...register("zip")} placeholder="12345 or 12345-6789" className={inputFull} />
           </Field>
           <Field label="Country">
             <Input

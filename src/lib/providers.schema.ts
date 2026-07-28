@@ -10,8 +10,19 @@ export const CREDENTIALS = ["MD", "DO", "NP", "PA", "RN", "PharmD", "Other"] as 
 export const CONSULTATION_TYPES = ["video", "phone", "chat", "in_person"] as const;
 
 export const COMMON_LANGUAGES = [
-  "English","Spanish","Mandarin","French","German","Hindi","Arabic","Portuguese",
-  "Russian","Korean","Japanese","Vietnamese","Tagalog",
+  "English",
+  "Spanish",
+  "Mandarin",
+  "French",
+  "German",
+  "Hindi",
+  "Arabic",
+  "Portuguese",
+  "Russian",
+  "Korean",
+  "Japanese",
+  "Vietnamese",
+  "Tagalog",
 ] as const;
 
 const optionalStr = z
@@ -35,11 +46,14 @@ export const providerFormSchema = z.object({
     .or(z.literal(""))
     .refine((v) => !v || /^[\d\s()+-]{7,20}$/.test(v), "Invalid phone")
     .transform((v) => (v ? v : undefined)),
-  avatar_url: optionalStr.refine(
-    (v) => !v || /^https?:\/\//i.test(v),
-    "Must be a URL",
-  ),
-  bio: z.string().trim().max(2000).optional().or(z.literal("")).transform((v) => v || undefined),
+  avatar_url: optionalStr.refine((v) => !v || /^https?:\/\//i.test(v), "Must be a URL"),
+  bio: z
+    .string()
+    .trim()
+    .max(2000)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => v || undefined),
 
   credentials: z.enum(CREDENTIALS).optional(),
   specialty: optionalStr,

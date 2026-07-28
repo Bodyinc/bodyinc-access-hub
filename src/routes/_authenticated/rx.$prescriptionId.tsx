@@ -5,6 +5,13 @@ import { useEffect } from "react";
 import { getPrescription } from "@/lib/requests.functions";
 
 export const Route = createFileRoute("/_authenticated/rx/$prescriptionId")({
+  head: () => ({
+    meta: [
+      { title: "Prescription · Body Inc Body Inc" },
+      { name: "description", content: "Prescription — Body Inc area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({
     download: s.download === true || s.download === "1" || s.download === "true",
   }),
@@ -37,7 +44,9 @@ function RxPage() {
   }, [download, q.data]);
 
   if (q.isLoading) {
-    return <div className="p-8 text-[14px] text-[#3B4759]/60 font-['DM_Sans',sans-serif]">Loading…</div>;
+    return (
+      <div className="p-8 text-[14px] text-[#3B4759]/60 font-['DM_Sans',sans-serif]">Loading…</div>
+    );
   }
   if (q.isError || !q.data) {
     return (

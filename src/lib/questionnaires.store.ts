@@ -193,7 +193,10 @@ export async function updateQuestion(
     disqualify_rules: Record<string, unknown>;
   }>,
 ): Promise<{ ok: true }> {
-  const { error } = await supabase.from("questionnaire_questions").update(input as any).eq("id", id);
+  const { error } = await supabase
+    .from("questionnaire_questions")
+    .update(input as any)
+    .eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }

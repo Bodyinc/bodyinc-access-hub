@@ -15,6 +15,7 @@ import { RefreshButton } from "@/components/admin/refresh-button";
 import { listSubscriptions } from "@/lib/billing.functions";
 import { Search } from "lucide-react";
 import { adminInput } from "@/lib/admin-ui";
+import { formatDate, formatDollarsOrDash } from "@/lib/format";
 
 const CANCELLATION_LABELS: Record<string, string> = {
   achieved_goals: "Achieved goals",
@@ -25,20 +26,6 @@ const CANCELLATION_LABELS: Record<string, string> = {
   wrong_medication: "Wrong medication",
   other: "Other",
 };
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function formatCurrency(amount: number | null): string {
-  if (amount == null) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-}
 
 export function SubscriptionsTable() {
   const [search, setSearch] = useState("");
@@ -81,40 +68,65 @@ export function SubscriptionsTable() {
           <Table className="border-collapse min-w-[720px]">
             <TableHeader className="bg-white">
               <TableRow className="hover:bg-transparent border-b border-[#D5DEDD]">
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Patient</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Plan</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Amount</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Status</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Next billing</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6">Cancellation</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Patient
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Plan
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Amount
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Status
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Next billing
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6">
+                  Cancellation
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#3B4759]/70">
+                  <TableCell
+                    colSpan={6}
+                    className="py-12 text-center text-[15px] text-[#3B4759]/70"
+                  >
                     Loading rows...
                   </TableCell>
                 </TableRow>
               )}
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-[15px] text-[#3B4759]/70">
+                  <TableCell
+                    colSpan={6}
+                    className="py-12 text-center text-[15px] text-[#3B4759]/70"
+                  >
                     No subscriptions found.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
-                <TableRow key={r.id} className="border-b border-[#D5DEDD] hover:bg-[#F2F7F6] transition-colors">
+                <TableRow
+                  key={r.id}
+                  className="border-b border-[#D5DEDD] hover:bg-[#F2F7F6] transition-colors"
+                >
                   <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
-                    <div className="font-semibold text-[14px] text-[#3B4759]">{r.customer_name ?? "—"}</div>
-                    <div className="text-[12px] font-medium text-[#3B4759]/70">{r.customer_email ?? "—"}</div>
+                    <div className="font-semibold text-[14px] text-[#3B4759]">
+                      {r.customer_name ?? "—"}
+                    </div>
+                    <div className="text-[12px] font-medium text-[#3B4759]/70">
+                      {r.customer_email ?? "—"}
+                    </div>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-[14px] font-medium text-[#3B4759]/80 border-r border-[#D5DEDD]">
                     {r.plan_name}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#3B4759] border-r border-[#D5DEDD]">
-                    {formatCurrency(r.amount)}
+                    {formatDollarsOrDash(r.amount)}
                   </TableCell>
                   <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
                     <div className="flex flex-col gap-1 items-start">
@@ -128,7 +140,9 @@ export function SubscriptionsTable() {
                         {r.status}
                       </Badge>
                       {r.cancel_at_period_end ? (
-                        <span className="text-[11px] font-semibold text-amber-600">Cancels at period end</span>
+                        <span className="text-[11px] font-semibold text-amber-600">
+                          Cancels at period end
+                        </span>
                       ) : null}
                     </div>
                   </TableCell>
@@ -148,7 +162,9 @@ export function SubscriptionsTable() {
                             .join(", ")}
                         </span>
                         {r.cancellation_note ? (
-                          <span className="block text-[12px] italic text-[#3B4759]/70 mt-0.5">“{r.cancellation_note}”</span>
+                          <span className="block text-[12px] italic text-[#3B4759]/70 mt-0.5">
+                            “{r.cancellation_note}”
+                          </span>
                         ) : null}
                       </div>
                     ) : (

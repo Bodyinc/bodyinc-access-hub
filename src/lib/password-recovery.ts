@@ -1,32 +1,29 @@
+import { readSession, removeSession, writeSession } from "@/lib/safe-storage";
+
 const PENDING_KEY = "bi_pending_password_reset";
 
 export function markPasswordRecoveryPending() {
-  try {
-    sessionStorage.setItem(PENDING_KEY, "1");
-  } catch {}
+  writeSession(PENDING_KEY, "1");
 }
 
 export function clearPasswordRecoveryPending() {
-  try {
-    sessionStorage.removeItem(PENDING_KEY);
-  } catch {}
+  removeSession(PENDING_KEY);
 }
 
 export function isPasswordRecoveryPending() {
-  try {
-    return sessionStorage.getItem(PENDING_KEY) === "1";
-  } catch {
-    return false;
-  }
+  return readSession(PENDING_KEY) === "1";
 }
 
 /** True when the current URL carries password-recovery auth params. */
-export function isPasswordRecoveryUrl(href = typeof window !== "undefined" ? window.location.href : "") {
+export function isPasswordRecoveryUrl(
+  href = typeof window !== "undefined" ? window.location.href : "",
+) {
   if (!href) return false;
   const url = new URL(href);
   if (url.pathname === "/reset-password") return false;
   if (url.searchParams.get("type") === "recovery") return true;
-  if (url.searchParams.has("token_hash") && url.searchParams.get("type") === "recovery") return true;
+  if (url.searchParams.has("token_hash") && url.searchParams.get("type") === "recovery")
+    return true;
   if (url.hash.includes("type=recovery")) return true;
   if (url.searchParams.has("code") && isPasswordRecoveryPending()) return true;
   return false;
@@ -41,7 +38,9 @@ export function buildPasswordRecoveryUrl(fromHref = window.location.href) {
 }
 
 /** Redirect target when recovery auth landed on the wrong route, or null if already correct. */
-export function getPasswordRecoveryRedirectUrl(href = typeof window !== "undefined" ? window.location.href : "") {
+export function getPasswordRecoveryRedirectUrl(
+  href = typeof window !== "undefined" ? window.location.href : "",
+) {
   if (!href) return null;
   const url = new URL(href);
   if (url.pathname === "/reset-password") return null;

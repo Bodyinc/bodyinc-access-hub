@@ -28,14 +28,11 @@ import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import { changeRequestMedicine } from "@/lib/requests.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
-
-function money(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatDollars } from "@/lib/format";
 
 function planLabel(p: StoredMedicinePackage) {
   const dur = p.duration_months === 1 ? "Monthly" : `${p.duration_months}-Month`;
-  return `${dur} — ${money(p.price)}${p.duration_months > 1 ? ` (every ${p.duration_months} mo)` : "/mo"}`;
+  return `${dur} — ${formatDollars(p.price)}${p.duration_months > 1 ? ` (every ${p.duration_months} mo)` : "/mo"}`;
 }
 
 export type RequestChangeCurrent = {
@@ -121,16 +118,17 @@ export function RequestChangeMedicineDialog({
     () => (medicine?.variants ?? []).filter((v) => v.is_active),
     [medicine],
   );
-  const variant = hasVariants ? activeVariants.find((v) => v.id === variantId) ?? null : null;
+  const variant = hasVariants ? (activeVariants.find((v) => v.id === variantId) ?? null) : null;
 
   const packages = useMemo(() => {
-    const list = hasVariants ? variant?.packages ?? [] : medicine?.packages ?? [];
+    const list = hasVariants ? (variant?.packages ?? []) : (medicine?.packages ?? []);
     return list.filter((p) => p.is_active && p.stripe_price_id);
   }, [hasVariants, variant, medicine]);
 
   useEffect(() => {
     if (!medicine) return;
-    if (hasVariants && !variantId && activeVariants.length === 1) setVariantId(activeVariants[0].id);
+    if (hasVariants && !variantId && activeVariants.length === 1)
+      setVariantId(activeVariants[0].id);
   }, [medicine, hasVariants, variantId, activeVariants]);
 
   useEffect(() => {
@@ -147,8 +145,7 @@ export function RequestChangeMedicineDialog({
   }
 
   const selectedPkg = packages.find((p) => p.id === packageId) ?? null;
-  const diff =
-    selectedPkg && current.price != null ? selectedPkg.price - current.price : null;
+  const diff = selectedPkg && current.price != null ? selectedPkg.price - current.price : null;
 
   const isCrossCategory = !!medicine && currentCategoryIds.size > 0 && !inSameCategory(medicine);
   const reasonMissing = isCrossCategory && categoryReason.trim().length < 10;
@@ -197,7 +194,7 @@ export function RequestChangeMedicineDialog({
               <div className="font-semibold text-foreground">{current.medicineName ?? "—"}</div>
               <div className="text-muted-foreground">{current.planName ?? "—"}</div>
               <div className="text-lg font-bold text-foreground">
-                {current.price != null ? money(current.price) : "—"}
+                {current.price != null ? formatDollars(current.price) : "—"}
               </div>
               {categoryNames.length > 0 ? (
                 <div className="flex flex-wrap gap-1 pt-1">
@@ -354,7 +351,7 @@ export function RequestChangeMedicineDialog({
                 }`}
               >
                 {diff > 0 ? "+" : diff < 0 ? "−" : ""}
-                {money(Math.abs(diff))}
+                {formatDollars(Math.abs(diff))}
               </span>
             </div>
             <p className="text-xs text-muted-foreground pt-1">

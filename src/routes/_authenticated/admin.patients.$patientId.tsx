@@ -49,21 +49,18 @@ import {
   adminBtnSecondary,
 } from "@/lib/admin-ui";
 import { US_STATES } from "@/lib/us-states";
+import { formatDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
+  head: () => ({
+    meta: [
+      { title: "Patient details · Body Inc Admin" },
+      { name: "description", content: "Patient details — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: PatientDetailPage,
 });
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function PatientDetailPage() {
   const { patientId } = Route.useParams();
@@ -180,7 +177,6 @@ function PatientDetailPage() {
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
           <div className="flex min-w-0 items-center gap-3">
             {d.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={d.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
             ) : (
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#D5DEDD] text-sm font-semibold uppercase text-[#3B4759]">
@@ -188,7 +184,9 @@ function PatientDetailPage() {
               </div>
             )}
             <div className="min-w-0 space-y-1">
-              <CardTitle className={adminSectionTitle}>{d.full_name || "Unnamed patient"}</CardTitle>
+              <CardTitle className={adminSectionTitle}>
+                {d.full_name || "Unnamed patient"}
+              </CardTitle>
               <CardDescription className={adminSectionSubtitle}>{d.email}</CardDescription>
             </div>
           </div>
@@ -322,7 +320,7 @@ function PatientDetailPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
-                        {formatDate(s.created_at)}
+                        {formatDateTime(s.created_at)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -383,7 +381,7 @@ function PatientDetailPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
-                        {formatDate(o.created_at)}
+                        {formatDateTime(o.created_at)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -435,7 +433,7 @@ function PatientDetailPage() {
                         {p.stripe_payment_intent_id ?? "—"}
                       </TableCell>
                       <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
-                        {formatDate(p.created_at)}
+                        {formatDateTime(p.created_at)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -457,19 +455,23 @@ function PatientDetailPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <div className="text-[13px] font-medium text-[#3B4759]/60">Email confirmed</div>
-                  <div className="font-medium text-[#3B4759]">{formatDate(d.email_confirmed_at)}</div>
+                  <div className="font-medium text-[#3B4759]">
+                    {formatDateTime(d.email_confirmed_at)}
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-[13px] font-medium text-[#3B4759]/60">Last sign-in</div>
-                  <div className="font-medium text-[#3B4759]">{formatDate(d.last_sign_in_at)}</div>
+                  <div className="font-medium text-[#3B4759]">
+                    {formatDateTime(d.last_sign_in_at)}
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-[13px] font-medium text-[#3B4759]/60">Joined</div>
-                  <div className="font-medium text-[#3B4759]">{formatDate(d.created_at)}</div>
+                  <div className="font-medium text-[#3B4759]">{formatDateTime(d.created_at)}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-[13px] font-medium text-[#3B4759]/60">Profile updated</div>
-                  <div className="font-medium text-[#3B4759]">{formatDate(d.updated_at)}</div>
+                  <div className="font-medium text-[#3B4759]">{formatDateTime(d.updated_at)}</div>
                 </div>
               </div>
 
@@ -684,9 +686,7 @@ function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean })
         {loading ? (
           <div className="text-[14px] font-medium text-[#3B4759]/60">Loading…</div>
         ) : !data?.has_data ? (
-          <div className="text-[14px] font-medium text-[#3B4759]/60">
-            No clinical data on file.
-          </div>
+          <div className="text-[14px] font-medium text-[#3B4759]/60">No clinical data on file.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Metric label="BMI" value={data.bmi != null ? String(data.bmi) : "—"} />
@@ -752,8 +752,7 @@ function AddressCard({
     defaultValues.country,
   ]);
 
-  const set = (key: keyof typeof form, value: string) =>
-    setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const consentBadge = (label: string, on: boolean) => (
     <Badge

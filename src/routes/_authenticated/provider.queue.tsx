@@ -21,6 +21,13 @@ import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/l
 import { adminPageTitle, adminPageSubtitle, adminInput } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/provider/queue")({
+  head: () => ({
+    meta: [
+      { title: "Order queue · Body Inc Practitioner" },
+      { name: "description", content: "Order queue — Practitioner area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ProviderQueuePage,
 });
 

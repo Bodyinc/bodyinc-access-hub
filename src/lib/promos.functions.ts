@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 const promoBase = z.object({
   code: z
     .string()
@@ -26,14 +25,14 @@ type PromoBaseValues = z.infer<typeof promoBase>;
 // otherwise you can save a code that silently discounts nothing.
 function hasPositiveDiscount<T extends z.ZodTypeAny>(schema: T) {
   return schema
-    .refine(
-      (d: PromoBaseValues) => d.discount_type !== "percent" || (d.percent_off ?? 0) > 0,
-      { message: "Percent off must be greater than 0", path: ["percent_off"] },
-    )
-    .refine(
-      (d: PromoBaseValues) => d.discount_type !== "amount" || (d.amount_off_cents ?? 0) > 0,
-      { message: "Amount off must be greater than 0", path: ["amount_off_cents"] },
-    );
+    .refine((d: PromoBaseValues) => d.discount_type !== "percent" || (d.percent_off ?? 0) > 0, {
+      message: "Percent off must be greater than 0",
+      path: ["percent_off"],
+    })
+    .refine((d: PromoBaseValues) => d.discount_type !== "amount" || (d.amount_off_cents ?? 0) > 0, {
+      message: "Amount off must be greater than 0",
+      path: ["amount_off_cents"],
+    });
 }
 
 const promoInput = hasPositiveDiscount(promoBase);
@@ -111,10 +110,7 @@ export const updatePromo = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...rest } = data;
-    const { error } = await supabaseAdmin
-      .from("promo_codes")
-      .update(toRow(rest))
-      .eq("id", id);
+    const { error } = await supabaseAdmin.from("promo_codes").update(toRow(rest)).eq("id", id);
     if (error) {
       throw new Error(
         /duplicate|unique/i.test(error.message)

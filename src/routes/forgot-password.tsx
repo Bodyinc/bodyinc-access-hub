@@ -15,7 +15,10 @@ export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [
       { title: "Reset Password — Body Inc Practitioners" },
-      { name: "description", content: "Request a password reset link for your practitioner account." },
+      {
+        name: "description",
+        content: "Request a password reset link for your practitioner account.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -59,9 +62,7 @@ function ForgotPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl">Forgot your password?</CardTitle>
-          <CardDescription>
-            Enter your email and we'll send you a reset link.
-          </CardDescription>
+          <CardDescription>Enter your email and we'll send you a reset link.</CardDescription>
         </CardHeader>
         <CardContent>
           {sent ? (
@@ -92,7 +93,10 @@ function ForgotPasswordPage() {
                 {submitting ? "Sending…" : "Send reset link"}
               </Button>
               <p className="text-center text-sm">
-                <Link to="/auth" className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+                <Link
+                  to="/auth"
+                  className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                >
                   Back to sign in
                 </Link>
               </p>

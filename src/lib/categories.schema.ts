@@ -38,8 +38,20 @@ export const categoryFormSchema = z.object({
     .regex(/^[a-z0-9-]+$/i, "Use letters, numbers, and dashes only")
     .transform((v) => v.toLowerCase()),
   name: z.string().trim().min(1, "Name is required").max(120),
-  tagline: z.string().trim().max(200).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
-  image_url: z.string().trim().url().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
+  tagline: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
+  image_url: z
+    .string()
+    .trim()
+    .url()
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
   sort_order: z.coerce.number().int().min(0).default(0),
   is_active: z.boolean().default(true),
   eligibility_rules: eligibilityRulesSchema,

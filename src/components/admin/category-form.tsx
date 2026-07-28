@@ -48,8 +48,6 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   );
 }
 
-
-
 export type CategoryFormProps = {
   defaultValues?: Partial<CategoryFormValues>;
   mode: "create" | "edit";
@@ -58,7 +56,13 @@ export type CategoryFormProps = {
   onCancel?: () => void;
 };
 
-export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCancel }: CategoryFormProps) {
+export function CategoryForm({
+  defaultValues,
+  mode,
+  submitting,
+  onSubmit,
+  onCancel,
+}: CategoryFormProps) {
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema) as any,
     defaultValues: { ...EMPTY, ...defaultValues },
@@ -67,13 +71,13 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
   const errors = formState.errors as any;
 
   const initialRules = defaultValues?.eligibility_rules;
-  const hasInitialRules = !!initialRules && (
-    (initialRules.bmi_bands?.length ?? 0) > 0 ||
-    (initialRules.sex?.length ?? 0) > 0 ||
-    initialRules.min_age != null ||
-    initialRules.max_age != null ||
-    (initialRules.blocked_state_codes?.length ?? 0) > 0
-  );
+  const hasInitialRules =
+    !!initialRules &&
+    ((initialRules.bmi_bands?.length ?? 0) > 0 ||
+      (initialRules.sex?.length ?? 0) > 0 ||
+      initialRules.min_age != null ||
+      initialRules.max_age != null ||
+      (initialRules.blocked_state_codes?.length ?? 0) > 0);
   const [showEligibility, setShowEligibility] = useState<boolean>(hasInitialRules);
 
   const [uploading, setUploading] = useState(false);
@@ -135,27 +139,27 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
           <CardContent className="space-y-5 p-4 sm:space-y-6 sm:p-6">
             <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
               <Field label="Name" error={errors.name?.message}>
-                <Input 
-                  {...register("name")} 
-                  placeholder="e.g. Weight Loss" 
-                  disabled={submitting} 
+                <Input
+                  {...register("name")}
+                  placeholder="e.g. Weight Loss"
+                  disabled={submitting}
                   className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] placeholder:text-[#6A9B9C]/40 rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
                 />
               </Field>
               <Field label="Slug" error={errors.slug?.message}>
-                <Input 
-                  {...register("slug")} 
-                  placeholder="weight-loss" 
-                  disabled={submitting} 
+                <Input
+                  {...register("slug")}
+                  placeholder="weight-loss"
+                  disabled={submitting}
                   className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] placeholder:text-[#6A9B9C]/40 rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
                 />
               </Field>
             </div>
             <Field label="Tagline" error={errors.tagline?.message}>
-              <Input 
-                {...register("tagline")} 
-                placeholder="Short one-liner shown on card" 
-                disabled={submitting} 
+              <Input
+                {...register("tagline")}
+                placeholder="Short one-liner shown on card"
+                disabled={submitting}
                 className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] placeholder:text-[#6A9B9C]/40 rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
               />
             </Field>
@@ -174,7 +178,11 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
               />
               {imageUrl ? (
                 <div className="flex flex-wrap items-center gap-4 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3">
-                  <img src={imageUrl} alt="" className="h-20 w-20 rounded-lg object-cover border border-[#D5DEDD]" />
+                  <img
+                    src={imageUrl}
+                    alt=""
+                    className="h-20 w-20 rounded-lg object-cover border border-[#D5DEDD]"
+                  />
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -214,11 +222,11 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
 
             <div className="grid gap-6 sm:grid-cols-2 items-end">
               <Field label="Sort order" error={errors.sort_order?.message}>
-                <Input 
-                  type="number" 
-                  min={0} 
-                  {...register("sort_order")} 
-                  disabled={submitting} 
+                <Input
+                  type="number"
+                  min={0}
+                  {...register("sort_order")}
+                  disabled={submitting}
                   className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
                 />
               </Field>
@@ -230,13 +238,18 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
                     name="is_active"
                     render={({ field }) => (
                       <div className="flex items-center justify-between w-full">
-                        <Label htmlFor="cat-active" className="text-[14px] font-semibold text-[#3B4759] cursor-pointer select-none">Active</Label>
+                        <Label
+                          htmlFor="cat-active"
+                          className="text-[14px] font-semibold text-[#3B4759] cursor-pointer select-none"
+                        >
+                          Active
+                        </Label>
                         <Switch
-  id="cat-active"
-  checked={!!field.value}
-  onCheckedChange={field.onChange}
-  disabled={submitting}
-/>
+                          id="cat-active"
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={submitting}
+                        />
                       </div>
                     )}
                   />
@@ -255,11 +268,11 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
             </p>
           </div>
           <Switch
-  id="eligibility-toggle"
-  checked={showEligibility}
-  onCheckedChange={setShowEligibility}
-  disabled={submitting}
-/>
+            id="eligibility-toggle"
+            checked={showEligibility}
+            onCheckedChange={setShowEligibility}
+            disabled={submitting}
+          />
         </div>
 
         {/* Rules Card */}
@@ -284,7 +297,10 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
                         {BMI_BANDS.map((b) => {
                           const checked = (field.value ?? []).includes(b);
                           return (
-                            <label key={b} className="flex items-center gap-3 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3.5 text-[14px] font-medium text-[#6A9B9C] cursor-pointer transition-colors hover:bg-[#F2F7F6]">
+                            <label
+                              key={b}
+                              className="flex items-center gap-3 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3.5 text-[14px] font-medium text-[#6A9B9C] cursor-pointer transition-colors hover:bg-[#F2F7F6]"
+                            >
                               <Checkbox
                                 checked={checked}
                                 className="border-[#6A9B9C]/40 data-[state=checked]:bg-[#6A9B9C] data-[state=checked]:border-[#6A9B9C] h-4 w-4 rounded"
@@ -314,7 +330,10 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
                         {SEX_VALUES.map((s) => {
                           const checked = (field.value ?? []).includes(s);
                           return (
-                            <label key={s} className="flex items-center gap-3 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3.5 text-[14px] font-medium text-[#6A9B9C] cursor-pointer transition-colors hover:bg-[#F2F7F6]">
+                            <label
+                              key={s}
+                              className="flex items-center gap-3 rounded-[6px] border border-[#D5DEDD] bg-[#FFFFFF] p-3.5 text-[14px] font-medium text-[#6A9B9C] cursor-pointer transition-colors hover:bg-[#F2F7F6]"
+                            >
                               <Checkbox
                                 checked={checked}
                                 className="border-[#6A9B9C]/40 data-[state=checked]:bg-[#6A9B9C] data-[state=checked]:border-[#6A9B9C] h-4 w-4 rounded"
@@ -336,22 +355,22 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
 
                 <div className="grid gap-6 sm:grid-cols-2">
                   <Field label="Minimum age" error={errors.eligibility_rules?.min_age?.message}>
-                    <Input 
-                      type="number" 
-                      min={0} 
-                      max={120} 
-                      {...register("eligibility_rules.min_age")} 
-                      disabled={submitting} 
+                    <Input
+                      type="number"
+                      min={0}
+                      max={120}
+                      {...register("eligibility_rules.min_age")}
+                      disabled={submitting}
                       className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
                     />
                   </Field>
                   <Field label="Maximum age" error={errors.eligibility_rules?.max_age?.message}>
-                    <Input 
-                      type="number" 
-                      min={0} 
-                      max={120} 
-                      {...register("eligibility_rules.max_age")} 
-                      disabled={submitting} 
+                    <Input
+                      type="number"
+                      min={0}
+                      max={120}
+                      {...register("eligibility_rules.max_age")}
+                      disabled={submitting}
                       className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
                     />
                   </Field>
@@ -365,8 +384,9 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
                       <div className="space-y-1">
                         <Label className={`${adminLabel} block`}>Blocked states</Label>
                         <p className="text-[13px] text-[#6A9B9C]/80 font-medium">
-                          Patients in these states cannot select this category. Leave empty to allow every
-                          state — unlike the groups above, this one excludes rather than includes.
+                          Patients in these states cannot select this category. Leave empty to allow
+                          every state — unlike the groups above, this one excludes rather than
+                          includes.
                         </p>
                       </div>
                       <StateMultiSelect
@@ -388,18 +408,18 @@ export function CategoryForm({ defaultValues, mode, submitting, onSubmit, onCanc
         )}
 
         <div className="flex flex-wrap gap-3 pt-2">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={submitting}
             className="h-11 min-w-[140px] rounded-[8px] bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-[#5B8788] sm:h-[53px]"
           >
             {submitting ? "Saving…" : mode === "create" ? "Create category" : "Save changes"}
           </Button>
           {onCancel && (
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel} 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
               disabled={submitting}
               className="h-11 rounded-[8px] border-[#D5DEDD] px-6 text-[14px] font-semibold text-[#6A9B9C] transition-colors hover:bg-[#F2F7F6] sm:h-[53px]"
             >

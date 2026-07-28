@@ -7,6 +7,7 @@ import {
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
 import { isBrowser } from "@/lib/is-browser";
+import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -27,20 +28,13 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/auth" });
     }
 
-    if (
-      isPasswordRecoveryPending() &&
-      window.location.pathname !== "/reset-password"
-    ) {
+    if (isPasswordRecoveryPending() && window.location.pathname !== "/reset-password") {
       window.location.replace("/reset-password");
       await haltForPasswordRecoveryRedirect();
     }
 
     const user = data.session.user;
-    const cacheKey = `bi_portal_role:${user.id}`;
-    let role: string | null = null;
-    try {
-      role = sessionStorage.getItem(cacheKey);
-    } catch {}
+    let role = readCachedPortalRole(user.id);
 
     if (!role) {
       const { data: fetched, error: roleError } = await supabase.rpc("get_user_portal", {
@@ -50,9 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
         throw redirect({ to: "/auth" });
       }
       role = (fetched as string | null) ?? null;
-      if (role) {
-        try { sessionStorage.setItem(cacheKey, role); } catch {}
-      }
+      cachePortalRole(user.id, role);
     }
 
     if (role !== "provider" && role !== "admin") {

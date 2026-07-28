@@ -29,6 +29,13 @@ const MedicinePreview = lazy(() =>
 );
 
 export const Route = createFileRoute("/_authenticated/admin/medicines/$medicineId")({
+  head: () => ({
+    meta: [
+      { title: "Edit medicine · Body Inc Admin" },
+      { name: "description", content: "Edit medicine — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: EditMedicinePage,
 });
 
@@ -133,7 +140,9 @@ export default function EditMedicinePage() {
       // they cannot back a new subscription. Existing subscribers are unaffected.
       if (orphanedPriceIds.length > 0 || orphanedProductIds.length > 0) {
         try {
-          await archiveStripe({ data: { priceIds: orphanedPriceIds, productIds: orphanedProductIds } });
+          await archiveStripe({
+            data: { priceIds: orphanedPriceIds, productIds: orphanedProductIds },
+          });
         } catch {
           // Non-fatal: the rows are already gone and the stale Stripe objects are unreachable
           // from the catalogue, so a failure here cannot sell anything by accident.

@@ -62,51 +62,51 @@
   --radius: 0.625rem;
 
   /* ── Brand palette ───────────────────────────────── */
-  --sand: #E3E084;          /* highlight / CTA */
-  --sand-strong: #D6D26A;
-  --ink: #3B4759;           /* primary text */
+  --sand: #e3e084; /* highlight / CTA */
+  --sand-strong: #d6d26a;
+  --ink: #3b4759; /* primary text */
   --ink-soft: rgba(59, 71, 89, 0.75);
   --ink-muted: rgba(59, 71, 89, 0.45);
   --ink-line: rgba(59, 71, 89, 0.18);
-  --clay: #B8684B;          /* secondary accent */
-  --clay-soft: #FBF1EC;
-  --mist: #E8EEED;          /* surface tint */
-  --mist-soft: #F2F7F6;
-  --teal: #6A9B9C;          /* brand */
-  --teal-strong: #5B8788;
-  --teal-soft: #DCE8E8;
+  --clay: #b8684b; /* secondary accent */
+  --clay-soft: #fbf1ec;
+  --mist: #e8eeed; /* surface tint */
+  --mist-soft: #f2f7f6;
+  --teal: #6a9b9c; /* brand */
+  --teal-strong: #5b8788;
+  --teal-soft: #dce8e8;
 
-  --background: #FFFFFF;
+  --background: #ffffff;
   --foreground: var(--ink);
-  --card: #FFFFFF;
+  --card: #ffffff;
   --card-foreground: var(--ink);
-  --popover: #FFFFFF;
+  --popover: #ffffff;
   --popover-foreground: var(--ink);
   --primary: var(--teal);
-  --primary-foreground: #FFFFFF;
+  --primary-foreground: #ffffff;
   --secondary: var(--mist);
   --secondary-foreground: var(--ink);
   --muted: var(--mist);
   --muted-foreground: rgba(59, 71, 89, 0.65);
   --accent: var(--sand);
   --accent-foreground: var(--ink);
-  --destructive: #B8684B;
-  --destructive-foreground: #FFFFFF;
-  --border: #D5DEDD;
-  --input: #D5DEDD;
+  --destructive: #b8684b;
+  --destructive-foreground: #ffffff;
+  --border: #d5dedd;
+  --input: #d5dedd;
   --ring: var(--teal);
   --sidebar: var(--mist);
   --brand: var(--teal);
   --brand-strong: var(--teal-strong);
   --brand-surface: var(--mist);
   --brand-soft: var(--teal-soft);
-  --brand-border: #D5DEDD;
-  --brand-foreground: #FFFFFF;
+  --brand-border: #d5dedd;
+  --brand-foreground: #ffffff;
 
   /* 1. GLOBAL RESPONSIVE DESIGN TOKENS USING CLAMP */
   /* Input height scales smoothly from 44px (mobile) to 53px (desktop) */
   --app-input-height: clamp(44px, 5vw, 53px);
-  
+
   /* Font size scales smoothly from 15px (mobile) to 18px (desktop) */
   --app-input-text: clamp(15px, 2vw, 18px);
 
@@ -148,11 +148,13 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
   }
 
   /* 2. REMOVE SCROLLBARS GLOBALLY ACROSS ALL SCREEN SIZES */
-  html, body, div {
+  html,
+  body,
+  div {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
   }
@@ -166,20 +168,21 @@
 
 /* 3. GLOBAL RESPONSIVE COMPONENT CLASSES */
 @layer components {
-
   /* Responsive Input Field */
   .app-input {
     height: var(--app-input-height);
     font-size: var(--app-input-text);
     padding: 0 16px;
-    border: 1px solid #D5DEDD;
-    background-color: #FFFFFF;
-    color: #3B4759;
+    border: 1px solid #d5dedd;
+    background-color: #ffffff;
+    color: #3b4759;
     border-radius: 6px;
     font-weight: 500;
     width: 100%;
-    font-family: 'DM Sans', sans-serif;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: "DM Sans", sans-serif;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .app-input::placeholder {
@@ -190,15 +193,15 @@
   .app-label {
     font-size: clamp(13px, 1.5vw, 14px);
     font-weight: 700;
-    color: #3B4759;
+    color: #3b4759;
     display: block;
     margin-bottom: var(--app-label-gap);
   }
 
   /* Responsive Main Card Padding & Border */
   .app-card {
-    border: 1px solid #D5DEDD;
-    background-color: #FFFFFF;
+    border: 1px solid #d5dedd;
+    background-color: #ffffff;
     border-radius: 12px;
     padding: var(--app-page-padding);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -256,12 +259,12 @@
 
   /* ── Admin design system (matched to Categories + Medicines Figma) ── */
   .admin-page-title {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 28px;
     font-weight: 600;
     line-height: 100%;
     letter-spacing: 0;
-    color: #3B4759;
+    color: #3b4759;
   }
 
   @media (min-width: 640px) {
@@ -271,7 +274,7 @@
   }
 
   .admin-page-subtitle {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 18px;
     font-weight: 400;
     line-height: 100%;
@@ -286,16 +289,16 @@
   }
 
   .admin-section-title {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 20px;
     font-weight: 600;
     line-height: 100%;
     letter-spacing: 0;
-    color: #3B4759;
+    color: #3b4759;
   }
 
   .admin-section-subtitle {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 100%;
@@ -304,12 +307,12 @@
   }
 
   .admin-label {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 16px;
     font-weight: 500;
     line-height: 100%;
     letter-spacing: 0;
-    color: #3B4759;
+    color: #3b4759;
     display: block;
   }
 
@@ -317,11 +320,11 @@
     height: 44px;
     width: 100%;
     padding: 14px 16px;
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 6px !important;
-    background-color: #FFFFFF;
-    color: #3B4759;
-    font-family: 'DM Sans', sans-serif;
+    background-color: #ffffff;
+    color: #3b4759;
+    font-family: "DM Sans", sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 100%;
@@ -341,18 +344,18 @@
 
   .admin-input:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 1px #3B4759;
+    box-shadow: 0 0 0 1px #3b4759;
   }
 
   .admin-textarea {
     min-height: 80px;
     width: 100%;
     padding: 14px 16px;
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 6px !important;
-    background-color: #FFFFFF;
-    color: #3B4759;
-    font-family: 'DM Sans', sans-serif;
+    background-color: #ffffff;
+    color: #3b4759;
+    font-family: "DM Sans", sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 140%;
@@ -373,7 +376,7 @@
 
   .admin-textarea:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 1px #3B4759;
+    box-shadow: 0 0 0 1px #3b4759;
   }
 
   .admin-select {
@@ -381,11 +384,11 @@
     width: 100%;
     padding-left: 16px;
     padding-right: 16px;
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 6px !important;
-    background-color: #FFFFFF;
-    color: #3B4759;
-    font-family: 'DM Sans', sans-serif;
+    background-color: #ffffff;
+    color: #3b4759;
+    font-family: "DM Sans", sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 100%;
@@ -402,9 +405,9 @@
     width: 100%;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 12px;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     box-shadow: none;
   }
 
@@ -424,8 +427,8 @@
     padding-right: 24px;
     border-radius: 8px;
     background-color: var(--teal);
-    color: #FFFFFF;
-    font-family: 'DM Sans', sans-serif;
+    color: #ffffff;
+    font-family: "DM Sans", sans-serif;
     font-size: 14px;
     font-weight: 600;
     box-shadow: none;
@@ -446,11 +449,11 @@
     height: 44px;
     padding-left: 24px;
     padding-right: 24px;
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 8px;
-    background-color: #FFFFFF;
-    color: #3B4759;
-    font-family: 'DM Sans', sans-serif;
+    background-color: #ffffff;
+    color: #3b4759;
+    font-family: "DM Sans", sans-serif;
     font-size: 14px;
     font-weight: 600;
     box-shadow: none;
@@ -458,7 +461,7 @@
   }
 
   .admin-btn-secondary:hover {
-    background-color: #F2F7F6;
+    background-color: #f2f7f6;
   }
 
   @media (min-width: 640px) {
@@ -468,9 +471,9 @@
   }
 
   .admin-table-wrap {
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 12px;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     overflow: hidden;
     box-shadow: none;
   }
@@ -479,12 +482,12 @@
     height: 48px;
     padding-left: 16px;
     padding-right: 16px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 14px;
     font-weight: 600;
-    color: #3B4759;
-    border-bottom: 1px solid #D5DEDD;
-    background-color: #F2F7F6;
+    color: #3b4759;
+    border-bottom: 1px solid #d5dedd;
+    background-color: #f2f7f6;
   }
 
   @media (min-width: 640px) {
@@ -497,11 +500,11 @@
 
   .admin-td {
     padding: 16px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 14px;
     font-weight: 400;
-    color: #3B4759;
-    border-bottom: 1px solid #D5DEDD;
+    color: #3b4759;
+    border-bottom: 1px solid #d5dedd;
   }
 
   @media (min-width: 640px) {
@@ -514,20 +517,20 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid #D5DEDD;
+    border: 1px solid #d5dedd;
     border-radius: 10px;
-    background-color: #F8FBFA;
+    background-color: #f8fbfa;
     padding: 16px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     font-size: 16px;
     font-weight: 500;
     line-height: 100%;
-    color: #3B4759;
+    color: #3b4759;
     cursor: pointer;
     transition: background-color 0.15s ease;
   }
 
   .admin-check-row:hover {
-    background-color: #F2F7F6;
+    background-color: #f2f7f6;
   }
 }

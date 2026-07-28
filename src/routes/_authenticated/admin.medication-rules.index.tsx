@@ -10,17 +10,34 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import {
-  createRelationship, deleteRelationship, listRelationships,
+  createRelationship,
+  deleteRelationship,
+  listRelationships,
   type RelationshipType,
 } from "@/lib/medication-rules.store";
 import {
@@ -35,6 +52,13 @@ import {
 } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/medication-rules/")({
+  head: () => ({
+    meta: [
+      { title: "Medication rules · Body Inc Admin" },
+      { name: "description", content: "Medication rules — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: MedicationRulesPage,
 });
 
@@ -58,12 +82,20 @@ function MedicationRulesPage() {
 
   const createMut = useMutation({
     mutationFn: () =>
-      createRelationship({ medicine_a_id: a, medicine_b_id: b, relationship: type, reason: reason || null }),
+      createRelationship({
+        medicine_a_id: a,
+        medicine_b_id: b,
+        relationship: type,
+        reason: reason || null,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: relationshipsKey });
       toast.success("Rule created");
       setOpen(false);
-      setA(""); setB(""); setReason(""); setType("incompatible");
+      setA("");
+      setB("");
+      setReason("");
+      setType("incompatible");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -85,7 +117,8 @@ function MedicationRulesPage() {
         <div className="min-w-0 space-y-2 sm:space-y-4">
           <h2 className={adminPageTitle}>Medication Rules</h2>
           <p className={`mt-1 ${adminPageSubtitle}`}>
-            Configure medication compatibility rules to ensure safe treatment recommendations during patient intake.
+            Configure medication compatibility rules to ensure safe treatment recommendations during
+            patient intake.
           </p>
         </div>
 
@@ -111,7 +144,9 @@ function MedicationRulesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {medicines.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -123,9 +158,13 @@ function MedicationRulesPage() {
                     <SelectValue placeholder="Select medicine" />
                   </SelectTrigger>
                   <SelectContent>
-                    {medicines.filter((m) => m.id !== a).map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                    ))}
+                    {medicines
+                      .filter((m) => m.id !== a)
+                      .map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -153,7 +192,11 @@ function MedicationRulesPage() {
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setOpen(false)} className={adminBtnSecondary}>
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className={adminBtnSecondary}
+              >
                 Cancel
               </Button>
               <Button
@@ -173,30 +216,47 @@ function MedicationRulesPage() {
           <Table className="min-w-[720px] border-collapse">
             <TableHeader className="border-b border-[#D5DEDD] bg-[#F8FBFA]">
               <TableRow className="border-none hover:bg-transparent">
-                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Medicine A</TableHead>
-                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Medicine B</TableHead>
-                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Relationship</TableHead>
-                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">Reason</TableHead>
+                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                  Medicine A
+                </TableHead>
+                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                  Medicine B
+                </TableHead>
+                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                  Relationship
+                </TableHead>
+                <TableHead className="h-12 border-r border-[#D5DEDD] px-4 text-[13px] font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-[14px] lg:px-8">
+                  Reason
+                </TableHead>
                 <TableHead className="h-12 w-14 px-2 sm:h-14 sm:px-4 lg:px-8" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {rulesQ.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center font-medium text-[#3B4759]/60">
+                  <TableCell
+                    colSpan={5}
+                    className="py-12 text-center font-medium text-[#3B4759]/60"
+                  >
                     Loading records…
                   </TableCell>
                 </TableRow>
               )}
               {!rulesQ.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center font-medium text-[#3B4759]/60">
+                  <TableCell
+                    colSpan={5}
+                    className="py-12 text-center font-medium text-[#3B4759]/60"
+                  >
                     No active restriction rules compiled yet.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
-                <TableRow key={r.id} className="border-b border-[#D5DEDD] last:border-none hover:bg-[#F2F7F6]/20 transition-colors">
+                <TableRow
+                  key={r.id}
+                  className="border-b border-[#D5DEDD] last:border-none hover:bg-[#F2F7F6]/20 transition-colors"
+                >
                   <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-[14px] font-semibold text-[#3B4759] sm:px-6 sm:py-5 lg:px-8">
                     {r.medicine_a_name ?? r.medicine_a_id}
                   </TableCell>

@@ -4,7 +4,6 @@ import { z } from "zod";
 import { providerFormSchema } from "./providers.schema";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 const PROFILE_KEYS = ["full_name", "phone", "avatar_url"] as const;
 type ProfileKey = (typeof PROFILE_KEYS)[number];
 
@@ -33,7 +32,9 @@ export const listProviders = createServerFn({ method: "POST" })
     await assertAdmin(context);
     let query = context.supabase
       .from("provider_directory")
-      .select("id, full_name, email, phone, avatar_url, specialty, credentials, is_active, created_at")
+      .select(
+        "id, full_name, email, phone, avatar_url, specialty, credentials, is_active, created_at",
+      )
       .order("created_at", { ascending: false });
 
     if (data.status === "active") query = query.eq("is_active", true);
@@ -41,9 +42,7 @@ export const listProviders = createServerFn({ method: "POST" })
 
     if (data.search) {
       const s = `%${data.search}%`;
-      query = query.or(
-        `full_name.ilike.${s},email.ilike.${s},specialty.ilike.${s}`,
-      );
+      query = query.or(`full_name.ilike.${s},email.ilike.${s},specialty.ilike.${s}`);
     }
 
     const { data: rows, error } = await query;
@@ -147,10 +146,9 @@ export const createProvider = createServerFn({ method: "POST" })
       throw new Error(insertErr.message);
     }
 
-    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(
-      email,
-      { redirectTo: redirect_to },
-    );
+    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+      redirectTo: redirect_to,
+    });
     if (linkErr) {
       // Provider exists; surface warning but don't roll back
       return { id: userId, invite_sent: false, warning: linkErr.message };
@@ -209,10 +207,9 @@ export const resendInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !row?.email) throw new Error("Provider not found");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(
-      row.email,
-      { redirectTo: data.redirect_to },
-    );
+    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(row.email, {
+      redirectTo: data.redirect_to,
+    });
     if (linkErr) throw new Error(linkErr.message);
     return { ok: true };
   });

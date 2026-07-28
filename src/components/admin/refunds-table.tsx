@@ -26,19 +26,7 @@ import {
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { approveRefund, listRefunds, rejectRefund } from "@/lib/billing.functions";
 import { adminInput } from "@/lib/admin-ui";
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-}
+import { formatDate, formatDollars } from "@/lib/format";
 
 export function RefundsTable() {
   const [search, setSearch] = useState("");
@@ -114,43 +102,74 @@ export function RefundsTable() {
           <Table className="border-collapse min-w-[820px]">
             <TableHeader className="bg-white">
               <TableRow className="hover:bg-transparent border-b border-[#D5DEDD]">
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Patient</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Amount</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Reason</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Invoice</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Status</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">Requested</TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 text-right">Actions</TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Patient
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Amount
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Reason
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Invoice
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Status
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
+                  Requested
+                </TableHead>
+                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#3B4759]/70">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[15px] text-[#3B4759]/70"
+                  >
                     Loading rows...
                   </TableCell>
                 </TableRow>
               )}
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-12 text-center text-[15px] text-[#3B4759]/70">
+                  <TableCell
+                    colSpan={7}
+                    className="py-12 text-center text-[15px] text-[#3B4759]/70"
+                  >
                     No refund requests.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
-                <TableRow key={r.id} className="border-b border-[#D5DEDD] hover:bg-[#F2F7F6] transition-colors">
+                <TableRow
+                  key={r.id}
+                  className="border-b border-[#D5DEDD] hover:bg-[#F2F7F6] transition-colors"
+                >
                   <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
-                    <div className="font-semibold text-[14px] text-[#3B4759]">{r.customer_name ?? "—"}</div>
-                    <div className="text-[12px] font-medium text-[#3B4759]/70">{r.customer_email ?? "—"}</div>
+                    <div className="font-semibold text-[14px] text-[#3B4759]">
+                      {r.customer_name ?? "—"}
+                    </div>
+                    <div className="text-[12px] font-medium text-[#3B4759]/70">
+                      {r.customer_email ?? "—"}
+                    </div>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#3B4759] border-r border-[#D5DEDD]">
-                    {formatCurrency(r.amount)}
+                    {formatDollars(r.amount)}
                   </TableCell>
                   <TableCell className="px-6 py-4 max-w-[220px] border-r border-[#D5DEDD]">
-                    <span className="text-[14px] font-medium text-[#3B4759]/80">{r.reason || "—"}</span>
+                    <span className="text-[14px] font-medium text-[#3B4759]/80">
+                      {r.reason || "—"}
+                    </span>
                     {r.admin_note ? (
-                      <span className="block text-[12px] font-medium text-[#3B4759]/70 mt-1">Note: {r.admin_note}</span>
+                      <span className="block text-[12px] font-medium text-[#3B4759]/70 mt-1">
+                        Note: {r.admin_note}
+                      </span>
                     ) : null}
                   </TableCell>
                   <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
@@ -237,10 +256,12 @@ export function RefundsTable() {
       <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
         <DialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#D5DEDD] shadow-xl">
           <DialogHeader className="space-y-1">
-            <DialogTitle className="text-[18px] font-bold text-[#3B4759]">Reject refund request</DialogTitle>
+            <DialogTitle className="text-[18px] font-bold text-[#3B4759]">
+              Reject refund request
+            </DialogTitle>
             <DialogDescription className="text-sm text-[#6A9B9C]/90 leading-relaxed">
               {rejecting
-                ? `Reject the ${formatCurrency(rejecting.amount)} refund for ${
+                ? `Reject the ${formatDollars(rejecting.amount)} refund for ${
                     rejecting.customer_email ?? "this patient"
                   }. The reason is shown to the patient.`
                 : ""}
@@ -255,17 +276,17 @@ export function RefundsTable() {
             className="border-[#D5DEDD] bg-[#F8FBFA] text-foreground placeholder:text-[#6A9B9C]/40 rounded-xl focus-visible:ring-[#3B4759] text-[14px] mt-2 resize-none"
           />
           <DialogFooter className="mt-5 gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setRejecting(null)} 
+            <Button
+              variant="outline"
+              onClick={() => setRejecting(null)}
               disabled={busyId !== null}
               className="rounded-lg border border-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F2F7F6]"
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={onReject} 
+            <Button
+              variant="destructive"
+              onClick={onReject}
               disabled={busyId !== null}
               className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
             >

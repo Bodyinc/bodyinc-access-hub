@@ -64,7 +64,11 @@ function packageRowToStored(row: any): StoredMedicinePackage {
     is_active: row.is_active !== false,
     features: feat
       .map((v: unknown) =>
-        typeof v === "string" ? v : typeof v === "object" && v && "text" in v ? String((v as any).text ?? "") : "",
+        typeof v === "string"
+          ? v
+          : typeof v === "object" && v && "text" in v
+            ? String((v as any).text ?? "")
+            : "",
       )
       .filter(Boolean),
     clinical_note: row.clinical_note,
@@ -76,9 +80,7 @@ function packageRowToStored(row: any): StoredMedicinePackage {
 function sortPackages(rows: any[]): StoredMedicinePackage[] {
   return rows
     .map(packageRowToStored)
-    .sort(
-      (a, b) => a.duration_months - b.duration_months || a.sort_order - b.sort_order,
-    );
+    .sort((a, b) => a.duration_months - b.duration_months || a.sort_order - b.sort_order);
 }
 
 function rowToStored(row: any): StoredMedicine {
@@ -109,9 +111,15 @@ function rowToStored(row: any): StoredMedicine {
     image_url: row.image_url,
     from_price_cents: row.from_price_cents == null ? null : Number(row.from_price_cents),
     status: row.status,
-    important_info: info.map((v: unknown) =>
-      typeof v === "string" ? v : typeof v === "object" && v && "text" in v ? String((v as any).text ?? "") : "",
-    ).filter(Boolean),
+    important_info: info
+      .map((v: unknown) =>
+        typeof v === "string"
+          ? v
+          : typeof v === "object" && v && "text" in v
+            ? String((v as any).text ?? "")
+            : "",
+      )
+      .filter(Boolean),
     notice_text: row.notice_text,
     sort_order: row.sort_order,
     is_active: row.is_active,
@@ -133,9 +141,7 @@ function fromForm(values: MedicineFormValues) {
     long_description: values.long_description ?? null,
     image_url: values.image_url ?? null,
     status: values.status ?? "draft",
-    important_info: (values.important_info ?? [])
-      .map((b) => b.text.trim())
-      .filter(Boolean),
+    important_info: (values.important_info ?? []).map((b) => b.text.trim()).filter(Boolean),
     notice_text: values.notice_text ?? null,
     sort_order: values.sort_order ?? 0,
     requires_questionnaire: !!values.requires_questionnaire,
@@ -235,7 +241,10 @@ export async function reconcileMedicinePricing(
       sort_order: i,
     };
     if (v.id && existingVariantIds.has(v.id)) {
-      const { error } = await supabase.from("medicine_variants").update(payload as any).eq("id", v.id);
+      const { error } = await supabase
+        .from("medicine_variants")
+        .update(payload as any)
+        .eq("id", v.id);
       if (error) throw new Error(error.message);
       variantIdByIndex[i] = v.id;
     } else {
@@ -257,7 +266,9 @@ export async function reconcileMedicinePricing(
   }[] = [];
   if (variants.length > 0) {
     variants.forEach((v, i) =>
-      (v.packages ?? []).forEach((pkg, j) => desired.push({ pkg, variantId: variantIdByIndex[i], sort: j })),
+      (v.packages ?? []).forEach((pkg, j) =>
+        desired.push({ pkg, variantId: variantIdByIndex[i], sort: j }),
+      ),
     );
   } else {
     (values.packages ?? []).forEach((pkg, j) => desired.push({ pkg, variantId: null, sort: j }));
@@ -288,7 +299,10 @@ export async function reconcileMedicinePricing(
   for (const d of desired) {
     const payload = packageFromForm(medicineId, d.variantId, d.pkg, d.sort);
     if (d.pkg.id && existingPkgIds.has(d.pkg.id)) {
-      const { error } = await supabase.from("packages").update(payload as any).eq("id", d.pkg.id);
+      const { error } = await supabase
+        .from("packages")
+        .update(payload as any)
+        .eq("id", d.pkg.id);
       if (error) throw new Error(error.message);
       syncTargets.push({ id: d.pkg.id, name: d.pkg.name ?? "Unnamed plan" });
     } else {
@@ -372,7 +386,10 @@ export async function updateMedicine(
   values: MedicineFormValues,
 ): Promise<{ id: string } & PricingReconcileResult> {
   const payload = fromForm(values);
-  const { error } = await supabase.from("medicines").update(payload as any).eq("id", id);
+  const { error } = await supabase
+    .from("medicines")
+    .update(payload as any)
+    .eq("id", id);
   if (error) throw new Error(error.message);
   await syncMedicineCategories(id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(id, values);

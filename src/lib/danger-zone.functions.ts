@@ -5,7 +5,9 @@ import { assertAdmin } from "@/lib/admin-guard";
 import { WIPE_GROUPS, TABLES, expandGroups, type WipeGroupKey } from "@/lib/danger-zone";
 
 const inputSchema = z.object({
-  groups: z.array(z.enum(WIPE_GROUPS.map((g) => g.key) as [WipeGroupKey, ...WipeGroupKey[]])).min(1),
+  groups: z
+    .array(z.enum(WIPE_GROUPS.map((g) => g.key) as [WipeGroupKey, ...WipeGroupKey[]]))
+    .min(1),
 });
 
 export const wipePlatformData = createServerFn({ method: "POST" })
@@ -24,9 +26,7 @@ export const wipePlatformData = createServerFn({ method: "POST" })
         from: (t: string) => any;
       };
 
-      const { count } = await client
-        .from(entry.table)
-        .select("*", { count: "exact", head: true });
+      const { count } = await client.from(entry.table).select("*", { count: "exact", head: true });
 
       const { error } = await client.from(entry.table).delete().not(entry.col, "is", null);
       if (error) throw new Error(`${entry.table}: ${error.message}`);

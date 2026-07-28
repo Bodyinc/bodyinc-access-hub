@@ -7,6 +7,13 @@ import { getPromo, updatePromo } from "@/lib/promos.functions";
 import { toPromoInput } from "./admin.promos.new";
 
 export const Route = createFileRoute("/_authenticated/admin/promos/$promoId")({
+  head: () => ({
+    meta: [
+      { title: "Edit promo code · Body Inc Admin" },
+      { name: "description", content: "Edit promo code — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: EditPromoPage,
 });
 

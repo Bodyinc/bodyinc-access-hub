@@ -25,6 +25,13 @@ import {
 } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/new")({
+  head: () => ({
+    meta: [
+      { title: "New questionnaire · Body Inc Admin" },
+      { name: "description", content: "New questionnaire — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: NewQuestionnairePage,
 });
 
@@ -60,9 +67,7 @@ function NewQuestionnairePage() {
     <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif] sm:space-y-6">
       <div className="space-y-3">
         <h2 className={adminPageTitle}>New questionnaire</h2>
-        <p className={adminPageSubtitle}>
-          Add screening configurations and structure questions.
-        </p>
+        <p className={adminPageSubtitle}>Add screening configurations and structure questions.</p>
       </div>
 
       <Card className={adminCard}>
@@ -95,11 +100,7 @@ function NewQuestionnairePage() {
           </div>
 
           <div className="flex items-center gap-3 pt-1">
-           <Switch
-  checked={isActive}
-  onCheckedChange={setIsActive}
-  id="q-active"
-/>
+            <Switch checked={isActive} onCheckedChange={setIsActive} id="q-active" />
             <Label
               htmlFor="q-active"
               className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]"

@@ -6,15 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getIntakeSession } from "@/lib/intake-sessions.functions";
+import { formatDateTimeFull } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/intake-sessions/$sessionId")({
+  head: () => ({
+    meta: [
+      { title: "Intake session · Body Inc Admin" },
+      { name: "description", content: "Intake session — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: IntakeSessionDetailPage,
 });
 
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString();
-}
 function computeBmi(height_cm?: number | null, weight_kg?: number | null) {
   const h = Number(height_cm ?? 0);
   const w = Number(weight_kg ?? 0);
@@ -25,7 +29,8 @@ function computeBmi(height_cm?: number | null, weight_kg?: number | null) {
 function formatAnswer(r: any) {
   if (r.answer_text) return r.answer_text;
   if (r.answer_number !== null && r.answer_number !== undefined) return String(r.answer_number);
-  if (r.answer_boolean !== null && r.answer_boolean !== undefined) return r.answer_boolean ? "Yes" : "No";
+  if (r.answer_boolean !== null && r.answer_boolean !== undefined)
+    return r.answer_boolean ? "Yes" : "No";
   if (r.selected_options?.length) {
     return r.selected_options.map((o: any) => o.label).join(", ");
   }
@@ -45,17 +50,27 @@ function IntakeSessionDetailPage() {
   if (q.isError || !q.data) {
     return (
       <div className="space-y-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin/intake-sessions" })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/admin/intake-sessions" })}
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
-        <div className="text-sm text-destructive">
-          {(q.error as Error)?.message ?? "Not found"}
-        </div>
+        <div className="text-sm text-destructive">{(q.error as Error)?.message ?? "Not found"}</div>
       </div>
     );
   }
 
-  const { session, categories, eligibility, recommended_medicines, responses, selected_plan, payments } = q.data as any;
+  const {
+    session,
+    categories,
+    eligibility,
+    recommended_medicines,
+    responses,
+    selected_plan,
+    payments,
+  } = q.data as any;
   const bmi = computeBmi(session.height_cm, session.weight_kg);
 
   return (
@@ -80,7 +95,7 @@ function IntakeSessionDetailPage() {
           <Row label="Height (cm)" value={session.height_cm ?? "—"} />
           <Row label="Weight (kg)" value={session.weight_kg ?? "—"} />
           <Row label="BMI" value={bmi ? bmi.toFixed(1) : "—"} />
-          <Row label="Created" value={formatDate(session.created_at)} />
+          <Row label="Created" value={formatDateTimeFull(session.created_at)} />
           <Row label="Claimed by" value={session.claimed_by_user_id ? "Yes" : "No"} />
         </CardContent>
       </Card>
@@ -142,7 +157,9 @@ function IntakeSessionDetailPage() {
             <div className="text-muted-foreground">None recorded.</div>
           ) : (
             categories.map((c: any) => (
-              <Badge key={c.category_id} variant="outline">{c.name || c.slug}</Badge>
+              <Badge key={c.category_id} variant="outline">
+                {c.name || c.slug}
+              </Badge>
             ))
           )}
         </CardContent>
@@ -157,12 +174,17 @@ function IntakeSessionDetailPage() {
             <div className="text-muted-foreground">No eligibility rules evaluated.</div>
           ) : (
             eligibility.map((e: any) => (
-              <div key={e.id} className="flex items-start justify-between gap-3 rounded-md border p-3">
+              <div
+                key={e.id}
+                className="flex items-start justify-between gap-3 rounded-md border p-3"
+              >
                 <div>
                   <div className="font-medium">{e.medicine_name || e.medicine_id}</div>
                   {e.reason && <div className="text-xs text-muted-foreground">{e.reason}</div>}
                 </div>
-                <Badge variant={e.result === "eligible" ? "default" : "destructive"}>{e.result}</Badge>
+                <Badge variant={e.result === "eligible" ? "default" : "destructive"}>
+                  {e.result}
+                </Badge>
               </div>
             ))
           )}
@@ -178,7 +200,10 @@ function IntakeSessionDetailPage() {
             <div className="text-muted-foreground">None.</div>
           ) : (
             recommended_medicines.map((m: any, i: number) => (
-              <div key={`${m.medicine_id}-${i}`} className="flex justify-between rounded-md border p-3">
+              <div
+                key={`${m.medicine_id}-${i}`}
+                className="flex justify-between rounded-md border p-3"
+              >
                 <span className="font-medium">{m.name || m.medicine_id}</span>
                 <span className="text-muted-foreground">
                   {m.from_price_cents != null ? `From $${m.from_price_cents / 100}/mo` : "—"}
@@ -202,7 +227,13 @@ function IntakeSessionDetailPage() {
               return (
                 <div key={r.id} className="rounded-md border p-3">
                   <div className="font-medium">{r.prompt}</div>
-                  <div className={disq ? "mt-1 flex items-center gap-1.5 text-destructive" : "mt-1 text-muted-foreground"}>
+                  <div
+                    className={
+                      disq
+                        ? "mt-1 flex items-center gap-1.5 text-destructive"
+                        : "mt-1 text-muted-foreground"
+                    }
+                  >
                     {disq && <AlertTriangle className="h-3.5 w-3.5" />}
                     {formatAnswer(r)}
                   </div>
@@ -221,7 +252,9 @@ function IntakeSessionDetailPage() {
           <CardContent className="space-y-2 text-sm">
             {payments.map((p: any) => (
               <div key={p.id} className="flex justify-between rounded-md border p-3">
-                <span>${((p.amount_cents ?? 0) / 100).toFixed(2)} {p.currency?.toUpperCase()}</span>
+                <span>
+                  ${((p.amount_cents ?? 0) / 100).toFixed(2)} {p.currency?.toUpperCase()}
+                </span>
                 <Badge variant="secondary">{p.status}</Badge>
               </div>
             ))}

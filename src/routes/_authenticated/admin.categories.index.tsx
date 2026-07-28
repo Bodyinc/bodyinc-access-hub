@@ -6,20 +6,42 @@ import { Plus, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { categoriesQueryKey, categoriesQueryOptions } from "@/lib/query-options/categories";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { deleteCategory, setCategoryActive } from "@/lib/categories.store";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/")({
+  head: () => ({
+    meta: [
+      { title: "Categories · Body Inc Admin" },
+      { name: "description", content: "Categories — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: CategoriesListPage,
 });
 
@@ -31,7 +53,8 @@ function CategoriesListPage() {
   const rows = query.data ?? [];
 
   const toggleMut = useMutation({
-    mutationFn: (vars: { id: string; is_active: boolean }) => setCategoryActive(vars.id, vars.is_active),
+    mutationFn: (vars: { id: string; is_active: boolean }) =>
+      setCategoryActive(vars.id, vars.is_active),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
       toast.success("Updated");
@@ -69,7 +92,7 @@ function CategoriesListPage() {
             }}
             loading={query.isFetching}
           />
-          <Button 
+          <Button
             onClick={() => navigate({ to: "/admin/categories/new" })}
             className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
           >
@@ -81,7 +104,7 @@ function CategoriesListPage() {
       {isEmpty ? (
         <div className="border border-dashed border-[#D5DEDD] bg-[#F2F7F6] rounded-2xl p-12 text-center space-y-4">
           <p className="text-base font-semibold text-[#3B4759]">No categories found</p>
-          <Button 
+          <Button
             onClick={() => navigate({ to: "/admin/categories/new" })}
             className="bg-[#6A9B9C] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
           >
@@ -94,44 +117,50 @@ function CategoriesListPage() {
           <div className="admin-table-scroll">
             <Table className="w-full min-w-[700px] border-collapse">
               <TableHeader className="bg-[#F2F7F6]">
-  <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-    <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-      Name
-    </TableHead>
-    <TableHead className="h-12 min-w-[120px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-      Slug
-    </TableHead>
-    <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-      BMI rule
-    </TableHead>
-    <TableHead className="h-12 min-w-[110px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-      Sex rule
-    </TableHead>
-    <TableHead className="h-12 min-w-[90px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-      Image
-    </TableHead>
-    <TableHead className="h-12 min-w-[100px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-      Status
-    </TableHead>
-    <TableHead className="h-12 w-14 px-2 text-center sm:h-14 sm:px-4" />
-  </TableRow>
-</TableHeader>
+                <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                  <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    Name
+                  </TableHead>
+                  <TableHead className="h-12 min-w-[120px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    Slug
+                  </TableHead>
+                  <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    BMI rule
+                  </TableHead>
+                  <TableHead className="h-12 min-w-[110px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    Sex rule
+                  </TableHead>
+                  <TableHead className="h-12 min-w-[90px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    Image
+                  </TableHead>
+                  <TableHead className="h-12 min-w-[100px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-12 w-14 px-2 text-center sm:h-14 sm:px-4" />
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-12 text-center text-[16px] text-[#3B4759]/70">
+                    <TableCell
+                      colSpan={7}
+                      className="py-12 text-center text-[16px] text-[#3B4759]/70"
+                    >
                       Loading rows...
                     </TableCell>
                   </TableRow>
                 )}
-                
+
                 {rows.map((c) => {
                   return (
                     <TableRow
                       key={c.id}
                       className="border-b border-[#D5DEDD] transition-all cursor-pointer select-none bg-white hover:bg-[#F2F7F6]"
                       onClick={() =>
-                        navigate({ to: "/admin/categories/$categoryId", params: { categoryId: c.id } })
+                        navigate({
+                          to: "/admin/categories/$categoryId",
+                          params: { categoryId: c.id },
+                        })
                       }
                     >
                       {/* Name column */}
@@ -146,12 +175,16 @@ function CategoriesListPage() {
 
                       {/* BMI Rule column */}
                       <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
-                        {c.eligibility_rules?.bmi_bands?.length ? c.eligibility_rules.bmi_bands.join(", ") : "No Restriction"}
+                        {c.eligibility_rules?.bmi_bands?.length
+                          ? c.eligibility_rules.bmi_bands.join(", ")
+                          : "No Restriction"}
                       </TableCell>
 
                       {/* Sex Rule column */}
                       <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
-                        {c.eligibility_rules?.sex?.length ? c.eligibility_rules.sex.join(", ") : "All"}
+                        {c.eligibility_rules?.sex?.length
+                          ? c.eligibility_rules.sex.join(", ")
+                          : "All"}
                       </TableCell>
 
                       {/* Image column */}
@@ -169,12 +202,12 @@ function CategoriesListPage() {
 
                       {/* Status Badge column */}
                       <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6">
-                        <Badge 
+                        <Badge
                           variant="secondary"
                           className={`rounded-[6px] px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
                             c.is_active
-                            ? "bg-[#E8EEED] text-[#3B4759]"
-                            : "bg-gray-100 text-gray-500"
+                              ? "bg-[#E8EEED] text-[#3B4759]"
+                              : "bg-gray-100 text-gray-500"
                           }`}
                         >
                           {c.is_active ? "Active" : "Inactive"}
@@ -182,26 +215,40 @@ function CategoriesListPage() {
                       </TableCell>
 
                       {/* Actions Menu button column */}
-                      <TableCell className="px-2 py-4 text-center sm:px-4" onClick={(e) => e.stopPropagation()}>
+                      <TableCell
+                        className="px-2 py-4 text-center sm:px-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 rounded-[6px] text-[#3B4759] transition-all hover:bg-[#E8EEED]"
                             >
                               <MoreHorizontal className="h-5 w-5" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-36 rounded-lg shadow-lg border border-[#D5DEDD] bg-white p-1 font-['DM_Sans']">
-                            <DropdownMenuItem asChild className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]">
-                              <Link to="/admin/categories/$categoryId" params={{ categoryId: c.id }}>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-36 rounded-lg shadow-lg border border-[#D5DEDD] bg-white p-1 font-['DM_Sans']"
+                          >
+                            <DropdownMenuItem
+                              asChild
+                              className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
+                            >
+                              <Link
+                                to="/admin/categories/$categoryId"
+                                params={{ categoryId: c.id }}
+                              >
                                 Edit
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="rounded-[6px] cursor-pointer font-medium text-[14px] text-[#3B4759] focus:bg-[#E8EEED]"
-                              onClick={() => toggleMut.mutate({ id: c.id, is_active: !c.is_active })}
+                              onClick={() =>
+                                toggleMut.mutate({ id: c.id, is_active: !c.is_active })
+                              }
                             >
                               {c.is_active ? "Deactivate" : "Activate"}
                             </DropdownMenuItem>
@@ -228,7 +275,9 @@ function CategoriesListPage() {
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
         <AlertDialogContent className="rounded-2xl max-w-sm p-6 bg-white border border-[#D5DEDD] shadow-xl font-['DM_Sans']">
           <AlertDialogHeader className="space-y-1">
-            <AlertDialogTitle className="text-[18px] font-bold text-[#3B4759]">Delete category?</AlertDialogTitle>
+            <AlertDialogTitle className="text-[18px] font-bold text-[#3B4759]">
+              Delete category?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-[#3B4759]/80">
               This removes &ldquo;{confirm?.name}&rdquo; and unlinks its assignments.
             </AlertDialogDescription>

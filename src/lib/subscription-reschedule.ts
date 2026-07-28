@@ -31,7 +31,8 @@ export async function applyPackageChangeToSubscription(params: {
 
   const medicineName = pkg.medicines?.name ?? "Treatment";
   const variantName = pkg.medicine_variants?.name ?? null;
-  const planLabel = pkg.duration_months === 1 ? "Monthly Plan" : `${pkg.duration_months}-Month Plan`;
+  const planLabel =
+    pkg.duration_months === 1 ? "Monthly Plan" : `${pkg.duration_months}-Month Plan`;
   const description = `${medicineName}${variantName ? ` — ${variantName}` : ""} · ${planLabel}`;
   const newIntervalCount = Math.max(1, Number(pkg.duration_months) || 1);
 

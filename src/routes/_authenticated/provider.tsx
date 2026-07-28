@@ -4,6 +4,7 @@ import { ProviderSidebar } from "@/components/provider/provider-sidebar";
 import { RoutePending } from "@/components/route-pending";
 import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
+import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/_authenticated/provider")({
   ssr: false,
@@ -18,21 +19,15 @@ export const Route = createFileRoute("/_authenticated/provider")({
     if (!role) {
       const { data } = await supabase.auth.getSession();
       if (!data.session?.user) throw redirect({ to: "/auth" });
-      const cacheKey = `bi_portal_role:${data.session.user.id}`;
-      try {
-        role = sessionStorage.getItem(cacheKey) ?? undefined;
-      } catch {}
+      const userId = data.session.user.id;
+      role = readCachedPortalRole(userId) ?? undefined;
       if (!role) {
         const { data: fetched, error } = await supabase.rpc("get_user_portal", {
-          _user_id: data.session.user.id,
+          _user_id: userId,
         });
         if (error) throw redirect({ to: "/auth" });
         role = (fetched as string) ?? undefined;
-        if (role) {
-          try {
-            sessionStorage.setItem(cacheKey, role);
-          } catch {}
-        }
+        cachePortalRole(userId, role);
       }
     }
 

@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
-
 const listInput = z
   .object({
     search: z.string().trim().max(200).optional(),
@@ -32,11 +31,7 @@ export const listReferrals = createServerFn({ method: "POST" })
     const refs = rows ?? [];
 
     const userIds = Array.from(
-      new Set(
-        refs
-          .flatMap((r: any) => [r.referrer_user_id, r.referred_user_id])
-          .filter(Boolean),
-      ),
+      new Set(refs.flatMap((r: any) => [r.referrer_user_id, r.referred_user_id]).filter(Boolean)),
     );
     const { data: profiles } = userIds.length
       ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
@@ -119,7 +114,11 @@ export const getPatientWallet = createServerFn({ method: "POST" })
       .limit(50);
 
     return {
-      user: { id: profile.id, full_name: (profile as any).full_name, email: (profile as any).email },
+      user: {
+        id: profile.id,
+        full_name: (profile as any).full_name,
+        email: (profile as any).email,
+      },
       balance_cents,
       transactions: txns ?? [],
     };
@@ -127,7 +126,12 @@ export const getPatientWallet = createServerFn({ method: "POST" })
 
 const adjustInput = z.object({
   userId: z.string().uuid(),
-  amount_cents: z.number().int().min(-100000).max(100000).refine((v) => v !== 0, "Amount required"),
+  amount_cents: z
+    .number()
+    .int()
+    .min(-100000)
+    .max(100000)
+    .refine((v) => v !== 0, "Amount required"),
   note: z.string().trim().max(300).optional(),
   // Stable per-submit token so a retry/double-click can't double-credit (see migration
   // 20260720120000_wallet_idempotency).

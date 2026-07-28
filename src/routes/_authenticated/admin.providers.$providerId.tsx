@@ -11,6 +11,13 @@ const ProviderForm = lazy(() =>
 );
 
 export const Route = createFileRoute("/_authenticated/admin/providers/$providerId")({
+  head: () => ({
+    meta: [
+      { title: "Edit practitioner · Body Inc Admin" },
+      { name: "description", content: "Edit practitioner — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: EditProviderPage,
 });
 

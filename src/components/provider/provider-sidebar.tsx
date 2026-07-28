@@ -2,6 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/lib/use-notifications";
+import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import {
   Sidebar,
   SidebarContent,
@@ -35,11 +36,7 @@ export function ProviderSidebar() {
   async function handleLogout() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    try {
-      for (const k of Object.keys(sessionStorage)) {
-        if (k.startsWith("bi_portal_role:")) sessionStorage.removeItem(k);
-      }
-    } catch {}
+    clearCachedPortalRoles();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
@@ -52,8 +49,23 @@ export function ProviderSidebar() {
     >
       <div className="absolute -right-2.5 top-6 z-50 hidden md:block">
         <SidebarTrigger className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-[#5B8788] p-5 text-white shadow-md transition-all hover:bg-[#5B8788]">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="2" width="16" height="16" rx="2" stroke="white" strokeWidth="2" fill="none" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="2"
+              y="2"
+              width="16"
+              height="16"
+              rx="2"
+              stroke="white"
+              strokeWidth="2"
+              fill="none"
+            />
             <line x1="8" y1="2" x2="8" y2="18" stroke="white" strokeWidth="2" />
           </svg>
         </SidebarTrigger>

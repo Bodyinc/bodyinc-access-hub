@@ -24,21 +24,20 @@ const emailSchema = z.object({
 
 const verifyOtpSchema = z.object({
   email: z.string().trim().email().max(255),
-  token: z.string().trim().regex(/^\d{8}$/u, "Enter the 8-digit code"),
+  token: z
+    .string()
+    .trim()
+    .regex(/^\d{8}$/u, "Enter the 8-digit code"),
 });
 
 function serverSupabase() {
-  return createClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    {
-      auth: {
-        storage: undefined,
-        persistSession: false,
-        autoRefreshToken: false,
-      },
+  return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
     },
-  );
+  });
 }
 
 export type SignInResult =
@@ -52,11 +51,7 @@ export type SignInResult =
     }
   | {
       ok: false;
-      error:
-        | "invalid_credentials"
-        | "invalid_code"
-        | "wrong_portal"
-        | "no_access";
+      error: "invalid_credentials" | "invalid_code" | "wrong_portal" | "no_access";
       message: string;
       actualRole?: string;
       redirectUrl?: string;
@@ -73,8 +68,7 @@ function buildRoleResult(
     return {
       ok: false,
       error: "no_access",
-      message:
-        "Your account does not have portal access. Please contact your administrator.",
+      message: "Your account does not have portal access. Please contact your administrator.",
     };
   }
   const redirectUrl = PORTAL_URLS[role];
@@ -95,11 +89,10 @@ export const signInWithPassword = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SignInResult> => {
     const supabase = serverSupabase();
 
-    const { data: signInData, error: signInError } =
-      await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
 
     if (signInError || !signInData.session || !signInData.user) {
       return {
@@ -109,10 +102,9 @@ export const signInWithPassword = createServerFn({ method: "POST" })
       };
     }
 
-    const { data: role, error: roleError } = await supabase.rpc(
-      "get_user_portal",
-      { _user_id: signInData.user.id },
-    );
+    const { data: role, error: roleError } = await supabase.rpc("get_user_portal", {
+      _user_id: signInData.user.id,
+    });
 
     if (roleError) {
       await supabase.auth.signOut();
@@ -150,12 +142,11 @@ export const verifyLoginOtp = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SignInResult> => {
     const supabase = serverSupabase();
 
-    const { data: verifyData, error: verifyError } =
-      await supabase.auth.verifyOtp({
-        email: data.email,
-        token: data.token,
-        type: "email",
-      });
+    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+      email: data.email,
+      token: data.token,
+      type: "email",
+    });
 
     if (verifyError || !verifyData.session || !verifyData.user) {
       return {
@@ -165,10 +156,9 @@ export const verifyLoginOtp = createServerFn({ method: "POST" })
       };
     }
 
-    const { data: role, error: roleError } = await supabase.rpc(
-      "get_user_portal",
-      { _user_id: verifyData.user.id },
-    );
+    const { data: role, error: roleError } = await supabase.rpc("get_user_portal", {
+      _user_id: verifyData.user.id,
+    });
 
     if (roleError) {
       await supabase.auth.signOut();

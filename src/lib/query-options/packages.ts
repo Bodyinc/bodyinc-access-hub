@@ -1,9 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import {
-  getPackage,
-  listPackages,
-  type ListPackagesInput,
-} from "@/lib/packages.store";
+import { getPackage, listPackages, type ListPackagesInput } from "@/lib/packages.store";
 
 const LOCAL_STALE = Number.POSITIVE_INFINITY;
 

@@ -24,26 +24,18 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listOrders } from "@/lib/orders.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
+import { formatDateTime, formatDollars } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/")({
+  head: () => ({
+    meta: [
+      { title: "Orders · Body Inc Admin" },
+      { name: "description", content: "Orders — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: OrdersListPage,
 });
-
-function formatCurrency(n: number | string | null | undefined) {
-  const v = Number(n ?? 0);
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v);
-}
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function OrdersListPage() {
   const navigate = useNavigate();
@@ -62,9 +54,7 @@ function OrdersListPage() {
       <div className="admin-page-header">
         <div className="min-w-0 space-y-2 sm:space-y-4">
           <h2 className={adminPageTitle}>Orders</h2>
-          <p className={adminPageSubtitle}>
-            Review checkout orders, line items, and payments.
-          </p>
+          <p className={adminPageSubtitle}>Review checkout orders, line items, and payments.</p>
         </div>
         <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
       </div>
@@ -94,89 +84,116 @@ function OrdersListPage() {
 
       <div className="admin-table-wrap m-0 w-full max-w-none">
         <div className="admin-table-scroll">
-        <Table className="min-w-[720px]">
-          <TableHeader className="bg-[#F8FBFA]">
-            <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Order</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Customer</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Item</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Amount</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
-              <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading && (
-              <TableRow className="border-b border-[#D5DEDD]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
-                  Loading…
-                </TableCell>
+          <Table className="min-w-[720px]">
+            <TableHeader className="bg-[#F8FBFA]">
+              <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Order
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Customer
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Item
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Amount
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Status
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Created
+                </TableHead>
               </TableRow>
-            )}
-            {query.isError && (
-              <TableRow className="border-b border-[#D5DEDD]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#B8684B] font-semibold text-[14px]">
-                  {(query.error as Error).message}
-                </TableCell>
-              </TableRow>
-            )}
-            {!query.isLoading && query.data?.length === 0 && (
-              <TableRow className="border-b border-[#D5DEDD]">
-                <TableCell colSpan={6} className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]">
-                  No orders found.
-                </TableCell>
-              </TableRow>
-            )}
-            {query.data?.map((o: any) => (
-              <TableRow
-                key={o.id}
-                className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
-                onClick={() => navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })}
-              >
-                <TableCell className="font-mono text-xs text-[#3B4759]/70 font-medium">
-                  {o.id.slice(0, 8)}…
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-[#3B4759] text-[14px]">{o.customer_name || "—"}</span>
-                    {o.is_guest ? (
-                      <span
-                        className="rounded bg-[#E8EEED] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6A9B9C]"
-                        title="Paid during onboarding; account not yet created"
-                      >
-                        Guest
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="text-[12px] text-[#3B4759]/70 font-medium">{o.customer_email || "—"}</div>
-                </TableCell>
-                <TableCell className="max-w-[220px] truncate text-[#3B4759] font-medium text-[14px]">
-                  {o.item_name}
-                </TableCell>
-                <TableCell className="text-[#3B4759] font-semibold text-[14px]">
-                  {o.amount != null ? formatCurrency(o.amount) : "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={o.status === "paid" ? "default" : "secondary"}
-                    className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
-                      o.status === "paid"
-                        ? "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#E8F5E9]"
-                        : o.status === "canceled"
-                        ? "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F6E4DA]"
-                        : "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#FFF3E0]"
-                    }`}
+            </TableHeader>
+            <TableBody>
+              {query.isLoading && (
+                <TableRow className="border-b border-[#D5DEDD]">
+                  <TableCell
+                    colSpan={6}
+                    className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]"
                   >
-                    {o.status ?? "—"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
-                  {formatDate(o.created_at)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                    Loading…
+                  </TableCell>
+                </TableRow>
+              )}
+              {query.isError && (
+                <TableRow className="border-b border-[#D5DEDD]">
+                  <TableCell
+                    colSpan={6}
+                    className="py-12 text-center text-[#B8684B] font-semibold text-[14px]"
+                  >
+                    {(query.error as Error).message}
+                  </TableCell>
+                </TableRow>
+              )}
+              {!query.isLoading && query.data?.length === 0 && (
+                <TableRow className="border-b border-[#D5DEDD]">
+                  <TableCell
+                    colSpan={6}
+                    className="py-12 text-center text-[#3B4759]/60 font-medium text-[14px]"
+                  >
+                    No orders found.
+                  </TableCell>
+                </TableRow>
+              )}
+              {query.data?.map((o: any) => (
+                <TableRow
+                  key={o.id}
+                  className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onClick={() =>
+                    navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })
+                  }
+                >
+                  <TableCell className="font-mono text-xs text-[#3B4759]/70 font-medium">
+                    {o.id.slice(0, 8)}…
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[#3B4759] text-[14px]">
+                        {o.customer_name || "—"}
+                      </span>
+                      {o.is_guest ? (
+                        <span
+                          className="rounded bg-[#E8EEED] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6A9B9C]"
+                          title="Paid during onboarding; account not yet created"
+                        >
+                          Guest
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="text-[12px] text-[#3B4759]/70 font-medium">
+                      {o.customer_email || "—"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-[220px] truncate text-[#3B4759] font-medium text-[14px]">
+                    {o.item_name}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759] font-semibold text-[14px]">
+                    {o.amount != null ? formatDollars(o.amount) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={o.status === "paid" ? "default" : "secondary"}
+                      className={`font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none normal-case tracking-normal border border-transparent ${
+                        o.status === "paid"
+                          ? "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#E8F5E9]"
+                          : o.status === "canceled"
+                            ? "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F6E4DA]"
+                            : "bg-[#D5DEDD] text-[#6A9B9C] hover:bg-[#FFF3E0]"
+                      }`}
+                    >
+                      {o.status ?? "—"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
+                    {formatDateTime(o.created_at)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>

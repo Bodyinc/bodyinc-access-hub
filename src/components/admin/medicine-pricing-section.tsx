@@ -92,7 +92,9 @@ export function MedicinePricingSection({
                   className="h-[44px] rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal text-[#3B4759] shadow-none focus-visible:ring-1 focus-visible:ring-[#3B4759] sm:h-[53px]"
                 />
                 {errors.variants?.[vIndex]?.name?.message && (
-                  <p className="text-xs text-destructive">{errors.variants[vIndex]!.name!.message}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.variants[vIndex]!.name!.message}
+                  </p>
                 )}
               </div>
               <Controller
@@ -137,9 +139,7 @@ export function MedicinePricingSection({
           type="button"
           variant="outline"
           disabled={submitting}
-          onClick={() =>
-            variantsArray.append({ name: "", is_active: true, packages: [] } as any)
-          }
+          onClick={() => variantsArray.append({ name: "", is_active: true, packages: [] } as any)}
           className="h-[44px] rounded-[6px] border border-[#D5DEDD] px-6 text-[14px] font-semibold text-[#3B4759] transition-colors hover:bg-[#F2F7F6] sm:h-11"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Add variant

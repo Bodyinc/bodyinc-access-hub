@@ -5,6 +5,13 @@ import { RefundsTable } from "@/components/admin/refunds-table";
 import { adminPageTitle, adminPageSubtitle } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/billing/")({
+  head: () => ({
+    meta: [
+      { title: "Billing · Body Inc Admin" },
+      { name: "description", content: "Billing — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: BillingPage,
 });
 
@@ -13,9 +20,7 @@ function BillingPage() {
     <div className="admin-page-shell space-y-4 sm:space-y-5 font-['DM_Sans',sans-serif]">
       <div className="min-w-0 space-y-2 sm:space-y-4">
         <h2 className={adminPageTitle}>Billing</h2>
-        <p className={adminPageSubtitle}>
-          Recurring subscriptions and patient refund requests.
-        </p>
+        <p className={adminPageSubtitle}>Recurring subscriptions and patient refund requests.</p>
       </div>
 
       <Tabs defaultValue="subscriptions" className="w-full min-w-0">
@@ -33,11 +38,11 @@ function BillingPage() {
             Refunds
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="subscriptions" className="mt-6 outline-none">
           <SubscriptionsTable />
         </TabsContent>
-        
+
         <TabsContent value="refunds" className="mt-6 outline-none">
           <RefundsTable />
         </TabsContent>

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
+import { cachePortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -80,7 +81,8 @@ function ResetPasswordPage() {
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (!cancelled) {
-          if (error) setLinkError("This reset link is invalid or has expired. Please request a new one.");
+          if (error)
+            setLinkError("This reset link is invalid or has expired. Please request a new one.");
           else {
             setReady(true);
             // Clean ?code from the URL
@@ -139,9 +141,7 @@ function ResetPasswordPage() {
       if (user) {
         const { data: role } = await supabase.rpc("get_user_portal", { _user_id: user.id });
         if (role === "admin" || role === "provider") {
-          try {
-            sessionStorage.setItem(`bi_portal_role:${user.id}`, role);
-          } catch {}
+          cachePortalRole(user.id, role);
           await router.invalidate();
           navigate({ to: role === "admin" ? "/admin" : "/dashboard", replace: true });
           return;
@@ -165,8 +165,8 @@ function ResetPasswordPage() {
             {linkError
               ? linkError
               : ready
-              ? "Choose a new password for your practitioner account."
-              : "Verifying your reset link…"}
+                ? "Choose a new password for your practitioner account."
+                : "Verifying your reset link…"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -179,43 +179,46 @@ function ResetPasswordPage() {
                 Request a new link
               </Link>
               <div>
-                <Link to="/auth" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+                <Link
+                  to="/auth"
+                  className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                >
                   Back to sign in
                 </Link>
               </div>
             </div>
           ) : (
-          <form onSubmit={onSubmit} className="space-y-4" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="password">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={submitting || !ready}
-                required
-              />
-              {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm">Confirm password</Label>
-              <Input
-                id="confirm"
-                type="password"
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                disabled={submitting || !ready}
-                required
-              />
-              {errors.confirm && <p className="text-sm text-destructive">{errors.confirm}</p>}
-            </div>
-            <Button type="submit" className="w-full" disabled={submitting || !ready}>
-              {submitting ? "Saving…" : "Save new password"}
-            </Button>
-          </form>
+            <form onSubmit={onSubmit} className="space-y-4" noValidate>
+              <div className="space-y-2">
+                <Label htmlFor="password">New password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={submitting || !ready}
+                  required
+                />
+                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm">Confirm password</Label>
+                <Input
+                  id="confirm"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  disabled={submitting || !ready}
+                  required
+                />
+                {errors.confirm && <p className="text-sm text-destructive">{errors.confirm}</p>}
+              </div>
+              <Button type="submit" className="w-full" disabled={submitting || !ready}>
+                {submitting ? "Saving…" : "Save new password"}
+              </Button>
+            </form>
           )}
         </CardContent>
       </Card>

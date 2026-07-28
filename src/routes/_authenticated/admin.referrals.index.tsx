@@ -32,28 +32,23 @@ import {
 } from "@/components/ui/select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import {
-  adjustPatientWallet,
-  getPatientWallet,
-  listReferrals,
-} from "@/lib/referrals.functions";
+import { adjustPatientWallet, getPatientWallet, listReferrals } from "@/lib/referrals.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
+import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/referrals/")({
+  head: () => ({
+    meta: [
+      { title: "Referrals · Body Inc Admin" },
+      { name: "description", content: "Referrals — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ReferralsPage,
 });
 
 function usd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-}
-
-function formatDate(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -65,13 +60,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function WalletDialog({
-  userId,
-  onClose,
-}: {
-  userId: string;
-  onClose: () => void;
-}) {
+function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const walletFn = useServerFn(getPatientWallet);
   const adjustFn = useServerFn(adjustPatientWallet);
@@ -164,7 +153,9 @@ function WalletDialog({
                 <TableRow key={t.id} className="border-b border-[#D5DEDD]/50">
                   <TableCell className="text-[13px] text-[#3B4759]/80">
                     {t.description ?? t.type}
-                    <span className="ml-2 text-xs text-[#6A9B9C]/60">{formatDate(t.created_at)}</span>
+                    <span className="ml-2 text-xs text-[#6A9B9C]/60">
+                      {formatDate(t.created_at)}
+                    </span>
                   </TableCell>
                   <TableCell
                     className={`text-right text-[13px] font-bold ${
@@ -257,34 +248,57 @@ function ReferralsPage() {
           <Table className="min-w-[900px]">
             <TableHeader className="bg-[#F8FBFA]">
               <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Referrer</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Referred friend</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Code</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Status</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Reward</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Invited</TableHead>
-                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">Converted</TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Referrer
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Referred friend
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Code
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Status
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Reward
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Invited
+                </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold h-11 text-[13px]">
+                  Converted
+                </TableHead>
                 <TableHead className="w-24 h-11 text-[13px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {query.isLoading && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
+                  <TableCell
+                    colSpan={8}
+                    className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]"
+                  >
                     Loading…
                   </TableCell>
                 </TableRow>
               )}
               {query.isError && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-[#B8684B] font-semibold text-[14px]">
+                  <TableCell
+                    colSpan={8}
+                    className="py-12 text-center text-[#B8684B] font-semibold text-[14px]"
+                  >
                     {(query.error as Error).message}
                   </TableCell>
                 </TableRow>
               )}
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]">
+                  <TableCell
+                    colSpan={8}
+                    className="py-12 text-center text-[#6A9B9C]/60 font-semibold text-[14px]"
+                  >
                     No referrals yet.
                   </TableCell>
                 </TableRow>
@@ -292,11 +306,15 @@ function ReferralsPage() {
               {rows.map((r: any) => (
                 <TableRow key={r.id} className="border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40">
                   <TableCell>
-                    <p className="font-semibold text-[#3B4759] text-[14px]">{r.referrer_name ?? "—"}</p>
+                    <p className="font-semibold text-[#3B4759] text-[14px]">
+                      {r.referrer_name ?? "—"}
+                    </p>
                     <p className="text-xs text-[#3B4759]/70">{r.referrer_email}</p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-medium text-[#3B4759] text-[14px]">{r.referred_name ?? "—"}</p>
+                    <p className="font-medium text-[#3B4759] text-[14px]">
+                      {r.referred_name ?? "—"}
+                    </p>
                     <p className="text-xs text-[#3B4759]/70">{r.referred_email}</p>
                   </TableCell>
                   <TableCell className="font-mono text-[13px] text-[#3B4759]">{r.code}</TableCell>
@@ -314,8 +332,12 @@ function ReferralsPage() {
                   <TableCell className="font-medium text-[#3B4759] text-[14px]">
                     {r.status === "converted" ? usd(r.reward_cents) : "—"}
                   </TableCell>
-                  <TableCell className="text-[#3B4759]/80 text-[13px]">{formatDate(r.created_at)}</TableCell>
-                  <TableCell className="text-[#3B4759]/80 text-[13px]">{formatDate(r.converted_at)}</TableCell>
+                  <TableCell className="text-[#3B4759]/80 text-[13px]">
+                    {formatDate(r.created_at)}
+                  </TableCell>
+                  <TableCell className="text-[#3B4759]/80 text-[13px]">
+                    {formatDate(r.converted_at)}
+                  </TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"

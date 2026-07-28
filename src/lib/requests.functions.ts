@@ -104,7 +104,12 @@ export const listRequests = createServerFn({ method: "POST" })
 
     const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
     const sessionIds = Array.from(
-      new Set(list.filter((r: any) => !r.user_id).map((r: any) => r.session_id).filter(Boolean)),
+      new Set(
+        list
+          .filter((r: any) => !r.user_id)
+          .map((r: any) => r.session_id)
+          .filter(Boolean),
+      ),
     );
     const medIds = Array.from(new Set(list.map((r: any) => r.medicine_id).filter(Boolean)));
     const provIds = Array.from(new Set(list.map((r: any) => r.provider_id).filter(Boolean)));
@@ -115,7 +120,10 @@ export const listRequests = createServerFn({ method: "POST" })
           ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
           : Promise.resolve({ data: [] as any[] }),
         sessionIds.length
-          ? supabaseAdmin.from("intake_sessions").select("id, full_name, email").in("id", sessionIds)
+          ? supabaseAdmin
+              .from("intake_sessions")
+              .select("id, full_name, email")
+              .in("id", sessionIds)
           : Promise.resolve({ data: [] as any[] }),
         medIds.length
           ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
@@ -188,7 +196,11 @@ export const getRequest = createServerFn({ method: "POST" })
               .maybeSingle()
           : Promise.resolve({ data: null }),
         req.medicine_id
-          ? supabaseAdmin.from("medicines").select("id, name").eq("id", req.medicine_id).maybeSingle()
+          ? supabaseAdmin
+              .from("medicines")
+              .select("id, name")
+              .eq("id", req.medicine_id)
+              .maybeSingle()
           : Promise.resolve({ data: null }),
         req.package_id
           ? supabaseAdmin
@@ -275,7 +287,14 @@ export const approveRequest = createServerFn({ method: "POST" })
       .eq("id", req.id);
     if (error) throw new Error(error.message);
 
-    await logEvent(supabaseAdmin, req.id, "approved", role, context.userId, data.note?.trim() || null);
+    await logEvent(
+      supabaseAdmin,
+      req.id,
+      "approved",
+      role,
+      context.userId,
+      data.note?.trim() || null,
+    );
     return { ok: true };
   });
 
@@ -351,10 +370,7 @@ export const rejectRequest = createServerFn({ method: "POST" })
         } catch (e) {
           console.error("[requests] cancel subscription on reject failed:", e);
         }
-        await supabaseAdmin
-          .from("subscriptions")
-          .update({ status: "canceled" })
-          .eq("id", sub.id);
+        await supabaseAdmin.from("subscriptions").update({ status: "canceled" }).eq("id", sub.id);
       }
     }
 
@@ -377,7 +393,14 @@ export const rejectRequest = createServerFn({ method: "POST" })
       })
       .eq("id", req.id);
 
-    await logEvent(supabaseAdmin, req.id, "rejected", role, context.userId, data.note?.trim() || null);
+    await logEvent(
+      supabaseAdmin,
+      req.id,
+      "rejected",
+      role,
+      context.userId,
+      data.note?.trim() || null,
+    );
     return { ok: true, stripe_refund_id: refund.id };
   });
 
@@ -423,7 +446,9 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     if (!newPkg) throw new Error("Selected plan not found.");
     if (!newPkg.is_active) throw new Error("Selected plan is inactive.");
     if (!newPkg.stripe_price_id) {
-      throw new Error("This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.");
+      throw new Error(
+        "This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.",
+      );
     }
 
     // Cross-category switches need an explicit clinical reason, which is logged on the order.
@@ -674,9 +699,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
 
 export const getPrescription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ prescriptionId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ prescriptionId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -11,6 +11,13 @@ const ProviderForm = lazy(() =>
 );
 
 export const Route = createFileRoute("/_authenticated/admin/providers/new")({
+  head: () => ({
+    meta: [
+      { title: "New practitioner · Body Inc Admin" },
+      { name: "description", content: "New practitioner — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: NewProviderPage,
 });
 
@@ -36,16 +43,15 @@ function NewProviderPage() {
   });
 
   return (
-  <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
-    <Suspense fallback={<FormSkeleton />}>
-      <ProviderForm
-        mode="create"
-        submitting={mutation.isPending}
-        onSubmit={(values) => mutation.mutate(values)}
-        onCancel={() => navigate({ to: "/admin/providers" })}
-      />
-    </Suspense>
-  </div>
-
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <Suspense fallback={<FormSkeleton />}>
+        <ProviderForm
+          mode="create"
+          submitting={mutation.isPending}
+          onSubmit={(values) => mutation.mutate(values)}
+          onCancel={() => navigate({ to: "/admin/providers" })}
+        />
+      </Suspense>
+    </div>
   );
 }

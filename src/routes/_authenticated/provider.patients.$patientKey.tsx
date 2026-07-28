@@ -7,14 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getMyPatient } from "@/lib/provider.functions";
 import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
 import { adminCard, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
+import { formatDateTimeFull } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/provider/patients/$patientKey")({
+  head: () => ({
+    meta: [
+      { title: "Patient record · Body Inc Practitioner" },
+      {
+        name: "description",
+        content: "Patient record — Practitioner area of the Body Inc portal.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ProviderPatientDetail,
 });
-
-function formatDate(iso?: string | null) {
-  return iso ? new Date(iso).toLocaleString() : "—";
-}
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -45,7 +52,10 @@ function ProviderPatientDetail() {
   if (q.isError || !q.data) {
     return (
       <div className="admin-page-shell space-y-3 font-['DM_Sans',sans-serif]">
-        <Link to="/provider/patients" className="inline-flex items-center text-[14px] text-[#3B4759]">
+        <Link
+          to="/provider/patients"
+          className="inline-flex items-center text-[14px] text-[#3B4759]"
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Link>
         <div className="text-[14px] font-semibold text-[#B8684B]">
@@ -85,7 +95,10 @@ function ProviderPatientDetail() {
               <div className="pb-1 text-[13px] font-medium text-[#3B4759]/60">Health goals</div>
               <div className="flex flex-wrap gap-1.5">
                 {goals.map((g: string) => (
-                  <Badge key={g} className="bg-[#E8EEED] text-[12px] text-[#3B4759] hover:bg-[#E8EEED]">
+                  <Badge
+                    key={g}
+                    className="bg-[#E8EEED] text-[12px] text-[#3B4759] hover:bg-[#E8EEED]"
+                  >
                     {g}
                   </Badge>
                 ))}
@@ -121,7 +134,9 @@ function ProviderPatientDetail() {
               <div key={i} className="flex items-start justify-between gap-3">
                 <div>
                   <div className="font-medium text-[#3B4759]">{e.medicine_name}</div>
-                  {e.reason ? <div className="text-[13px] text-[#3B4759]/70">{e.reason}</div> : null}
+                  {e.reason ? (
+                    <div className="text-[13px] text-[#3B4759]/70">{e.reason}</div>
+                  ) : null}
                 </div>
                 <Badge
                   className={`rounded-lg border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case shadow-none ${
@@ -157,7 +172,8 @@ function ProviderPatientDetail() {
               <div>
                 <div className="text-[14px] font-medium text-[#3B4759]">{o.medicine_name}</div>
                 <div className="text-[12px] text-[#3B4759]/60">
-                  {o.kind === "followup" ? "Renewal" : "Initial"} · {formatDate(o.created_at)}
+                  {o.kind === "followup" ? "Renewal" : "Initial"} ·{" "}
+                  {formatDateTimeFull(o.created_at)}
                 </div>
               </div>
               <Badge
@@ -185,7 +201,7 @@ function ProviderPatientDetail() {
                   <div className="text-[13px] text-[#3B4759]/80">{rx.directions}</div>
                 ) : null}
                 <div className="text-[12px] text-[#3B4759]/60">
-                  {rx.status} · {formatDate(rx.created_at)}
+                  {rx.status} · {formatDateTimeFull(rx.created_at)}
                 </div>
               </div>
             ))}

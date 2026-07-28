@@ -7,6 +7,13 @@ import { categoriesQueryKey } from "@/lib/query-options/categories";
 import type { CategoryFormValues } from "@/lib/categories.schema";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/new")({
+  head: () => ({
+    meta: [
+      { title: "New category · Body Inc Admin" },
+      { name: "description", content: "New category — Admin area of the Body Inc portal." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: NewCategoryPage,
 });
 
