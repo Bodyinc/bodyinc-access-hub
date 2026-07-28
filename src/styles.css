@@ -51,30 +51,57 @@
   --color-brand-soft: var(--brand-soft);
   --color-brand-border: var(--brand-border);
   --color-brand-foreground: var(--brand-foreground);
+  --color-sand: var(--sand);
+  --color-ink: var(--ink);
+  --color-clay: var(--clay);
+  --color-mist: var(--mist);
+  --color-teal: var(--teal);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.22 0.12 295);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.12 295);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.12 295);
-  --primary: oklch(0.28 0.19 295);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.02 295);
-  --secondary-foreground: oklch(0.28 0.19 295);
-  --muted: oklch(0.97 0.02 295);
-  --muted-foreground: oklch(0.52 0.14 290);
-  --accent: oklch(0.94 0.04 295);
-  --accent-foreground: oklch(0.28 0.19 295);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.9 0.04 295);
-  --input: oklch(0.9 0.04 295);
-  --ring: oklch(0.44 0.22 290);
-  --sidebar: oklch(0.97 0.02 295);
+
+  /* ── Brand palette ───────────────────────────────── */
+  --sand: #E3E084;          /* highlight / CTA */
+  --sand-strong: #D6D26A;
+  --ink: #3B4759;           /* primary text */
+  --ink-soft: rgba(59, 71, 89, 0.75);
+  --ink-muted: rgba(59, 71, 89, 0.45);
+  --ink-line: rgba(59, 71, 89, 0.18);
+  --clay: #B8684B;          /* secondary accent */
+  --clay-soft: #FBF1EC;
+  --mist: #E8EEED;          /* surface tint */
+  --mist-soft: #F2F7F6;
+  --teal: #6A9B9C;          /* brand */
+  --teal-strong: #5B8788;
+  --teal-soft: #DCE8E8;
+
+  --background: #FFFFFF;
+  --foreground: var(--ink);
+  --card: #FFFFFF;
+  --card-foreground: var(--ink);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--ink);
+  --primary: var(--teal);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--mist);
+  --secondary-foreground: var(--ink);
+  --muted: var(--mist);
+  --muted-foreground: rgba(59, 71, 89, 0.65);
+  --accent: var(--sand);
+  --accent-foreground: var(--ink);
+  --destructive: #B8684B;
+  --destructive-foreground: #FFFFFF;
+  --border: #D5DEDD;
+  --input: #D5DEDD;
+  --ring: var(--teal);
+  --sidebar: var(--mist);
+  --brand: var(--teal);
+  --brand-strong: var(--teal-strong);
+  --brand-surface: var(--mist);
+  --brand-soft: var(--teal-soft);
+  --brand-border: #D5DEDD;
+  --brand-foreground: #FFFFFF;
 
   /* 1. GLOBAL RESPONSIVE DESIGN TOKENS USING CLAMP */
   /* Input height scales smoothly from 44px (mobile) to 53px (desktop) */
@@ -156,7 +183,7 @@
   }
 
   .app-input::placeholder {
-    color: rgba(107, 90, 224, 0.4);
+    color: rgba(59, 71, 89, 0.45);
   }
 
   /* Responsive Field Label (Auto gap to input below) */
@@ -249,7 +276,7 @@
     font-weight: 400;
     line-height: 100%;
     letter-spacing: 0;
-    color: rgba(46, 0, 171, 0.8);
+    color: rgba(59, 71, 89, 0.75);
   }
 
   @media (min-width: 640px) {
@@ -273,7 +300,7 @@
     font-weight: 400;
     line-height: 100%;
     letter-spacing: 0;
-    color: rgba(46, 0, 171, 0.8);
+    color: rgba(59, 71, 89, 0.75);
   }
 
   .admin-label {
@@ -309,7 +336,7 @@
   }
 
   .admin-input::placeholder {
-    color: rgba(46, 0, 171, 0.4);
+    color: rgba(59, 71, 89, 0.45);
   }
 
   .admin-input:focus-visible {
@@ -341,7 +368,7 @@
   }
 
   .admin-textarea::placeholder {
-    color: rgba(46, 0, 171, 0.4);
+    color: rgba(59, 71, 89, 0.45);
   }
 
   .admin-textarea:focus-visible {
