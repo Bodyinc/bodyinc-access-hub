@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createQuestionnaire } from "@/lib/questionnaires.store";
+import { createQuestionnaire, listCategoryLinks } from "@/lib/questionnaires.store";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import {
   adminLabel,
@@ -39,6 +39,11 @@ function NewQuestionnairePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const catsQ = useQuery(categoriesQueryOptions());
+  const linksQ = useQuery({
+    queryKey: ["questionnaire-category-links"],
+    queryFn: listCategoryLinks,
+  });
+  const takenBy = new Map((linksQ.data ?? []).map((l) => [l.category_id, l.questionnaire_name]));
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -54,6 +59,7 @@ function NewQuestionnairePage() {
       }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
+      qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
       toast.success("Created");
       navigate({
         to: "/admin/questionnaires/$questionnaireId",
@@ -116,7 +122,7 @@ function NewQuestionnairePage() {
           <CardTitle className={adminSectionTitle}>Linked goals / categories</CardTitle>
           <CardDescription className={adminSectionSubtitle}>
             Patients selecting these goals/categories will see this custom screening sequence during
-            checkout.
+            checkout. Each category can be linked to only one questionnaire.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
@@ -131,10 +137,15 @@ function NewQuestionnairePage() {
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {(catsQ.data ?? []).map((m) => {
               const checked = categoryIds.includes(m.id);
+              const usedBy = takenBy.get(m.id);
               return (
-                <label key={m.id} className="admin-check-row">
+                <label
+                  key={m.id}
+                  className={`admin-check-row ${usedBy ? "cursor-not-allowed opacity-60" : ""}`}
+                >
                   <Checkbox
                     checked={checked}
+                    disabled={!!usedBy}
                     className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                     onCheckedChange={(v) => {
                       setCategoryIds((prev) =>
@@ -142,7 +153,14 @@ function NewQuestionnairePage() {
                       );
                     }}
                   />
-                  {m.name}
+                  <span className="min-w-0">
+                    {m.name}
+                    {usedBy && (
+                      <span className="block text-[12px] font-normal text-[#3B4759]/50">
+                        Used by {usedBy}
+                      </span>
+                    )}
+                  </span>
                 </label>
               );
             })}

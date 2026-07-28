@@ -22,6 +22,7 @@ import {
   createQuestion,
   deleteQuestion,
   getQuestionnaire,
+  listCategoryLinks,
   QQUESTION_TYPE_LABELS,
   replaceQuestionOptions,
   updateQuestion,
@@ -68,6 +69,15 @@ function EditQuestionnairePage() {
   const qc = useQueryClient();
   const dataQ = useQuery(detailQO(questionnaireId));
   const catsQ = useQuery(categoriesQueryOptions());
+  const linksQ = useQuery({
+    queryKey: ["questionnaire-category-links"],
+    queryFn: listCategoryLinks,
+  });
+  const takenBy = new Map(
+    (linksQ.data ?? [])
+      .filter((l) => l.questionnaire_id !== questionnaireId)
+      .map((l) => [l.category_id, l.questionnaire_name]),
+  );
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -94,6 +104,7 @@ function EditQuestionnairePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
+      qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
       toast.success("Saved");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -158,13 +169,21 @@ function EditQuestionnairePage() {
           </div>
           <div className="space-y-2">
             <Label className={adminLabel}>Linked goals / categories</Label>
+            <p className="text-[13px] font-normal text-[#3B4759]/60">
+              Each category can be linked to only one questionnaire.
+            </p>
             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {(catsQ.data ?? []).map((m) => {
                 const checked = categoryIds.includes(m.id);
+                const usedBy = takenBy.get(m.id);
                 return (
-                  <label key={m.id} className="admin-check-row">
+                  <label
+                    key={m.id}
+                    className={`admin-check-row ${usedBy ? "cursor-not-allowed opacity-60" : ""}`}
+                  >
                     <Checkbox
                       checked={checked}
+                      disabled={!!usedBy}
                       className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
                       onCheckedChange={(v) =>
                         setCategoryIds((prev) =>
@@ -172,7 +191,14 @@ function EditQuestionnairePage() {
                         )
                       }
                     />
-                    {m.name}
+                    <span className="min-w-0">
+                      {m.name}
+                      {usedBy && (
+                        <span className="block text-[12px] font-normal text-[#3B4759]/50">
+                          Used by {usedBy}
+                        </span>
+                      )}
+                    </span>
                   </label>
                 );
               })}
