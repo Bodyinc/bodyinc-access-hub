@@ -13,7 +13,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const items = [{ title: "Requests", url: "/provider", exact: true }];
+const items = [
+  { title: "Dashboard", url: "/provider", exact: true },
+  { title: "My Requests", url: "/provider/requests" },
+  { title: "Unassigned queue", url: "/provider/queue" },
+  { title: "My Patients", url: "/provider/patients" },
+  { title: "My Profile", url: "/provider/profile" },
+];
 
 export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
