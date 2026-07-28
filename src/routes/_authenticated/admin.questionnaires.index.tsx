@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteQuestionnaire, listQuestionnaires } from "@/lib/questionnaires.store";
+import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import { adminPageTitle, adminPageSubtitle, adminBtnPrimary, adminCard } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/")({
@@ -59,11 +60,14 @@ function QuestionnairesListPage() {
   const [confirm, setConfirm] = useState<{ id: string; name: string } | null>(null);
   const query = useQuery(listQO);
   const rows = query.data ?? [];
+  const catsQ = useQuery(categoriesQueryOptions());
+  const catName = new Map((catsQ.data ?? []).map((c) => [c.id, c.name]));
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteQuestionnaire(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: listKey });
+      qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
       toast.success("Deleted");
       setConfirm(null);
     },
@@ -154,7 +158,9 @@ function QuestionnairesListPage() {
                       {r.question_count}
                     </TableCell>
                     <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-[14px] font-normal text-[#3B4759]/80 sm:px-6 sm:py-5 lg:px-8">
-                      {r.category_ids.length}
+                      {r.category_ids.length === 0
+                        ? "—"
+                        : r.category_ids.map((id) => catName.get(id) ?? id).join(", ")}
                     </TableCell>
                     <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
                       <Badge

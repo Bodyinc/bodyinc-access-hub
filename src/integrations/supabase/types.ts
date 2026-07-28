@@ -1460,7 +1460,7 @@ export type Database = {
           {
             foreignKeyName: "questionnaire_categories_category_id_fkey"
             columns: ["category_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "medication_categories"
             referencedColumns: ["id"]
           },
