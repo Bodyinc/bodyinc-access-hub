@@ -389,6 +389,8 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         requestId: z.string().uuid(),
         packageId: z.string().uuid(),
         note: z.string().trim().max(500).optional(),
+        // Required when the new medicine sits outside the current medicine's categories.
+        crossCategoryReason: z.string().trim().max(500).optional(),
       })
       .parse(input),
   )
@@ -404,7 +406,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id, user_id, subscription_id, package_id",
+      "id, status, provider_id, user_id, subscription_id, package_id, medicine_id",
     );
     if (!["pending_review", "approved", "awaiting_additional_payment"].includes(req.status)) {
       throw new Error(`Cannot change medicine on a request that is ${req.status}.`);
@@ -422,6 +424,31 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     if (!newPkg.is_active) throw new Error("Selected plan is inactive.");
     if (!newPkg.stripe_price_id) {
       throw new Error("This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.");
+    }
+
+    // Cross-category switches need an explicit clinical reason, which is logged on the order.
+    const currentMedicineId = (req as any).medicine_id as string | null;
+    let crossCategory = false;
+    if (currentMedicineId && currentMedicineId !== newPkg.medicine_id) {
+      const { data: catRows } = await supabaseAdmin
+        .from("medication_category_medicines")
+        .select("category_id, medicine_id")
+        .in("medicine_id", [currentMedicineId, newPkg.medicine_id]);
+      const oldCats = new Set(
+        ((catRows ?? []) as any[])
+          .filter((r) => r.medicine_id === currentMedicineId)
+          .map((r) => r.category_id),
+      );
+      const newCats = ((catRows ?? []) as any[])
+        .filter((r) => r.medicine_id === newPkg.medicine_id)
+        .map((r) => r.category_id);
+      crossCategory =
+        oldCats.size > 0 && newCats.length > 0 && !newCats.some((c) => oldCats.has(c));
+    }
+    if (crossCategory && !data.crossCategoryReason) {
+      throw new Error(
+        "This medicine is in a different treatment category. A clinical reason is required.",
+      );
     }
 
     let currentPrice = 0;
@@ -471,6 +498,23 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       .eq("id", req.id);
 
     const medLabel = (newPkg as any).medicines?.name ?? "the new medication";
+
+    if (crossCategory) {
+      await logEvent(
+        supabaseAdmin,
+        req.id,
+        "category_changed",
+        role,
+        context.userId,
+        `Switched to a different treatment category (${medLabel}). Reason: ${data.crossCategoryReason}`,
+      );
+      await supabaseAdmin.from("medication_request_notes").insert({
+        request_id: req.id,
+        author_id: context.userId,
+        author_role: role,
+        body: `Category change → ${medLabel}. Clinical reason: ${data.crossCategoryReason}`,
+      });
+    }
 
     if (deltaCents > 0) {
       // More expensive: collect the current-cycle difference before the prescription is generated.
