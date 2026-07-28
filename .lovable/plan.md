@@ -1,20 +1,33 @@
+# Add provider name to the dashboard greeting
+
 ## Goal
-Replace the static "Practitioner dashboard" heading with a time-aware greeting.
+The Practitioner dashboard heading is now dynamic by time of day. Extend it to include the logged-in practitioner's name, e.g. "Good morning, Dr. Smith".
 
-## Behaviour
-Greeting is computed on the client from the practitioner's local time:
+## Current state
+- `src/routes/_authenticated/provider.index.tsx` renders `greeting ?? "Practitioner dashboard"` and calls `providerDashboard` from `src/lib/provider.functions.ts`.
+- `providerDashboard` returns workload counts only. It does not fetch the provider's display name.
+- Provider full name lives in `public.profiles.full_name` (the `getMyProviderProfile` function already reads this).
 
-```text
-05:00–11:59  Good morning
-12:00–16:59  Good afternoon
-17:00–20:59  Good evening
-21:00–04:59  Working late
+## Changes
+
+### 1. Backend: `src/lib/provider.functions.ts`
+Update `providerDashboard` to fetch the provider's `full_name` from `public.profiles` using `context.userId` and include it in the response. Keep the existing counts and claimable logic unchanged.
+
+```typescript
+const { data: meProfile } = await supabaseAdmin
+  .from("profiles")
+  .select("full_name")
+  .eq("id", context.userId)
+  .maybeSingle();
+
+return { ...counts, claimable, full_name: meProfile?.full_name ?? "" };
 ```
 
-Heading text: `Good morning` (plus first name when available, e.g. `Good morning, Dr. Chen`). Subtitle stays "Your workload at a glance."
+### 2. Frontend: `src/routes/_authenticated/provider.index.tsx`
+- Read `full_name` from the dashboard query result.
+- Update the heading to `{greeting}{name ? `, ${name}` : ""}`.
+- Keep the "Practitioner dashboard" fallback when the greeting has not yet computed client-side.
 
-## Technical notes
-- Edit `src/routes/_authenticated/provider.index.tsx` only.
-- Compute greeting in a `useState` + `useEffect` (set after mount) so SSR/hydration don't mismatch; render the plain title until hydrated.
-- Re-evaluate on an interval (every 60s) so a long-open tab rolls over correctly.
-- Name comes from the existing provider dashboard query if it already returns one; otherwise the greeting renders without a name.
+## Verification
+- Run the TypeScript build check to confirm no type errors.
+- Open `/provider` in the preview to confirm the greeting displays the provider name after data loads.

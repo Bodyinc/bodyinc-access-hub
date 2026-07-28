@@ -36,6 +36,8 @@ function ProviderDashboard() {
   const q = useQuery({ queryKey: ["provider-dashboard"], queryFn: () => get({}) });
   const d = (q.data as any) ?? {};
 
+  const heading = greeting ? `${greeting}${d.full_name ? `, ${d.full_name}` : ""}` : "Practitioner dashboard";
+
   const tiles: { label: string; value: number; hint: string; to: string }[] = [
     {
       label: "Awaiting your review",
@@ -78,7 +80,7 @@ function ProviderDashboard() {
   return (
     <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif]">
       <div className="space-y-1">
-        <h1 className={adminPageTitle}>{greeting ?? "Practitioner dashboard"}</h1>
+        <h1 className={adminPageTitle}>{heading}</h1>
         <p className={adminPageSubtitle}>Your workload at a glance.</p>
       </div>
 

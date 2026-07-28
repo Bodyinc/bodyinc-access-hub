@@ -78,7 +78,14 @@ export const providerDashboard = createServerFn({ method: "POST" })
     };
 
     const claimable = await countClaimable(supabaseAdmin, me);
-    return { ...counts, claimable };
+
+    const { data: meProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", me)
+      .maybeSingle();
+
+    return { ...counts, claimable, full_name: meProfile?.full_name ?? "" };
   });
 
 async function providerStates(supabaseAdmin: any, me: string): Promise<string[]> {
