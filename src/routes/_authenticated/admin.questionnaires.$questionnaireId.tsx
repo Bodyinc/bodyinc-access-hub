@@ -131,6 +131,12 @@ function EditQuestionnairePage() {
 
   return (
     <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif] sm:space-y-6">
+      <PageHeader
+        backTo="/admin/questionnaires"
+        backLabel="questionnaires"
+        crumbs={[{ label: "Questionnaires", to: "/admin/questionnaires" }]}
+        title={dataQ.data.name || "Edit questionnaire"}
+      />
       <Card className={adminCard}>
         <CardHeader className="space-y-5 p-4 sm:p-6">
           <CardTitle className={adminSectionTitle}>Questionnaire details</CardTitle>
@@ -203,22 +209,6 @@ function EditQuestionnairePage() {
                 );
               })}
             </div>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-              onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending}
-              className={adminBtnPrimary}
-            >
-              {saveMut.isPending ? "Saving…" : "Save"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate({ to: "/admin/questionnaires" })}
-              className={adminBtnSecondary}
-            >
-              Back
-            </Button>
           </div>
         </CardContent>
       </Card>
