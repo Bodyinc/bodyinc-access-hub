@@ -335,26 +335,12 @@ export function ProviderForm({
         </CardContent>
       </Card>
 
-      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={submitting}
-            className={`${adminBtnSecondary} w-full min-w-0 sm:w-auto sm:min-w-[140px]`}
-          >
-            Cancel
-          </Button>
-        )}
-        <Button
-          type="submit"
-          disabled={submitting}
-          className={`${adminBtnPrimary} w-full min-w-0 sm:w-auto sm:min-w-[140px]`}
-        >
-          {submitting ? "Saving changes…" : mode === "create" ? "Create provider" : "Save changes"}
-        </Button>
-      </div>
+      <FormActionBar
+        submitting={submitting}
+        savingLabel="Saving changes…"
+        submitLabel={mode === "create" ? "Create provider" : "Save changes"}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

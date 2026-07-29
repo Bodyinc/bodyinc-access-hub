@@ -450,35 +450,11 @@ export function MedicineForm({
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button
-            type="submit"
-            disabled={submitting || uploading}
-            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving…
-              </>
-            ) : mode === "create" ? (
-              "Create medicine"
-            ) : (
-              "Save changes"
-            )}
-          </Button>
-          {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={submitting}
-              className="border-[#D5DEDD] hover:bg-[#F2F7F6] text-[#3B4759] h-11 px-8 rounded-xl font-semibold text-[14px] transition-colors"
-            >
-              Cancel
-            </Button>
-          )}
-        </div>
+        <FormActionBar
+          submitting={submitting || uploading}
+          submitLabel={mode === "create" ? "Create medicine" : "Save changes"}
+          onCancel={onCancel}
+        />
       </div>
     </form>
   );
