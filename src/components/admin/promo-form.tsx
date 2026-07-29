@@ -1,3 +1,4 @@
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,26 +180,11 @@ export function PromoForm({
         </CardContent>
       </Card>
 
-      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <Button
-          type="submit"
-          disabled={submitting}
-          className={`${adminBtnPrimary} w-full min-w-0 sm:w-auto sm:min-w-[140px]`}
-        >
-          {submitting ? "Saving…" : mode === "create" ? "Create promo" : "Save changes"}
-        </Button>
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={submitting}
-            className={`${adminBtnSecondary} w-full min-w-0 sm:w-auto sm:min-w-[140px]`}
-          >
-            Cancel
-          </Button>
-        )}
-      </div>
+      <FormActionBar
+        submitting={submitting}
+        submitLabel={mode === "create" ? "Create promo" : "Save changes"}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { PromoForm, type PromoFormValues } from "@/components/admin/promo-form";
+import { PageHeader } from "@/components/admin/page-header";
 import { createPromo } from "@/lib/promos.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/promos/new")({
@@ -43,6 +44,12 @@ function NewPromoPage() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <PageHeader
+        backTo="/admin/promos"
+        backLabel="promo codes"
+        crumbs={[{ label: "Promo Codes", to: "/admin/promos" }]}
+        title="New promo code"
+      />
       <PromoForm
         mode="create"
         submitting={mutation.isPending}

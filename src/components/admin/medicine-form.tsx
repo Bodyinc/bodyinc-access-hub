@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeader } from "@/components/admin/page-header";
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,14 +51,13 @@ export type MedicineFormProps = {
 
 export function MedicineFormPageHeader({ mode }: { mode: "create" | "edit" }) {
   return (
-    <div className="space-y-3">
-      <h1 className="admin-page-title text-[28px] font-semibold leading-[100%] tracking-normal text-[#3B4759] sm:text-[32px]">
-        {mode === "create" ? "Add medicine" : "Edit medicine"}
-      </h1>
-      <p className="admin-page-subtitle text-[18px] font-normal leading-[100%] tracking-normal text-[#3B4759]/80 sm:text-[20px]">
-        Product image and details shown to patients.
-      </p>
-    </div>
+    <PageHeader
+      backTo="/admin/medicines"
+      backLabel="medications"
+      crumbs={[{ label: "Medications", to: "/admin/medicines" }]}
+      title={mode === "create" ? "Add medicine" : "Edit medicine"}
+      subtitle="Product image and details shown to patients."
+    />
   );
 }
 
@@ -450,35 +451,11 @@ export function MedicineForm({
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button
-            type="submit"
-            disabled={submitting || uploading}
-            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-8 rounded-xl font-semibold text-[14px] shadow-sm transition-all min-w-[140px]"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving…
-              </>
-            ) : mode === "create" ? (
-              "Create medicine"
-            ) : (
-              "Save changes"
-            )}
-          </Button>
-          {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={submitting}
-              className="border-[#D5DEDD] hover:bg-[#F2F7F6] text-[#3B4759] h-11 px-8 rounded-xl font-semibold text-[14px] transition-colors"
-            >
-              Cancel
-            </Button>
-          )}
-        </div>
+        <FormActionBar
+          submitting={submitting || uploading}
+          submitLabel={mode === "create" ? "Create medicine" : "Save changes"}
+          onCancel={onCancel}
+        />
       </div>
     </form>
   );

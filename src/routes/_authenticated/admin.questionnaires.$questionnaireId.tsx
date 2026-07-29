@@ -1,3 +1,5 @@
+import { PageHeader } from "@/components/admin/page-header";
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
@@ -131,6 +133,12 @@ function EditQuestionnairePage() {
 
   return (
     <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif] sm:space-y-6">
+      <PageHeader
+        backTo="/admin/questionnaires"
+        backLabel="questionnaires"
+        crumbs={[{ label: "Questionnaires", to: "/admin/questionnaires" }]}
+        title={dataQ.data.questionnaire.name || "Edit questionnaire"}
+      />
       <Card className={adminCard}>
         <CardHeader className="space-y-5 p-4 sm:p-6">
           <CardTitle className={adminSectionTitle}>Questionnaire details</CardTitle>
@@ -204,22 +212,6 @@ function EditQuestionnairePage() {
               })}
             </div>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-              onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending}
-              className={adminBtnPrimary}
-            >
-              {saveMut.isPending ? "Saving…" : "Save"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate({ to: "/admin/questionnaires" })}
-              className={adminBtnSecondary}
-            >
-              Back
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -247,6 +239,16 @@ function EditQuestionnairePage() {
           <QuestionEditor key={q.id} question={q} questionnaireId={questionnaireId} />
         ))}
       </div>
+
+      <FormActionBar
+        submitting={saveMut.isPending}
+        submitLabel="Save details"
+        onSubmit={() => saveMut.mutate()}
+        onCancel={() => navigate({ to: "/admin/questionnaires" })}
+        cancelLabel="Back"
+      >
+        Questionnaire name, description and linked categories.
+      </FormActionBar>
     </div>
   );
 }

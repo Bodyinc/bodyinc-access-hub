@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
+import { PageHeader } from "@/components/admin/page-header";
 import { getProvider, updateProvider } from "@/lib/providers.functions";
 
 const ProviderForm = lazy(() =>
@@ -56,37 +57,45 @@ function EditProviderPage() {
 
   const d = query.data as any;
   return (
-    <Suspense fallback={<FormSkeleton />}>
-      <ProviderForm
-        mode="edit"
-        submitting={mutation.isPending}
-        defaultValues={{
-          email: d.email,
-          full_name: d.full_name,
-          phone: d.phone ?? "",
-          avatar_url: d.avatar_url ?? "",
-          bio: d.bio ?? "",
-          credentials: d.credentials ?? undefined,
-          specialty: d.specialty ?? "",
-          npi: d.npi ?? "",
-          dea: d.dea ?? "",
-          license_number: d.license_number ?? "",
-          license_states: d.license_states ?? [],
-          years_experience: d.years_experience ?? undefined,
-          languages: d.languages ?? [],
-          consultation_types: d.consultation_types ?? [],
-          practice_states: d.practice_states ?? [],
-          address_line1: d.address_line1 ?? "",
-          address_line2: d.address_line2 ?? "",
-          city: d.city ?? "",
-          state: d.state ?? undefined,
-          zip: d.zip ?? "",
-          country: d.country ?? "US",
-          is_active: d.is_active,
-        }}
-        onSubmit={(values) => mutation.mutate(values)}
-        onCancel={() => navigate({ to: "/admin/providers" })}
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <PageHeader
+        backTo="/admin/providers"
+        backLabel="providers"
+        crumbs={[{ label: "Providers", to: "/admin/providers" }]}
+        title={d.full_name ?? "Edit practitioner"}
       />
-    </Suspense>
+      <Suspense fallback={<FormSkeleton />}>
+        <ProviderForm
+          mode="edit"
+          submitting={mutation.isPending}
+          defaultValues={{
+            email: d.email,
+            full_name: d.full_name,
+            phone: d.phone ?? "",
+            avatar_url: d.avatar_url ?? "",
+            bio: d.bio ?? "",
+            credentials: d.credentials ?? undefined,
+            specialty: d.specialty ?? "",
+            npi: d.npi ?? "",
+            dea: d.dea ?? "",
+            license_number: d.license_number ?? "",
+            license_states: d.license_states ?? [],
+            years_experience: d.years_experience ?? undefined,
+            languages: d.languages ?? [],
+            consultation_types: d.consultation_types ?? [],
+            practice_states: d.practice_states ?? [],
+            address_line1: d.address_line1 ?? "",
+            address_line2: d.address_line2 ?? "",
+            city: d.city ?? "",
+            state: d.state ?? undefined,
+            zip: d.zip ?? "",
+            country: d.country ?? "US",
+            is_active: d.is_active,
+          }}
+          onSubmit={(values) => mutation.mutate(values)}
+          onCancel={() => navigate({ to: "/admin/providers" })}
+        />
+      </Suspense>
+    </div>
   );
 }

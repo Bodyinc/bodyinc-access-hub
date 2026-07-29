@@ -18,6 +18,8 @@ import {
   type CategoryFormValues,
 } from "@/lib/categories.schema";
 import { StateMultiSelect } from "@/components/admin/state-multi-select";
+import { PageHeader } from "@/components/admin/page-header";
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { adminLabel } from "@/lib/admin-ui";
 import { Switch } from "../ui/switch";
 
@@ -125,14 +127,13 @@ export function CategoryForm({
 
   return (
     <div className="admin-page-shell space-y-5 sm:space-y-6">
-      <div>
-        <h2 className="text-[24px] font-bold leading-tight text-[#3B4759] sm:text-[28px] lg:text-[32px]">
-          {mode === "create" ? "New category" : "Edit category"}
-        </h2>
-        <p className="mt-1 text-sm font-medium text-[#6A9B9C]/80 sm:text-base">
-          Categories are the goals patients pick during intake.
-        </p>
-      </div>
+      <PageHeader
+        backTo="/admin/categories"
+        backLabel="categories"
+        crumbs={[{ label: "Categories", to: "/admin/categories" }]}
+        title={mode === "create" ? "New category" : "Edit category"}
+        subtitle="Categories are the goals patients pick during intake."
+      />
 
       <form onSubmit={submit} className="space-y-5 sm:space-y-6" noValidate>
         <Card className="rounded-[12px] border border-[#D5DEDD] bg-white shadow-sm">
@@ -407,26 +408,11 @@ export function CategoryForm({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="h-11 min-w-[140px] rounded-[8px] bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-[#5B8788] sm:h-[53px]"
-          >
-            {submitting ? "Saving…" : mode === "create" ? "Create category" : "Save changes"}
-          </Button>
-          {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={submitting}
-              className="h-11 rounded-[8px] border-[#D5DEDD] px-6 text-[14px] font-semibold text-[#6A9B9C] transition-colors hover:bg-[#F2F7F6] sm:h-[53px]"
-            >
-              Cancel
-            </Button>
-          )}
-        </div>
+        <FormActionBar
+          submitting={submitting || uploading}
+          submitLabel={mode === "create" ? "Create category" : "Save changes"}
+          onCancel={onCancel}
+        />
       </form>
     </div>
   );

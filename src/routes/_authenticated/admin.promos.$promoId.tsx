@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { PromoForm, type PromoFormValues } from "@/components/admin/promo-form";
+import { PageHeader } from "@/components/admin/page-header";
 import { getPromo, updatePromo } from "@/lib/promos.functions";
 import { toPromoInput } from "./admin.promos.new";
 
@@ -56,12 +57,20 @@ function EditPromoPage() {
   }
 
   return (
-    <PromoForm
-      mode="edit"
-      defaultValues={toFormValues(q.data)}
-      submitting={mutation.isPending}
-      onSubmit={(v) => mutation.mutate(v)}
-      onCancel={() => navigate({ to: "/admin/promos" })}
-    />
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <PageHeader
+        backTo="/admin/promos"
+        backLabel="promo codes"
+        crumbs={[{ label: "Promo Codes", to: "/admin/promos" }]}
+        title={(q.data as any).code ?? "Edit promo code"}
+      />
+      <PromoForm
+        mode="edit"
+        defaultValues={toFormValues(q.data)}
+        submitting={mutation.isPending}
+        onSubmit={(v) => mutation.mutate(v)}
+        onCancel={() => navigate({ to: "/admin/promos" })}
+      />
+    </div>
   );
 }

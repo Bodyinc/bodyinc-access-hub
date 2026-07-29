@@ -1,3 +1,5 @@
+import { PageHeader } from "@/components/admin/page-header";
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -71,10 +73,13 @@ function NewQuestionnairePage() {
 
   return (
     <div className="admin-page-shell space-y-5 font-['DM_Sans',sans-serif] sm:space-y-6">
-      <div className="space-y-3">
-        <h2 className={adminPageTitle}>New questionnaire</h2>
-        <p className={adminPageSubtitle}>Add screening configurations and structure questions.</p>
-      </div>
+      <PageHeader
+        backTo="/admin/questionnaires"
+        backLabel="questionnaires"
+        crumbs={[{ label: "Questionnaires", to: "/admin/questionnaires" }]}
+        title="New questionnaire"
+        subtitle="Add screening configurations and structure questions."
+      />
 
       <Card className={adminCard}>
         <CardHeader className="space-y-2 p-4 sm:p-6">
@@ -168,22 +173,13 @@ function NewQuestionnairePage() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
-        <Button
-          variant="outline"
-          onClick={() => navigate({ to: "/admin/questionnaires" })}
-          className={`${adminBtnSecondary} w-full sm:w-auto`}
-        >
-          Cancel
-        </Button>
-        <Button
-          disabled={!name.trim() || mut.isPending}
-          onClick={() => mut.mutate()}
-          className={`${adminBtnPrimary} w-full sm:w-auto`}
-        >
-          {mut.isPending ? "Saving…" : "Create questionnaire"}
-        </Button>
-      </div>
+      <FormActionBar
+        submitting={mut.isPending}
+        disabled={!name.trim()}
+        submitLabel="Create questionnaire"
+        onSubmit={() => mut.mutate()}
+        onCancel={() => navigate({ to: "/admin/questionnaires" })}
+      />
     </div>
   );
 }

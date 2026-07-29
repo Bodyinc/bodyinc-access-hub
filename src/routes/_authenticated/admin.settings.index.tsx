@@ -1,3 +1,4 @@
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -419,11 +420,7 @@ function SettingsPage() {
       </Tabs>
 
       {form && tab !== "audit" && tab !== "danger" ? (
-        <div className="flex justify-end">
-          <Button onClick={save} disabled={mutation.isPending} className={adminBtnPrimary}>
-            {mutation.isPending ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
+        <FormActionBar submitting={mutation.isPending} submitLabel="Save changes" onSubmit={save} />
       ) : null}
     </div>
   );
