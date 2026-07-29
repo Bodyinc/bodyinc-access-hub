@@ -239,6 +239,16 @@ function EditQuestionnairePage() {
           <QuestionEditor key={q.id} question={q} questionnaireId={questionnaireId} />
         ))}
       </div>
+
+      <FormActionBar
+        submitting={saveMut.isPending}
+        submitLabel="Save details"
+        onSubmit={() => saveMut.mutate()}
+        onCancel={() => navigate({ to: "/admin/questionnaires" })}
+        cancelLabel="Back"
+      >
+        Questionnaire name, description and linked categories.
+      </FormActionBar>
     </div>
   );
 }
