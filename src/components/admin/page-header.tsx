@@ -30,8 +30,7 @@ export function PageHeader({
   actions,
 }: PageHeaderProps) {
   const trail = crumbs ?? [];
-  const fallbackBackLabel =
-    backLabel ?? [...trail].reverse().find((c) => c.to)?.label ?? "Back";
+  const fallbackBackLabel = backLabel ?? [...trail].reverse().find((c) => c.to)?.label ?? "Back";
 
   return (
     <div className="mb-5 space-y-3 sm:mb-6">
@@ -69,9 +68,7 @@ export function PageHeader({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className={adminPageTitle}>{title}</h1>
-          {subtitle && (
-            <p className="mt-2 text-[15px] font-normal text-[#3B4759]/70">{subtitle}</p>
-          )}
+          {subtitle && <p className="mt-2 text-[15px] font-normal text-[#3B4759]/70">{subtitle}</p>}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>

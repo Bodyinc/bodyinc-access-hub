@@ -420,11 +420,7 @@ function SettingsPage() {
       </Tabs>
 
       {form && tab !== "audit" && tab !== "danger" ? (
-        <FormActionBar
-          submitting={mutation.isPending}
-          submitLabel="Save changes"
-          onSubmit={save}
-        />
+        <FormActionBar submitting={mutation.isPending} submitLabel="Save changes" onSubmit={save} />
       ) : null}
     </div>
   );
