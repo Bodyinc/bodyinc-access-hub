@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
+import { PageHeader } from "@/components/admin/page-header";
 import { getProvider, updateProvider } from "@/lib/providers.functions";
 
 const ProviderForm = lazy(() =>
@@ -56,7 +57,14 @@ function EditProviderPage() {
 
   const d = query.data as any;
   return (
-    <Suspense fallback={<FormSkeleton />}>
+    <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <PageHeader
+        backTo="/admin/providers"
+        backLabel="providers"
+        crumbs={[{ label: "Providers", to: "/admin/providers" }]}
+        title={d.full_name ?? "Edit practitioner"}
+      />
+      <Suspense fallback={<FormSkeleton />}>
       <ProviderForm
         mode="edit"
         submitting={mutation.isPending}
