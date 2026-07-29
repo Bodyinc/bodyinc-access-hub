@@ -419,11 +419,11 @@ function SettingsPage() {
       </Tabs>
 
       {form && tab !== "audit" && tab !== "danger" ? (
-        <div className="flex justify-end">
-          <Button onClick={save} disabled={mutation.isPending} className={adminBtnPrimary}>
-            {mutation.isPending ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
+        <FormActionBar
+          submitting={mutation.isPending}
+          submitLabel="Save changes"
+          onSubmit={save}
+        />
       ) : null}
     </div>
   );
