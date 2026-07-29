@@ -94,7 +94,8 @@ function EditProviderPage() {
         }}
         onSubmit={(values) => mutation.mutate(values)}
         onCancel={() => navigate({ to: "/admin/providers" })}
-      />
-    </Suspense>
+        />
+      </Suspense>
+    </div>
   );
 }
