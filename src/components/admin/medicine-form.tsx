@@ -50,14 +50,13 @@ export type MedicineFormProps = {
 
 export function MedicineFormPageHeader({ mode }: { mode: "create" | "edit" }) {
   return (
-    <div className="space-y-3">
-      <h1 className="admin-page-title text-[28px] font-semibold leading-[100%] tracking-normal text-[#3B4759] sm:text-[32px]">
-        {mode === "create" ? "Add medicine" : "Edit medicine"}
-      </h1>
-      <p className="admin-page-subtitle text-[18px] font-normal leading-[100%] tracking-normal text-[#3B4759]/80 sm:text-[20px]">
-        Product image and details shown to patients.
-      </p>
-    </div>
+    <PageHeader
+      backTo="/admin/medicines"
+      backLabel="medications"
+      crumbs={[{ label: "Medications", to: "/admin/medicines" }]}
+      title={mode === "create" ? "Add medicine" : "Edit medicine"}
+      subtitle="Product image and details shown to patients."
+    />
   );
 }
 

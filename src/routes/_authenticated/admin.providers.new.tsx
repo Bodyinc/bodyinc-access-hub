@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
+import { PageHeader } from "@/components/admin/page-header";
 import { createProvider } from "@/lib/providers.functions";
 
 const ProviderForm = lazy(() =>
@@ -44,6 +45,12 @@ function NewProviderPage() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1440px] overflow-x-hidden">
+      <PageHeader
+        backTo="/admin/providers"
+        backLabel="providers"
+        crumbs={[{ label: "Providers", to: "/admin/providers" }]}
+        title="New practitioner"
+      />
       <Suspense fallback={<FormSkeleton />}>
         <ProviderForm
           mode="create"
