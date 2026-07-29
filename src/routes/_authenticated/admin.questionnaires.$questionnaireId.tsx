@@ -1,3 +1,5 @@
+import { PageHeader } from "@/components/admin/page-header";
+import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
@@ -135,7 +137,7 @@ function EditQuestionnairePage() {
         backTo="/admin/questionnaires"
         backLabel="questionnaires"
         crumbs={[{ label: "Questionnaires", to: "/admin/questionnaires" }]}
-        title={dataQ.data.name || "Edit questionnaire"}
+        title={dataQ.data.questionnaire.name || "Edit questionnaire"}
       />
       <Card className={adminCard}>
         <CardHeader className="space-y-5 p-4 sm:p-6">
