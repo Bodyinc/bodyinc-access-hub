@@ -1,12 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import {
-  AlertTriangle,
-  ClipboardList,
-  CreditCard,
-  Hourglass,
-  UserPlus,
-  Undo2,
-} from "lucide-react";
+import { AlertTriangle, ClipboardList, CreditCard, Hourglass, UserPlus, Undo2 } from "lucide-react";
 
 type Attention = {
   unassigned: number;

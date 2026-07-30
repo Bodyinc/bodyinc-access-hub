@@ -2,11 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/format";
-import {
-  REQUEST_STATUS_BADGE,
-  requestStatusLabel,
-  requestStatusTone,
-} from "@/lib/request-status";
+import { REQUEST_STATUS_BADGE, requestStatusLabel, requestStatusTone } from "@/lib/request-status";
 
 export type RecentRequest = {
   id: string;

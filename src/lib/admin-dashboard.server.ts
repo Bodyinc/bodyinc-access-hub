@@ -40,39 +40,36 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
   const startISO = new Date(now.getTime() - days * 86400000).toISOString();
   const prevStartISO = new Date(now.getTime() - days * 2 * 86400000).toISOString();
 
-  const [
-    paymentsRes,
-    profilesRes,
-    requestsRes,
-    subsRes,
-    refundsRes,
-    sessionsRes,
-    activityRes,
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("payments")
-      .select("amount_cents, status, created_at")
-      .gte("created_at", prevStartISO)
-      .limit(5000),
-    supabaseAdmin.from("profiles").select("created_at").gte("created_at", prevStartISO).limit(5000),
-    supabaseAdmin
-      .from("medication_requests")
-      .select("id, status, provider_id, medicine_id, user_id, session_id, created_at")
-      .order("created_at", { ascending: false })
-      .limit(2000),
-    supabaseAdmin.from("subscriptions").select("status").limit(5000),
-    supabaseAdmin.from("refund_requests").select("id, status").eq("status", "pending").limit(500),
-    supabaseAdmin
-      .from("intake_sessions")
-      .select("id, status, created_at, expires_at")
-      .in("status", ["in_progress", "payment_pending"])
-      .limit(2000),
-    supabaseAdmin
-      .from("admin_activity_log")
-      .select("id, admin_user_id, action, entity, created_at")
-      .order("created_at", { ascending: false })
-      .limit(6),
-  ]);
+  const [paymentsRes, profilesRes, requestsRes, subsRes, refundsRes, sessionsRes, activityRes] =
+    await Promise.all([
+      supabaseAdmin
+        .from("payments")
+        .select("amount_cents, status, created_at")
+        .gte("created_at", prevStartISO)
+        .limit(5000),
+      supabaseAdmin
+        .from("profiles")
+        .select("created_at")
+        .gte("created_at", prevStartISO)
+        .limit(5000),
+      supabaseAdmin
+        .from("medication_requests")
+        .select("id, status, provider_id, medicine_id, user_id, session_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      supabaseAdmin.from("subscriptions").select("status").limit(5000),
+      supabaseAdmin.from("refund_requests").select("id, status").eq("status", "pending").limit(500),
+      supabaseAdmin
+        .from("intake_sessions")
+        .select("id, status, created_at, expires_at")
+        .in("status", ["in_progress", "payment_pending"])
+        .limit(2000),
+      supabaseAdmin
+        .from("admin_activity_log")
+        .select("id, admin_user_id, action, entity, created_at")
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ]);
 
   const payments = (paymentsRes.data ?? []) as Row[];
   const profiles = (profilesRes.data ?? []) as Row[];
@@ -133,16 +130,14 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
   // Attention queues
   const nowISO = now.toISOString();
   const attention = {
-    unassigned: requests.filter(
-      (r) => !r.provider_id && UNASSIGNED_STATUSES.includes(r.status),
-    ).length,
+    unassigned: requests.filter((r) => !r.provider_id && UNASSIGNED_STATUSES.includes(r.status))
+      .length,
     pending_review: requests.filter((r) => r.status === "pending_review").length,
     awaiting_payment: requests.filter((r) => r.status === "awaiting_additional_payment").length,
     refunds_pending: (refundsRes.data ?? []).length,
     failed_payments: payments.filter((p) => p.status === "failed" && inWindow(p.created_at)).length,
-    abandoned_sessions: sessions.filter(
-      (s) => s.expires_at < nowISO || s.created_at < startISO,
-    ).length,
+    abandoned_sessions: sessions.filter((s) => s.expires_at < nowISO || s.created_at < startISO)
+      .length,
     open_orders: requests.filter((r) => OPEN_STATUSES.includes(r.status)).length,
   };
 
@@ -159,7 +154,12 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
   ) as string[];
   const userIds = Array.from(new Set(recentRaw.map((r) => r.user_id).filter(Boolean))) as string[];
   const sessionIds = Array.from(
-    new Set(recentRaw.filter((r) => !r.user_id).map((r) => r.session_id).filter(Boolean)),
+    new Set(
+      recentRaw
+        .filter((r) => !r.user_id)
+        .map((r) => r.session_id)
+        .filter(Boolean),
+    ),
   ) as string[];
   const providerIds = Array.from(
     new Set(recentRaw.map((r) => r.provider_id).filter(Boolean)),

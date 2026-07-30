@@ -5,7 +5,10 @@ type Point = { date: string; value: number };
 function path(points: Point[], w: number, h: number, max: number) {
   const step = points.length > 1 ? w / (points.length - 1) : w;
   return points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(2)},${(h - (p.value / max) * h).toFixed(2)}`)
+    .map(
+      (p, i) =>
+        `${i === 0 ? "M" : "L"}${(i * step).toFixed(2)},${(h - (p.value / max) * h).toFixed(2)}`,
+    )
     .join(" ");
 }
 
