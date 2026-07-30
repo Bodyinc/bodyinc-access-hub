@@ -118,7 +118,7 @@ function NewQuestionnairePage() {
               htmlFor="q-active"
               className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]"
             >
-              Active Status
+              Active
             </Label>
           </div>
         </CardContent>

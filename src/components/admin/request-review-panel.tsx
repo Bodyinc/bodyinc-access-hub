@@ -1,3 +1,4 @@
+import { sentenceCase } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -127,7 +128,7 @@ export function RequestReviewPanel({
   });
 
   const rejectMut = useMutation({
-    mutationFn: () => reject({ data: { requestId, note: rejectNote || undefined } }),
+    mutationFn: () => reject({ data: { requestId, note: sentenceCase(rejectNote) || undefined } }),
     onSuccess: () => {
       toast.success("Order rejected and refunded.");
       setRejectOpen(false);
@@ -138,7 +139,7 @@ export function RequestReviewPanel({
   });
 
   const generateMut = useMutation({
-    mutationFn: () => generate({ data: { requestId, directions: directions || undefined } }),
+    mutationFn: () => generate({ data: { requestId, directions: sentenceCase(directions) || undefined } }),
     onSuccess: () => {
       toast.success("Prescription generated.");
       setRxOpen(false);
