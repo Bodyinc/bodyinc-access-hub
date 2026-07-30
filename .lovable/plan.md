@@ -1,31 +1,38 @@
-## Goal
-After clicking Save on any add/edit page, return the user to that module's listing page.
+## Admin Dashboard
 
-## Current state (verified)
-Already redirect correctly on save:
-- Medicine new + edit → /admin/medicines
-- Category new → /admin/categories
-- Promo new + edit → /admin/promos
-- Provider new + edit → /admin/providers
+Replace the placeholder at `/admin` (currently 4 "Coming soon" cards) with a real operations overview built from existing tables: `payments`, `medication_requests`, `subscriptions`, `intake_sessions`, `profiles`, `providers`, `refund_requests`, `medicines`, `admin_activity_log`.
 
-Do NOT redirect on save (the gaps):
-- **Category edit** (`admin.categories.$categoryId`) — shows toast only, stays on page
-- **Questionnaire edit** (`admin.questionnaires.$questionnaireId`) — the "Changes saved." details form stays on page
-- **Questionnaire new** — redirects to the questionnaire detail page, not the listing
-- **Patient edit** (`admin.patients.$patientId`) — "Profile updated." stays on page
-- **Practitioner profile** (`provider.profile`) — stays on page
+### 1. KPI row (with 30-day vs previous-30-day trend)
+- Revenue (sum of succeeded `payments.amount_cents`)
+- New patients (`profiles` created)
+- Requests created
+- Active subscriptions
 
-## Changes
-1. Category edit: after `toast.success("Category updated.")`, `navigate({ to: "/admin/categories" })`.
-2. Questionnaire edit: after saving the details form, navigate to `/admin/questionnaires`. Question-level saves inside the editor (add/edit/delete a single question) stay in place — redirecting mid-editing would break the flow.
-3. Questionnaire new: keep the redirect to the new questionnaire's detail page, because a brand-new question set has no questions yet and the user must land there to add them. (Say the word and I'll switch it to the listing instead.)
-4. Patient edit: after "Profile updated.", navigate to `/admin/patients`. Status change / password reset actions stay in place.
-5. Practitioner profile: this is the user's own profile with no listing page — leave as is.
+### 2. Attention panel — what an admin must act on today
+Clickable cards that deep-link into existing screens:
+- Unassigned requests (no `provider_id`, paid/awaiting states) → `/admin/requests`
+- Pending review / awaiting additional payment → `/admin/requests`
+- Refund requests pending → `/admin/billing`
+- Failed payments (last 30 days) → `/admin/billing`
+- Abandoned intake sessions (started, not paid, not expired) → `/admin/intake-sessions`
 
-Each redirect keeps the existing query invalidation so the listing shows fresh data, and the success toast still appears after navigation.
+### 3. Charts (Recharts, already available in the stack)
+- Revenue trend: daily line/area chart, last 30 days
+- Requests by status: horizontal bar
+- New patients per day: bar chart
 
-## Technical notes
-All affected files already import `useNavigate`; the change is adding a `navigate({ to: ... })` call inside the existing `onSuccess` handlers in:
-- `src/routes/_authenticated/admin.categories.$categoryId.tsx`
-- `src/routes/_authenticated/admin.questionnaires.$questionnaireId.tsx`
-- `src/routes/_authenticated/admin.patients.$patientId.tsx`
+### 4. Lists
+- Latest 8 requests: patient name, medicine, status badge, provider, created — row click opens the request
+- Top 5 medicines by request volume (last 30 days)
+- Recent admin activity (last 6 rows from `admin_activity_log`)
+
+### 5. Controls
+- Range switcher: 7 / 30 / 90 days, driving all metrics and charts
+- Refresh button (reuses `src/components/admin/refresh-button.tsx`)
+- Skeleton loading states and a friendly empty state when there is no data yet
+
+### Technical notes
+- New `src/lib/admin-dashboard.functions.ts`: one `getAdminDashboard` server function (`requireSupabaseAuth` + `assertAdmin`, `supabaseAdmin` imported inside the handler) returning `{ kpis, attention, series, recent, topMedicines, activity }` for a given `days` input. Aggregation done in the handler over bounded, date-filtered selects — no new tables or migrations.
+- Called from the component with `useServerFn` + `useQuery` (not a loader), matching the existing admin pages.
+- UI split into small components under `src/components/admin/dashboard/` (`kpi-card.tsx`, `attention-cards.tsx`, `revenue-chart.tsx`, `status-chart.tsx`, `recent-requests.tsx`).
+- Styling uses the existing admin tokens in `src/lib/admin-ui.ts` and the sand/teal/ink palette already in use; page keeps its `head()` metadata with `noindex`.
