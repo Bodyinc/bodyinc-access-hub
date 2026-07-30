@@ -1,3 +1,4 @@
+import { sentenceCase, titleCaseName } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { PageHeader } from "@/components/admin/page-header";
 import { FormActionBar } from "@/components/admin/form-action-bar";
@@ -99,8 +100,8 @@ function EditQuestionnairePage() {
   const saveMut = useMutation({
     mutationFn: () =>
       updateQuestionnaire(questionnaireId, {
-        name: name.trim(),
-        description: description.trim() || null,
+        name: titleCaseName(name),
+        description: sentenceCase(description) || null,
         is_active: isActive,
         category_ids: categoryIds,
       }),
@@ -283,8 +284,8 @@ function QuestionEditor({
   const saveMut = useMutation({
     mutationFn: async () => {
       await updateQuestion(question.id, {
-        prompt: prompt.trim(),
-        description: description.trim() || null,
+        prompt: sentenceCase(prompt),
+        description: sentenceCase(description) || null,
         question_type: type,
         is_required: required,
         sort_order: question.sort_order,
@@ -300,7 +301,9 @@ function QuestionEditor({
       if (type === "single_choice" || type === "multi_choice") {
         await replaceQuestionOptions(
           question.id,
-          options.filter((o) => o.label.trim()),
+          options
+            .filter((o) => o.label.trim())
+            .map((o) => ({ ...o, label: sentenceCase(o.label) })),
         );
       } else {
         await replaceQuestionOptions(question.id, []);

@@ -1,3 +1,4 @@
+import { sentenceCase, titleCaseName } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { PageHeader } from "@/components/admin/page-header";
 import { FormActionBar } from "@/components/admin/form-action-bar";
@@ -55,8 +56,8 @@ function NewQuestionnairePage() {
   const mut = useMutation({
     mutationFn: () =>
       createQuestionnaire({
-        name: name.trim(),
-        description: description.trim() || null,
+        name: titleCaseName(name),
+        description: sentenceCase(description) || null,
         is_active: isActive,
         category_ids: categoryIds,
       }),

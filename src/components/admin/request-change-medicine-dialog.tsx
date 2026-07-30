@@ -1,3 +1,4 @@
+import { sentenceCase } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -157,7 +158,7 @@ export function RequestChangeMedicineDialog({
         data: {
           requestId,
           packageId,
-          crossCategoryReason: isCrossCategory ? categoryReason.trim() : undefined,
+          crossCategoryReason: isCrossCategory ? sentenceCase(categoryReason) : undefined,
         },
       }),
     onSuccess: (res: any) => {

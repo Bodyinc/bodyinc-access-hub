@@ -1,3 +1,4 @@
+import { sentenceCase } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -93,7 +94,7 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
     }
     adjustMut.mutate({
       amount_cents: sign * Math.round(dollars * 100),
-      note: note || undefined,
+      note: sentenceCase(note) || undefined,
       request_id: crypto.randomUUID(),
     });
   }

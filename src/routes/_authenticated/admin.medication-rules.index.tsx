@@ -1,3 +1,4 @@
+import { sentenceCase } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -87,7 +88,7 @@ function MedicationRulesPage() {
         medicine_a_id: a,
         medicine_b_id: b,
         relationship: type,
-        reason: reason || null,
+        reason: sentenceCase(reason) || null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: relationshipsKey });
