@@ -140,7 +140,7 @@ function MedicationRulesPage() {
                 <Label className={adminLabel}>Medicine A</Label>
                 <Select value={a} onValueChange={setA}>
                   <SelectTrigger className={adminSelect}>
-                    <SelectValue placeholder="Select medicine" />
+                    <SelectValue placeholder="Select a medicine" />
                   </SelectTrigger>
                   <SelectContent>
                     {medicines.map((m) => (
@@ -155,7 +155,7 @@ function MedicationRulesPage() {
                 <Label className={adminLabel}>Medicine B</Label>
                 <Select value={b} onValueChange={setB}>
                   <SelectTrigger className={adminSelect}>
-                    <SelectValue placeholder="Select medicine" />
+                    <SelectValue placeholder="Select a medicine" />
                   </SelectTrigger>
                   <SelectContent>
                     {medicines
@@ -187,7 +187,7 @@ function MedicationRulesPage() {
                   onChange={(e) => setReason(e.target.value)}
                   rows={3}
                   className={adminTextarea}
-                  placeholder="Provide clinical justification context notes..."
+                  placeholder="Clinical justification for this rule"
                 />
               </div>
             </div>

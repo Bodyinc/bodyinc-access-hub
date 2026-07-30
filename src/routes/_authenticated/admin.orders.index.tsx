@@ -65,7 +65,7 @@ function OrdersListPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by customer or order id"
+            placeholder="Search by customer or order ID…"
             className={`${adminInput} pl-9`}
           />
         </div>

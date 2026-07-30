@@ -228,7 +228,7 @@ function MedicinesListPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by medication name or active ingredient..."
+              placeholder="Search by medication name or active ingredient…"
               className="pl-11 pr-4 h-[54px] w-full border-[#6A9B9C]/25 bg-[#F2F7F6] text-[#3B4759] placeholder:text-[#3B4759]/40 rounded-[12px] focus-visible:ring-[#3B4759] text-[14px] font-medium shadow-none"
             />
           </div>

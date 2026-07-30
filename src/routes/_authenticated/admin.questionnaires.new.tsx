@@ -105,7 +105,7 @@ function NewQuestionnairePage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Provide context or instructions for this custom review cluster..."
+              placeholder="Context or instructions for this question set"
               className={adminTextarea}
             />
           </div>

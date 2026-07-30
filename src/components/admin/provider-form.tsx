@@ -126,7 +126,7 @@ export function ProviderForm({
             />
           </Field>
           <Field label="Phone" error={errors.phone?.message}>
-            <Input {...register("phone")} placeholder="(555) 555-1234" className={inputFull} />
+            <Input {...register("phone")} placeholder="e.g. (555) 555-1234" className={inputFull} />
           </Field>
           <Field label="Avatar URL" error={errors.avatar_url?.message}>
             <Input {...register("avatar_url")} placeholder="https://…" className={inputFull} />
@@ -150,7 +150,7 @@ export function ProviderForm({
               onValueChange={(v) => setValue("credentials", v as any, { shouldDirty: true })}
             >
               <SelectTrigger className={selectFull}>
-                <SelectValue placeholder="Select" />
+                <SelectValue placeholder="Select a credential" />
               </SelectTrigger>
               <SelectContent className="rounded-[6px] border-[#D5DEDD]">
                 {CREDENTIALS.map((c) => (
@@ -169,10 +169,10 @@ export function ProviderForm({
             />
           </Field>
           <Field label="NPI" error={errors.npi?.message}>
-            <Input {...register("npi")} placeholder="10 digits" className={inputFull} />
+            <Input {...register("npi")} placeholder="e.g. 1234567890" className={inputFull} />
           </Field>
           <Field label="DEA" error={errors.dea?.message}>
-            <Input {...register("dea")} placeholder="AB1234567" className={inputFull} />
+            <Input {...register("dea")} placeholder="e.g. AB1234567" className={inputFull} />
           </Field>
           <Field label="State license number" error={errors.license_number?.message}>
             <Input {...register("license_number")} className={inputFull} />
@@ -291,7 +291,7 @@ export function ProviderForm({
               onValueChange={(v) => setValue("state", v as any, { shouldDirty: true })}
             >
               <SelectTrigger className={selectFull}>
-                <SelectValue placeholder="Select state" />
+                <SelectValue placeholder="Select a state" />
               </SelectTrigger>
               <SelectContent className="max-h-72 rounded-[6px] border-[#D5DEDD]">
                 {US_STATES.map((s) => (
@@ -303,7 +303,7 @@ export function ProviderForm({
             </Select>
           </Field>
           <Field label="ZIP" error={errors.zip?.message}>
-            <Input {...register("zip")} placeholder="12345 or 12345-6789" className={inputFull} />
+            <Input {...register("zip")} placeholder="e.g. 12345 or 12345-6789" className={inputFull} />
           </Field>
           <Field label="Country">
             <Input
@@ -422,7 +422,7 @@ function ChipMultiSelect({
       {allowCustom && (
         <div className="w-full min-w-0">
           <Input
-            placeholder="Add other language and press Enter"
+            placeholder="Add another language, then press Enter"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();

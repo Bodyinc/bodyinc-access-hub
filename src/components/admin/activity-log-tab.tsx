@@ -51,7 +51,7 @@ export function ActivityLogTab() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="Search by action or entity"
+          placeholder="Search by action or entity…"
           className="h-10 w-full rounded-[6px] border-[#D5DEDD] bg-white pl-9 text-[14px] font-semibold text-[#3B4759] placeholder:text-[#6A9B9C]/40 focus-visible:ring-[#6A9B9C]"
         />
       </div>

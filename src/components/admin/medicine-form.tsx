@@ -258,7 +258,7 @@ export function MedicineForm({
                         disabled={submitting}
                       >
                         <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#3B4759] shadow-none sm:h-[53px]">
-                          <SelectValue placeholder="Select Status" />
+                          <SelectValue placeholder="Select a status" />
                         </SelectTrigger>
                         <SelectContent className="font-['DM_Sans',sans-serif]">
                           {MEDICINE_STATUSES.map((s) => (

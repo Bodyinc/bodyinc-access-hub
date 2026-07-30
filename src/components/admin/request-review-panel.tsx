@@ -520,7 +520,7 @@ export function RequestReviewPanel({
             <Textarea
               value={directions}
               onChange={(e) => setDirections(e.target.value)}
-              placeholder="Dosage / sig instructions"
+              placeholder="Dosage and sig instructions"
               className="min-h-[80px]"
             />
           </div>

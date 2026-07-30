@@ -54,7 +54,7 @@ export function SubscriptionsTable() {
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/60" />
           <Input
-            placeholder="Search by patient or plan..."
+            placeholder="Search by patient or plan…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`${adminInput} pl-10`}

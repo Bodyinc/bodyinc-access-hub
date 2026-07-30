@@ -143,7 +143,7 @@ function ProvidersListPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, specialty..."
+            placeholder="Search by name, email, or specialty…"
             className={`${adminInput} pl-10`}
           />
         </div>

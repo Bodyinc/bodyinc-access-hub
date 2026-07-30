@@ -118,7 +118,7 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
             <Input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="Amount (USD)"
+              placeholder="Amount in USD"
               inputMode="decimal"
               className="h-10 rounded-xl border-[#D5DEDD]"
             />
@@ -227,7 +227,7 @@ function ReferralsPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or code"
+            placeholder="Search by name, email, or code…"
             className={`${adminInput} pl-9`}
           />
         </div>

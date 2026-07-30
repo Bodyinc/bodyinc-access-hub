@@ -150,7 +150,7 @@ export function CategoryForm({
               <Field label="Slug" error={errors.slug?.message}>
                 <Input
                   {...register("slug")}
-                  placeholder="weight-loss"
+                  placeholder="e.g. weight-loss"
                   disabled={submitting}
                   className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] placeholder:text-[#6A9B9C]/40 rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
                 />
@@ -159,7 +159,7 @@ export function CategoryForm({
             <Field label="Tagline" error={errors.tagline?.message}>
               <Input
                 {...register("tagline")}
-                placeholder="Short one-liner shown on card"
+                placeholder="Short one-liner shown on the card"
                 disabled={submitting}
                 className="h-[44px] px-4 py-[14px] border-[#D5DEDD] bg-[#FFFFFF] text-[#3B4759] placeholder:text-[#6A9B9C]/40 rounded-[6px] focus-visible:ring-[#3B4759] text-[16px] font-[500] leading-none font-['DM_Sans',sans-serif] sm:h-[53px] sm:text-[18px]"
               />
@@ -392,7 +392,7 @@ export function CategoryForm({
                       </div>
                       <StateMultiSelect
                         selected={(field.value ?? []) as string[]}
-                        placeholder="Block a state"
+                        placeholder="Select a state to block"
                         onToggle={(s) => {
                           const set = new Set((field.value ?? []) as string[]);
                           if (set.has(s)) set.delete(s);

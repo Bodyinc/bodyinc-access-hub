@@ -89,7 +89,7 @@ export function PromoForm({
             <Input
               value={v.code}
               onChange={(e) => set({ code: e.target.value.toUpperCase() })}
-              placeholder="WELCOME20"
+              placeholder="e.g. WELCOME20"
               disabled={submitting}
               className={inputFull}
             />
