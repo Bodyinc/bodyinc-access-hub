@@ -37,7 +37,7 @@ function NewPromoPage() {
   const mutation = useMutation({
     mutationFn: (v: PromoFormValues) => create({ data: toPromoInput(v) }),
     onSuccess: () => {
-      toast.success("Promo created");
+      toast.success("Promo code created.");
       navigate({ to: "/admin/promos" });
     },
     onError: (e: Error) => toast.error(toastError(e)),

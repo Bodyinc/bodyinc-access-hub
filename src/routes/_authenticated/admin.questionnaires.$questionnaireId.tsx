@@ -108,7 +108,7 @@ function EditQuestionnairePage() {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
-      toast.success("Saved");
+      toast.success("Changes saved.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -308,7 +308,7 @@ function QuestionEditor({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
-      toast.success("Question saved");
+      toast.success("Question saved.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -317,7 +317,7 @@ function QuestionEditor({
     mutationFn: () => deleteQuestion(question.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
-      toast.success("Deleted");
+      toast.success("Deleted.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });

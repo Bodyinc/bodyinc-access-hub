@@ -113,7 +113,7 @@ function PatientDetailPage() {
     ) => update({ data: { userId: patientId, ...vars } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Profile updated");
+      toast.success("Profile updated.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -122,7 +122,7 @@ function PatientDetailPage() {
     mutationFn: (is_active: boolean) => setActive({ data: { userId: patientId, is_active } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Status updated");
+      toast.success("Status updated.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -132,7 +132,7 @@ function PatientDetailPage() {
       reset({
         data: { userId: patientId, redirect_to: `${window.location.origin}/reset-password` },
       }),
-    onSuccess: () => toast.success("Password reset email sent"),
+    onSuccess: () => toast.success("Password reset email sent."),
     onError: (e: Error) => toast.error(toastError(e)),
   });
 

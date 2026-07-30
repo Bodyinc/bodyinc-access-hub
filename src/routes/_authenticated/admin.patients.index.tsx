@@ -85,7 +85,7 @@ function PatientsListPage() {
     mutationFn: (vars: { userId: string; is_active: boolean }) => setActive({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["patients"] });
-      toast.success("Updated");
+      toast.success("Changes saved.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -93,7 +93,7 @@ function PatientsListPage() {
   const resetMut = useMutation({
     mutationFn: (userId: string) =>
       reset({ data: { userId, redirect_to: `${window.location.origin}/reset-password` } }),
-    onSuccess: () => toast.success("Password reset email sent"),
+    onSuccess: () => toast.success("Password reset email sent."),
     onError: (e: Error) => toast.error(toastError(e)),
   });
 
@@ -101,7 +101,7 @@ function PatientsListPage() {
     mutationFn: (userId: string) => remove({ data: { userId } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["patients"] });
-      toast.success("Patient deleted");
+      toast.success("Patient deleted.");
       setDeleteTarget(null);
     },
     onError: (e: Error) => toast.error(toastError(e)),

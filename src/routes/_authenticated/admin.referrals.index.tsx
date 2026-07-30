@@ -77,7 +77,7 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
     mutationFn: (vars: { amount_cents: number; note?: string; request_id: string }) =>
       adjustFn({ data: { userId, ...vars } }),
     onSuccess: () => {
-      toast.success("Wallet updated");
+      toast.success("Wallet updated.");
       setAmount("");
       setNote("");
       qc.invalidateQueries({ queryKey: ["patient-wallet", userId] });
@@ -88,7 +88,7 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
   function submit(sign: 1 | -1) {
     const dollars = Number(amount);
     if (!Number.isFinite(dollars) || dollars <= 0) {
-      toast.error("Enter a positive amount");
+      toast.error("Enter an amount greater than zero.");
       return;
     }
     adjustMut.mutate({

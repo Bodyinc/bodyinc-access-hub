@@ -46,7 +46,7 @@ function EditPromoPage() {
   const mutation = useMutation({
     mutationFn: (v: PromoFormValues) => update({ data: { id: promoId, ...toPromoInput(v) } }),
     onSuccess: () => {
-      toast.success("Promo updated");
+      toast.success("Promo code updated.");
       navigate({ to: "/admin/promos" });
     },
     onError: (e: Error) => toast.error(toastError(e)),

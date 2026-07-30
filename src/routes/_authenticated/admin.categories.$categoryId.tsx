@@ -28,7 +28,7 @@ function EditCategoryPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
       qc.invalidateQueries({ queryKey: ["category", categoryId] });
-      toast.success("Category updated");
+      toast.success("Category updated.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });

@@ -108,7 +108,7 @@ function MedicinesListPage() {
       setMedicineActive(vars.id, vars.status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
-      toast.success("Status updated");
+      toast.success("Status updated.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -125,7 +125,7 @@ function MedicinesListPage() {
           { duration: 12000 },
         );
       } else {
-        toast.success("Medicine deleted");
+        toast.success("Medicine deleted.");
       }
       setConfirmDelete(null);
     },
@@ -149,7 +149,7 @@ function MedicinesListPage() {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       qc.invalidateQueries({ queryKey: packagesQueryKey });
       if (result.total === 0) {
-        toast.success("Every plan already has a Stripe price");
+        toast.success("Every plan already has a Stripe price.");
       } else if (result.failed.length === 0) {
         toast.success(
           `${result.synced} plan${result.synced === 1 ? "" : "s"} synced to Stripe and can now be purchased`,

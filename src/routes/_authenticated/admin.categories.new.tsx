@@ -25,7 +25,7 @@ function NewCategoryPage() {
     mutationFn: (v: CategoryFormValues) => createCategory(v),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
-      toast.success("Category created");
+      toast.success("Category created.");
       navigate({ to: "/admin/categories" });
     },
     onError: (e: Error) => toast.error(toastError(e)),

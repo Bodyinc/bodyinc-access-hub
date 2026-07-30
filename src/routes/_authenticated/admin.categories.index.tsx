@@ -58,7 +58,7 @@ function CategoriesListPage() {
       setCategoryActive(vars.id, vars.is_active),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
-      toast.success("Updated");
+      toast.success("Changes saved.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -66,7 +66,7 @@ function CategoriesListPage() {
     mutationFn: (id: string) => deleteCategory(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
-      toast.success("Deleted");
+      toast.success("Deleted.");
       setConfirm(null);
     },
     onError: (e: Error) => toast.error(toastError(e)),

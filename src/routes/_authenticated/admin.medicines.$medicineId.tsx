@@ -171,7 +171,7 @@ export default function EditMedicinePage() {
           { duration: 12000 },
         );
       } else {
-        toast.success("Medicine updated");
+        toast.success("Medicine updated.");
       }
       navigate({ to: "/admin/medicines" });
     },

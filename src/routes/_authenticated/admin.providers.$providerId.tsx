@@ -39,7 +39,7 @@ function EditProviderPage() {
     mutationFn: (values: any) => update({ data: { id: providerId, ...values } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["providers"] });
-      toast.success("Provider updated");
+      toast.success("Provider updated.");
       navigate({ to: "/admin/providers" });
     },
     onError: (e: Error) => toast.error(toastError(e)),

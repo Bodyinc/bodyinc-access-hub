@@ -63,7 +63,7 @@ function NewQuestionnairePage() {
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
-      toast.success("Created");
+      toast.success("Question set created.");
       navigate({
         to: "/admin/questionnaires/$questionnaireId",
         params: { questionnaireId: r.id },

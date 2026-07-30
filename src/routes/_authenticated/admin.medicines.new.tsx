@@ -79,7 +79,7 @@ function NewMedicinePage() {
           { duration: 12000 },
         );
       } else {
-        toast.success("Medicine created");
+        toast.success("Medicine created.");
       }
       navigate({ to: "/admin/medicines" });
     },
