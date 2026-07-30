@@ -203,7 +203,7 @@ export function MedicineForm({
                     ) : (
                       <Upload className="h-4 w-4" />
                     )}
-                    {uploading ? "Uploading..." : imageUrl ? "Replace image" : "Upload image"}
+                    {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
                   </Button>
 
                   <span className="text-center text-[12px] font-normal leading-[100%] text-[#3B4759]/70">
