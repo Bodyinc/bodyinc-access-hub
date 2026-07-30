@@ -139,7 +139,8 @@ export function RequestReviewPanel({
   });
 
   const generateMut = useMutation({
-    mutationFn: () => generate({ data: { requestId, directions: sentenceCase(directions) || undefined } }),
+    mutationFn: () =>
+      generate({ data: { requestId, directions: sentenceCase(directions) || undefined } }),
     onSuccess: () => {
       toast.success("Prescription generated.");
       setRxOpen(false);

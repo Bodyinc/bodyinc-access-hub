@@ -48,9 +48,7 @@ export function titleCaseName(value: string): string {
   const cleaned = collapseSpaces(value);
   if (!cleaned) return cleaned;
   const parts = cleaned.split(" ");
-  return parts
-    .map((token, i) => capitalizeToken(token, i === 0, i === parts.length - 1))
-    .join(" ");
+  return parts.map((token, i) => capitalizeToken(token, i === 0, i === parts.length - 1)).join(" ");
 }
 
 /** Capitalize the first letter of free-form prose, leaving the rest as written. */

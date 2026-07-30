@@ -33,12 +33,12 @@ export const Route = createFileRoute("/auth")({
 });
 
 const passwordSchema = z.object({
-  email: z.string().trim().email("Enter a valid email").max(255),
+  email: z.string().trim().email("Enter a valid email address").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
 });
 
 const emailOnlySchema = z.object({
-  email: z.string().trim().email("Enter a valid email").max(255),
+  email: z.string().trim().email("Enter a valid email address").max(255),
 });
 
 function AuthPage() {
@@ -130,7 +130,7 @@ function AuthPage() {
 
     const parsed = emailOnlySchema.safeParse({ email: otpEmail });
     if (!parsed.success) {
-      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email");
+      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email address");
       return;
     }
     setOtpSubmitting(true);
