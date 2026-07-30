@@ -317,7 +317,7 @@ function QuestionEditor({
     mutationFn: () => deleteQuestion(question.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
-      toast.success("Deleted.");
+      toast.success("Question deleted.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });

@@ -66,7 +66,7 @@ function CategoriesListPage() {
     mutationFn: (id: string) => deleteCategory(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
-      toast.success("Deleted.");
+      toast.success("Category deleted.");
       setConfirm(null);
     },
     onError: (e: Error) => toast.error(toastError(e)),

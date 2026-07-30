@@ -91,7 +91,7 @@ function MedicationRulesPage() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: relationshipsKey });
-      toast.success("Rule created");
+      toast.success("Rule created.");
       setOpen(false);
       setA("");
       setB("");
@@ -104,7 +104,7 @@ function MedicationRulesPage() {
     mutationFn: (id: string) => deleteRelationship(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: relationshipsKey });
-      toast.success("Rule deleted");
+      toast.success("Rule deleted.");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });

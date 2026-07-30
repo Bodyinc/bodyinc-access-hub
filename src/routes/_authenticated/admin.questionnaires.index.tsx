@@ -69,7 +69,7 @@ function QuestionnairesListPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: listKey });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
-      toast.success("Deleted.");
+      toast.success("Question set deleted.");
       setConfirm(null);
     },
     onError: (e: Error) => toast.error(toastError(e)),
