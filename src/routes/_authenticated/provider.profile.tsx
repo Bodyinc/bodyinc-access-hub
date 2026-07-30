@@ -1,3 +1,5 @@
+import { sentenceCase, titleCaseName, upperTrim } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,14 +69,14 @@ function ProviderProfilePage() {
     mutationFn: () =>
       save({
         data: {
-          full_name: form.full_name.trim(),
-          bio: form.bio.trim() || undefined,
-          credentials: form.credentials.trim() || undefined,
-          specialty: form.specialty.trim() || undefined,
+          full_name: titleCaseName(form.full_name),
+          bio: sentenceCase(form.bio) || undefined,
+          credentials: upperTrim(form.credentials) || undefined,
+          specialty: titleCaseName(form.specialty) || undefined,
           years_experience: form.years_experience ? Number(form.years_experience) : null,
           languages: form.languages
             .split(",")
-            .map((s) => s.trim())
+            .map((s) => titleCaseName(s))
             .filter(Boolean),
           consultation_types: form.consultation_types
             .split(",")
@@ -87,7 +89,7 @@ function ProviderProfilePage() {
       toast.success("Profile updated.");
       qc.invalidateQueries({ queryKey: ["provider-profile"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const d = (q.data as any) ?? {};

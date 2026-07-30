@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -27,9 +28,9 @@ function EditCategoryPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
       qc.invalidateQueries({ queryKey: ["category", categoryId] });
-      toast.success("Category updated");
+      toast.success("Category updated.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (catQ.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;

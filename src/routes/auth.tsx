@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
@@ -32,12 +33,12 @@ export const Route = createFileRoute("/auth")({
 });
 
 const passwordSchema = z.object({
-  email: z.string().trim().email("Enter a valid email").max(255),
+  email: z.string().trim().email("Enter a valid email address").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
 });
 
 const emailOnlySchema = z.object({
-  email: z.string().trim().email("Enter a valid email").max(255),
+  email: z.string().trim().email("Enter a valid email address").max(255),
 });
 
 function AuthPage() {
@@ -70,7 +71,7 @@ function AuthPage() {
       if (result.error === "wrong_portal" || result.error === "no_access") {
         setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
       } else {
-        toast.error(result.message);
+        toast.error(toastError(result));
       }
       return;
     }
@@ -129,7 +130,7 @@ function AuthPage() {
 
     const parsed = emailOnlySchema.safeParse({ email: otpEmail });
     if (!parsed.success) {
-      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email");
+      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email address");
       return;
     }
     setOtpSubmitting(true);

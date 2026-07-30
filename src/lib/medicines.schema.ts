@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { sentenceCase, titleCaseName } from "@/lib/text-normalize";
+
 export const MEDICINE_STATUSES = ["active", "inactive", "draft"] as const;
 export type MedicineStatus = (typeof MEDICINE_STATUSES)[number];
 
@@ -23,7 +25,7 @@ export const medicinePackageSchema = z
       .max(120)
       .optional()
       .or(z.literal(""))
-      .transform((v) => (v ? v : undefined)),
+      .transform((v) => (v ? titleCaseName(v) : undefined)),
     duration_months: z.coerce
       .number()
       .int()
@@ -43,7 +45,16 @@ export const medicinePackageSchema = z
     is_most_popular: z.boolean().default(false),
     is_active: z.boolean().default(true),
     features: z
-      .array(z.object({ text: z.string().trim().min(1, "Feature cannot be empty").max(300) }))
+      .array(
+        z.object({
+          text: z
+            .string()
+            .trim()
+            .min(1, "Feature cannot be empty")
+            .max(300)
+            .transform((v) => sentenceCase(v)),
+        }),
+      )
       .default([]),
     clinical_note: z
       .string()
@@ -51,7 +62,7 @@ export const medicinePackageSchema = z
       .max(2000)
       .optional()
       .or(z.literal(""))
-      .transform((v) => (v ? v : undefined)),
+      .transform((v) => (v ? sentenceCase(v) : undefined)),
   })
   .refine((p) => p.price <= p.original_price, {
     message: "Sale price cannot exceed the original price",
@@ -62,7 +73,12 @@ export type MedicinePackageValues = z.input<typeof medicinePackageSchema>;
 
 export const medicineVariantSchema = z.object({
   id: z.string().uuid().optional(),
-  name: z.string().trim().min(1, "Variant name is required").max(120),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Variant name is required")
+    .max(120)
+    .transform((v) => titleCaseName(v)),
   is_active: z.boolean().default(true),
   packages: z
     .array(medicinePackageSchema)
@@ -76,15 +92,25 @@ export const medicineVariantSchema = z.object({
 export type MedicineVariantValues = z.input<typeof medicineVariantSchema>;
 
 export const medicineFormSchema = z.object({
-  name: z.string().trim().min(1, "Medicine name is required").max(120),
-  short_description: z.string().trim().min(1, "Short description is required").max(500),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Medicine name is required")
+    .max(120)
+    .transform((v) => titleCaseName(v)),
+  short_description: z
+    .string()
+    .trim()
+    .min(1, "Short description is required")
+    .max(500)
+    .transform((v) => sentenceCase(v)),
   long_description: z
     .string()
     .trim()
     .max(3000)
     .optional()
     .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
+    .transform((v) => (v ? sentenceCase(v) : undefined)),
   image_url: z
     .string()
     .trim()
@@ -104,7 +130,16 @@ export const medicineFormSchema = z.object({
   variants: z.array(medicineVariantSchema).default([]),
   status: z.enum(MEDICINE_STATUSES).default("draft"),
   important_info: z
-    .array(z.object({ text: z.string().trim().min(1, "Bullet cannot be empty").max(500) }))
+    .array(
+      z.object({
+        text: z
+          .string()
+          .trim()
+          .min(1, "Bullet cannot be empty")
+          .max(500)
+          .transform((v) => sentenceCase(v)),
+      }),
+    )
     .default([]),
   notice_text: z
     .string()
@@ -112,7 +147,7 @@ export const medicineFormSchema = z.object({
     .max(1000)
     .optional()
     .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
+    .transform((v) => (v ? sentenceCase(v) : undefined)),
   sort_order: z.coerce.number().int().min(0).default(0),
   requires_questionnaire: z.boolean().default(false),
   requires_consultation: z.boolean().default(false),

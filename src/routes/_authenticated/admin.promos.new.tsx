@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -36,10 +37,10 @@ function NewPromoPage() {
   const mutation = useMutation({
     mutationFn: (v: PromoFormValues) => create({ data: toPromoInput(v) }),
     onSuccess: () => {
-      toast.success("Promo created");
+      toast.success("Promo code created.");
       navigate({ to: "/admin/promos" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

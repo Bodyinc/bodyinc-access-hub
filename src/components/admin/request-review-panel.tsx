@@ -1,3 +1,5 @@
+import { sentenceCase } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -97,7 +99,7 @@ export function RequestReviewPanel({
       setAssignId("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const claimMut = useMutation({
@@ -108,7 +110,7 @@ export function RequestReviewPanel({
       qc.invalidateQueries({ queryKey: ["provider-dashboard"] });
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function refresh() {
@@ -122,29 +124,30 @@ export function RequestReviewPanel({
       toast.success("Order approved.");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const rejectMut = useMutation({
-    mutationFn: () => reject({ data: { requestId, note: rejectNote || undefined } }),
+    mutationFn: () => reject({ data: { requestId, note: sentenceCase(rejectNote) || undefined } }),
     onSuccess: () => {
       toast.success("Order rejected and refunded.");
       setRejectOpen(false);
       setRejectNote("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const generateMut = useMutation({
-    mutationFn: () => generate({ data: { requestId, directions: directions || undefined } }),
+    mutationFn: () =>
+      generate({ data: { requestId, directions: sentenceCase(directions) || undefined } }),
     onSuccess: () => {
       toast.success("Prescription generated.");
       setRxOpen(false);
       setDirections("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const advanceMut = useMutation({
@@ -158,7 +161,7 @@ export function RequestReviewPanel({
       setTracking("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (q.isLoading) {
@@ -520,7 +523,7 @@ export function RequestReviewPanel({
             <Textarea
               value={directions}
               onChange={(e) => setDirections(e.target.value)}
-              placeholder="Dosage / sig instructions"
+              placeholder="Dosage and sig instructions"
               className="min-h-[80px]"
             />
           </div>

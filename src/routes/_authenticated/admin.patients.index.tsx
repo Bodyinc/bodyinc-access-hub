@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -84,26 +85,26 @@ function PatientsListPage() {
     mutationFn: (vars: { userId: string; is_active: boolean }) => setActive({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["patients"] });
-      toast.success("Updated");
+      toast.success("Changes saved.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const resetMut = useMutation({
     mutationFn: (userId: string) =>
       reset({ data: { userId, redirect_to: `${window.location.origin}/reset-password` } }),
-    onSuccess: () => toast.success("Password reset email sent"),
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => toast.success("Password reset email sent."),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteMut = useMutation({
     mutationFn: (userId: string) => remove({ data: { userId } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["patients"] });
-      toast.success("Patient deleted");
+      toast.success("Patient deleted.");
       setDeleteTarget(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (
@@ -124,7 +125,7 @@ function PatientsListPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or phone"
+            placeholder="Search by name, email, or phone…"
             className={`${adminInput} pl-9`}
           />
         </div>

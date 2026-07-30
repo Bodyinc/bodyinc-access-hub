@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -107,9 +108,9 @@ function MedicinesListPage() {
       setMedicineActive(vars.id, vars.status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
-      toast.success("Status updated");
+      toast.success("Status updated.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteSafely = useServerFn(deleteMedicineSafely);
@@ -124,11 +125,11 @@ function MedicinesListPage() {
           { duration: 12000 },
         );
       } else {
-        toast.success("Medicine deleted");
+        toast.success("Medicine deleted.");
       }
       setConfirmDelete(null);
     },
-    onError: (e: Error) => toast.error(e.message, { duration: 15000 }),
+    onError: (e: Error) => toast.error(toastError(e), { duration: 15000 }),
   });
 
   const syncPrices = useServerFn(syncUnpricedPackages);
@@ -148,7 +149,7 @@ function MedicinesListPage() {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       qc.invalidateQueries({ queryKey: packagesQueryKey });
       if (result.total === 0) {
-        toast.success("Every plan already has a Stripe price");
+        toast.success("Every plan already has a Stripe price.");
       } else if (result.failed.length === 0) {
         toast.success(
           `${result.synced} plan${result.synced === 1 ? "" : "s"} synced to Stripe and can now be purchased`,
@@ -162,7 +163,7 @@ function MedicinesListPage() {
         );
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const totalUnsynced = allRows.reduce((n, m) => n + unsyncedPackages(m).length, 0);
@@ -228,7 +229,7 @@ function MedicinesListPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by medication name or active ingredient..."
+              placeholder="Search by medication name or active ingredient…"
               className="pl-11 pr-4 h-[54px] w-full border-[#6A9B9C]/25 bg-[#F2F7F6] text-[#3B4759] placeholder:text-[#3B4759]/40 rounded-[12px] focus-visible:ring-[#3B4759] text-[14px] font-medium shadow-none"
             />
           </div>

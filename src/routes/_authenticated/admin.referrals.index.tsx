@@ -1,3 +1,5 @@
+import { sentenceCase } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -76,23 +78,23 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
     mutationFn: (vars: { amount_cents: number; note?: string; request_id: string }) =>
       adjustFn({ data: { userId, ...vars } }),
     onSuccess: () => {
-      toast.success("Wallet updated");
+      toast.success("Wallet updated.");
       setAmount("");
       setNote("");
       qc.invalidateQueries({ queryKey: ["patient-wallet", userId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function submit(sign: 1 | -1) {
     const dollars = Number(amount);
     if (!Number.isFinite(dollars) || dollars <= 0) {
-      toast.error("Enter a positive amount");
+      toast.error("Enter an amount greater than zero.");
       return;
     }
     adjustMut.mutate({
       amount_cents: sign * Math.round(dollars * 100),
-      note: note || undefined,
+      note: sentenceCase(note) || undefined,
       request_id: crypto.randomUUID(),
     });
   }
@@ -118,7 +120,7 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
             <Input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="Amount (USD)"
+              placeholder="Amount in USD"
               inputMode="decimal"
               className="h-10 rounded-xl border-[#D5DEDD]"
             />
@@ -227,7 +229,7 @@ function ReferralsPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or code"
+            placeholder="Search by name, email, or code…"
             className={`${adminInput} pl-9`}
           />
         </div>

@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -78,11 +79,11 @@ function NewMedicinePage() {
           { duration: 12000 },
         );
       } else {
-        toast.success("Medicine created");
+        toast.success("Medicine created.");
       }
       navigate({ to: "/admin/medicines" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

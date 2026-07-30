@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
@@ -129,7 +130,7 @@ function ResetPasswordPage() {
     try {
       const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
       if (error) {
-        toast.error(error.message);
+        toast.error(toastError(error));
         return;
       }
       clearPasswordRecoveryPending();

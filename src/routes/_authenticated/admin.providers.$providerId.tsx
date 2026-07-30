@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -38,10 +39,10 @@ function EditProviderPage() {
     mutationFn: (values: any) => update({ data: { id: providerId, ...values } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["providers"] });
-      toast.success("Provider updated");
+      toast.success("Provider updated.");
       navigate({ to: "/admin/providers" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (query.isLoading) {

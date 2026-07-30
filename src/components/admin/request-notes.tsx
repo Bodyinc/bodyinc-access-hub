@@ -1,3 +1,5 @@
+import { sentenceCase } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,12 +24,12 @@ export function RequestNotes({ requestId }: { requestId: string }) {
   });
 
   const mut = useMutation({
-    mutationFn: () => add({ data: { requestId, body: body.trim() } }),
+    mutationFn: () => add({ data: { requestId, body: sentenceCase(body) } }),
     onSuccess: () => {
       setBody("");
       qc.invalidateQueries({ queryKey: ["request-notes", requestId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const notes = (q.data as any[]) ?? [];

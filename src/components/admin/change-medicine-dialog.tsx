@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -135,7 +136,7 @@ export function ChangeMedicineDialog({
       onChanged();
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const canSubmit = !!selectedPkg && !mutation.isPending;

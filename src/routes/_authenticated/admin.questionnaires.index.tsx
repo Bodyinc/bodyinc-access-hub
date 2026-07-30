@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
@@ -68,10 +69,10 @@ function QuestionnairesListPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: listKey });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
-      toast.success("Deleted");
+      toast.success("Question set deleted.");
       setConfirm(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

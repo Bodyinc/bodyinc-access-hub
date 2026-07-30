@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,7 +53,7 @@ function ProviderQueuePage() {
       qc.invalidateQueries({ queryKey: ["provider-dashboard"] });
       qc.invalidateQueries({ queryKey: ["requests"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const rows = (q.data as any[]) ?? [];

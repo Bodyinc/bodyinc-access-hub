@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -88,36 +89,36 @@ function ProvidersListPage() {
   const resendMut = useMutation({
     mutationFn: (id: string) =>
       resend({ data: { id, redirect_to: `${window.location.origin}/reset-password` } }),
-    onSuccess: () => toast.success("Invite link sent"),
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => toast.success("Invite link sent."),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const activeMut = useMutation({
     mutationFn: (vars: { id: string; is_active: boolean }) => setActive({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["providers"] });
-      toast.success("Updated");
+      toast.success("Changes saved.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const setDefaultMut = useMutation({
     mutationFn: (id: string) => setDefault({ data: { id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["providers"] });
-      toast.success("Default provider set");
+      toast.success("Default provider set.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => del({ data: { id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["providers"] });
-      toast.success("Provider deleted");
+      toast.success("Provider deleted.");
       setConfirmDelete(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (
@@ -143,7 +144,7 @@ function ProvidersListPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, specialty..."
+            placeholder="Search by name, email, or specialty…"
             className={`${adminInput} pl-10`}
           />
         </div>

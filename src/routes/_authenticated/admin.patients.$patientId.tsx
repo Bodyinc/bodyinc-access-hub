@@ -1,3 +1,5 @@
+import { titleCaseName, upperTrim } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -112,18 +114,18 @@ function PatientDetailPage() {
     ) => update({ data: { userId: patientId, ...vars } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Profile updated");
+      toast.success("Profile updated.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const activeMut = useMutation({
     mutationFn: (is_active: boolean) => setActive({ data: { userId: patientId, is_active } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Status updated");
+      toast.success("Status updated.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const resetMut = useMutation({
@@ -131,8 +133,8 @@ function PatientDetailPage() {
       reset({
         data: { userId: patientId, redirect_to: `${window.location.origin}/reset-password` },
       }),
-    onSuccess: () => toast.success("Password reset email sent"),
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => toast.success("Password reset email sent."),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (patient.isLoading) {
@@ -562,11 +564,11 @@ function ProfileTab({
           onSubmit={(e) => {
             e.preventDefault();
             if (!full_name.trim()) {
-              toast.error("Name is required");
+              toast.error("Enter the patient's full name.");
               return;
             }
             onSubmit({
-              full_name: full_name.trim(),
+              full_name: titleCaseName(full_name),
               phone: phone.trim(),
               dob,
               sex: (sex || null) as "male" | "female" | "other" | null,
@@ -780,12 +782,12 @@ function AddressCard({
           onSubmit={(e) => {
             e.preventDefault();
             onSubmit({
-              street_address: form.street_address.trim() || null,
+              street_address: titleCaseName(form.street_address) || null,
               apartment: form.apartment.trim() || null,
-              city: form.city.trim() || null,
-              state_code: form.state_code || null,
+              city: titleCaseName(form.city) || null,
+              state_code: upperTrim(form.state_code) || null,
               postal_code: form.postal_code.trim() || null,
-              country: form.country.trim() || null,
+              country: upperTrim(form.country) || null,
             });
           }}
         >

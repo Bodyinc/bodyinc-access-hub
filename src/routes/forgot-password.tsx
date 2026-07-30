@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
@@ -47,7 +48,7 @@ function ForgotPasswordPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (err) {
-        toast.error(err.message);
+        toast.error(toastError(err));
         return;
       }
       markPasswordRecoveryPending();

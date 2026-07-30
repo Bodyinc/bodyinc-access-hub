@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,10 +46,10 @@ function EditPromoPage() {
   const mutation = useMutation({
     mutationFn: (v: PromoFormValues) => update({ data: { id: promoId, ...toPromoInput(v) } }),
     onSuccess: () => {
-      toast.success("Promo updated");
+      toast.success("Promo code updated.");
       navigate({ to: "/admin/promos" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;

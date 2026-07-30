@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { US_STATES } from "@/lib/us-states";
+import { normalizeEmail, sentenceCase, titleCaseName, upperTrim } from "@/lib/text-normalize";
 
 export { US_STATES };
 export type { USState } from "@/lib/us-states";
@@ -36,27 +37,40 @@ const optionalStr = z
 const stateEnum = z.enum(US_STATES);
 
 export const providerFormSchema = z.object({
-  email: z.string().trim().email().max(255),
-  full_name: z.string().trim().min(1, "Required").max(120),
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email address")
+    .max(255)
+    .transform((v) => normalizeEmail(v)),
+  full_name: z
+    .string()
+    .trim()
+    .min(1, "Full name is required")
+    .max(120)
+    .transform((v) => titleCaseName(v)),
   phone: z
     .string()
     .trim()
     .max(20)
     .optional()
     .or(z.literal(""))
-    .refine((v) => !v || /^[\d\s()+-]{7,20}$/.test(v), "Invalid phone")
+    .refine((v) => !v || /^[\d\s()+-]{7,20}$/.test(v), "Enter a valid phone number")
     .transform((v) => (v ? v : undefined)),
-  avatar_url: optionalStr.refine((v) => !v || /^https?:\/\//i.test(v), "Must be a URL"),
+  avatar_url: optionalStr.refine(
+    (v) => !v || /^https?:\/\//i.test(v),
+    "Enter a valid URL starting with https://",
+  ),
   bio: z
     .string()
     .trim()
     .max(2000)
     .optional()
     .or(z.literal(""))
-    .transform((v) => v || undefined),
+    .transform((v) => (v ? sentenceCase(v) : undefined)),
 
   credentials: z.enum(CREDENTIALS).optional(),
-  specialty: optionalStr,
+  specialty: optionalStr.transform((v) => (v ? titleCaseName(v) : undefined)),
   npi: z
     .string()
     .trim()
@@ -70,7 +84,7 @@ export const providerFormSchema = z.object({
     .optional()
     .or(z.literal(""))
     .refine((v) => !v || /^[A-Za-z]{2}\d{7}$/.test(v), "DEA must be 2 letters + 7 digits")
-    .transform((v) => (v ? v.toUpperCase() : undefined)),
+    .transform((v) => (v ? upperTrim(v) : undefined)),
   license_number: optionalStr,
   license_states: z.array(stateEnum).default([]),
 

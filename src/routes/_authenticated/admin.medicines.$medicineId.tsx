@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -117,7 +118,7 @@ export default function EditMedicinePage() {
         );
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const [previewValues, setPreviewValues] = useState<MedicineFormValues | null>(null);
@@ -170,11 +171,11 @@ export default function EditMedicinePage() {
           { duration: 12000 },
         );
       } else {
-        toast.success("Medicine updated");
+        toast.success("Medicine updated.");
       }
       navigate({ to: "/admin/medicines" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (medicineQuery.isLoading && !medicineQuery.data) {

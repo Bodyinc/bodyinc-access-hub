@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -57,18 +58,18 @@ function CategoriesListPage() {
       setCategoryActive(vars.id, vars.is_active),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
-      toast.success("Updated");
+      toast.success("Changes saved.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
-      toast.success("Deleted");
+      toast.success("Category deleted.");
       setConfirm(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const isEmpty = !query.isLoading && rows.length === 0;

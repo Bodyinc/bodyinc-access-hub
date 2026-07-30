@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -290,7 +291,7 @@ function SettingsPage() {
       qc.invalidateQueries({ queryKey: ["platform-settings"] });
       qc.invalidateQueries({ queryKey: ["admin-activity-log"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {

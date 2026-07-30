@@ -1,3 +1,5 @@
+import { sentenceCase } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
@@ -86,26 +88,26 @@ function MedicationRulesPage() {
         medicine_a_id: a,
         medicine_b_id: b,
         relationship: type,
-        reason: reason || null,
+        reason: sentenceCase(reason) || null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: relationshipsKey });
-      toast.success("Rule created");
+      toast.success("Rule created.");
       setOpen(false);
       setA("");
       setB("");
       setReason("");
       setType("incompatible");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteRelationship(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: relationshipsKey });
-      toast.success("Rule deleted");
+      toast.success("Rule deleted.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const rows = rulesQ.data ?? [];
@@ -140,7 +142,7 @@ function MedicationRulesPage() {
                 <Label className={adminLabel}>Medicine A</Label>
                 <Select value={a} onValueChange={setA}>
                   <SelectTrigger className={adminSelect}>
-                    <SelectValue placeholder="Select medicine" />
+                    <SelectValue placeholder="Select a medicine" />
                   </SelectTrigger>
                   <SelectContent>
                     {medicines.map((m) => (
@@ -155,7 +157,7 @@ function MedicationRulesPage() {
                 <Label className={adminLabel}>Medicine B</Label>
                 <Select value={b} onValueChange={setB}>
                   <SelectTrigger className={adminSelect}>
-                    <SelectValue placeholder="Select medicine" />
+                    <SelectValue placeholder="Select a medicine" />
                   </SelectTrigger>
                   <SelectContent>
                     {medicines
@@ -187,7 +189,7 @@ function MedicationRulesPage() {
                   onChange={(e) => setReason(e.target.value)}
                   rows={3}
                   className={adminTextarea}
-                  placeholder="Provide clinical justification context notes..."
+                  placeholder="Clinical justification for this rule"
                 />
               </div>
             </div>

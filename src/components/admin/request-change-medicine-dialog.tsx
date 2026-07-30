@@ -1,3 +1,5 @@
+import { sentenceCase } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -156,7 +158,7 @@ export function RequestChangeMedicineDialog({
         data: {
           requestId,
           packageId,
-          crossCategoryReason: isCrossCategory ? categoryReason.trim() : undefined,
+          crossCategoryReason: isCrossCategory ? sentenceCase(categoryReason) : undefined,
         },
       }),
     onSuccess: (res: any) => {
@@ -168,7 +170,7 @@ export function RequestChangeMedicineDialog({
       onChanged();
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const canSubmit = !!selectedPkg && !mutation.isPending && !reasonMissing;

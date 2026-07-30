@@ -88,7 +88,7 @@ export function RefundsTable() {
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
           <Input
-            placeholder="Search by patient or reason..."
+            placeholder="Search by patient or reason…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`${adminInput} pl-10`}
@@ -270,7 +270,7 @@ export function RefundsTable() {
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Reason for rejecting (optional)..."
+            placeholder="Reason for rejecting (optional)"
             rows={4}
             maxLength={500}
             className="border-[#D5DEDD] bg-[#F8FBFA] text-foreground placeholder:text-[#6A9B9C]/40 rounded-xl focus-visible:ring-[#3B4759] text-[14px] mt-2 resize-none"

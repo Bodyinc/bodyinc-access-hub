@@ -1,3 +1,5 @@
+import { sentenceCase, titleCaseName } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { PageHeader } from "@/components/admin/page-header";
 import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -54,21 +56,21 @@ function NewQuestionnairePage() {
   const mut = useMutation({
     mutationFn: () =>
       createQuestionnaire({
-        name: name.trim(),
-        description: description.trim() || null,
+        name: titleCaseName(name),
+        description: sentenceCase(description) || null,
         is_active: isActive,
         category_ids: categoryIds,
       }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
-      toast.success("Created");
+      toast.success("Question set created.");
       navigate({
         to: "/admin/questionnaires/$questionnaireId",
         params: { questionnaireId: r.id },
       });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (
@@ -105,7 +107,7 @@ function NewQuestionnairePage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Provide context or instructions for this custom review cluster..."
+              placeholder="Context or instructions for this question set"
               className={adminTextarea}
             />
           </div>
@@ -116,7 +118,7 @@ function NewQuestionnairePage() {
               htmlFor="q-active"
               className="cursor-pointer select-none text-[16px] font-medium text-[#3B4759]"
             >
-              Active Status
+              Active
             </Label>
           </div>
         </CardContent>

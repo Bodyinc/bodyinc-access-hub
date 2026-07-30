@@ -1,3 +1,5 @@
+import { sentenceCase, titleCaseName } from "@/lib/text-normalize";
+import { toastError } from "@/lib/toast-message";
 import { PageHeader } from "@/components/admin/page-header";
 import { FormActionBar } from "@/components/admin/form-action-bar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -98,8 +100,8 @@ function EditQuestionnairePage() {
   const saveMut = useMutation({
     mutationFn: () =>
       updateQuestionnaire(questionnaireId, {
-        name: name.trim(),
-        description: description.trim() || null,
+        name: titleCaseName(name),
+        description: sentenceCase(description) || null,
         is_active: isActive,
         category_ids: categoryIds,
       }),
@@ -107,9 +109,9 @@ function EditQuestionnairePage() {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
-      toast.success("Saved");
+      toast.success("Changes saved.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const addMut = useMutation({
@@ -125,7 +127,7 @@ function EditQuestionnairePage() {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (dataQ.isLoading) return <p className="text-sm text-[#3B4759]/60">Loading…</p>;
@@ -282,8 +284,8 @@ function QuestionEditor({
   const saveMut = useMutation({
     mutationFn: async () => {
       await updateQuestion(question.id, {
-        prompt: prompt.trim(),
-        description: description.trim() || null,
+        prompt: sentenceCase(prompt),
+        description: sentenceCase(description) || null,
         question_type: type,
         is_required: required,
         sort_order: question.sort_order,
@@ -299,7 +301,9 @@ function QuestionEditor({
       if (type === "single_choice" || type === "multi_choice") {
         await replaceQuestionOptions(
           question.id,
-          options.filter((o) => o.label.trim()),
+          options
+            .filter((o) => o.label.trim())
+            .map((o) => ({ ...o, label: sentenceCase(o.label) })),
         );
       } else {
         await replaceQuestionOptions(question.id, []);
@@ -307,18 +311,18 @@ function QuestionEditor({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
-      toast.success("Question saved");
+      toast.success("Question saved.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteMut = useMutation({
     mutationFn: () => deleteQuestion(question.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
-      toast.success("Deleted");
+      toast.success("Question deleted.");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const showOptions = type === "single_choice" || type === "multi_choice";
