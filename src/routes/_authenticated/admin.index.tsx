@@ -123,7 +123,6 @@ function AdminDashboard() {
             </div>
             <div className="space-y-4">
               <TopMedicines rows={d.topMedicines} days={days} />
-              <ActivityFeed rows={d.activity} />
             </div>
           </div>
 
