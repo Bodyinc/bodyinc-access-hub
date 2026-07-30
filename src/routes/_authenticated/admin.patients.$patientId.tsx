@@ -115,6 +115,7 @@ function PatientDetailPage() {
     onSuccess: () => {
       invalidate();
       toast.success("Profile updated.");
+      navigate({ to: "/admin/patients" });
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
