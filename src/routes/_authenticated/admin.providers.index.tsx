@@ -48,6 +48,7 @@ import {
   setDefaultProvider,
 } from "@/lib/providers.functions";
 import {
+import { toastError } from "@/lib/toast-message";
   adminPageTitle,
   adminPageSubtitle,
   adminInput,
@@ -89,7 +90,7 @@ function ProvidersListPage() {
     mutationFn: (id: string) =>
       resend({ data: { id, redirect_to: `${window.location.origin}/reset-password` } }),
     onSuccess: () => toast.success("Invite link sent"),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const activeMut = useMutation({
@@ -98,7 +99,7 @@ function ProvidersListPage() {
       qc.invalidateQueries({ queryKey: ["providers"] });
       toast.success("Updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const setDefaultMut = useMutation({
@@ -107,7 +108,7 @@ function ProvidersListPage() {
       qc.invalidateQueries({ queryKey: ["providers"] });
       toast.success("Default provider set");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteMut = useMutation({
@@ -117,7 +118,7 @@ function ProvidersListPage() {
       toast.success("Provider deleted");
       setConfirmDelete(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

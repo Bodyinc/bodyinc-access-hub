@@ -6,6 +6,7 @@ import { PromoForm, type PromoFormValues } from "@/components/admin/promo-form";
 import { PageHeader } from "@/components/admin/page-header";
 import { getPromo, updatePromo } from "@/lib/promos.functions";
 import { toPromoInput } from "./admin.promos.new";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/promos/$promoId")({
   head: () => ({
@@ -48,7 +49,7 @@ function EditPromoPage() {
       toast.success("Promo updated");
       navigate({ to: "/admin/promos" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;

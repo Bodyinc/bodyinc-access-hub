@@ -35,6 +35,7 @@ import {
 } from "@/lib/questionnaires.store";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import {
+import { toastError } from "@/lib/toast-message";
   adminLabel,
   adminInput,
   adminTextarea,
@@ -109,7 +110,7 @@ function EditQuestionnairePage() {
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
       toast.success("Saved");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const addMut = useMutation({
@@ -125,7 +126,7 @@ function EditQuestionnairePage() {
       qc.invalidateQueries({ queryKey: detailKey(questionnaireId) });
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (dataQ.isLoading) return <p className="text-sm text-[#3B4759]/60">Loading…</p>;
@@ -309,7 +310,7 @@ function QuestionEditor({
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
       toast.success("Question saved");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteMut = useMutation({
@@ -318,7 +319,7 @@ function QuestionEditor({
       qc.invalidateQueries({ queryKey: ["questionnaire", questionnaireId] });
       toast.success("Deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const showOptions = type === "single_choice" || type === "multi_choice";

@@ -10,6 +10,7 @@ import { createMedicine } from "@/lib/medicines.store";
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
 import { syncPackageToStripe } from "@/lib/packages.functions";
 import { computeMedicineFromPriceCents, type MedicineFormValues } from "@/lib/medicines.schema";
+import { toastError } from "@/lib/toast-message";
 
 const MedicineForm = lazy(() =>
   import("@/components/admin/medicine-form").then((m) => ({ default: m.MedicineForm })),
@@ -82,7 +83,7 @@ function NewMedicinePage() {
       }
       navigate({ to: "/admin/medicines" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

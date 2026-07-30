@@ -5,6 +5,7 @@ import { CategoryForm } from "@/components/admin/category-form";
 import { updateCategory } from "@/lib/categories.store";
 import { categoriesQueryKey, categoryQueryOptions } from "@/lib/query-options/categories";
 import type { CategoryFormValues } from "@/lib/categories.schema";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/$categoryId")({
   head: () => ({
@@ -29,7 +30,7 @@ function EditCategoryPage() {
       qc.invalidateQueries({ queryKey: ["category", categoryId] });
       toast.success("Category updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (catQ.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;

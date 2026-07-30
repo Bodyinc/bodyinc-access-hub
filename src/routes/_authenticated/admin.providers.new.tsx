@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { PageHeader } from "@/components/admin/page-header";
 import { createProvider } from "@/lib/providers.functions";
+import { toastError } from "@/lib/toast-message";
 
 const ProviderForm = lazy(() =>
   import("@/components/admin/provider-form").then((m) => ({ default: m.ProviderForm })),
@@ -40,7 +41,7 @@ function NewProviderPage() {
       toast.success(res.invite_sent ? "Provider created — invite sent" : "Provider created");
       navigate({ to: "/admin/providers" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

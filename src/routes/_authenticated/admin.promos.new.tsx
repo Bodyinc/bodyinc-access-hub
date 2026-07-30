@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PromoForm, type PromoFormValues } from "@/components/admin/promo-form";
 import { PageHeader } from "@/components/admin/page-header";
 import { createPromo } from "@/lib/promos.functions";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/promos/new")({
   head: () => ({
@@ -39,7 +40,7 @@ function NewPromoPage() {
       toast.success("Promo created");
       navigate({ to: "/admin/promos" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

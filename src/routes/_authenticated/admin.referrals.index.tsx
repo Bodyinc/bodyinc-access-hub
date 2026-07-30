@@ -35,6 +35,7 @@ import { RefreshButton } from "@/components/admin/refresh-button";
 import { adjustPatientWallet, getPatientWallet, listReferrals } from "@/lib/referrals.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 import { formatDate } from "@/lib/format";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/referrals/")({
   head: () => ({
@@ -81,7 +82,7 @@ function WalletDialog({ userId, onClose }: { userId: string; onClose: () => void
       setNote("");
       qc.invalidateQueries({ queryKey: ["patient-wallet", userId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function submit(sign: 1 | -1) {

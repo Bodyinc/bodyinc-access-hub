@@ -49,6 +49,7 @@ import {
 } from "@/lib/patients.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 import { formatDate } from "@/lib/format";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/")({
   head: () => ({
@@ -86,14 +87,14 @@ function PatientsListPage() {
       qc.invalidateQueries({ queryKey: ["patients"] });
       toast.success("Updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const resetMut = useMutation({
     mutationFn: (userId: string) =>
       reset({ data: { userId, redirect_to: `${window.location.origin}/reset-password` } }),
     onSuccess: () => toast.success("Password reset email sent"),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteMut = useMutation({
@@ -103,7 +104,7 @@ function PatientsListPage() {
       toast.success("Patient deleted");
       setDeleteTarget(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

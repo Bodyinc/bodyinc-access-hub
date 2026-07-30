@@ -41,6 +41,7 @@ import {
   type RelationshipType,
 } from "@/lib/medication-rules.store";
 import {
+import { toastError } from "@/lib/toast-message";
   adminPageTitle,
   adminPageSubtitle,
   adminLabel,
@@ -97,7 +98,7 @@ function MedicationRulesPage() {
       setReason("");
       setType("incompatible");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteRelationship(id),
@@ -105,7 +106,7 @@ function MedicationRulesPage() {
       qc.invalidateQueries({ queryKey: relationshipsKey });
       toast.success("Rule deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const rows = rulesQ.data ?? [];

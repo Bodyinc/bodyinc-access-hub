@@ -19,6 +19,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listClaimableRequests, claimRequest } from "@/lib/provider.functions";
 import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput } from "@/lib/admin-ui";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/provider/queue")({
   head: () => ({
@@ -52,7 +53,7 @@ function ProviderQueuePage() {
       qc.invalidateQueries({ queryKey: ["provider-dashboard"] });
       qc.invalidateQueries({ queryKey: ["requests"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const rows = (q.data as any[]) ?? [];

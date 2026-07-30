@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
 import { cachePortalRole } from "@/lib/portal-role-cache";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -129,7 +130,7 @@ function ResetPasswordPage() {
     try {
       const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
       if (error) {
-        toast.error(error.message);
+        toast.error(toastError(error));
         return;
       }
       clearPasswordRecoveryPending();

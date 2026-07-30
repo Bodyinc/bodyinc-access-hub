@@ -20,6 +20,7 @@ import {
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { computeMedicineFromPriceCents, type MedicineFormValues } from "@/lib/medicines.schema";
+import { toastError } from "@/lib/toast-message";
 
 const MedicineForm = lazy(() =>
   import("@/components/admin/medicine-form").then((m) => ({ default: m.MedicineForm })),
@@ -117,7 +118,7 @@ export default function EditMedicinePage() {
         );
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const [previewValues, setPreviewValues] = useState<MedicineFormValues | null>(null);
@@ -174,7 +175,7 @@ export default function EditMedicinePage() {
       }
       navigate({ to: "/admin/medicines" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (medicineQuery.isLoading && !medicineQuery.data) {

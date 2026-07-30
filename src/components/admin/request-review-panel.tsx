@@ -44,6 +44,7 @@ import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { RequestNotes } from "@/components/admin/request-notes";
 import { formatCents, formatDateTimeFull } from "@/lib/format";
+import { toastError } from "@/lib/toast-message";
 
 export function RequestReviewPanel({
   requestId,
@@ -97,7 +98,7 @@ export function RequestReviewPanel({
       setAssignId("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const claimMut = useMutation({
@@ -108,7 +109,7 @@ export function RequestReviewPanel({
       qc.invalidateQueries({ queryKey: ["provider-dashboard"] });
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function refresh() {
@@ -122,7 +123,7 @@ export function RequestReviewPanel({
       toast.success("Order approved.");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const rejectMut = useMutation({
@@ -133,7 +134,7 @@ export function RequestReviewPanel({
       setRejectNote("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const generateMut = useMutation({
@@ -144,7 +145,7 @@ export function RequestReviewPanel({
       setDirections("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const advanceMut = useMutation({
@@ -158,7 +159,7 @@ export function RequestReviewPanel({
       setTracking("");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (q.isLoading) {

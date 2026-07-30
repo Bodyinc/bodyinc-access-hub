@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getMyProviderProfile, updateMyProviderProfile } from "@/lib/provider.functions";
 import { StateMultiSelect } from "@/components/admin/state-multi-select";
 import {
+import { toastError } from "@/lib/toast-message";
   adminCard,
   adminInput,
   adminPageTitle,
@@ -87,7 +88,7 @@ function ProviderProfilePage() {
       toast.success("Profile updated.");
       qc.invalidateQueries({ queryKey: ["provider-profile"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const d = (q.data as any) ?? {};

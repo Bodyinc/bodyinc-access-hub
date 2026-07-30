@@ -50,6 +50,7 @@ import {
 } from "@/lib/admin-ui";
 import { US_STATES } from "@/lib/us-states";
 import { formatDateTime } from "@/lib/format";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   head: () => ({
@@ -114,7 +115,7 @@ function PatientDetailPage() {
       invalidate();
       toast.success("Profile updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const activeMut = useMutation({
@@ -123,7 +124,7 @@ function PatientDetailPage() {
       invalidate();
       toast.success("Status updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const resetMut = useMutation({
@@ -132,7 +133,7 @@ function PatientDetailPage() {
         data: { userId: patientId, redirect_to: `${window.location.origin}/reset-password` },
       }),
     onSuccess: () => toast.success("Password reset email sent"),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (patient.isLoading) {

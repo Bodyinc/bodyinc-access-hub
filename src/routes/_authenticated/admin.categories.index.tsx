@@ -33,6 +33,7 @@ import {
 import { categoriesQueryKey, categoriesQueryOptions } from "@/lib/query-options/categories";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { deleteCategory, setCategoryActive } from "@/lib/categories.store";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/")({
   head: () => ({
@@ -59,7 +60,7 @@ function CategoriesListPage() {
       qc.invalidateQueries({ queryKey: categoriesQueryKey });
       toast.success("Updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
@@ -68,7 +69,7 @@ function CategoriesListPage() {
       toast.success("Deleted");
       setConfirm(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const isEmpty = !query.isLoading && rows.length === 0;

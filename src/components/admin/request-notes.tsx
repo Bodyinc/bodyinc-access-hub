@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { listRequestNotes, addRequestNote } from "@/lib/requests.functions";
 import { adminCard, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
 import { formatDateTimeFull } from "@/lib/format";
+import { toastError } from "@/lib/toast-message";
 
 // Internal clinical notes on an order — visible to admins and the assigned practitioner only.
 export function RequestNotes({ requestId }: { requestId: string }) {
@@ -27,7 +28,7 @@ export function RequestNotes({ requestId }: { requestId: string }) {
       setBody("");
       qc.invalidateQueries({ queryKey: ["request-notes", requestId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const notes = (q.data as any[]) ?? [];

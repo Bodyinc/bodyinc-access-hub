@@ -18,6 +18,7 @@ import {
   type SignInResult,
 } from "@/lib/auth.functions";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -70,7 +71,7 @@ function AuthPage() {
       if (result.error === "wrong_portal" || result.error === "no_access") {
         setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
       } else {
-        toast.error(result.message);
+        toast.error(toastError(result));
       }
       return;
     }

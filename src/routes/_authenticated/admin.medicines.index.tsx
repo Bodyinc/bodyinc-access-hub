@@ -46,6 +46,7 @@ import { setMedicineActive, type StoredMedicine } from "@/lib/medicines.store";
 import { syncUnpricedPackages } from "@/lib/packages.functions";
 import { deleteMedicineSafely, getMedicineDeletionImpact } from "@/lib/medicines.functions";
 import {
+import { toastError } from "@/lib/toast-message";
   formatFromPrice,
   MEDICINE_STATUSES,
   MEDICINE_STATUS_LABELS,
@@ -109,7 +110,7 @@ function MedicinesListPage() {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });
       toast.success("Status updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const deleteSafely = useServerFn(deleteMedicineSafely);
@@ -128,7 +129,7 @@ function MedicinesListPage() {
       }
       setConfirmDelete(null);
     },
-    onError: (e: Error) => toast.error(e.message, { duration: 15000 }),
+    onError: (e: Error) => toast.error(toastError(e), { duration: 15000 }),
   });
 
   const syncPrices = useServerFn(syncUnpricedPackages);
@@ -162,7 +163,7 @@ function MedicinesListPage() {
         );
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const totalUnsynced = allRows.reduce((n, m) => n + unsyncedPackages(m).length, 0);

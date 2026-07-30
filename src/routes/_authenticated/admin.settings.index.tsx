@@ -26,6 +26,7 @@ import { syncShippingBatch } from "@/lib/shipping-reprice.functions";
 import { ActivityLogTab } from "@/components/admin/activity-log-tab";
 import { DangerZoneTab } from "@/components/admin/danger-zone-tab";
 import {
+import { toastError } from "@/lib/toast-message";
   adminPageTitle,
   adminPageSubtitle,
   adminLabel,
@@ -290,7 +291,7 @@ function SettingsPage() {
       qc.invalidateQueries({ queryKey: ["platform-settings"] });
       qc.invalidateQueries({ queryKey: ["admin-activity-log"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {

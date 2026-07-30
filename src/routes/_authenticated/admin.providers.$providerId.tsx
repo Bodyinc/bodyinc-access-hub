@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { FormSkeleton } from "@/components/admin/form-skeleton";
 import { PageHeader } from "@/components/admin/page-header";
 import { getProvider, updateProvider } from "@/lib/providers.functions";
+import { toastError } from "@/lib/toast-message";
 
 const ProviderForm = lazy(() =>
   import("@/components/admin/provider-form").then((m) => ({ default: m.ProviderForm })),
@@ -41,7 +42,7 @@ function EditProviderPage() {
       toast.success("Provider updated");
       navigate({ to: "/admin/providers" });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   if (query.isLoading) {

@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { createQuestionnaire, listCategoryLinks } from "@/lib/questionnaires.store";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import {
+import { toastError } from "@/lib/toast-message";
   adminLabel,
   adminInput,
   adminTextarea,
@@ -68,7 +69,7 @@ function NewQuestionnairePage() {
         params: { questionnaireId: r.id },
       });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

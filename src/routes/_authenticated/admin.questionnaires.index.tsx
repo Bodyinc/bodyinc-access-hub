@@ -35,6 +35,7 @@ import {
 import { deleteQuestionnaire, listQuestionnaires } from "@/lib/questionnaires.store";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import { adminPageTitle, adminPageSubtitle, adminBtnPrimary, adminCard } from "@/lib/admin-ui";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/questionnaires/")({
   head: () => ({
@@ -71,7 +72,7 @@ function QuestionnairesListPage() {
       toast.success("Deleted");
       setConfirm(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   return (

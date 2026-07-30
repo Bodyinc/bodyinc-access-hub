@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { markPasswordRecoveryPending } from "@/lib/password-recovery";
+import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/forgot-password")({
   ssr: false,
@@ -47,7 +48,7 @@ function ForgotPasswordPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (err) {
-        toast.error(err.message);
+        toast.error(toastError(err));
         return;
       }
       markPasswordRecoveryPending();

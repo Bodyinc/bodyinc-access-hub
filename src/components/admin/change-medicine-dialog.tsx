@@ -25,6 +25,7 @@ import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { changeSubscriptionMedicine } from "@/lib/orders.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
 import { formatDate, formatDollars } from "@/lib/format";
+import { toastError } from "@/lib/toast-message";
 
 function planLabel(p: StoredMedicinePackage) {
   const dur = p.duration_months === 1 ? "Monthly" : `${p.duration_months}-Month`;
@@ -135,7 +136,7 @@ export function ChangeMedicineDialog({
       onChanged();
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   const canSubmit = !!selectedPkg && !mutation.isPending;
