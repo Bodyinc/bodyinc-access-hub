@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { US_STATES } from "@/lib/us-states";
+import { sentenceCase, slugify, titleCaseName } from "@/lib/text-normalize";
 
 export const BMI_BANDS = ["underweight", "normal", "overweight", "obese"] as const;
 export type BmiBand = (typeof BMI_BANDS)[number];
@@ -36,15 +37,20 @@ export const categoryFormSchema = z.object({
     .min(1, "Slug is required")
     .max(80)
     .regex(/^[a-z0-9-]+$/i, "Use letters, numbers, and dashes only")
-    .transform((v) => v.toLowerCase()),
-  name: z.string().trim().min(1, "Name is required").max(120),
+    .transform((v) => slugify(v)),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(120)
+    .transform((v) => titleCaseName(v)),
   tagline: z
     .string()
     .trim()
     .max(200)
     .optional()
     .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
+    .transform((v) => (v ? sentenceCase(v) : undefined)),
   image_url: z
     .string()
     .trim()

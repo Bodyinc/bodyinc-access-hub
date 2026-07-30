@@ -1,9 +1,16 @@
 import { z } from "zod";
 
+import { sentenceCase, titleCaseName } from "@/lib/text-normalize";
+
 export const packageFormSchema = z
   .object({
     medicine_id: z.string().uuid("Select a medicine"),
-    name: z.string().trim().min(1, "Plan name is required").max(120),
+    name: z
+      .string()
+      .trim()
+      .min(1, "Plan name is required")
+      .max(120)
+      .transform((v) => titleCaseName(v)),
     duration_months: z.coerce
       .number()
       .int()
@@ -19,7 +26,16 @@ export const packageFormSchema = z
       .max(100_000, "Sale price is too large"),
     is_most_popular: z.boolean().default(false),
     features: z
-      .array(z.object({ text: z.string().trim().min(1, "Feature cannot be empty").max(300) }))
+      .array(
+        z.object({
+          text: z
+            .string()
+            .trim()
+            .min(1, "Feature cannot be empty")
+            .max(300)
+            .transform((v) => sentenceCase(v)),
+        }),
+      )
       .default([]),
     clinical_note: z
       .string()
@@ -27,7 +43,7 @@ export const packageFormSchema = z
       .max(2000)
       .optional()
       .or(z.literal(""))
-      .transform((v) => (v ? v : undefined)),
+      .transform((v) => (v ? sentenceCase(v) : undefined)),
     sort_order: z.coerce.number().int().min(0).default(0),
     is_active: z.boolean().default(true),
   })
