@@ -122,8 +122,8 @@ function CategoriesListPage() {
                   <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
                     Name
                   </TableHead>
-                  <TableHead className="h-12 min-w-[120px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
-                    Slug
+                  <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                    Age rule
                   </TableHead>
                   <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
                     BMI rule
@@ -144,7 +144,7 @@ function CategoriesListPage() {
                 {query.isLoading && (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={6}
                       className="py-12 text-center text-[16px] text-[#3B4759]/70"
                     >
                       Loading rows...
@@ -153,6 +153,17 @@ function CategoriesListPage() {
                 )}
 
                 {rows.map((c) => {
+                  const minAge = c.eligibility_rules?.min_age;
+                  const maxAge = c.eligibility_rules?.max_age;
+                  const ageLabel =
+                    minAge == null && maxAge == null
+                      ? "No restriction"
+                      : minAge != null && maxAge != null
+                        ? `${minAge} - ${maxAge}`
+                        : minAge != null
+                          ? `${minAge}+`
+                          : `Up to ${maxAge}`;
+
                   return (
                     <TableRow
                       key={c.id}
@@ -169,16 +180,16 @@ function CategoriesListPage() {
                         {c.name}
                       </TableCell>
 
-                      {/* Slug column */}
+                      {/* Age Rule column */}
                       <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
-                        {c.slug}
+                        {ageLabel}
                       </TableCell>
 
                       {/* BMI Rule column */}
                       <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {c.eligibility_rules?.bmi_bands?.length
                           ? c.eligibility_rules.bmi_bands.join(", ")
-                          : "No Restriction"}
+                          : "No restriction"}
                       </TableCell>
 
                       {/* Sex Rule column */}
