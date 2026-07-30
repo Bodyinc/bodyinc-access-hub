@@ -110,6 +110,7 @@ function EditQuestionnairePage() {
       qc.invalidateQueries({ queryKey: ["questionnaires"] });
       qc.invalidateQueries({ queryKey: ["questionnaire-category-links"] });
       toast.success("Changes saved.");
+      navigate({ to: "/admin/questionnaires" });
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
