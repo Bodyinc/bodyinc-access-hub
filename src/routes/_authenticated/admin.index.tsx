@@ -10,7 +10,7 @@ import { AttentionCards } from "@/components/admin/dashboard/attention-cards";
 import { TrendChart } from "@/components/admin/dashboard/trend-chart";
 import { StatusBreakdown } from "@/components/admin/dashboard/status-breakdown";
 import { RecentRequests } from "@/components/admin/dashboard/recent-requests";
-import { ActivityFeed, TopMedicines } from "@/components/admin/dashboard/side-lists";
+import { TopMedicines } from "@/components/admin/dashboard/side-lists";
 import { getAdminDashboard } from "@/lib/admin-dashboard.functions";
 import { formatCents } from "@/lib/format";
 import { adminPageSubtitle, adminPageTitle } from "@/lib/admin-ui";
