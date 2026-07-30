@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -25,7 +26,6 @@ import { medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { changeSubscriptionMedicine } from "@/lib/orders.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
 import { formatDate, formatDollars } from "@/lib/format";
-import { toastError } from "@/lib/toast-message";
 
 function planLabel(p: StoredMedicinePackage) {
   const dur = p.duration_months === 1 ? "Monthly" : `${p.duration_months}-Month`;

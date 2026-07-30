@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
@@ -9,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { markPasswordRecoveryPending } from "@/lib/password-recovery";
-import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/forgot-password")({
   ssr: false,

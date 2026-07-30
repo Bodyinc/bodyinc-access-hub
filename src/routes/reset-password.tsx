@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
 import { cachePortalRole } from "@/lib/portal-role-cache";
-import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,

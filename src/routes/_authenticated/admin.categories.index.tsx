@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -33,7 +34,6 @@ import {
 import { categoriesQueryKey, categoriesQueryOptions } from "@/lib/query-options/categories";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { deleteCategory, setCategoryActive } from "@/lib/categories.store";
-import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/categories/")({
   head: () => ({

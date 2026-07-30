@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -35,7 +36,6 @@ import { RefreshButton } from "@/components/admin/refresh-button";
 import { adjustPatientWallet, getPatientWallet, listReferrals } from "@/lib/referrals.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 import { formatDate } from "@/lib/format";
-import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/referrals/")({
   head: () => ({

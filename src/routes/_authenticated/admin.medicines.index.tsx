@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -46,7 +47,6 @@ import { setMedicineActive, type StoredMedicine } from "@/lib/medicines.store";
 import { syncUnpricedPackages } from "@/lib/packages.functions";
 import { deleteMedicineSafely, getMedicineDeletionImpact } from "@/lib/medicines.functions";
 import {
-import { toastError } from "@/lib/toast-message";
   formatFromPrice,
   MEDICINE_STATUSES,
   MEDICINE_STATUS_LABELS,

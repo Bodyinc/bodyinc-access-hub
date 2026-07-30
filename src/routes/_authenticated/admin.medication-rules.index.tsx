@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
@@ -41,7 +42,6 @@ import {
   type RelationshipType,
 } from "@/lib/medication-rules.store";
 import {
-import { toastError } from "@/lib/toast-message";
   adminPageTitle,
   adminPageSubtitle,
   adminLabel,

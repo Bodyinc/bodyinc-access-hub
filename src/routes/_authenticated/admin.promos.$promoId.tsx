@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,7 +7,6 @@ import { PromoForm, type PromoFormValues } from "@/components/admin/promo-form";
 import { PageHeader } from "@/components/admin/page-header";
 import { getPromo, updatePromo } from "@/lib/promos.functions";
 import { toPromoInput } from "./admin.promos.new";
-import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/_authenticated/admin/promos/$promoId")({
   head: () => ({

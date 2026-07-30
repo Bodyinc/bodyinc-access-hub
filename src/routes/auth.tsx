@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
@@ -18,7 +19,6 @@ import {
   type SignInResult,
 } from "@/lib/auth.functions";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
-import { toastError } from "@/lib/toast-message";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
