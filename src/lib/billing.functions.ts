@@ -319,14 +319,6 @@ export const createRefundRequest = createServerFn({ method: "POST" })
     return { ok: true, id: inserted.id };
   });
 
-const approveRefundInternal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    return approveRefundImpl(data, context);
-  });
-
 async function approveRefundImpl(data: { id: string }, context: { userId: string }) {
   {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
