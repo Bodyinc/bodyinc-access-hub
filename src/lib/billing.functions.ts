@@ -200,127 +200,6 @@ export const approveRefund = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    return approveRefundImpl(data, context);
-  });
-
-export const listRefundablePayments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input ?? {}))
-  .handler(async ({ context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: payments, error } = await supabaseAdmin
-      .from("payments")
-      .select("id, user_id, amount_cents, currency, status, stripe_invoice_id, created_at")
-      .eq("status", "succeeded")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    const rows = payments ?? [];
-
-    const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean)));
-    const payIds = rows.map((r: any) => r.id);
-
-    const [{ data: profiles }, { data: existing }] = await Promise.all([
-      userIds.length
-        ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
-        : Promise.resolve({ data: [] as any[] }),
-      payIds.length
-        ? supabaseAdmin
-            .from("refund_requests")
-            .select("payment_id, status")
-            .in("payment_id", payIds)
-        : Promise.resolve({ data: [] as any[] }),
-    ]);
-
-    const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
-    const blocked = new Set(
-      (existing ?? [])
-        .filter((r: any) => r.status === "pending" || r.status === "approved")
-        .map((r: any) => r.payment_id),
-    );
-
-    return rows
-      .filter((r: any) => !blocked.has(r.id))
-      .map((r: any) => {
-        const p = pMap.get(r.user_id) as any;
-        return {
-          id: r.id,
-          user_id: r.user_id,
-          customer_name: p?.full_name ?? null,
-          customer_email: p?.email ?? null,
-          amount: Number(r.amount_cents) / 100,
-          amount_cents: Number(r.amount_cents),
-          stripe_invoice_id: r.stripe_invoice_id,
-          created_at: r.created_at,
-        };
-      });
-  });
-
-export const createRefundRequest = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        payment_id: z.string().uuid(),
-        amount_cents: z.number().int().positive().optional(),
-        reason: z.string().trim().min(1, "Enter a reason.").max(500),
-        approve_now: z.boolean().optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: payment, error } = await supabaseAdmin
-      .from("payments")
-      .select("id, user_id, amount_cents, status")
-      .eq("id", data.payment_id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!payment) throw new Error("Payment not found.");
-    if (payment.status !== "succeeded") {
-      throw new Error("Only succeeded payments can be refunded.");
-    }
-
-    const { data: open } = await supabaseAdmin
-      .from("refund_requests")
-      .select("id, status")
-      .eq("payment_id", payment.id)
-      .in("status", ["pending", "approved"])
-      .maybeSingle();
-    if (open) throw new Error("A refund already exists for this payment.");
-
-    const amountCents = data.amount_cents ?? Number(payment.amount_cents);
-    if (amountCents > Number(payment.amount_cents)) {
-      throw new Error("The refund amount cannot exceed the payment amount.");
-    }
-
-    const { data: inserted, error: insertError } = await supabaseAdmin
-      .from("refund_requests")
-      .insert({
-        user_id: payment.user_id,
-        payment_id: payment.id,
-        amount_cents: amountCents,
-        reason: data.reason,
-        status: "pending",
-      })
-      .select("id")
-      .maybeSingle();
-    if (insertError) throw new Error(insertError.message);
-    if (!inserted) throw new Error("Could not create the refund request.");
-
-    if (data.approve_now) {
-      await approveRefundImpl({ id: inserted.id }, context);
-    }
-
-    return { ok: true, id: inserted.id };
-  });
-
-async function approveRefundImpl(data: { id: string }, context: { userId: string }) {
-  {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getStripe } = await import("@/integrations/stripe/client.server");
     const stripe = getStripe();
@@ -371,8 +250,7 @@ async function approveRefundImpl(data: { id: string }, context: { userId: string
     await supabaseAdmin.from("payments").update({ status: "refunded" }).eq("id", payment.id);
 
     return { ok: true, stripe_refund_id: refund.id };
-  }
-}
+  });
 
 export const rejectRefund = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

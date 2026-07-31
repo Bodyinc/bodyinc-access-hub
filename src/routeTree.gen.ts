@@ -37,7 +37,6 @@ import { Route as AuthenticatedProviderRequestsIndexRouteImport } from './routes
 import { Route as AuthenticatedProviderPatientsIndexRouteImport } from './routes/_authenticated/provider.patients.index'
 import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
 import { Route as AuthenticatedAdminRequestsIndexRouteImport } from './routes/_authenticated/admin.requests.index'
-import { Route as AuthenticatedAdminRefundsIndexRouteImport } from './routes/_authenticated/admin.refunds.index'
 import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
 import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
 import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
@@ -223,12 +222,6 @@ const AuthenticatedAdminRequestsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAdminRequestsRoute,
-  } as any)
-const AuthenticatedAdminRefundsIndexRoute =
-  AuthenticatedAdminRefundsIndexRouteImport.update({
-    id: '/refunds/',
-    path: '/refunds/',
-    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminReferralsIndexRoute =
   AuthenticatedAdminReferralsIndexRouteImport.update({
@@ -444,7 +437,6 @@ export interface FileRoutesByFullPath {
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
   '/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
-  '/admin/refunds/': typeof AuthenticatedAdminRefundsIndexRoute
   '/admin/requests/': typeof AuthenticatedAdminRequestsIndexRoute
   '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
   '/provider/patients/': typeof AuthenticatedProviderPatientsIndexRoute
@@ -489,7 +481,6 @@ export interface FileRoutesByTo {
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesIndexRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsIndexRoute
-  '/admin/refunds': typeof AuthenticatedAdminRefundsIndexRoute
   '/admin/requests': typeof AuthenticatedAdminRequestsIndexRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
   '/provider/patients': typeof AuthenticatedProviderPatientsIndexRoute
@@ -548,7 +539,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/_authenticated/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
   '/_authenticated/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
-  '/_authenticated/admin/refunds/': typeof AuthenticatedAdminRefundsIndexRoute
   '/_authenticated/admin/requests/': typeof AuthenticatedAdminRequestsIndexRoute
   '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
   '/_authenticated/provider/patients/': typeof AuthenticatedProviderPatientsIndexRoute
@@ -607,7 +597,6 @@ export interface FileRouteTypes {
     | '/admin/providers/'
     | '/admin/questionnaires/'
     | '/admin/referrals/'
-    | '/admin/refunds/'
     | '/admin/requests/'
     | '/admin/settings/'
     | '/provider/patients/'
@@ -652,7 +641,6 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/questionnaires'
     | '/admin/referrals'
-    | '/admin/refunds'
     | '/admin/requests'
     | '/admin/settings'
     | '/provider/patients'
@@ -710,7 +698,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers/'
     | '/_authenticated/admin/questionnaires/'
     | '/_authenticated/admin/referrals/'
-    | '/_authenticated/admin/refunds/'
     | '/_authenticated/admin/requests/'
     | '/_authenticated/admin/settings/'
     | '/_authenticated/provider/patients/'
@@ -922,13 +909,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/requests/'
       preLoaderRoute: typeof AuthenticatedAdminRequestsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRequestsRoute
-    }
-    '/_authenticated/admin/refunds/': {
-      id: '/_authenticated/admin/refunds/'
-      path: '/refunds'
-      fullPath: '/admin/refunds/'
-      preLoaderRoute: typeof AuthenticatedAdminRefundsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/referrals/': {
       id: '/_authenticated/admin/referrals/'
@@ -1316,7 +1296,6 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
   AuthenticatedAdminPromosIndexRoute: typeof AuthenticatedAdminPromosIndexRoute
   AuthenticatedAdminReferralsIndexRoute: typeof AuthenticatedAdminReferralsIndexRoute
-  AuthenticatedAdminRefundsIndexRoute: typeof AuthenticatedAdminRefundsIndexRoute
   AuthenticatedAdminSettingsIndexRoute: typeof AuthenticatedAdminSettingsIndexRoute
 }
 
@@ -1342,7 +1321,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPromosNewRoute: AuthenticatedAdminPromosNewRoute,
   AuthenticatedAdminPromosIndexRoute: AuthenticatedAdminPromosIndexRoute,
   AuthenticatedAdminReferralsIndexRoute: AuthenticatedAdminReferralsIndexRoute,
-  AuthenticatedAdminRefundsIndexRoute: AuthenticatedAdminRefundsIndexRoute,
   AuthenticatedAdminSettingsIndexRoute: AuthenticatedAdminSettingsIndexRoute,
 }
 

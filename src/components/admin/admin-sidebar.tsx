@@ -25,7 +25,6 @@ const items: NavItem[] = [
   { title: "Requests", url: "/admin/requests" },
   { title: "Orders", url: "/admin/orders" },
   { title: "Billing", url: "/admin/billing" },
-  { title: "Refunds", url: "/admin/refunds" },
   { title: "Referrals", url: "/admin/referrals" },
   { title: "Promo Codes", url: "/admin/promos" },
   { title: "Providers", url: "/admin/providers" },
