@@ -1,11 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ClipboardList, CreditCard, Hourglass, UserPlus, Undo2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  CreditCard,
+  Hourglass,
+  UserPlus,
+  Undo2,
+} from "lucide-react";
 
 type Attention = {
   unassigned: number;
   pending_review: number;
   awaiting_payment: number;
   refunds_pending: number;
+  refunds_processed: number;
   failed_payments: number;
   abandoned_sessions: number;
 };
@@ -15,6 +24,7 @@ const ICONS = {
   pending_review: ClipboardList,
   awaiting_payment: Hourglass,
   refunds_pending: Undo2,
+  refunds_processed: CheckCircle2,
   failed_payments: CreditCard,
   abandoned_sessions: AlertTriangle,
 } as const;
@@ -24,17 +34,18 @@ const ITEMS: Array<{ key: keyof Attention; label: string; to: string }> = [
   { key: "pending_review", label: "Awaiting review", to: "/admin/requests" },
   { key: "awaiting_payment", label: "Additional payment due", to: "/admin/requests" },
   { key: "refunds_pending", label: "Refunds to approve", to: "/admin/billing" },
+  { key: "refunds_processed", label: "Refunds processed", to: "/admin/billing" },
   { key: "failed_payments", label: "Failed payments", to: "/admin/billing" },
   { key: "abandoned_sessions", label: "Abandoned intakes", to: "/admin/intake-sessions" },
 ];
 
 export function AttentionCards({ attention }: { attention: Attention }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
       {ITEMS.map((item) => {
         const count = attention[item.key] ?? 0;
         const Icon = ICONS[item.key];
-        const hot = count > 0;
+        const hot = count > 0 && item.key !== "refunds_processed";
         return (
           <Link
             key={item.key}

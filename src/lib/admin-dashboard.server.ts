@@ -58,7 +58,10 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
         .order("created_at", { ascending: false })
         .limit(2000),
       supabaseAdmin.from("subscriptions").select("status").limit(5000),
-      supabaseAdmin.from("refund_requests").select("id, status").eq("status", "pending").limit(500),
+      supabaseAdmin
+        .from("refund_requests")
+        .select("id, status, amount_cents, reviewed_at, created_at")
+        .limit(2000),
       supabaseAdmin
         .from("intake_sessions")
         .select("id, status, created_at, expires_at")
@@ -77,6 +80,7 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
   const subs = (subsRes.data ?? []) as Row[];
   const sessions = (sessionsRes.data ?? []) as Row[];
   const activityRows = (activityRes.data ?? []) as Row[];
+  const refunds = (refundsRes.data ?? []) as Row[];
 
   const inWindow = (iso: string) => iso >= startISO;
   const inPrevWindow = (iso: string) => iso >= prevStartISO && iso < startISO;
@@ -134,7 +138,10 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
       .length,
     pending_review: requests.filter((r) => r.status === "pending_review").length,
     awaiting_payment: requests.filter((r) => r.status === "awaiting_additional_payment").length,
-    refunds_pending: (refundsRes.data ?? []).length,
+    refunds_pending: refunds.filter((r) => r.status === "pending").length,
+    refunds_processed: refunds.filter(
+      (r) => r.status === "approved" && inWindow((r.reviewed_at ?? r.created_at) as string),
+    ).length,
     failed_payments: payments.filter((p) => p.status === "failed" && inWindow(p.created_at)).length,
     abandoned_sessions: sessions.filter((s) => s.expires_at < nowISO || s.created_at < startISO)
       .length,

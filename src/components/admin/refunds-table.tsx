@@ -30,6 +30,9 @@ import { formatDate, formatDollars } from "@/lib/format";
 
 export function RefundsTable() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">(
+    "all",
+  );
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [note, setNote] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -40,17 +43,33 @@ export function RefundsTable() {
   const reject = useServerFn(rejectRefund);
   const query = useQuery({ queryKey: ["admin-refunds"], queryFn: () => list({ data: {} }) });
 
+  const all = useMemo(() => ((query.data as any[]) ?? []), [query.data]);
+
+  const summary = useMemo(() => {
+    const sum = (list: any[]) => list.reduce((t, r) => t + Number(r.amount ?? 0), 0);
+    const pending = all.filter((r) => r.status === "pending");
+    const approved = all.filter((r) => r.status === "approved");
+    const rejected = all.filter((r) => r.status === "rejected");
+    return {
+      pending: { count: pending.length, amount: sum(pending) },
+      approved: { count: approved.length, amount: sum(approved) },
+      rejected: { count: rejected.length, amount: sum(rejected) },
+      total: { count: all.length, amount: sum(all) },
+    };
+  }, [all]);
+
   const rows = useMemo(() => {
-    const all = (query.data as any[]) ?? [];
     const s = search.trim().toLowerCase();
-    if (!s) return all;
-    return all.filter(
-      (r) =>
+    return all.filter((r) => {
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (!s) return true;
+      return (
         (r.customer_name ?? "").toLowerCase().includes(s) ||
         (r.customer_email ?? "").toLowerCase().includes(s) ||
-        (r.reason ?? "").toLowerCase().includes(s),
-    );
-  }, [query.data, search]);
+        (r.reason ?? "").toLowerCase().includes(s)
+      );
+    });
+  }, [all, search, statusFilter]);
 
   async function onApprove(id: string) {
     setBusyId(id);
@@ -83,16 +102,75 @@ export function RefundsTable() {
 
   return (
     <div className="space-y-4">
+      {/* Refund summary */}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {(
+          [
+            { key: "pending", label: "Needs approval", data: summary.pending, hot: true },
+            { key: "approved", label: "Approved / processed", data: summary.approved, hot: false },
+            { key: "rejected", label: "Rejected", data: summary.rejected, hot: false },
+            { key: "total", label: "Total requested", data: summary.total, hot: false },
+          ] as const
+        ).map((card) => {
+          const highlight = card.hot && card.data.count > 0;
+          return (
+            <div
+              key={card.key}
+              className={`rounded-2xl border p-4 ${
+                highlight ? "border-[#B8684B]/40 bg-[#E8EEED]" : "border-[#D5DEDD] bg-white"
+              }`}
+            >
+              <div className="text-[12px] font-semibold text-[#3B4759]/70">{card.label}</div>
+              <div
+                className={`mt-2 text-[24px] leading-none font-semibold ${
+                  highlight ? "text-[#B8684B]" : "text-[#3B4759]"
+                }`}
+              >
+                {card.data.count}
+              </div>
+              <div className="mt-1 text-[12px] font-medium text-[#3B4759]/60">
+                {formatDollars(card.data.amount)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Search and Refresh Bar styled to match Subscriptions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative min-w-0 w-full sm:max-w-[390px]">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
-          <Input
-            placeholder="Search by patient or reason…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={`${adminInput} pl-10`}
-          />
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 w-full sm:max-w-[390px]">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
+            <Input
+              placeholder="Search by patient or reason…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`${adminInput} pl-10`}
+            />
+          </div>
+          <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[#D5DEDD] bg-[#F2F7F6] p-1">
+            {(
+              [
+                { value: "all", label: "All" },
+                { value: "pending", label: "Pending" },
+                { value: "approved", label: "Approved" },
+                { value: "rejected", label: "Rejected" },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setStatusFilter(tab.value)}
+                className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-all ${
+                  statusFilter === tab.value
+                    ? "bg-white text-[#3B4759] shadow-sm"
+                    : "text-[#3B4759]/70 hover:text-[#3B4759]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
         <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
       </div>
