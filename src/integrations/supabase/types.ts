@@ -191,7 +191,7 @@ export type Database = {
         Row: {
           evaluated_at: string
           id: string
-          medicine_id: string
+          medicine_id: string | null
           reason: string | null
           result: Database["public"]["Enums"]["eligibility_result"]
           session_id: string
@@ -199,7 +199,7 @@ export type Database = {
         Insert: {
           evaluated_at?: string
           id?: string
-          medicine_id: string
+          medicine_id?: string | null
           reason?: string | null
           result: Database["public"]["Enums"]["eligibility_result"]
           session_id: string
@@ -207,7 +207,7 @@ export type Database = {
         Update: {
           evaluated_at?: string
           id?: string
-          medicine_id?: string
+          medicine_id?: string | null
           reason?: string | null
           result?: Database["public"]["Enums"]["eligibility_result"]
           session_id?: string
@@ -294,7 +294,7 @@ export type Database = {
           answer_text: string | null
           created_at: string
           id: string
-          medicine_id: string
+          medicine_id: string | null
           question_id: string
           session_id: string
         }
@@ -305,7 +305,7 @@ export type Database = {
           answer_text?: string | null
           created_at?: string
           id?: string
-          medicine_id: string
+          medicine_id?: string | null
           question_id: string
           session_id: string
         }
@@ -316,7 +316,7 @@ export type Database = {
           answer_text?: string | null
           created_at?: string
           id?: string
-          medicine_id?: string
+          medicine_id?: string | null
           question_id?: string
           session_id?: string
         }
