@@ -18,7 +18,7 @@ import {
 const items = [
   { title: "Dashboard", url: "/provider", exact: true },
   { title: "My Requests", url: "/provider/requests" },
-  { title: "Unassigned queue", url: "/provider/queue" },
+  { title: "Unassigned Queue", url: "/provider/queue" },
   { title: "Notifications", url: "/provider/notifications", badge: true },
   { title: "My Patients", url: "/provider/patients" },
   { title: "My Profile", url: "/provider/profile" },
