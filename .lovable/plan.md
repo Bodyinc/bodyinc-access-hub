@@ -1,38 +1,30 @@
-## Admin Dashboard
+## Goal
 
-Replace the placeholder at `/admin` (currently 4 "Coming soon" cards) with a real operations overview built from existing tables: `payments`, `medication_requests`, `subscriptions`, `intake_sessions`, `profiles`, `providers`, `refund_requests`, `medicines`, `admin_activity_log`.
+Today refunds only exist as a flat table under Admin → Billing → Refunds, with no way to see how many are processed vs. waiting on you. Add a clear overview.
 
-### 1. KPI row (with 30-day vs previous-30-day trend)
-- Revenue (sum of succeeded `payments.amount_cents`)
-- New patients (`profiles` created)
-- Requests created
-- Active subscriptions
+## What gets built
 
-### 2. Attention panel — what an admin must act on today
-Clickable cards that deep-link into existing screens:
-- Unassigned requests (no `provider_id`, paid/awaiting states) → `/admin/requests`
-- Pending review / awaiting additional payment → `/admin/requests`
-- Refund requests pending → `/admin/billing`
-- Failed payments (last 30 days) → `/admin/billing`
-- Abandoned intake sessions (started, not paid, not expired) → `/admin/intake-sessions`
+**1. Refund summary strip (Billing → Refunds tab)**
 
-### 3. Charts (Recharts, already available in the stack)
-- Revenue trend: daily line/area chart, last 30 days
-- Requests by status: horizontal bar
-- New patients per day: bar chart
+Four small cards above the table, computed from the refund rows already loaded:
+- Needs approval — count + total dollar amount of `pending` requests
+- Approved / processed — count + total refunded amount
+- Rejected — count
+- Total requested — count + amount, all time
 
-### 4. Lists
-- Latest 8 requests: patient name, medicine, status badge, provider, created — row click opens the request
-- Top 5 medicines by request volume (last 30 days)
-- Recent admin activity (last 6 rows from `admin_activity_log`)
+The "Needs approval" card is highlighted when the count is above zero.
 
-### 5. Controls
-- Range switcher: 7 / 30 / 90 days, driving all metrics and charts
-- Refresh button (reuses `src/components/admin/refresh-button.tsx`)
-- Skeleton loading states and a friendly empty state when there is no data yet
+**2. Status filter**
 
-### Technical notes
-- New `src/lib/admin-dashboard.functions.ts`: one `getAdminDashboard` server function (`requireSupabaseAuth` + `assertAdmin`, `supabaseAdmin` imported inside the handler) returning `{ kpis, attention, series, recent, topMedicines, activity }` for a given `days` input. Aggregation done in the handler over bounded, date-filtered selects — no new tables or migrations.
-- Called from the component with `useServerFn` + `useQuery` (not a loader), matching the existing admin pages.
-- UI split into small components under `src/components/admin/dashboard/` (`kpi-card.tsx`, `attention-cards.tsx`, `revenue-chart.tsx`, `status-chart.tsx`, `recent-requests.tsx`).
-- Styling uses the existing admin tokens in `src/lib/admin-ui.ts` and the sand/teal/ink palette already in use; page keeps its `head()` metadata with `noindex`.
+A row of filter chips (All / Pending / Approved / Rejected) next to the existing search box, so you can jump straight to the queue of items awaiting your action. Filtering happens client-side on the already-fetched list; search keeps working on top of it.
+
+**3. Dashboard tie-in**
+
+The admin dashboard already has a "Refunds to approve" action card. Add a second refunds figure to it flow: a "Refunds processed" line showing the count of approved refunds in the selected 7/30/90-day window, linking to `/admin/billing`.
+
+## Technical notes
+
+- Refund summary + filters are pure presentation in `src/components/admin/refunds-table.tsx`, derived with `useMemo` from the existing `listRefunds` result — no new server calls.
+- Cards reuse the existing admin card styling and `formatDollars` from `src/lib/format.ts`.
+- For the dashboard figure, `src/lib/admin-dashboard.server.ts` currently only counts pending refunds; extend that query to also fetch `status`, `amount_cents`, `reviewed_at` so an in-window approved count can be returned, and surface it in `attention-cards.tsx`.
+- No schema changes, no new tables, no changes to approve/reject behaviour.
