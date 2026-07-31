@@ -26,6 +26,7 @@ import { getSettings, updateSettings, type PlatformSettings } from "@/lib/settin
 import { syncShippingBatch } from "@/lib/shipping-reprice.functions";
 import { ActivityLogTab } from "@/components/admin/activity-log-tab";
 import { DangerZoneTab } from "@/components/admin/danger-zone-tab";
+import { OffersTab } from "@/components/admin/offers-tab";
 import {
   adminPageTitle,
   adminPageSubtitle,
@@ -323,13 +324,16 @@ function SettingsPage() {
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
       <div className="min-w-0 space-y-2 sm:space-y-4">
         <h2 className={adminPageTitle}>Settings</h2>
-        <p className={adminPageSubtitle}>Configure fees, referrals, and platform-wide behavior.</p>
+        <p className={adminPageSubtitle}>
+          Configure fees, referrals, offers, and platform-wide behavior.
+        </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full min-w-0">
         <TabsList className="flex h-auto w-full flex-wrap bg-[#E8EEED] text-[#3B4759]/70 sm:w-auto">
           <TabsTrigger value="fees">Fees</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
+          <TabsTrigger value="offers">Offers</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="audit">Audit logs</TabsTrigger>
           <TabsTrigger value="danger" className="data-[state=active]:text-destructive">
@@ -388,6 +392,10 @@ function SettingsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="offers" className="mt-4">
+          <OffersTab />
+        </TabsContent>
+
         <TabsContent value="system" className="mt-4">
           <Card className={`${adminCard} ${adminCardPad} space-y-4`}>
             {form ? (
@@ -420,7 +428,7 @@ function SettingsPage() {
         </TabsContent>
       </Tabs>
 
-      {form && tab !== "audit" && tab !== "danger" ? (
+      {form && tab !== "audit" && tab !== "danger" && tab !== "offers" ? (
         <FormActionBar submitting={mutation.isPending} submitLabel="Save changes" onSubmit={save} />
       ) : null}
     </div>

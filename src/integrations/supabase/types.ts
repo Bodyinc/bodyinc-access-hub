@@ -1134,6 +1134,59 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_offers: {
+        Row: {
+          badge_text: string | null
+          created_at: string
+          cta_href: string
+          cta_label: string
+          ends_at: string | null
+          headline: string
+          id: string
+          is_active: boolean
+          promo_code_id: string | null
+          sort_order: number
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge_text?: string | null
+          created_at?: string
+          cta_href?: string
+          cta_label?: string
+          ends_at?: string | null
+          headline: string
+          id?: string
+          is_active?: boolean
+          promo_code_id?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge_text?: string | null
+          created_at?: string
+          cta_href?: string
+          cta_label?: string
+          ends_at?: string | null
+          headline?: string
+          id?: string
+          is_active?: boolean
+          promo_code_id?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_offers_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prescriptions: {
         Row: {
           created_at: string
