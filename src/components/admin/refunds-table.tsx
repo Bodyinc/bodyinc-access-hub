@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Download, Eye, Search } from "lucide-react";
+import { Download, Eye, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import { approveRefund, listRefunds, rejectRefund } from "@/lib/billing.functions";
+import {
+  approveRefund,
+  createRefundRequest,
+  listRefundablePayments,
+  listRefunds,
+  rejectRefund,
+} from "@/lib/billing.functions";
 import { adminInput } from "@/lib/admin-ui";
 import { formatDate, formatDollars } from "@/lib/format";
 
@@ -36,12 +42,78 @@ export function RefundsTable() {
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [note, setNote] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
+  const [newReason, setNewReason] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [savingNew, setSavingNew] = useState(false);
 
   const qc = useQueryClient();
   const list = useServerFn(listRefunds);
   const approve = useServerFn(approveRefund);
   const reject = useServerFn(rejectRefund);
+  const listPayments = useServerFn(listRefundablePayments);
+  const createRefund = useServerFn(createRefundRequest);
   const query = useQuery({ queryKey: ["admin-refunds"], queryFn: () => list({ data: {} }) });
+  const paymentsQuery = useQuery({
+    queryKey: ["admin-refundable-payments"],
+    queryFn: () => listPayments({ data: {} }),
+    enabled: creating,
+  });
+
+  const payments = useMemo(() => {
+    const rows = (paymentsQuery.data as any[]) ?? [];
+    const s = paymentSearch.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter(
+      (p) =>
+        (p.customer_name ?? "").toLowerCase().includes(s) ||
+        (p.customer_email ?? "").toLowerCase().includes(s) ||
+        (p.stripe_invoice_id ?? "").toLowerCase().includes(s),
+    );
+  }, [paymentsQuery.data, paymentSearch]);
+
+  function closeCreate() {
+    setCreating(false);
+    setSelectedPayment(null);
+    setPaymentSearch("");
+    setNewReason("");
+    setNewAmount("");
+  }
+
+  async function onCreate(approveNow: boolean) {
+    if (!selectedPayment) return;
+    const reason = newReason.trim();
+    if (!reason) {
+      toast.error("Enter a reason for the refund.");
+      return;
+    }
+    const parsed = newAmount.trim() ? Number(newAmount) : null;
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0)) {
+      toast.error("Enter a valid refund amount.");
+      return;
+    }
+    setSavingNew(true);
+    try {
+      await createRefund({
+        data: {
+          payment_id: selectedPayment.id,
+          reason,
+          approve_now: approveNow,
+          ...(parsed !== null ? { amount_cents: Math.round(parsed * 100) } : {}),
+        },
+      });
+      toast.success(approveNow ? "Refund issued via Stripe." : "Refund request created.");
+      closeCreate();
+      qc.invalidateQueries({ queryKey: ["admin-refunds"] });
+      qc.invalidateQueries({ queryKey: ["admin-refundable-payments"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingNew(false);
+    }
+  }
 
   const all = useMemo(() => ((query.data as any[]) ?? []), [query.data]);
 
@@ -172,7 +244,16 @@ export function RefundsTable() {
             ))}
           </div>
         </div>
-        <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setCreating(true)}
+            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white font-semibold rounded-lg"
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            New refund
+          </Button>
+          <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+        </div>
       </div>
 
       <div className="admin-table-wrap">
@@ -220,7 +301,7 @@ export function RefundsTable() {
                     colSpan={7}
                     className="py-12 text-center text-[15px] text-[#3B4759]/70"
                   >
-                    No refund requests.
+                    No refund requests yet. Use “New refund” to raise one against a payment.
                   </TableCell>
                 </TableRow>
               )}
@@ -369,6 +450,118 @@ export function RefundsTable() {
               className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
             >
               {busyId ? "Rejecting…" : "Reject request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create refund */}
+      <Dialog open={creating} onOpenChange={(open) => !open && closeCreate()}>
+        <DialogContent className="rounded-xl max-w-lg p-6 bg-white border border-[#D5DEDD] shadow-xl">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-[18px] font-bold text-[#3B4759]">New refund</DialogTitle>
+            <DialogDescription className="text-sm text-[#6A9B9C]/90 leading-relaxed">
+              Pick a successful payment, then create a pending request or issue the refund right
+              away.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-2 space-y-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
+              <Input
+                placeholder="Search by patient, email or invoice ID…"
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className={`${adminInput} pl-10`}
+              />
+            </div>
+
+            <div className="max-h-56 overflow-y-auto rounded-xl border border-[#D5DEDD]">
+              {paymentsQuery.isLoading ? (
+                <div className="p-4 text-[13px] text-[#3B4759]/70">Loading payments…</div>
+              ) : payments.length === 0 ? (
+                <div className="p-4 text-[13px] text-[#3B4759]/70">
+                  No refundable payments found.
+                </div>
+              ) : (
+                payments.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPayment(p);
+                      setNewAmount(String(p.amount));
+                    }}
+                    className={`flex w-full items-center justify-between gap-3 border-b border-[#D5DEDD] px-4 py-3 text-left last:border-b-0 transition-colors ${
+                      selectedPayment?.id === p.id ? "bg-[#E8EEED]" : "hover:bg-[#F2F7F6]"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-semibold text-[#3B4759]">
+                        {p.customer_name ?? p.customer_email ?? "Unknown patient"}
+                      </span>
+                      <span className="block truncate text-[12px] font-medium text-[#3B4759]/60">
+                        {formatDate(p.created_at)}
+                        {p.stripe_invoice_id ? ` · ${p.stripe_invoice_id}` : ""}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[14px] font-semibold text-[#3B4759]">
+                      {formatDollars(p.amount)}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[12px] font-semibold text-[#3B4759]/70">Amount (USD)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newAmount}
+                  onChange={(e) => setNewAmount(e.target.value)}
+                  disabled={!selectedPayment}
+                  className={`${adminInput} mt-1`}
+                />
+              </div>
+            </div>
+
+            <Textarea
+              value={newReason}
+              onChange={(e) => setNewReason(e.target.value)}
+              placeholder="Reason for the refund"
+              rows={3}
+              maxLength={500}
+              className="border-[#D5DEDD] bg-[#F8FBFA] text-foreground placeholder:text-[#6A9B9C]/40 rounded-xl focus-visible:ring-[#3B4759] text-[14px] resize-none"
+            />
+          </div>
+
+          <DialogFooter className="mt-5 gap-2">
+            <Button
+              variant="outline"
+              onClick={closeCreate}
+              disabled={savingNew}
+              className="rounded-lg border border-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F2F7F6]"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onCreate(false)}
+              disabled={savingNew || !selectedPayment}
+              className="rounded-lg border border-[#D5DEDD] text-[#3B4759] hover:bg-[#F2F7F6]"
+            >
+              Create pending
+            </Button>
+            <Button
+              onClick={() => onCreate(true)}
+              disabled={savingNew || !selectedPayment}
+              className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white font-semibold rounded-lg"
+            >
+              {savingNew ? "Working…" : "Create and refund"}
             </Button>
           </DialogFooter>
         </DialogContent>
