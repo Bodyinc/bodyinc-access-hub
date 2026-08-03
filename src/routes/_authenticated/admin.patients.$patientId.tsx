@@ -370,7 +370,7 @@ function PatientDetailPage() {
                       }
                     >
                       <TableCell className="font-mono text-xs font-medium text-[#3B4759]">
-                        {o.id.slice(0, 8)}…
+                        {formatRecordId(o.id)}
                       </TableCell>
                       <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                         {o.selected_plan_code || "—"}

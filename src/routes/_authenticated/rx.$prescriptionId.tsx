@@ -95,7 +95,7 @@ function RxPage() {
             </div>
             <div className="text-right text-xs text-[#3B4759]/70">
               <div>Date: {formatDate(rx.createdAt)}</div>
-              <div className="font-mono">Rx: {rx.id.slice(0, 8)}</div>
+              <div className="font-mono">Rx: {formatRecordId(rx.id)}</div>
             </div>
           </div>
 
