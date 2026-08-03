@@ -49,6 +49,21 @@ export function formatDateTimeFull(iso?: string | null): string {
 }
 
 /** Whole years between a date of birth and today. */
+
+/**
+ * Human-facing record ID label: "#BI-9A3F" (first 4 chars of the UUID, uppercased).
+ * Display-only — full IDs remain in URLs and API calls.
+ */
+export function formatRecordId(id?: string | null): string {
+  if (!id) return "—";
+  return `#BI-${String(id).slice(0, 4).toUpperCase()}`;
+}
+
+/** Strip a "#BI-"/"BI-"/"#" prefix so users can paste a displayed ID into search. */
+export function normalizeIdSearch(value: string): string {
+  return value.trim().replace(/^#/, "").replace(/^BI-/i, "");
+}
+
 export function ageFromDob(dob: unknown): number | null {
   if (!dob) return null;
   const d = new Date(String(dob));

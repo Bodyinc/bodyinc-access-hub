@@ -24,7 +24,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listOrders } from "@/lib/orders.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
-import { formatDateTime, formatDollars } from "@/lib/format";
+import { formatDateTime, formatDollars, formatRecordId, normalizeIdSearch } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/")({
   head: () => ({
@@ -44,9 +44,11 @@ function OrdersListPage() {
   const debounced = useDebouncedValue(search);
   const [status, setStatus] = useState<string>("all");
 
+  const searchTerm = normalizeIdSearch(debounced);
+
   const query = useQuery({
-    queryKey: ["admin-orders", { search: debounced, status }],
-    queryFn: () => list({ data: { search: debounced || undefined, status } }),
+    queryKey: ["admin-orders", { search: searchTerm, status }],
+    queryFn: () => list({ data: { search: searchTerm || undefined, status } }),
   });
 
   return (
@@ -147,7 +149,7 @@ function OrdersListPage() {
                   }
                 >
                   <TableCell className="font-mono text-xs text-[#3B4759]/70 font-medium">
-                    {o.id.slice(0, 8)}…
+                    {formatRecordId(o.id)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

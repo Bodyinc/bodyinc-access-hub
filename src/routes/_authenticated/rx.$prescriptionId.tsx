@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { getPrescription } from "@/lib/requests.functions";
+import { formatRecordId } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rx/$prescriptionId")({
   head: () => ({
@@ -95,7 +96,7 @@ function RxPage() {
             </div>
             <div className="text-right text-xs text-[#3B4759]/70">
               <div>Date: {formatDate(rx.createdAt)}</div>
-              <div className="font-mono">Rx: {rx.id.slice(0, 8)}</div>
+              <div className="font-mono">Rx: {formatRecordId(rx.id)}</div>
             </div>
           </div>
 

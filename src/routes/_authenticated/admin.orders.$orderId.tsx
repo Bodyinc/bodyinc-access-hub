@@ -22,7 +22,7 @@ import {
   adminCard,
   adminBtnSecondary,
 } from "@/lib/admin-ui";
-import { formatDateTimeFull, formatDollars } from "@/lib/format";
+import { formatDateTimeFull, formatDollars, formatRecordId } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$orderId")({
   head: () => ({
@@ -97,7 +97,7 @@ function OrderDetailPage() {
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
           <div className="min-w-0 space-y-1.5">
             <CardTitle className={`${adminSectionTitle} font-mono text-[16px] sm:text-[18px]`}>
-              {subscription.id}
+              {formatRecordId(subscription.id)}
             </CardTitle>
             <CardDescription className={adminSectionSubtitle}>
               {formatDateTimeFull(subscription.created_at)}

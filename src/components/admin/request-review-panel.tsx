@@ -45,7 +45,7 @@ import {
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { RequestNotes } from "@/components/admin/request-notes";
-import { formatCents, formatDateTimeFull } from "@/lib/format";
+import { formatCents, formatDateTimeFull, formatRecordId } from "@/lib/format";
 
 export function RequestReviewPanel({
   requestId,
@@ -218,7 +218,7 @@ export function RequestReviewPanel({
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
           <div className="min-w-0 space-y-1.5">
             <CardTitle className={`${adminSectionTitle} font-mono text-[15px] sm:text-[17px]`}>
-              {request.id}
+              {formatRecordId(request.id)}
             </CardTitle>
             <CardDescription className={adminSectionSubtitle}>
               {request.kind === "followup" ? "Renewal order" : "Initial order"} ·{" "}

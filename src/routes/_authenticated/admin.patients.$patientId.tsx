@@ -51,7 +51,7 @@ import {
   adminBtnSecondary,
 } from "@/lib/admin-ui";
 import { US_STATES } from "@/lib/us-states";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatRecordId } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   head: () => ({
@@ -370,7 +370,7 @@ function PatientDetailPage() {
                       }
                     >
                       <TableCell className="font-mono text-xs font-medium text-[#3B4759]">
-                        {o.id.slice(0, 8)}…
+                        {formatRecordId(o.id)}
                       </TableCell>
                       <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                         {o.selected_plan_code || "—"}
