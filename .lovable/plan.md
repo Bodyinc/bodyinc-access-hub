@@ -1,38 +1,27 @@
-## Admin Dashboard
+# Unified ID display format: `#BI-XXXX`
 
-Replace the placeholder at `/admin` (currently 4 "Coming soon" cards) with a real operations overview built from existing tables: `payments`, `medication_requests`, `subscriptions`, `intake_sessions`, `profiles`, `providers`, `refund_requests`, `medicines`, `admin_activity_log`.
+Every internal record ID (patients, orders/subscriptions, medication requests, intake sessions, prescriptions) is currently shown either as a full UUID or as an ad-hoc 8-character truncation. This standardises them to a single readable format: `#BI-` followed by the first 4 characters of the ID, uppercased — e.g. `#BI-9A3F`.
 
-### 1. KPI row (with 30-day vs previous-30-day trend)
-- Revenue (sum of succeeded `payments.amount_cents`)
-- New patients (`profiles` created)
-- Requests created
-- Active subscriptions
+## What changes
 
-### 2. Attention panel — what an admin must act on today
-Clickable cards that deep-link into existing screens:
-- Unassigned requests (no `provider_id`, paid/awaiting states) → `/admin/requests`
-- Pending review / awaiting additional payment → `/admin/requests`
-- Refund requests pending → `/admin/billing`
-- Failed payments (last 30 days) → `/admin/billing`
-- Abandoned intake sessions (started, not paid, not expired) → `/admin/intake-sessions`
+A shared formatter is added and used everywhere an ID is shown to a user:
 
-### 3. Charts (Recharts, already available in the stack)
-- Revenue trend: daily line/area chart, last 30 days
-- Requests by status: horizontal bar
-- New patients per day: bar chart
+- Order / subscription detail header (currently the full UUID)
+- Orders list table (currently `9a3f12ab…`)
+- Medication request review panel header (admin + practitioner) — currently the full UUID
+- Patient detail page: order and payment rows
+- Prescription page (`Rx: …`)
+- Any other place a record's own ID is rendered
 
-### 4. Lists
-- Latest 8 requests: patient name, medicine, status badge, provider, created — row click opens the request
-- Top 5 medicines by request volume (last 30 days)
-- Recent admin activity (last 6 rows from `admin_activity_log`)
+Not changed (these are external references, not our IDs): Stripe subscription / invoice / payment-intent IDs, promo codes, and activity-log action names.
 
-### 5. Controls
-- Range switcher: 7 / 30 / 90 days, driving all metrics and charts
-- Refresh button (reuses `src/components/admin/refresh-button.tsx`)
-- Skeleton loading states and a friendly empty state when there is no data yet
+## Search behaviour
 
-### Technical notes
-- New `src/lib/admin-dashboard.functions.ts`: one `getAdminDashboard` server function (`requireSupabaseAuth` + `assertAdmin`, `supabaseAdmin` imported inside the handler) returning `{ kpis, attention, series, recent, topMedicines, activity }` for a given `days` input. Aggregation done in the handler over bounded, date-filtered selects — no new tables or migrations.
-- Called from the component with `useServerFn` + `useQuery` (not a loader), matching the existing admin pages.
-- UI split into small components under `src/components/admin/dashboard/` (`kpi-card.tsx`, `attention-cards.tsx`, `revenue-chart.tsx`, `status-chart.tsx`, `recent-requests.tsx`).
-- Styling uses the existing admin tokens in `src/lib/admin-ui.ts` and the sand/teal/ink palette already in use; page keeps its `head()` metadata with `noindex`.
+Where a list lets you search by order ID, the search will accept the displayed form too — typing `#BI-9A3F`, `BI-9A3F`, or `9a3f` all match — so people can copy the code straight off the screen and paste it into search.
+
+## Technical notes
+
+- Add `formatRecordId(id)` to `src/lib/format.ts`: returns `#BI-` + `id.slice(0, 4).toUpperCase()`, and `—` for nullish values.
+- Replace raw/truncated ID renders in: `src/routes/_authenticated/admin.orders.$orderId.tsx`, `src/routes/_authenticated/admin.orders.index.tsx`, `src/components/admin/request-review-panel.tsx`, `src/routes/_authenticated/admin.patients.$patientId.tsx`, `src/routes/_authenticated/rx.$prescriptionId.tsx`, plus any equivalent spots found during the pass.
+- Add a small `normalizeIdSearch()` helper that strips a leading `#`/`BI-` prefix before the query is sent, applied in the order/request search inputs.
+- Nothing in the database changes; this is display-only. Note that a 4-character prefix is not unique, so it stays a label — full UUIDs remain in URLs and API calls.
