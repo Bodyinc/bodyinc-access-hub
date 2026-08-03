@@ -22,7 +22,7 @@ import {
   adminCard,
   adminBtnSecondary,
 } from "@/lib/admin-ui";
-import { formatDateTimeFull, formatDollars } from "@/lib/format";
+import { formatDateTimeFull, formatDollars, formatRecordId } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$orderId")({
   head: () => ({

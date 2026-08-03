@@ -51,7 +51,7 @@ import {
   adminBtnSecondary,
 } from "@/lib/admin-ui";
 import { US_STATES } from "@/lib/us-states";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatRecordId } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   head: () => ({

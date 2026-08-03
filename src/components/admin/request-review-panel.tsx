@@ -45,7 +45,7 @@ import {
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { RequestNotes } from "@/components/admin/request-notes";
-import { formatCents, formatDateTimeFull } from "@/lib/format";
+import { formatCents, formatDateTimeFull, formatRecordId } from "@/lib/format";
 
 export function RequestReviewPanel({
   requestId,
