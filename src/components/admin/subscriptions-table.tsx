@@ -37,13 +37,15 @@ export function SubscriptionsTable() {
 
   const rows = useMemo(() => {
     const all = (query.data as any[]) ?? [];
-    const s = search.trim().toLowerCase();
+    const s = normalizeIdSearch(search).toLowerCase();
     if (!s) return all;
+    const idTerm = s.replace(/-/g, "");
     return all.filter(
       (r) =>
         (r.customer_name ?? "").toLowerCase().includes(s) ||
         (r.customer_email ?? "").toLowerCase().includes(s) ||
-        (r.plan_name ?? "").toLowerCase().includes(s),
+        (r.plan_name ?? "").toLowerCase().includes(s) ||
+        String(r.id).toLowerCase().replace(/-/g, "").startsWith(idTerm),
     );
   }, [query.data, search]);
 
@@ -54,7 +56,7 @@ export function SubscriptionsTable() {
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/60" />
           <Input
-            placeholder="Search by patient or plan…"
+            placeholder="Search by subscription ID, patient, or plan…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`${adminInput} pl-10`}
