@@ -467,6 +467,8 @@ export function RequestReviewPanel({
         onOpenChange={setChangeOpen}
         onChanged={refresh}
         currentMedicineId={medicine?.id ?? request.medicine_id ?? null}
+        currentVariantId={request.variant_id ?? null}
+        currentPackageId={pkg?.id ?? request.package_id ?? null}
         current={{
           medicineName: medicine?.name ?? null,
           planName: pkg?.name ?? null,

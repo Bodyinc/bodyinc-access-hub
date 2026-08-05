@@ -293,7 +293,7 @@ export const approveRequest = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id",
+      "id, status, provider_id, user_id, medicine_id",
     );
     if (req.status !== "pending_review") {
       throw new Error(`Cannot approve a request that is ${req.status}.`);
@@ -319,6 +319,15 @@ export const approveRequest = createServerFn({ method: "POST" })
       context.userId,
       data.note?.trim() || null,
     );
+
+    const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
+    void notifyPatientRequestEvent({
+      supabaseAdmin,
+      request: req,
+      template: "patient_approved",
+      extraParams: { DECISION_NOTE: data.note?.trim() || "" },
+    });
+
     return { ok: true };
   });
 
@@ -340,7 +349,7 @@ export const rejectRequest = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id, payment_id, subscription_id, stripe_invoice_id",
+      "id, status, provider_id, user_id, medicine_id, payment_id, subscription_id, stripe_invoice_id",
     );
     if (!["pending_review", "awaiting_additional_payment"].includes(req.status)) {
       throw new Error(`Cannot reject a request that is ${req.status}.`);
@@ -425,6 +434,15 @@ export const rejectRequest = createServerFn({ method: "POST" })
       context.userId,
       data.note?.trim() || null,
     );
+
+    const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
+    void notifyPatientRequestEvent({
+      supabaseAdmin,
+      request: req,
+      template: "patient_rejected",
+      extraParams: { DECISION_NOTE: data.note?.trim() || "" },
+    });
+
     return { ok: true, stripe_refund_id: refund.id };
   });
 
@@ -468,6 +486,9 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       .maybeSingle();
     if (pkgErr) throw new Error(pkgErr.message);
     if (!newPkg) throw new Error("Selected plan not found.");
+    if (newPkg.id === req.package_id) {
+      throw new Error("That is already this order's medicine, variant and plan.");
+    }
     if (!newPkg.is_active) throw new Error("Selected plan is inactive.");
     if (!newPkg.stripe_price_id) {
       throw new Error(
@@ -546,7 +567,10 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       })
       .eq("id", req.id);
 
-    const medLabel = (newPkg as any).medicines?.name ?? "the new medication";
+    // Variant is part of the label so a dose-only change reads clearly on the timeline and emails.
+    const medName = (newPkg as any).medicines?.name ?? "the new medication";
+    const variantName = (newPkg as any).medicine_variants?.name ?? null;
+    const medLabel = variantName ? `${medName} (${variantName})` : medName;
 
     if (crossCategory) {
       await logEvent(
@@ -589,6 +613,28 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         context.userId,
         `Changed to ${medLabel}; additional $${(deltaCents / 100).toFixed(2)} due.`,
       );
+
+      const { notifyPatientRequestEvent, notifyProviderRequestEvent } =
+        await import("@/lib/email.notifications");
+      void notifyPatientRequestEvent({
+        supabaseAdmin,
+        request: { ...req, medicine_id: newPkg.medicine_id },
+        template: "patient_additional_payment",
+        extraParams: {
+          MEDICINE_NAME: medLabel,
+          AMOUNT_DUE: (deltaCents / 100).toFixed(2),
+          AMOUNT_DUE_CENTS: deltaCents,
+        },
+      });
+      void notifyProviderRequestEvent({
+        supabaseAdmin,
+        providerId: req.provider_id,
+        requestId: req.id,
+        medicineId: newPkg.medicine_id,
+        template: "provider_needs_attention",
+        actorUserId: context.userId,
+      });
+
       return { ok: true, delta_cents: deltaCents, status: "awaiting_additional_payment" };
     }
 
@@ -620,6 +666,18 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         ? `Changed to ${medLabel}; $${(Math.abs(deltaCents) / 100).toFixed(2)} credited next cycle.`
         : `Changed to ${medLabel}.`,
     );
+
+    const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
+    void notifyPatientRequestEvent({
+      supabaseAdmin,
+      request: { ...req, medicine_id: newPkg.medicine_id },
+      template: "patient_medicine_changed",
+      extraParams: {
+        MEDICINE_NAME: medLabel,
+        CREDIT_AMOUNT: deltaCents < 0 ? (Math.abs(deltaCents) / 100).toFixed(2) : "0.00",
+      },
+    });
+
     return { ok: true, delta_cents: deltaCents, status: "approved" };
   });
 
@@ -688,6 +746,17 @@ export const generatePrescription = createServerFn({ method: "POST" })
       .eq("id", req.id);
     await logEvent(supabaseAdmin, req.id, "prescribed", role, context.userId);
 
+    const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
+    void notifyPatientRequestEvent({
+      supabaseAdmin,
+      request: req,
+      template: "patient_prescription_ready",
+      extraParams: {
+        MEDICINE_NAME: (med as any)?.name ?? "Medication",
+        PRESCRIPTION_ID: rx?.id ?? "",
+      },
+    });
+
     return { ok: true, prescription_id: rx?.id ?? null };
   });
 
@@ -703,6 +772,13 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: existing } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, medicine_id, status, provider_id")
+      .eq("id", data.requestId)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from("medication_requests")
       .update({ provider_id: data.providerId, updated_at: new Date().toISOString() })
@@ -717,6 +793,26 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
         context.userId,
         "Provider assigned by admin",
       );
+
+      const { notifyProviderRequestEvent } = await import("@/lib/email.notifications");
+      void notifyProviderRequestEvent({
+        supabaseAdmin,
+        providerId: data.providerId,
+        requestId: data.requestId,
+        medicineId: (existing as any)?.medicine_id ?? null,
+        template: "provider_assigned",
+        actorUserId: context.userId,
+      });
+      if ((existing as any)?.status === "pending_review") {
+        void notifyProviderRequestEvent({
+          supabaseAdmin,
+          providerId: data.providerId,
+          requestId: data.requestId,
+          medicineId: (existing as any)?.medicine_id ?? null,
+          template: "provider_ready_for_review",
+          actorUserId: context.userId,
+        });
+      }
     }
     return { ok: true };
   });
@@ -777,7 +873,7 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id",
+      "id, status, provider_id, user_id, medicine_id, tracking_number",
     );
 
     const update: { status: string; updated_at: string; tracking_number?: string | null } = {
@@ -800,6 +896,31 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
       context.userId,
       data.note?.trim() || (data.trackingNumber ? `Tracking: ${data.trackingNumber}` : null),
     );
+
+    const tracking =
+      data.trackingNumber !== undefined
+        ? data.trackingNumber || null
+        : (req.tracking_number as string | null);
+
+    const statusTemplate =
+      data.status === "sent_to_pharmacy"
+        ? ("patient_sent_to_pharmacy" as const)
+        : data.status === "dispatched"
+          ? ("patient_shipped" as const)
+          : data.status === "delivered"
+            ? ("patient_delivered" as const)
+            : null;
+
+    if (statusTemplate) {
+      const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
+      void notifyPatientRequestEvent({
+        supabaseAdmin,
+        request: { ...req, tracking_number: tracking },
+        template: statusTemplate,
+        extraParams: { TRACKING_NUMBER: tracking ?? "" },
+      });
+    }
+
     return { ok: true };
   });
 

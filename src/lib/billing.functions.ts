@@ -206,7 +206,7 @@ export const approveRefund = createServerFn({ method: "POST" })
 
     const { data: req, error } = await supabaseAdmin
       .from("refund_requests")
-      .select("id, payment_id, status, amount_cents")
+      .select("id, payment_id, status, amount_cents, user_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -249,6 +249,19 @@ export const approveRefund = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("payments").update({ status: "refunded" }).eq("id", payment.id);
 
+    const { notifyUserById } = await import("@/lib/email.notifications");
+    void notifyUserById({
+      supabaseAdmin,
+      userId: req.user_id,
+      template: "patient_refund_approved",
+      params: {
+        AMOUNT: ((req.amount_cents ?? 0) / 100).toFixed(2),
+        AMOUNT_CENTS: req.amount_cents ?? 0,
+        REFUND_ID: refund.id,
+        PORTAL_URL: process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "",
+      },
+    });
+
     return { ok: true, stripe_refund_id: refund.id };
   });
 
@@ -263,7 +276,7 @@ export const rejectRefund = createServerFn({ method: "POST" })
 
     const { data: req, error } = await supabaseAdmin
       .from("refund_requests")
-      .select("id, status")
+      .select("id, status, user_id, amount_cents")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -280,6 +293,19 @@ export const rejectRefund = createServerFn({ method: "POST" })
       })
       .eq("id", data.id);
     if (updateError) throw new Error(updateError.message);
+
+    const { notifyUserById } = await import("@/lib/email.notifications");
+    void notifyUserById({
+      supabaseAdmin,
+      userId: req.user_id,
+      template: "patient_refund_rejected",
+      params: {
+        AMOUNT: ((req.amount_cents ?? 0) / 100).toFixed(2),
+        AMOUNT_CENTS: req.amount_cents ?? 0,
+        ADMIN_NOTE: data.note?.trim() || "",
+        PORTAL_URL: process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "",
+      },
+    });
 
     return { ok: true };
   });

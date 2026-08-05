@@ -53,6 +53,8 @@ export function RequestChangeMedicineDialog({
   onChanged,
   current,
   currentMedicineId,
+  currentVariantId,
+  currentPackageId,
 }: {
   requestId: string;
   open: boolean;
@@ -60,6 +62,8 @@ export function RequestChangeMedicineDialog({
   onChanged: () => void;
   current: RequestChangeCurrent;
   currentMedicineId?: string | null;
+  currentVariantId?: string | null;
+  currentPackageId?: string | null;
 }) {
   const medicinesQ = useQuery(medicinesQueryOptions());
   const categoriesQ = useQuery(categoriesQueryOptions());
@@ -72,16 +76,18 @@ export function RequestChangeMedicineDialog({
   const [allowOtherCategory, setAllowOtherCategory] = useState(false);
   const [categoryReason, setCategoryReason] = useState("");
 
+  // Open on the order's current selection so the variant/dose and plan can be changed without
+  // switching medicine.
   useEffect(() => {
     if (open) {
       setSearch("");
-      setMedicineId("");
-      setVariantId("");
-      setPackageId("");
+      setMedicineId(currentMedicineId ?? "");
+      setVariantId(currentVariantId ?? "");
+      setPackageId(currentPackageId ?? "");
       setAllowOtherCategory(false);
       setCategoryReason("");
     }
-  }, [open]);
+  }, [open, currentMedicineId, currentVariantId, currentPackageId]);
 
   const medicines = useMemo(
     () => (medicinesQ.data ?? []).filter((m) => m.is_active),
@@ -105,27 +111,35 @@ export function RequestChangeMedicineDialog({
       .filter(Boolean) as string[];
   }, [categoriesQ.data, currentCategoryIds]);
 
+  // The current medicine stays in the list (pinned first) so a practitioner can keep the medicine
+  // and change only its variant/dose or plan.
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return medicines
-      .filter((m) => m.id !== currentMedicineId)
       .filter((m) => allowOtherCategory || inSameCategory(m))
-      .filter((m) => !s || m.name.toLowerCase().includes(s));
+      .filter((m) => !s || m.name.toLowerCase().includes(s))
+      .sort((a, b) => (a.id === currentMedicineId ? -1 : b.id === currentMedicineId ? 1 : 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [medicines, search, allowOtherCategory, currentCategoryIds, currentMedicineId]);
 
   const medicine = medicines.find((m) => m.id === medicineId) ?? null;
   const hasVariants = (medicine?.variants.length ?? 0) > 0;
-  const activeVariants = useMemo(
-    () => (medicine?.variants ?? []).filter((v) => v.is_active),
-    [medicine],
-  );
+  const activeVariants = useMemo(() => {
+    const list = (medicine?.variants ?? []).filter((v) => v.is_active);
+    // A since-deactivated variant must still be listed while it is the order's current one,
+    // otherwise its plans are unreachable and the dialog looks empty.
+    if (medicine && medicine.id === currentMedicineId && currentVariantId) {
+      const cur = medicine.variants.find((v) => v.id === currentVariantId);
+      if (cur && !cur.is_active) return [cur, ...list];
+    }
+    return list;
+  }, [medicine, currentMedicineId, currentVariantId]);
   const variant = hasVariants ? (activeVariants.find((v) => v.id === variantId) ?? null) : null;
 
   const packages = useMemo(() => {
     const list = hasVariants ? (variant?.packages ?? []) : (medicine?.packages ?? []);
-    return list.filter((p) => p.is_active && p.stripe_price_id);
-  }, [hasVariants, variant, medicine]);
+    return list.filter((p) => (p.is_active && p.stripe_price_id) || p.id === currentPackageId);
+  }, [hasVariants, variant, medicine, currentPackageId]);
 
   useEffect(() => {
     if (!medicine) return;
@@ -142,8 +156,8 @@ export function RequestChangeMedicineDialog({
 
   function selectMedicine(id: string) {
     setMedicineId(id);
-    setVariantId("");
-    setPackageId("");
+    setVariantId(id === currentMedicineId ? (currentVariantId ?? "") : "");
+    setPackageId(id === currentMedicineId ? (currentPackageId ?? "") : "");
   }
 
   const selectedPkg = packages.find((p) => p.id === packageId) ?? null;
@@ -151,6 +165,13 @@ export function RequestChangeMedicineDialog({
 
   const isCrossCategory = !!medicine && currentCategoryIds.size > 0 && !inSameCategory(medicine);
   const reasonMissing = isCrossCategory && categoryReason.trim().length < 10;
+  const isUnchanged = !!selectedPkg && !!currentPackageId && selectedPkg.id === currentPackageId;
+
+  const currentVariantName = useMemo(() => {
+    if (!currentMedicineId || !currentVariantId) return null;
+    const m = medicines.find((x) => x.id === currentMedicineId);
+    return m?.variants.find((v) => v.id === currentVariantId)?.name ?? null;
+  }, [medicines, currentMedicineId, currentVariantId]);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -164,8 +185,8 @@ export function RequestChangeMedicineDialog({
     onSuccess: (res: any) => {
       toast.success(
         res?.status === "awaiting_additional_payment"
-          ? "Medicine changed. The patient has been sent a payment request for the difference."
-          : "Medicine changed and approved.",
+          ? "Order updated. The patient has been sent a payment request for the difference."
+          : "Order updated and approved.",
       );
       onChanged();
       onOpenChange(false);
@@ -173,7 +194,7 @@ export function RequestChangeMedicineDialog({
     onError: (e: Error) => toast.error(toastError(e)),
   });
 
-  const canSubmit = !!selectedPkg && !mutation.isPending && !reasonMissing;
+  const canSubmit = !!selectedPkg && !isUnchanged && !mutation.isPending && !reasonMissing;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -181,9 +202,10 @@ export function RequestChangeMedicineDialog({
         <DialogHeader>
           <DialogTitle>Change medicine</DialogTitle>
           <DialogDescription>
-            Switch this order to a different medicine. If it costs more, the patient is sent a
-            payment request for the difference before the prescription is generated; if it costs
-            less, the difference is credited to their next cycle.
+            Switch this order to a different medicine, or keep the same medicine and change its
+            variant/dose or plan. If it costs more, the patient is sent a payment request for the
+            difference before the prescription is generated; if it costs less, the difference is
+            credited to their next cycle.
           </DialogDescription>
         </DialogHeader>
 
@@ -194,6 +216,9 @@ export function RequestChangeMedicineDialog({
             </div>
             <div className="rounded-lg border bg-muted/30 p-4 space-y-1.5 text-sm">
               <div className="font-semibold text-foreground">{current.medicineName ?? "—"}</div>
+              {currentVariantName ? (
+                <div className="text-muted-foreground">{currentVariantName}</div>
+              ) : null}
               <div className="text-muted-foreground">{current.planName ?? "—"}</div>
               <div className="text-lg font-bold text-foreground">
                 {current.price != null ? formatDollars(current.price) : "—"}
@@ -212,7 +237,7 @@ export function RequestChangeMedicineDialog({
 
           <div className="space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              New medicine
+              New selection
             </div>
 
             {currentCategoryIds.size > 0 ? (
@@ -253,6 +278,7 @@ export function RequestChangeMedicineDialog({
                 filtered.map((m) => {
                   const selected = m.id === medicineId;
                   const other = !inSameCategory(m);
+                  const isCurrent = m.id === currentMedicineId;
                   return (
                     <button
                       key={m.id}
@@ -263,7 +289,14 @@ export function RequestChangeMedicineDialog({
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium truncate">{m.name}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium truncate">{m.name}</span>
+                          {isCurrent ? (
+                            <Badge variant="secondary" className="text-[10px]">
+                              Current
+                            </Badge>
+                          ) : null}
+                        </div>
                         {other ? (
                           <div className="text-[11px] text-muted-foreground">Other category</div>
                         ) : null}
@@ -295,7 +328,7 @@ export function RequestChangeMedicineDialog({
 
             {hasVariants ? (
               <div className="space-y-1">
-                <Label className="text-xs">Variant</Label>
+                <Label className="text-xs">Variant / dose</Label>
                 <Select
                   value={variantId}
                   onValueChange={(v) => {
@@ -310,6 +343,7 @@ export function RequestChangeMedicineDialog({
                     {activeVariants.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.name}
+                        {v.id === currentVariantId ? " (current)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -333,6 +367,7 @@ export function RequestChangeMedicineDialog({
                       {packages.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {planLabel(p)}
+                          {p.id === currentPackageId ? " (current)" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -343,7 +378,14 @@ export function RequestChangeMedicineDialog({
           </div>
         </div>
 
-        {selectedPkg && diff != null ? (
+        {isUnchanged ? (
+          <p className="text-xs text-muted-foreground">
+            This is the order's current variant and plan. Pick a different variant/dose or plan to
+            change it.
+          </p>
+        ) : null}
+
+        {selectedPkg && !isUnchanged && diff != null ? (
           <div className="rounded-lg border bg-muted/20 p-3 text-sm space-y-1">
             <div className="flex items-center justify-between">
               <span className="font-semibold">Price difference</span>
