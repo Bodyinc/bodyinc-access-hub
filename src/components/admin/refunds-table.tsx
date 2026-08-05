@@ -26,7 +26,7 @@ import {
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { approveRefund, listRefunds, rejectRefund } from "@/lib/billing.functions";
 import { adminInput } from "@/lib/admin-ui";
-import { formatDate, formatDollars } from "@/lib/format";
+import { formatDate, formatDollars, normalizeIdSearch } from "@/lib/format";
 
 export function RefundsTable() {
   const [search, setSearch] = useState("");
@@ -42,13 +42,15 @@ export function RefundsTable() {
 
   const rows = useMemo(() => {
     const all = (query.data as any[]) ?? [];
-    const s = search.trim().toLowerCase();
+    const s = normalizeIdSearch(search).toLowerCase();
     if (!s) return all;
+    const idTerm = s.replace(/-/g, "");
     return all.filter(
       (r) =>
         (r.customer_name ?? "").toLowerCase().includes(s) ||
         (r.customer_email ?? "").toLowerCase().includes(s) ||
-        (r.reason ?? "").toLowerCase().includes(s),
+        (r.reason ?? "").toLowerCase().includes(s) ||
+        String(r.id).toLowerCase().replace(/-/g, "").startsWith(idTerm),
     );
   }, [query.data, search]);
 
@@ -88,7 +90,7 @@ export function RefundsTable() {
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
           <Input
-            placeholder="Search by patient or reason…"
+            placeholder="Search by refund ID, patient, or reason…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`${adminInput} pl-10`}

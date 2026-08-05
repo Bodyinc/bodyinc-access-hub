@@ -64,6 +64,21 @@ export function normalizeIdSearch(value: string): string {
   return value.trim().replace(/^#/, "").replace(/^BI-/i, "");
 }
 
+/**
+ * Turn a hex ID fragment (e.g. "9a3f", from a displayed "#BI-9A3F") into an
+ * inclusive uuid range so a database can match it with gte/lte — PostgREST
+ * cannot run `ilike` against a uuid column.
+ */
+export function uuidPrefixRange(value: string): { lo: string; hi: string } | null {
+  const hex = normalizeIdSearch(value).replace(/-/g, "").toLowerCase();
+  if (!hex || hex.length > 32 || !/^[0-9a-f]+$/.test(hex)) return null;
+  const pad = (fill: string) => {
+    const full = (hex + fill.repeat(32)).slice(0, 32);
+    return `${full.slice(0, 8)}-${full.slice(8, 12)}-${full.slice(12, 16)}-${full.slice(16, 20)}-${full.slice(20)}`;
+  };
+  return { lo: pad("0"), hi: pad("f") };
+}
+
 export function ageFromDob(dob: unknown): number | null {
   if (!dob) return null;
   const d = new Date(String(dob));
