@@ -15,7 +15,7 @@ import { RefreshButton } from "@/components/admin/refresh-button";
 import { listSubscriptions } from "@/lib/billing.functions";
 import { Search } from "lucide-react";
 import { adminInput } from "@/lib/admin-ui";
-import { formatDate, formatDollarsOrDash } from "@/lib/format";
+import { formatDate, formatDollarsOrDash, normalizeIdSearch } from "@/lib/format";
 
 const CANCELLATION_LABELS: Record<string, string> = {
   achieved_goals: "Achieved goals",
