@@ -84,11 +84,15 @@ export const listRequests = createServerFn({ method: "POST" })
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const { normalizeIdSearch, uuidPrefixRange } = await import("@/lib/format");
+    const term = data.search ? normalizeIdSearch(data.search) : "";
+    const idRange = term ? uuidPrefixRange(term) : null;
+    const SELECT_COLS =
+      "id, user_id, session_id, provider_id, medicine_id, package_id, kind, status, requires_consultation, tracking_number, created_at";
+
     let q = supabaseAdmin
       .from("medication_requests")
-      .select(
-        "id, user_id, session_id, provider_id, medicine_id, package_id, kind, status, requires_consultation, tracking_number, created_at",
-      )
+      .select(SELECT_COLS)
       .order("created_at", { ascending: false })
       .limit(300);
 
@@ -100,7 +104,26 @@ export const listRequests = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const list = rows ?? [];
+    let list = rows ?? [];
+
+    // ID search must find the record regardless of the active status filter or page limit.
+    if (idRange) {
+      let idQ = supabaseAdmin
+        .from("medication_requests")
+        .select(SELECT_COLS)
+        .gte("id", idRange.lo)
+        .lte("id", idRange.hi)
+        .limit(50);
+      if (role === "provider") idQ = idQ.eq("provider_id", context.userId);
+      const { data: idRows, error: idErr } = await idQ;
+      if (idErr) throw new Error(idErr.message);
+      const byId = new Map<string, any>();
+      for (const r of list as any[]) byId.set(r.id, r);
+      for (const r of (idRows ?? []) as any[]) byId.set(r.id, r);
+      list = [...byId.values()].sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+    }
 
     const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
     const sessionIds = Array.from(
@@ -157,13 +180,14 @@ export const listRequests = createServerFn({ method: "POST" })
       };
     });
 
-    if (data.search) {
-      const s = data.search.toLowerCase();
+    if (term) {
+      const s = term.toLowerCase();
       result = result.filter(
         (r: any) =>
           (r.customer_name ?? "").toLowerCase().includes(s) ||
           (r.customer_email ?? "").toLowerCase().includes(s) ||
           (r.medicine_name ?? "").toLowerCase().includes(s) ||
+          r.id.toLowerCase().replace(/-/g, "").startsWith(s.replace(/-/g, "")) ||
           r.id.toLowerCase().includes(s),
       );
     }
