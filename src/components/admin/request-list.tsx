@@ -24,7 +24,7 @@ import { listRequests } from "@/lib/requests.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, normalizeIdSearch } from "@/lib/format";
 
 const STATUS_FILTERS = [
   { value: "open", label: "Open" },
@@ -54,9 +54,11 @@ export function RequestList({
   const debounced = useDebouncedValue(search);
   const [status, setStatus] = useState<string>("open");
 
+  const searchTerm = normalizeIdSearch(debounced);
+
   const query = useQuery({
-    queryKey: ["requests", { search: debounced, status }],
-    queryFn: () => list({ data: { search: debounced || undefined, status } }),
+    queryKey: ["requests", { search: searchTerm, status }],
+    queryFn: () => list({ data: { search: searchTerm || undefined, status } }),
   });
 
   const rows = (query.data as any[]) ?? [];
@@ -77,7 +79,7 @@ export function RequestList({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by patient, email, or medicine…"
+            placeholder="Search by order ID, patient, email, or medicine…"
             className={`${adminInput} pl-10`}
           />
         </div>
