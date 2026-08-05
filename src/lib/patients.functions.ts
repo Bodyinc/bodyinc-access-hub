@@ -46,6 +46,12 @@ export const listPatients = createServerFn({ method: "POST" })
       return map;
     })();
 
+    const idTerm = data.search ? data.search.trim().replace(/^#/, "").replace(/^BI-/i, "") : "";
+    const idMatchedIds =
+      idTerm && /^[0-9a-fA-F-]{2,}$/.test(idTerm)
+        ? userIds.filter((id: string) => id.toLowerCase().startsWith(idTerm.toLowerCase()))
+        : [];
+
     let q = supabaseAdmin
       .from("profiles")
       .select("id, full_name, email, phone, dob, avatar_url, created_at")
@@ -56,8 +62,24 @@ export const listPatients = createServerFn({ method: "POST" })
       const s = `%${data.search}%`;
       q = q.or(`full_name.ilike.${s},email.ilike.${s},phone.ilike.${s}`);
     }
-    const { data: profiles, error } = await q;
+    const [{ data: textProfiles, error }, idProfilesRes] = await Promise.all([
+      q,
+      idMatchedIds.length
+        ? supabaseAdmin
+            .from("profiles")
+            .select("id, full_name, email, phone, dob, avatar_url, created_at")
+            .in("id", idMatchedIds)
+        : Promise.resolve({ data: [], error: null } as any),
+    ]);
     if (error) throw new Error(error.message);
+    if (idProfilesRes.error) throw new Error(idProfilesRes.error.message);
+
+    const merged = new Map<string, any>();
+    for (const p of (textProfiles ?? []) as any[]) merged.set(p.id, p);
+    for (const p of (idProfilesRes.data ?? []) as any[]) merged.set(p.id, p);
+    const profiles = [...merged.values()].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
     const authById = await authByIdPromise;
 
     const rows = (profiles ?? []).map((p: any) => {
