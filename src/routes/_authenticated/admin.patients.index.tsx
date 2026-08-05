@@ -49,7 +49,7 @@ import {
   setPatientActive,
 } from "@/lib/patients.functions";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
-import { formatDate } from "@/lib/format";
+import { formatDate, normalizeIdSearch } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/")({
   head: () => ({
@@ -76,9 +76,11 @@ function PatientsListPage() {
   const [status, setStatus] = useState<"all" | "active" | "deactivated">("all");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
+  const searchTerm = normalizeIdSearch(debounced);
+
   const query = useQuery({
-    queryKey: ["patients", { search: debounced, status }],
-    queryFn: () => list({ data: { search: debounced || undefined, status } }),
+    queryKey: ["patients", { search: searchTerm, status }],
+    queryFn: () => list({ data: { search: searchTerm || undefined, status } }),
   });
 
   const activeMut = useMutation({
@@ -125,7 +127,7 @@ function PatientsListPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or phone…"
+            placeholder="Search by patient ID, name, email, or phone…"
             className={`${adminInput} pl-9`}
           />
         </div>
