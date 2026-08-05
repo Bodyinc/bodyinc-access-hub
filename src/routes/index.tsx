@@ -63,7 +63,7 @@ function HomePage() {
 
       if (!active) return;
       if (role === "admin") navigate({ to: "/admin", replace: true });
-      else if (role === "provider") navigate({ to: "/dashboard", replace: true });
+      else if (role === "provider") navigate({ to: "/provider", replace: true });
       else {
         await supabase.auth.signOut();
         navigate({ to: "/auth", replace: true });

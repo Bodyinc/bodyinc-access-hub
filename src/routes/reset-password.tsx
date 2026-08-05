@@ -11,6 +11,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
 import { cachePortalRole } from "@/lib/portal-role-cache";
+import {
+  adminLabel,
+  adminInput,
+  adminCard,
+  adminBtnPrimary,
+  adminSectionTitle,
+  adminSectionSubtitle,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -86,7 +94,6 @@ function ResetPasswordPage() {
             setLinkError("This reset link is invalid or has expired. Please request a new one.");
           else {
             setReady(true);
-            // Clean ?code from the URL
             window.history.replaceState({}, "", url.pathname);
           }
         }
@@ -101,7 +108,6 @@ function ResetPasswordPage() {
             window.history.replaceState({}, "", url.pathname);
           }
         } else if (!window.location.hash) {
-          // No code, no token_hash, no hash fragment, no session → bad/missing link.
           setLinkError("This reset link is invalid or has expired. Please request a new one.");
         }
       }
@@ -144,7 +150,10 @@ function ResetPasswordPage() {
         if (role === "admin" || role === "provider") {
           cachePortalRole(user.id, role);
           await router.invalidate();
-          navigate({ to: role === "admin" ? "/admin" : "/dashboard", replace: true });
+          navigate({
+            to: role === "admin" ? "/admin" : role === "provider" ? "/provider" : "/dashboard",
+            replace: true,
+          });
           return;
         }
       }
@@ -158,11 +167,20 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl">Set a new password</CardTitle>
-          <CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12 font-['DM_Sans',sans-serif]">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+      `}</style>
+
+      <Card className={`${adminCard} w-full max-w-md`}>
+        <CardHeader className="space-y-3 p-4 text-center sm:p-6">
+          <img
+            src="/logo.svg"
+            alt="Body Inc"
+            className="mx-auto h-auto max-h-[48px] w-full max-w-[160px] object-contain"
+          />
+          <CardTitle className={adminSectionTitle}>Set a new password</CardTitle>
+          <CardDescription className={`${adminSectionSubtitle} break-words`}>
             {linkError
               ? linkError
               : ready
@@ -170,19 +188,19 @@ function ResetPasswordPage() {
                 : "Verifying your reset link…"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
           {linkError ? (
-            <div className="space-y-3 text-center">
+            <div className="space-y-4 text-center">
               <Link
                 to="/forgot-password"
-                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                className={`${adminBtnPrimary} inline-flex w-full items-center justify-center sm:w-auto`}
               >
                 Request a new link
               </Link>
               <div>
                 <Link
                   to="/auth"
-                  className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                  className="text-[14px] font-medium text-[#6A9B9C] underline-offset-4 hover:text-[#5B8788] hover:underline"
                 >
                   Back to sign in
                 </Link>
@@ -191,7 +209,9 @@ function ResetPasswordPage() {
           ) : (
             <form onSubmit={onSubmit} className="space-y-4" noValidate>
               <div className="space-y-2">
-                <Label htmlFor="password">New password</Label>
+                <Label htmlFor="password" className={adminLabel}>
+                  New password
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -200,11 +220,14 @@ function ResetPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting || !ready}
                   required
+                  className={adminInput}
                 />
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm">Confirm password</Label>
+                <Label htmlFor="confirm" className={adminLabel}>
+                  Confirm password
+                </Label>
                 <Input
                   id="confirm"
                   type="password"
@@ -213,10 +236,15 @@ function ResetPasswordPage() {
                   onChange={(e) => setConfirm(e.target.value)}
                   disabled={submitting || !ready}
                   required
+                  className={adminInput}
                 />
                 {errors.confirm && <p className="text-sm text-destructive">{errors.confirm}</p>}
               </div>
-              <Button type="submit" className="w-full" disabled={submitting || !ready}>
+              <Button
+                type="submit"
+                className={`${adminBtnPrimary} w-full`}
+                disabled={submitting || !ready}
+              >
                 {submitting ? "Saving…" : "Save new password"}
               </Button>
             </form>

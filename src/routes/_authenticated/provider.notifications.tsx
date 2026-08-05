@@ -19,7 +19,7 @@ function ProviderNotificationsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="w-full min-w-0 max-w-none">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-[#3B4759]">Notifications</h1>

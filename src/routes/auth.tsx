@@ -19,6 +19,14 @@ import {
   type SignInResult,
 } from "@/lib/auth.functions";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
+import {
+  adminLabel,
+  adminInput,
+  adminCard,
+  adminBtnPrimary,
+  adminSectionTitle,
+  adminSectionSubtitle,
+} from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -41,6 +49,9 @@ const emailOnlySchema = z.object({
   email: z.string().trim().email("Enter a valid email address").max(255),
 });
 
+const otpSlotClass =
+  "h-10 w-9 border border-[#D5DEDD] bg-white text-[16px] font-medium text-[#3B4759] shadow-none first:rounded-l-[6px] first:border-l last:rounded-r-[6px] ring-[#6A9B9C]";
+
 function AuthPage() {
   const navigate = useNavigate();
   const router = useRouter();
@@ -53,13 +64,11 @@ function AuthPage() {
     redirectUrl?: string;
   } | null>(null);
 
-  // Password tab state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pwSubmitting, setPwSubmitting] = useState(false);
   const [pwErrors, setPwErrors] = useState<{ email?: string; password?: string }>({});
 
-  // OTP tab state
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpStage, setOtpStage] = useState<"request" | "verify">("request");
@@ -71,7 +80,7 @@ function AuthPage() {
       if (result.error === "wrong_portal" || result.error === "no_access") {
         setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
       } else {
-        toast.error(toastError(result));
+        toast.error(result.message);
       }
       return;
     }
@@ -86,12 +95,7 @@ function AuthPage() {
     clearPasswordRecoveryPending();
     await router.invalidate();
     navigate({
-      to:
-        result.role === "admin"
-          ? "/admin"
-          : result.role === "provider"
-            ? "/provider"
-            : "/dashboard",
+      to: result.role === "admin" ? "/admin" : result.role === "provider" ? "/provider" : "/dashboard",
     });
   }
 
@@ -130,7 +134,7 @@ function AuthPage() {
 
     const parsed = emailOnlySchema.safeParse({ email: otpEmail });
     if (!parsed.success) {
-      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email address");
+      setOtpEmailError(parsed.error.issues[0]?.message ?? "Enter a valid email");
       return;
     }
     setOtpSubmitting(true);
@@ -168,23 +172,46 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl">Sign In</CardTitle>
-          <CardDescription>Body Inc — Practitioner & Admin portal</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-white px-4 py-12 font-['DM_Sans',sans-serif]">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+      `}</style>
+
+      <Card className={`${adminCard} w-full max-w-md`}>
+        <CardHeader className="space-y-3 p-4 text-center sm:p-6">
+          <img
+            src="/logo.svg"
+            alt="Body Inc"
+            className="mx-auto h-auto max-h-[48px] w-full max-w-[160px] object-contain"
+          />
+          <CardTitle className={adminSectionTitle}>Sign In</CardTitle>
+          <CardDescription className={adminSectionSubtitle}>
+            Body Inc — Practitioner & Admin portal
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
           <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="password">Password</TabsTrigger>
-              <TabsTrigger value="otp">Email OTP</TabsTrigger>
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-[10px] border border-[#D5DEDD] bg-[#F2F7F6] p-1">
+              <TabsTrigger
+                value="password"
+                className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
+              >
+                Password
+              </TabsTrigger>
+              <TabsTrigger
+                value="otp"
+                className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
+              >
+                Email OTP
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="password" className="mt-4">
+            <TabsContent value="password" className="mt-5">
               <form onSubmit={onPasswordSubmit} className="space-y-4" noValidate>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className={adminLabel}>
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -193,15 +220,18 @@ function AuthPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={pwSubmitting}
                     required
+                    className={adminInput}
                   />
                   {pwErrors.email && <p className="text-sm text-destructive">{pwErrors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="password" className={adminLabel}>
+                      Password
+                    </Label>
                     <Link
                       to="/forgot-password"
-                      className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                      className="text-[13px] font-medium text-[#6A9B9C] underline-offset-4 hover:text-[#5B8788] hover:underline"
                     >
                       Forgot password?
                     </Link>
@@ -214,6 +244,7 @@ function AuthPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={pwSubmitting}
                     required
+                    className={adminInput}
                   />
                   {pwErrors.password && (
                     <p className="text-sm text-destructive">{pwErrors.password}</p>
@@ -222,17 +253,19 @@ function AuthPage() {
 
                 {portalError && <PortalErrorBox error={portalError} />}
 
-                <Button type="submit" className="w-full" disabled={pwSubmitting}>
+                <Button type="submit" className={`${adminBtnPrimary} w-full`} disabled={pwSubmitting}>
                   {pwSubmitting ? "Signing in…" : "Sign in"}
                 </Button>
               </form>
             </TabsContent>
 
-            <TabsContent value="otp" className="mt-4">
+            <TabsContent value="otp" className="mt-5">
               {otpStage === "request" ? (
                 <form onSubmit={onSendOtp} className="space-y-4" noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="otp-email">Email</Label>
+                    <Label htmlFor="otp-email" className={adminLabel}>
+                      Email
+                    </Label>
                     <Input
                       id="otp-email"
                       type="email"
@@ -241,34 +274,37 @@ function AuthPage() {
                       onChange={(e) => setOtpEmail(e.target.value)}
                       disabled={otpSubmitting}
                       required
+                      className={adminInput}
                     />
                     {otpEmailError && <p className="text-sm text-destructive">{otpEmailError}</p>}
                   </div>
                   {portalError && <PortalErrorBox error={portalError} />}
-                  <Button type="submit" className="w-full" disabled={otpSubmitting}>
+                  <Button
+                    type="submit"
+                    className={`${adminBtnPrimary} w-full`}
+                    disabled={otpSubmitting}
+                  >
                     {otpSubmitting ? "Sending…" : "Send code"}
                   </Button>
                 </form>
               ) : (
                 <form onSubmit={onVerifyOtp} className="space-y-4" noValidate>
-                  <div className="space-y-2">
-                    <Label>Enter the 8-digit code sent to {otpEmail}</Label>
-                    <div className="flex justify-center">
+                  <div className="space-y-3">
+                    <Label className={`${adminLabel} break-words leading-[140%]`}>
+                      Enter the 8-digit code sent to {otpEmail}
+                    </Label>
+                    <div className="flex justify-center overflow-x-auto py-1">
                       <InputOTP
                         maxLength={8}
                         value={otpCode}
                         onChange={(v) => setOtpCode(v)}
                         disabled={otpSubmitting}
+                        containerClassName="gap-1.5 sm:gap-2"
                       >
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                          <InputOTPSlot index={6} />
-                          <InputOTPSlot index={7} />
+                        <InputOTPGroup className="gap-0">
+                          {Array.from({ length: 8 }).map((_, i) => (
+                            <InputOTPSlot key={i} index={i} className={otpSlotClass} />
+                          ))}
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
@@ -276,7 +312,11 @@ function AuthPage() {
 
                   {portalError && <PortalErrorBox error={portalError} />}
 
-                  <Button type="submit" className="w-full" disabled={otpSubmitting}>
+                  <Button
+                    type="submit"
+                    className={`${adminBtnPrimary} w-full`}
+                    disabled={otpSubmitting}
+                  >
                     {otpSubmitting ? "Verifying…" : "Verify & sign in"}
                   </Button>
                   <button
@@ -286,7 +326,7 @@ function AuthPage() {
                       setOtpCode("");
                       setPortalError(null);
                     }}
-                    className="block w-full text-center text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                    className="block w-full text-center text-[13px] font-medium text-[#6A9B9C] underline-offset-4 hover:text-[#5B8788] hover:underline"
                   >
                     Use a different email
                   </button>
@@ -295,7 +335,7 @@ function AuthPage() {
             </TabsContent>
           </Tabs>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <p className="mt-6 text-center text-[12px] font-medium text-[#3B4759]/60">
             Accounts are created by your administrator.
           </p>
         </CardContent>
@@ -306,12 +346,12 @@ function AuthPage() {
 
 function PortalErrorBox({ error }: { error: { message: string; redirectUrl?: string } }) {
   return (
-    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
-      <p className="text-foreground">{error.message}</p>
+    <div className="rounded-[10px] border border-[#B8684B]/40 bg-[#FBF1EC] p-3 text-sm">
+      <p className="font-medium text-[#3B4759]">{error.message}</p>
       {error.redirectUrl && (
         <a
           href={error.redirectUrl}
-          className="mt-2 inline-block font-medium text-destructive underline-offset-4 hover:underline"
+          className="mt-2 inline-block font-semibold text-[#B8684B] underline-offset-4 hover:underline"
         >
           Go to the correct portal →
         </a>
