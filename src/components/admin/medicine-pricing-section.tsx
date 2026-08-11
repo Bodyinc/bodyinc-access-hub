@@ -11,9 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { MedicinePackagesEditor } from "@/components/admin/medicine-packages-editor";
 import type { MedicineFormValues } from "@/lib/medicines.schema";
+import {
+  CardDivider,
+  medicineCard,
+  medicineCardTitle,
+  medicineInput,
+} from "@/components/admin/medicine-form-styles";
 
 type Props = {
   control: Control<MedicineFormValues>;
@@ -36,8 +42,6 @@ export function MedicinePricingSection({
   const hasVariants = variantsArray.fields.length > 0;
 
   function addFirstVariant() {
-    // Move any medicine-level packages into the first variant, keeping their ids so the
-    // reconcile reparents the existing rows (preserving order history + Stripe prices).
     const current = getValues("packages") ?? [];
     variantsArray.append({ name: "", is_active: true, packages: current } as any);
     setValue("packages", []);
@@ -53,43 +57,44 @@ export function MedicinePricingSection({
           packageErrors={errors.packages}
           submitting={submitting}
         />
-        <Button
+        <button
           type="button"
-          variant="outline"
           disabled={submitting}
           onClick={addFirstVariant}
-          className="h-[44px] rounded-[6px] border border-[#D5DEDD] px-6 text-[14px] font-semibold text-[#3B4759] transition-colors hover:bg-[#F2F7F6] sm:h-11"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#152A51] transition-colors hover:text-[#152A51]/70 disabled:opacity-50"
         >
-          <Layers className="mr-1.5 h-4 w-4" /> Add variants (e.g. dosages)
-        </Button>
+          <Layers className="h-4 w-4" /> Add variants (e.g. dosages)
+        </button>
       </div>
     );
   }
 
   return (
-    <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white shadow-sm">
-      <CardHeader className="border-b border-[#D5DEDD] bg-white p-4 sm:p-6">
-        <CardTitle className="text-[16px] font-bold text-[#3B4759]">Variants</CardTitle>
-        <CardDescription className="text-[13px] text-[#3B4759]/80 font-medium">
+    <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+      <div className="mb-5 space-y-2 sm:mb-6">
+        <h2 className={medicineCardTitle}>Variants</h2>
+        <p className="text-[16px] font-normal text-[#3B4759]/70">
           Dose or strength options (e.g. 50mg, 100mg). Each variant has its own packages (up to 2)
           and pricing; patients pick a variant in the shop. The medicine&apos;s &ldquo;from&rdquo;
           price is the cheapest across variants.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="min-w-0 space-y-5 p-4 sm:p-6">
+        </p>
+        <CardDivider />
+      </div>
+
+      <CardContent className="min-w-0 space-y-5 p-0">
         {variantsArray.fields.map((field, vIndex) => (
           <div
             key={field.id}
-            className="min-w-0 space-y-4 rounded-xl border border-[#D5DEDD] bg-[#F8FBFA] p-4 sm:p-5"
+            className="min-w-0 space-y-4 rounded-[14px] border border-[#E8EEED] bg-white p-4 sm:p-5"
           >
             <div className="grid grid-cols-1 items-start gap-3 min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto]">
               <div className="min-w-0 space-y-1">
-                <Label className="text-[16px] font-medium text-[#3B4759]">Variant name</Label>
+                <Label className="text-[16px] font-medium text-[#152A51]">Variant name</Label>
                 <Input
                   {...register(`variants.${vIndex}.name`)}
                   placeholder="e.g. 50mg"
                   disabled={submitting}
-                  className="h-[44px] rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal text-[#3B4759] shadow-none focus-visible:ring-1 focus-visible:ring-[#3B4759] sm:h-[53px]"
+                  className={medicineInput}
                 />
                 {errors.variants?.[vIndex]?.name?.message && (
                   <p className="text-xs text-destructive">
@@ -106,9 +111,8 @@ export function MedicinePricingSection({
                       checked={sw.value ?? true}
                       onCheckedChange={sw.onChange}
                       disabled={submitting}
-                      className="data-[state=checked]:bg-[#6A9B9C]"
                     />
-                    <span className="text-[11px] font-semibold text-[#6A9B9C]/70">Active</span>
+                    <span className="text-[11px] font-semibold text-[#3B4759]/70">Active</span>
                   </div>
                 )}
               />
@@ -116,7 +120,7 @@ export function MedicinePricingSection({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="mt-0 h-[44px] w-[44px] rounded-[6px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive min-[480px]:mt-6 sm:h-11 sm:w-11"
+                className="mt-0 h-[45px] w-[45px] rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive min-[480px]:mt-6"
                 disabled={submitting}
                 onClick={() => variantsArray.remove(vIndex)}
               >
@@ -135,15 +139,14 @@ export function MedicinePricingSection({
           </div>
         ))}
 
-        <Button
+        <button
           type="button"
-          variant="outline"
           disabled={submitting}
           onClick={() => variantsArray.append({ name: "", is_active: true, packages: [] } as any)}
-          className="h-[44px] rounded-[6px] border border-[#D5DEDD] px-6 text-[14px] font-semibold text-[#3B4759] transition-colors hover:bg-[#F2F7F6] sm:h-11"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#152A51] transition-colors hover:text-[#152A51]/70 disabled:opacity-50"
         >
-          <Plus className="mr-1.5 h-4 w-4" /> Add variant
-        </Button>
+          <Plus className="h-4 w-4" /> Add variant
+        </button>
       </CardContent>
     </Card>
   );

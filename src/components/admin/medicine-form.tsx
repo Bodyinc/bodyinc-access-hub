@@ -1,6 +1,5 @@
 "use client";
 
-import { PageHeader } from "@/components/admin/page-header";
 import { FormActionBar } from "@/components/admin/form-action-bar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
@@ -32,12 +31,19 @@ import {
   type MedicineStatus,
 } from "@/lib/medicines.schema";
 import {
-  adminLabel as labelClass,
-  adminInput as inputClass,
-  adminTextarea as textareaClass,
-  adminSectionTitle as sectionTitleClass,
-  adminSectionSubtitle as sectionSubtitleClass,
-} from "@/lib/admin-ui";
+  CardDivider,
+  MedicineField,
+  MedicineFormPageHeader,
+  medicineCard,
+  medicineCardTitle,
+  medicineCheckbox,
+  medicineInput,
+  medicineOptionWhite,
+  medicineTextarea,
+  medicineToggleCard,
+} from "@/components/admin/medicine-form-styles";
+
+export { MedicineFormPageHeader };
 
 export type MedicineFormProps = {
   defaultValues?: Partial<MedicineFormValues>;
@@ -48,18 +54,6 @@ export type MedicineFormProps = {
   onValuesChange?: (values: MedicineFormValues) => void;
   showPageHeader?: boolean;
 };
-
-export function MedicineFormPageHeader({ mode }: { mode: "create" | "edit" }) {
-  return (
-    <PageHeader
-      backTo="/admin/medicines"
-      backLabel="medications"
-      crumbs={[{ label: "Medications", to: "/admin/medicines" }]}
-      title={mode === "create" ? "Add medicine" : "Edit medicine"}
-      subtitle="Product image and details shown to patients."
-    />
-  );
-}
 
 const EMPTY: MedicineFormValues = {
   name: "",
@@ -77,16 +71,6 @@ const EMPTY: MedicineFormValues = {
   requires_followup: false,
   category_ids: [],
 };
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <div className="flex w-full min-w-0 flex-col gap-2">
-      <Label className={labelClass}>{label}</Label>
-      {children}
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-    </div>
-  );
-}
 
 export function MedicineForm({
   defaultValues,
@@ -150,67 +134,99 @@ export function MedicineForm({
     if (file) void handleImageSelect(file);
   }
 
+  const toggleItems: {
+    id: string;
+    name: keyof Pick<
+      MedicineFormValues,
+      "requires_questionnaire" | "requires_consultation" | "requires_followup"
+    >;
+    label: string;
+  }[] = [
+    {
+      id: "req-qq",
+      name: "requires_questionnaire",
+      label: "Requires questionnaire before checkout",
+    },
+    {
+      id: "req-consult",
+      name: "requires_consultation",
+      label: "Requires provider consultation & approval",
+    },
+    {
+      id: "req-followup",
+      name: "requires_followup",
+      label: "Requires follow-up approval each cycle",
+    },
+  ];
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="font-['DM_Sans',sans-serif] m-0 w-full min-w-0 max-w-full space-y-6 p-0"
+      className="m-0 w-full min-w-0 max-w-full space-y-5 p-0 font-['DM_Sans',sans-serif] sm:space-y-6"
       noValidate
     >
-      <div className="w-full min-w-0 max-w-full space-y-6">
+      <div className="w-full min-w-0 max-w-full space-y-5 sm:space-y-6">
         {showPageHeader && <MedicineFormPageHeader mode={mode} />}
 
-        {/* Main Details Card */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6">
-          <div className="flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-stretch">
-            {/* Product Image Box Container — stretches to match fields column height on desktop */}
-            <div className="mx-auto flex w-full max-w-[280px] shrink-0 flex-col gap-2 sm:mx-0 lg:max-w-[300px]">
-              <Label className={labelClass}>Product image</Label>
-              <div
-                className="flex min-h-[320px] w-full flex-1 flex-col rounded-[12px] border border-dashed border-[#D5DEDD] bg-[#F8FBFA] p-[14px] lg:min-h-0"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={onDrop}
-              >
-                <div className="flex min-h-[160px] flex-1 w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#D5DEDD]">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt="Medicine preview"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : (
-                    <ImageIcon className="h-12 w-12 text-[#3B4759]/40" />
-                  )}
-                </div>
+        {/* Product Details card */}
+        <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+          <div className="mb-5 space-y-4 sm:mb-6">
+            <h2 className={medicineCardTitle}>Product Details</h2>
+            <CardDivider />
+          </div>
 
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={onFileChange}
-                  disabled={submitting || uploading}
-                />
+          <div className="flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-start">
+            {/* Product image — Figma: 200×201 square on card bg, no extra white wrap */}
+            <div
+              className="flex w-full max-w-[200px] shrink-0 flex-col gap-3"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onDrop}
+            >
+              <Label className="text-[16px] font-medium text-[#152A51]">Product image</Label>
 
-                <div className="mt-3 flex shrink-0 flex-col items-center gap-2">
-                  <Button
-                    type="button"
-                    disabled={submitting || uploading}
-                    onClick={() => fileRef.current?.click()}
-                    className="flex h-10 items-center gap-2 rounded-[10px] bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#5B8788]"
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                    {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
-                  </Button>
-
-                  <span className="text-center text-[12px] font-normal leading-[100%] text-[#3B4759]/70">
-                    JPG, PNG, or WebP · Max 5MB
-                  </span>
-                </div>
+              <div className="relative h-[201px] w-[200px] overflow-hidden rounded-[21px] bg-[#E8EEED]">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt="Medicine preview"
+                    className="h-full w-full scale-[1.08] object-cover object-top"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <ImageIcon className="h-10 w-10 text-[#3B4759]/40" />
+                  </div>
+                )}
               </div>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={onFileChange}
+                disabled={submitting || uploading}
+              />
+
+              <div className="flex w-[200px] flex-col items-center gap-2">
+                <Button
+                  type="button"
+                  disabled={submitting || uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className="flex h-[45px] w-full items-center justify-center gap-2 rounded-full bg-[#6A9B9C] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#5B8788]"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {uploading ? "Uploading…" : imageUrl ? "Replace image" : "Upload image"}
+                </Button>
+
+                <span className="text-center text-[12px] font-normal text-[#3B4759]/70">
+                  JPG, PNG, or WebP · Max 5MB
+                </span>
+              </div>
+
               {(errors.image_url?.message || uploadError) && (
                 <p className="text-xs text-destructive">
                   {errors.image_url?.message ?? uploadError}
@@ -218,156 +234,116 @@ export function MedicineForm({
               )}
             </div>
 
-            {/* Input Fields — toggle row pinned to bottom to align with image box */}
-            <div className="flex w-full min-w-0 flex-1 flex-col justify-between gap-4">
-              <div className="space-y-4">
-                <Field label="Medicine Name" error={errors.name?.message}>
-                  <Input
-                    {...register("name")}
-                    placeholder="e.g. GLP-1 Compound"
-                    disabled={submitting}
-                    className={inputClass}
-                  />
-                </Field>
+            {/* Fields column */}
+            <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
+              <MedicineField label="Medicine Name" error={errors.name?.message}>
+                <Input
+                  {...register("name")}
+                  placeholder="e.g. GLP-1 Compound"
+                  disabled={submitting}
+                  className={medicineInput}
+                />
+              </MedicineField>
 
-                <Field label="Short description" error={errors.short_description?.message}>
-                  <Input
-                    {...register("short_description")}
-                    placeholder="Shown on the medication card"
-                    disabled={submitting}
-                    className={inputClass}
-                  />
-                </Field>
+              <MedicineField label="Short description" error={errors.short_description?.message}>
+                <Input
+                  {...register("short_description")}
+                  placeholder="Shown on the medication card"
+                  disabled={submitting}
+                  className={medicineInput}
+                />
+              </MedicineField>
 
-                <Field label="Long description" error={errors.long_description?.message}>
-                  <Textarea
-                    {...register("long_description")}
-                    rows={3}
-                    placeholder="Full description in the Learn More modal"
-                    disabled={submitting}
-                    className={textareaClass}
-                  />
-                </Field>
+              <MedicineField label="Long description" error={errors.long_description?.message}>
+                <Textarea
+                  {...register("long_description")}
+                  rows={3}
+                  placeholder="Full description in the Learn More modal"
+                  disabled={submitting}
+                  className={medicineTextarea}
+                />
+              </MedicineField>
 
-                <div className="pt-1 space-y-4">
-                  <div className="w-full max-w-[220px]">
-                    <Field label="Status" error={errors.status?.message}>
-                      <Select
-                        value={status}
-                        onValueChange={(v) => setValue("status", v as MedicineStatus)}
-                        disabled={submitting}
+              <MedicineField label="Status" error={errors.status?.message}>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setValue("status", v as MedicineStatus)}
+                  disabled={submitting}
+                >
+                  <SelectTrigger className={`${medicineInput} font-normal`}>
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                  <SelectContent className="font-['DM_Sans',sans-serif]">
+                    {MEDICINE_STATUSES.map((s) => (
+                      <SelectItem
+                        key={s}
+                        value={s}
+                        className="text-[16px] font-normal text-[#152A51]"
                       >
-                        <SelectTrigger className="h-[44px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#3B4759] shadow-none sm:h-[53px]">
-                          <SelectValue placeholder="Select a status" />
-                        </SelectTrigger>
-                        <SelectContent className="font-['DM_Sans',sans-serif]">
-                          {MEDICINE_STATUSES.map((s) => (
-                            <SelectItem
-                              key={s}
-                              value={s}
-                              className="text-[16px] font-normal text-[#3B4759]"
-                            >
-                              {MEDICINE_STATUS_LABELS[s]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                  </div>
-                </div>
-              </div>
+                        {MEDICINE_STATUS_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </MedicineField>
 
-              {/* Toggle — Figma: light track, rounded-square thumb (lavender off / purple on) */}
-              <div className="flex min-w-0 items-center gap-3">
-                <Controller
-                  control={control}
-                  name="requires_questionnaire"
-                  render={({ field }) => (
-                    <Switch id="req-qq" checked={!!field.value} onCheckedChange={field.onChange} />
-                  )}
-                />
-                <Label
-                  htmlFor="req-qq"
-                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#3B4759]"
-                >
-                  Requires questionnaire before checkout
-                </Label>
-              </div>
-
-              {/* Requires provider approval before the prescription is fulfilled. */}
-              <div className="flex min-w-0 items-center gap-3">
-                <Controller
-                  control={control}
-                  name="requires_consultation"
-                  render={({ field }) => (
-                    <Switch
-                      id="req-consult"
-                      checked={!!field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-                <Label
-                  htmlFor="req-consult"
-                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#3B4759]"
-                >
-                  Requires provider consultation &amp; approval
-                </Label>
-              </div>
-
-              {/* When on, approval is required on every renewal cycle, not just the first. */}
-              <div className="flex min-w-0 items-center gap-3">
-                <Controller
-                  control={control}
-                  name="requires_followup"
-                  render={({ field }) => (
-                    <Switch
-                      id="req-followup"
-                      checked={!!field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-                <Label
-                  htmlFor="req-followup"
-                  className="min-w-0 cursor-pointer select-none text-[16px] font-normal leading-[100%] text-[#3B4759]"
-                >
-                  Requires follow-up approval each cycle
-                </Label>
+              {/* Toggle cards — one per row */}
+              <div className="space-y-3 pt-1">
+                {toggleItems.map((item) => (
+                  <Controller
+                    key={item.id}
+                    control={control}
+                    name={item.name}
+                    render={({ field }) => (
+                      <div className={medicineToggleCard}>
+                        <Switch
+                          id={item.id}
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={submitting}
+                        />
+                        <Label
+                          htmlFor={item.id}
+                          className="min-w-0 flex-1 cursor-pointer select-none text-[14px] font-normal leading-snug text-[#152A51]"
+                        >
+                          {item.label}
+                        </Label>
+                      </div>
+                    )}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </Card>
 
-        {/* Target Categories */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
-          <div className="space-y-2">
-            <h3 className={sectionTitleClass}>Categories</h3>
-            <p className={sectionSubtitleClass}>
+        {/* Categories card */}
+        <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+          <div className="mb-5 space-y-2 sm:mb-6">
+            <h2 className={medicineCardTitle}>Categories</h2>
+            <p className="text-[16px] font-normal text-[#3B4759]/70">
               Assign this medicine to one or more goal categories.
             </p>
+            <CardDivider />
           </div>
 
           <Controller
             control={control}
             name="category_ids"
             render={({ field }) => (
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">
                 {(categoriesQ.data ?? []).length === 0 && (
-                  <p className="text-sm text-muted-foreground font-medium py-1 col-span-1 sm:col-span-2">
+                  <p className="col-span-full py-1 text-sm font-medium text-muted-foreground">
                     No categories yet. Create one under Categories first.
                   </p>
                 )}
                 {(categoriesQ.data ?? []).map((c) => {
                   const checked = (field.value ?? []).includes(c.id);
                   return (
-                    <label
-                      key={c.id}
-                      className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4 text-[16px] font-medium leading-[100%] text-[#3B4759] transition-colors hover:bg-[#F2F7F6]"
-                    >
+                    <label key={c.id} className={medicineOptionWhite}>
                       <Checkbox
                         checked={checked}
-                        className="h-5 w-5 rounded-[4px] border-[#D5DEDD] data-[state=checked]:border-[#6A9B9C] data-[state=checked]:bg-[#6A9B9C]"
+                        className={medicineCheckbox}
                         onCheckedChange={(v) => {
                           const set = new Set(field.value ?? []);
                           if (v) set.add(c.id);
@@ -375,7 +351,7 @@ export function MedicineForm({
                           field.onChange(Array.from(set));
                         }}
                       />
-                      {c.name}
+                      <span className="truncate">{c.name}</span>
                     </label>
                   );
                 })}
@@ -384,7 +360,6 @@ export function MedicineForm({
           />
         </Card>
 
-        {/* Medicine Pricing Section */}
         <MedicinePricingSection
           control={control}
           register={register}
@@ -395,10 +370,13 @@ export function MedicineForm({
         />
 
         {/* Important Info */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
-          <div className="space-y-2">
-            <h3 className={sectionTitleClass}>Important information</h3>
-            <p className={sectionSubtitleClass}>Bullet points shown in the Learn More modal.</p>
+        <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+          <div className="mb-5 space-y-2 sm:mb-6">
+            <h2 className={medicineCardTitle}>Important information</h2>
+            <p className="text-[16px] font-normal text-[#3B4759]/70">
+              Bullet points shown in the Learn More modal.
+            </p>
+            <CardDivider />
           </div>
 
           <div className="space-y-3">
@@ -408,13 +386,13 @@ export function MedicineForm({
                   {...register(`important_info.${index}.text`)}
                   placeholder={`Bullet ${index + 1}`}
                   disabled={submitting}
-                  className={inputClass}
+                  className={medicineInput}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 h-[53px] w-[53px] rounded-xl text-[#3B4759]/60 hover:text-destructive hover:bg-destructive/5"
+                  className="h-[45px] w-[45px] shrink-0 rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive"
                   disabled={submitting}
                   onClick={() => remove(index)}
                 >
@@ -422,23 +400,25 @@ export function MedicineForm({
                 </Button>
               </div>
             ))}
-            <Button
+            <button
               type="button"
-              variant="outline"
               disabled={submitting}
               onClick={() => append({ text: "" })}
-              className="border-[#D5DEDD] hover:bg-[#F2F7F6] text-[#3B4759] h-10 px-4 rounded-xl font-semibold text-[13px] transition-colors mt-1"
+              className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#152A51] transition-colors hover:text-[#152A51]/70 disabled:opacity-50"
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add bullet
-            </Button>
+              <Plus className="h-4 w-4" /> Add bullet
+            </button>
           </div>
         </Card>
 
-        {/* Notice Block */}
-        <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white p-4 shadow-none sm:p-6 space-y-4">
-          <div className="space-y-2">
-            <h3 className={sectionTitleClass}>Notice</h3>
-            <p className={sectionSubtitleClass}>Optional footer disclaimer in the modal.</p>
+        {/* Notice */}
+        <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+          <div className="mb-5 space-y-2 sm:mb-6">
+            <h2 className={medicineCardTitle}>Notice</h2>
+            <p className="text-[16px] font-normal text-[#3B4759]/70">
+              Optional footer disclaimer in the modal.
+            </p>
+            <CardDivider />
           </div>
 
           <Textarea
@@ -446,15 +426,17 @@ export function MedicineForm({
             rows={2}
             placeholder="e.g. Individual results may vary…"
             disabled={submitting}
-            className={textareaClass}
+            className={medicineTextarea}
           />
         </Card>
 
-        {/* Action Buttons */}
         <FormActionBar
           submitting={submitting || uploading}
           submitLabel={mode === "create" ? "Create medicine" : "Save changes"}
           onCancel={onCancel}
+          barClassName="sticky bottom-0 z-30 -mx-4 mt-4 flex flex-col-reverse gap-3 border-t border-[#E8EEED] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:-mx-6 sm:flex-row sm:items-center sm:justify-end sm:px-6"
+          secondaryClassName="h-[45px] w-full min-w-0 rounded-[14px] border border-[#E8EEED] bg-white px-6 text-[14px] font-medium text-[#152A51] shadow-none hover:bg-[#F2F7F6] sm:w-auto sm:min-w-[120px]"
+          primaryClassName="h-[45px] w-full min-w-0 rounded-[14px] border border-[#E3E084]/40 bg-[#E3E084] px-6 text-[14px] font-semibold text-[#152A51] shadow-none hover:bg-[#D6D26A] sm:w-auto sm:min-w-[140px]"
         />
       </div>
     </form>

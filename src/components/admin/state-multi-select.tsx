@@ -13,15 +13,22 @@ export function StateMultiSelect({
   selected,
   onToggle,
   placeholder = "Add state",
+  triggerClassName,
 }: {
   selected: readonly string[];
   onToggle: (s: string) => void;
   placeholder?: string;
+  triggerClassName?: string;
 }) {
   return (
     <div className="w-full min-w-0 max-w-full space-y-2.5">
       <Select value="" onValueChange={(v) => v && onToggle(v)}>
-        <SelectTrigger className="h-11 w-full min-w-0 max-w-full rounded-[6px] border border-[#D5DEDD] bg-white text-[14px] font-semibold text-[#3B4759] shadow-none sm:h-[53px]">
+        <SelectTrigger
+          className={
+            triggerClassName ??
+            "h-11 w-full min-w-0 max-w-full rounded-[6px] border border-[#D5DEDD] bg-white text-[14px] font-semibold text-[#3B4759] shadow-none sm:h-[53px]"
+          }
+        >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className="max-h-72 rounded-[6px] border-[#D5DEDD]">

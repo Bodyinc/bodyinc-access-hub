@@ -105,7 +105,7 @@ function NewMedicinePage() {
             </Suspense>
           </div>
 
-          <div className="w-full min-w-0 shrink-0 lg:sticky lg:top-4 lg:w-[min(100%,300px)] xl:w-[400px]">
+          <div className="w-full min-w-0 shrink-0 lg:sticky lg:top-4 lg:w-[491px] lg:max-w-[491px]">
             <Suspense fallback={<FormSkeleton />}>
               <MedicinePreview
                 name={previewValues.name}
