@@ -13,6 +13,10 @@ export type FormActionBarProps = {
   onSubmit?: () => void;
   /** Optional content rendered on the left (hints, secondary actions). */
   children?: ReactNode;
+  /** Optional class overrides for page-specific Figma styling. */
+  barClassName?: string;
+  primaryClassName?: string;
+  secondaryClassName?: string;
 };
 
 /**
@@ -28,6 +32,9 @@ export function FormActionBar({
   onCancel,
   onSubmit,
   children,
+  barClassName,
+  primaryClassName,
+  secondaryClassName,
 }: FormActionBarProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const busy = !!submitting || !!disabled;
@@ -49,7 +56,10 @@ export function FormActionBar({
   return (
     <div
       ref={ref}
-      className="sticky bottom-0 z-30 -mx-4 mt-4 flex flex-col-reverse gap-3 border-t border-[#D5DEDD] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:-mx-6 sm:flex-row sm:items-center sm:justify-end sm:px-6"
+      className={
+        barClassName ??
+        "sticky bottom-0 z-30 -mx-4 mt-4 flex flex-col-reverse gap-3 border-t border-[#D5DEDD] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:-mx-6 sm:flex-row sm:items-center sm:justify-end sm:px-6"
+      }
     >
       {children && (
         <div className="min-w-0 flex-1 text-[13px] font-medium text-[#3B4759]/70">{children}</div>
@@ -60,7 +70,10 @@ export function FormActionBar({
           variant="outline"
           onClick={onCancel}
           disabled={submitting}
-          className={`${adminBtnSecondary} h-11 w-full min-w-0 sm:h-11 sm:w-auto sm:min-w-[120px]`}
+          className={
+            secondaryClassName ??
+            `${adminBtnSecondary} h-11 w-full min-w-0 sm:h-11 sm:w-auto sm:min-w-[120px]`
+          }
         >
           {cancelLabel}
         </Button>
@@ -69,7 +82,10 @@ export function FormActionBar({
         type={onSubmit ? "button" : "submit"}
         onClick={onSubmit}
         disabled={busy}
-        className={`${adminBtnPrimary} h-11 w-full min-w-0 sm:h-11 sm:w-auto sm:min-w-[140px]`}
+        className={
+          primaryClassName ??
+          `${adminBtnPrimary} h-11 w-full min-w-0 sm:h-11 sm:w-auto sm:min-w-[140px]`
+        }
       >
         {submitting ? savingLabel : submitLabel}
       </Button>

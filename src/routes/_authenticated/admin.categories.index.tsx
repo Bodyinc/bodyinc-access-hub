@@ -79,14 +79,14 @@ function CategoriesListPage() {
       {/* Header Section */}
       <div className="admin-page-header">
         <div className="min-w-0 space-y-2 sm:space-y-4">
-          <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#3B4759] sm:text-[28px] lg:text-[32px]">
+          <h2 className="text-[24px] font-bold leading-tight tracking-tight text-[#152A51] sm:text-[28px] lg:text-[32px]">
             Categories (Goals)
           </h2>
-          <p className="text-base font-normal text-[#3B4759]/80 sm:text-lg lg:text-[20px]">
+          <p className="text-base font-normal text-[#3B4759]/70 sm:text-lg lg:text-[20px]">
             Medication categories shown to patients as goals during intake.
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-3 self-start sm:self-auto">
+        <div className="flex shrink-0 flex-wrap items-center gap-3 self-start sm:self-auto">
           <RefreshButton
             onClick={() => {
               query.refetch();
@@ -95,46 +95,46 @@ function CategoriesListPage() {
           />
           <Button
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white h-11 px-6 rounded-[6px] font-semibold text-[14px] gap-2 shadow-none cursor-pointer transition-colors"
+            className="h-[34px] cursor-pointer gap-2 rounded-full border border-[#152A51]/20 bg-[#152A51] px-5 text-[14px] font-medium text-white shadow-none transition-colors hover:bg-[#152A51]/90 hover:text-white"
           >
-            <Plus className="h-4 w-4 stroke-[3]" /> Add Category
+            <Plus className="h-4 w-4 stroke-[2.5]" /> Add Category
           </Button>
         </div>
       </div>
 
       {isEmpty ? (
-        <div className="border border-dashed border-[#D5DEDD] bg-[#F2F7F6] rounded-2xl p-12 text-center space-y-4">
-          <p className="text-base font-semibold text-[#3B4759]">No categories found</p>
+        <div className="border border-dashed border-[#E8EEED] bg-[#F2F7F6] rounded-2xl p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-[#152A51]">No categories found</p>
           <Button
             onClick={() => navigate({ to: "/admin/categories/new" })}
-            className="bg-[#6A9B9C] text-white rounded-[6px] px-4 h-10 font-semibold text-[14px]"
+            className="h-[34px] rounded-full border border-[#152A51]/20 bg-[#152A51] px-5 text-[14px] font-medium text-white shadow-none hover:bg-[#152A51]/90 hover:text-white"
           >
-            <Plus className="h-4 w-4 mr-2" /> Add category
+            <Plus className="h-4 w-4 mr-2 stroke-[2.5]" /> Add category
           </Button>
         </div>
       ) : (
         /* Table Frame Container */
-        <div className="max-w-full overflow-hidden rounded-2xl border border-[#D5DEDD] bg-white shadow-none">
+        <div className="max-w-full overflow-hidden rounded-2xl border border-[#E8EEED] bg-white shadow-none">
           <div className="admin-table-scroll">
             <Table className="w-full min-w-[700px] border-collapse">
               <TableHeader className="bg-[#F2F7F6]">
-                <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
-                  <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                <TableRow className="border-b border-[#E8EEED] hover:bg-transparent">
+                  <TableHead className="h-12 min-w-[140px] px-4 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-6 sm:text-[13px]">
                     Name
                   </TableHead>
-                  <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                  <TableHead className="h-12 min-w-[140px] px-4 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-6 sm:text-[13px]">
                     Age rule
                   </TableHead>
-                  <TableHead className="h-12 min-w-[140px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                  <TableHead className="h-12 min-w-[140px] px-4 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-6 sm:text-[13px]">
                     BMI rule
                   </TableHead>
-                  <TableHead className="h-12 min-w-[110px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                  <TableHead className="h-12 min-w-[110px] px-4 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-6 sm:text-[13px]">
                     Sex rule
                   </TableHead>
-                  <TableHead className="h-12 min-w-[90px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                  <TableHead className="h-12 min-w-[90px] px-4 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-6 sm:text-[13px]">
                     Image
                   </TableHead>
-                  <TableHead className="h-12 min-w-[100px] border-r border-[#D5DEDD] px-4 text-base font-medium text-[#3B4759] sm:h-14 sm:px-6 sm:text-lg lg:text-[20px]">
+                  <TableHead className="h-12 min-w-[100px] px-4 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-6 sm:text-[13px]">
                     Status
                   </TableHead>
                   <TableHead className="h-12 w-14 px-2 text-center sm:h-14 sm:px-4" />
@@ -144,7 +144,7 @@ function CategoriesListPage() {
                 {query.isLoading && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-[16px] text-[#3B4759]/70"
                     >
                       Loading rows...
@@ -167,7 +167,7 @@ function CategoriesListPage() {
                   return (
                     <TableRow
                       key={c.id}
-                      className="border-b border-[#D5DEDD] transition-all cursor-pointer select-none bg-white hover:bg-[#F2F7F6]"
+                      className="border-b border-[#E8EEED] transition-all cursor-pointer select-none bg-white hover:bg-[#F8F9FB]"
                       onClick={() =>
                         navigate({
                           to: "/admin/categories/$categoryId",
@@ -176,36 +176,36 @@ function CategoriesListPage() {
                       }
                     >
                       {/* Name column */}
-                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-medium text-[#3B4759] sm:px-6 sm:text-lg">
+                      <TableCell className="px-4 py-4 text-base font-medium text-[#152A51] sm:px-6 sm:text-lg">
                         {c.name}
                       </TableCell>
 
                       {/* Age Rule column */}
-                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
+                      <TableCell className="px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {ageLabel}
                       </TableCell>
 
                       {/* BMI Rule column */}
-                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
+                      <TableCell className="px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {c.eligibility_rules?.bmi_bands?.length
                           ? c.eligibility_rules.bmi_bands.join(", ")
                           : "No restriction"}
                       </TableCell>
 
                       {/* Sex Rule column */}
-                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
+                      <TableCell className="px-4 py-4 text-base font-normal text-[#3B4759]/80 sm:px-6 sm:text-lg">
                         {c.eligibility_rules?.sex?.length
                           ? c.eligibility_rules.sex.join(", ")
                           : "All"}
                       </TableCell>
 
                       {/* Image column */}
-                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6">
+                      <TableCell className="px-4 py-4 sm:px-6">
                         {c.image_url ? (
                           <img
                             src={c.image_url}
                             alt={c.name}
-                            className="h-10 w-10 rounded-[6px] object-cover border border-[#D5DEDD]"
+                            className="h-10 w-10 rounded-[6px] object-cover border border-[#E8EEED]"
                           />
                         ) : (
                           <span className="text-[16px] text-[#3B4759]/40">—</span>
@@ -213,13 +213,13 @@ function CategoriesListPage() {
                       </TableCell>
 
                       {/* Status Badge column */}
-                      <TableCell className="border-r border-[#D5DEDD] px-4 py-4 sm:px-6">
+                      <TableCell className="px-4 py-4 sm:px-6">
                         <Badge
                           variant="secondary"
-                          className={`rounded-[6px] px-3 py-1 text-[13px] font-semibold shadow-none border-0 ${
+                          className={`rounded-full border-0 px-2.5 py-[3px] text-[12px] font-medium shadow-none hover:bg-inherit ${
                             c.is_active
-                              ? "bg-[#E8EEED] text-[#3B4759]"
-                              : "bg-gray-100 text-gray-500"
+                              ? "bg-[#D1FAE5] text-[#065F46] hover:bg-[#D1FAE5]"
+                              : "bg-gray-100 text-gray-500 hover:bg-gray-100"
                           }`}
                         >
                           {c.is_active ? "Active" : "Inactive"}
@@ -236,7 +236,7 @@ function CategoriesListPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 rounded-[6px] text-[#3B4759] transition-all hover:bg-[#E8EEED]"
+                              className="h-8 w-8 rounded-full text-[#3B4759]/70 transition-all hover:bg-[#F2F2F2] hover:text-[#152A51]"
                             >
                               <MoreHorizontal className="h-5 w-5" />
                             </Button>

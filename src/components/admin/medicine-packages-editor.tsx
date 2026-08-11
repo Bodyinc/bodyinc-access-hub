@@ -8,24 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MAX_PACKAGES_PER_MEDICINE, type MedicineFormValues } from "@/lib/medicines.schema";
+import { medicineInput, medicineTextarea } from "@/components/admin/medicine-form-styles";
 
 type Props = {
   control: Control<MedicineFormValues>;
   register: UseFormRegister<MedicineFormValues>;
-  // Base field-array path, e.g. "packages" or `variants.0.packages`.
   name: string;
-  // Error slice for this packages array (errors.packages or errors.variants[i].packages).
   packageErrors?: any;
   submitting?: boolean;
-  // Embedded inside a variant card — render without the outer Card chrome.
   embedded?: boolean;
 };
-
-const inputClass =
-  "h-[44px] sm:h-[53px] px-4 !rounded-[6px] border border-[#D5DEDD] bg-white text-[#3B4759] placeholder:text-[#3B4759]/40 focus-visible:ring-1 focus-visible:ring-[#3B4759] text-[16px] font-normal leading-[100%] shadow-none";
-
-const textareaClass =
-  "min-h-[70px] px-4 py-3 !rounded-[6px] border border-[#D5DEDD] bg-white text-[#3B4759] placeholder:text-[#3B4759]/40 focus-visible:ring-1 focus-visible:ring-[#3B4759] text-[16px] font-normal leading-[140%] resize-none shadow-none";
 
 export function MedicinePackagesEditor({
   control,
@@ -41,7 +33,7 @@ export function MedicinePackagesEditor({
   const body = (
     <div className="w-full min-w-0 max-w-full space-y-4">
       {fields.length === 0 && (
-        <p className="text-sm text-muted-foreground font-medium py-1">
+        <p className="py-1 text-sm font-medium text-[#3B4759]/70">
           No packages yet. Add at least one so this {embedded ? "variant" : "medicine"} has a price
           and can be purchased.
         </p>
@@ -69,9 +61,8 @@ export function MedicinePackagesEditor({
         />
       ))}
 
-      <Button
+      <button
         type="button"
-        variant="outline"
         disabled={submitting || atMax}
         onClick={() =>
           append({
@@ -84,12 +75,12 @@ export function MedicinePackagesEditor({
             clinical_note: "",
           } as any)
         }
-        className="h-[44px] rounded-[6px] border border-[#D5DEDD] px-4 text-[14px] font-semibold text-[#3B4759] transition-colors hover:bg-[#F2F7F6] sm:h-11"
+        className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#152A51] transition-colors hover:text-[#152A51]/70 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Plus className="mr-1.5 h-4 w-4" /> Add package
-      </Button>
+        <Plus className="h-4 w-4" /> Add package
+      </button>
       {atMax && (
-        <p className="text-[12px] font-medium text-[#6A9B9C]/60">
+        <p className="text-[12px] font-medium text-[#3B4759]/60">
           Maximum of {MAX_PACKAGES_PER_MEDICINE} packages reached.
         </p>
       )}
@@ -99,12 +90,12 @@ export function MedicinePackagesEditor({
   if (embedded) return body;
 
   return (
-    <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#D5DEDD] bg-white shadow-sm">
-      <CardHeader className="border-b border-[#D5DEDD] bg-white p-4 sm:p-6">
-        <CardTitle className="text-[20px] font-semibold leading-[100%] text-[#3B4759]">
+    <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[24px] border border-[#E8EEED] bg-white shadow-none">
+      <CardHeader className="border-b border-[#E8EEED] bg-white p-4 sm:p-6">
+        <CardTitle className="text-[22px] font-medium leading-[34px] tracking-[-0.3px] text-[#152A51]">
           Pricing packages
         </CardTitle>
-        <CardDescription className="text-[16px] font-normal leading-[100%] text-[#3B4759]/80">
+        <CardDescription className="text-[16px] font-normal text-[#3B4759]/70">
           Duration-based plans patients can buy — up to {MAX_PACKAGES_PER_MEDICINE} per medicine.
           The lowest per-month price is shown as the medicine&apos;s &ldquo;from&rdquo; price.
         </CardDescription>
@@ -138,10 +129,10 @@ function PackageRow({
   });
 
   return (
-    <div className="min-w-0 space-y-3 rounded-[10px] border border-[#D5DEDD] bg-[#F8FBFA] p-4">
+    <div className="min-w-0 space-y-3">
       <div className="grid min-w-0 grid-cols-1 items-start gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <div className="min-w-0 space-y-1">
-          <Label className="text-[12px] font-medium text-[#3B4759] md:hidden">
+          <Label className="text-[12px] font-medium text-[#152A51] md:hidden">
             Duration (months)
           </Label>
           <Input
@@ -150,7 +141,7 @@ function PackageRow({
             step={1}
             {...register(`${name}.${index}.duration_months` as any)}
             disabled={submitting}
-            className={inputClass}
+            className={medicineInput}
           />
           {rowErrors?.duration_months?.message && (
             <p className="text-xs text-destructive">{rowErrors.duration_months.message}</p>
@@ -166,7 +157,7 @@ function PackageRow({
             min={0}
             {...register(`${name}.${index}.original_price` as any)}
             disabled={submitting}
-            className={inputClass}
+            className={medicineInput}
           />
           {rowErrors?.original_price?.message && (
             <p className="text-xs text-destructive">{rowErrors.original_price.message}</p>
@@ -182,7 +173,7 @@ function PackageRow({
             min={0}
             {...register(`${name}.${index}.price` as any)}
             disabled={submitting}
-            className={inputClass}
+            className={medicineInput}
           />
           {rowErrors?.price?.message && (
             <p className="text-xs text-destructive">{rowErrors.price.message}</p>
@@ -192,7 +183,7 @@ function PackageRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-[44px] w-[44px] shrink-0 justify-self-end rounded-[6px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive sm:h-11 sm:w-11"
+          className="h-[45px] w-[45px] shrink-0 justify-self-end rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive"
           disabled={submitting}
           onClick={onRemove}
         >
@@ -211,7 +202,7 @@ function PackageRow({
                 onCheckedChange={field.onChange}
                 disabled={submitting}
               />
-              <span className="text-[14px] font-normal text-[#3B4759]">Most popular</span>
+              <span className="text-[14px] font-normal text-[#152A51]">Most popular</span>
             </div>
           )}
         />
@@ -225,14 +216,14 @@ function PackageRow({
                 onCheckedChange={field.onChange}
                 disabled={submitting}
               />
-              <span className="text-[14px] font-normal text-[#3B4759]">Active</span>
+              <span className="text-[14px] font-normal text-[#152A51]">Active</span>
             </div>
           )}
         />
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="col-span-1 flex min-w-0 items-center justify-start gap-1 text-[14px] font-medium text-[#3B4759] transition-colors hover:text-[#2E3745] md:col-span-1 md:ml-auto md:justify-end"
+          className="col-span-1 flex min-w-0 items-center justify-start gap-1 text-[14px] font-medium text-[#152A51] transition-colors hover:text-[#152A51]/70 md:col-span-1 md:ml-auto md:justify-end"
         >
           Features &amp; clinical note
           <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
@@ -240,7 +231,7 @@ function PackageRow({
       </div>
 
       {expanded && (
-        <div className="space-y-3 border-t border-[#D5DEDD] pt-3">
+        <div className="space-y-3 border-t border-[#E8EEED] pt-3">
           <div className="space-y-2">
             <Label className="text-[12px] font-medium text-[#3B4759]/70">Included features</Label>
             {fields.map((f, fi) => (
@@ -249,13 +240,13 @@ function PackageRow({
                   {...register(`${name}.${index}.features.${fi}.text` as any)}
                   placeholder={`Feature ${fi + 1}`}
                   disabled={submitting}
-                  className={inputClass}
+                  className={medicineInput}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-[44px] w-[44px] shrink-0 rounded-[6px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive sm:h-11 sm:w-11"
+                  className="h-[45px] w-[45px] shrink-0 rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive"
                   disabled={submitting}
                   onClick={() => remove(fi)}
                 >
@@ -263,15 +254,14 @@ function PackageRow({
                 </Button>
               </div>
             ))}
-            <Button
+            <button
               type="button"
-              variant="outline"
               disabled={submitting}
               onClick={() => append({ text: "" } as any)}
-              className="h-10 rounded-[6px] border border-[#D5DEDD] px-4 text-[14px] font-semibold text-[#3B4759] transition-colors hover:bg-[#F2F7F6]"
+              className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#152A51] transition-colors hover:text-[#152A51]/70 disabled:opacity-50"
             >
-              <Plus className="mr-1.5 h-4 w-4" /> Add feature
-            </Button>
+              <Plus className="h-4 w-4" /> Add feature
+            </button>
           </div>
           <div className="space-y-2">
             <Label className="text-[12px] font-medium text-[#3B4759]/70">Clinical note</Label>
@@ -280,7 +270,7 @@ function PackageRow({
               rows={2}
               placeholder="Optional disclaimer shown with this plan"
               disabled={submitting}
-              className={textareaClass}
+              className={medicineTextarea}
             />
           </div>
         </div>
