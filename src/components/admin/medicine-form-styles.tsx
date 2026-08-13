@@ -3,6 +3,39 @@ import type { ReactNode } from "react";
 const pageTitle =
   "text-[24px] font-medium leading-[37px] tracking-[-0.5px] text-[#152A51] sm:text-[28px]";
 
+/** Product image: square frame, full product visible, bottom-anchored */
+export function MedicineProductImage({
+  src,
+  alt = "",
+  size = "form",
+  className = "",
+}: {
+  src: string;
+  alt?: string;
+  size?: "form" | "preview" | "modal";
+  className?: string;
+}) {
+  const frame =
+    size === "preview"
+      ? "h-[72px] w-[72px] rounded-[14px] px-1.5 pt-1.5"
+      : size === "modal"
+        ? "mx-auto h-[200px] w-[200px] rounded-[21px] px-3 pt-3"
+        : "h-[201px] w-[200px] rounded-[21px] px-3 pt-3";
+
+  return (
+    <div
+      className={`flex shrink-0 items-end justify-center overflow-hidden bg-[#E8EEED] ${frame} ${className}`.trim()}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="max-h-full max-w-full object-contain object-bottom"
+        draggable={false}
+      />
+    </div>
+  );
+}
+
 export function MedicineFormPageHeader({ mode }: { mode: "create" | "edit" }) {
   const heading = mode === "create" ? "Add medicine" : "Edit medicine";
 
@@ -21,7 +54,11 @@ export const medicineInput =
   "h-[45px] w-full rounded-[14px] border border-[#E8EEED] bg-[#E8EEED] px-4 py-3 text-[16px] font-normal text-[#152A51] shadow-none placeholder:text-[#3B4759]/40 focus-visible:border-[#D5DEDD] focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-[#152A51]/15";
 
 export const medicineTextarea =
-  "min-h-[90px] w-full rounded-[14px] border border-[#E8EEED] bg-[#E8EEED] px-4 py-3 text-[16px] font-normal leading-[140%] text-[#152A51] shadow-none placeholder:text-[#3B4759]/40 focus-visible:border-[#D5DEDD] focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-[#152A51]/15 resize-none";
+  "min-h-[120px] w-full rounded-[14px] border border-[#E8EEED] bg-[#E8EEED] px-4 py-3 text-[16px] font-normal leading-[140%] text-[#152A51] shadow-none placeholder:text-[#3B4759]/40 focus-visible:border-[#D5DEDD] focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-[#152A51]/15 overflow-y-auto resize-y";
+
+/** Short description: multi-line so longer copy is fully visible while editing */
+export const medicineShortTextarea =
+  "min-h-[72px] w-full rounded-[14px] border border-[#E8EEED] bg-[#E8EEED] px-4 py-3 text-[16px] font-normal leading-[140%] text-[#152A51] shadow-none placeholder:text-[#3B4759]/40 focus-visible:border-[#D5DEDD] focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-[#152A51]/15 overflow-y-auto resize-none";
 
 export const medicineCard = "rounded-[24px] border border-[#E8EEED] bg-white shadow-none";
 

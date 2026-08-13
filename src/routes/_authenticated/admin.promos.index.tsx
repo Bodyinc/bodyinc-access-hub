@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshButton } from "@/components/admin/refresh-button";
+import { formatDate } from "@/lib/format";
 import { listPromos, setPromoActive } from "@/lib/promos.functions";
 import { adminPageTitle, adminPageSubtitle, adminBtnPrimary } from "@/lib/admin-ui";
 
@@ -147,7 +148,7 @@ function PromosListPage() {
                   </TableCell>
                   <TableCell className="text-[#3B4759]/70 font-medium text-[14px]">
                     {p.redeem_by ? (
-                      String(p.redeem_by).slice(0, 10)
+                      formatDate(p.redeem_by)
                     ) : (
                       <span className="text-[#3B4759]/40">—</span>
                     )}

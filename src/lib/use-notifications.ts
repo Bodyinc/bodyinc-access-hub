@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { formatDate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listMyNotifications,
@@ -18,7 +19,7 @@ export function timeAgo(iso: string): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
-  return d < 7 ? `${d}d ago` : new Date(iso).toLocaleDateString();
+  return d < 7 ? `${d}d ago` : formatDate(iso);
 }
 
 /**

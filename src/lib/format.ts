@@ -20,32 +20,37 @@ export function formatCents(cents: number | null | undefined): string {
   return usd.format(Number(cents ?? 0) / 100);
 }
 
-/** "12 Mar 2026" style — calendar date only. */
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  month: "2-digit",
+  day: "2-digit",
+  year: "numeric",
+};
+
+/** MM/DD/YYYY — calendar date only. */
 export function formatDate(iso?: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(iso).toLocaleDateString("en-US", DATE_FORMAT);
 }
 
-/** "12 Mar 2026, 09:41" style — compact date and time. */
+/** MM/DD/YYYY, HH:MM AM/PM — compact date and time. */
 export function formatDateTime(iso?: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+  return new Date(iso).toLocaleString("en-US", {
+    ...DATE_FORMAT,
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-/** Locale-default full date and time, including seconds. */
+/** MM/DD/YYYY with full time, including seconds. */
 export function formatDateTimeFull(iso?: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString("en-US", {
+    ...DATE_FORMAT,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 /** Whole years between a date of birth and today. */

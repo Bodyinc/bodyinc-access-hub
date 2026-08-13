@@ -34,11 +34,13 @@ import {
   CardDivider,
   MedicineField,
   MedicineFormPageHeader,
+  MedicineProductImage,
   medicineCard,
   medicineCardTitle,
   medicineCheckbox,
   medicineInput,
   medicineOptionWhite,
+  medicineShortTextarea,
   medicineTextarea,
   medicineToggleCard,
 } from "@/components/admin/medicine-form-styles";
@@ -169,34 +171,28 @@ export function MedicineForm({
         {showPageHeader && <MedicineFormPageHeader mode={mode} />}
 
         {/* Product Details card */}
-        <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+        <Card className={`w-full min-w-0 max-w-full p-4 sm:p-6 ${medicineCard}`}>
           <div className="mb-5 space-y-4 sm:mb-6">
             <h2 className={medicineCardTitle}>Product Details</h2>
             <CardDivider />
           </div>
 
-          <div className="flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-start">
-            {/* Product image — Figma: 200×201 square on card bg, no extra white wrap */}
+          <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:items-start">
+            {/* Product image — 200×201 square */}
             <div
-              className="flex w-full max-w-[200px] shrink-0 flex-col gap-3"
+              className="flex w-full max-w-[200px] flex-col gap-3"
               onDragOver={(e) => e.preventDefault()}
               onDrop={onDrop}
             >
               <Label className="text-[16px] font-medium text-[#152A51]">Product image</Label>
 
-              <div className="relative h-[201px] w-[200px] overflow-hidden rounded-[21px] bg-[#E8EEED]">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="Medicine preview"
-                    className="h-full w-full scale-[1.08] object-cover object-top"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <ImageIcon className="h-10 w-10 text-[#3B4759]/40" />
-                  </div>
-                )}
-              </div>
+              {imageUrl ? (
+                <MedicineProductImage src={imageUrl} alt="Medicine preview" size="form" />
+              ) : (
+                <div className="flex h-[201px] w-[200px] items-center justify-center rounded-[21px] bg-[#E8EEED]">
+                  <ImageIcon className="h-10 w-10 text-[#3B4759]/40" />
+                </div>
+              )}
 
               <input
                 ref={fileRef}
@@ -234,8 +230,8 @@ export function MedicineForm({
               )}
             </div>
 
-            {/* Fields column */}
-            <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
+            {/* Fields column — minmax(0,1fr) keeps all inputs the same width */}
+            <div className="flex w-full min-w-0 flex-col gap-4">
               <MedicineField label="Medicine Name" error={errors.name?.message}>
                 <Input
                   {...register("name")}
@@ -246,18 +242,19 @@ export function MedicineForm({
               </MedicineField>
 
               <MedicineField label="Short description" error={errors.short_description?.message}>
-                <Input
+                <Textarea
                   {...register("short_description")}
+                  rows={2}
                   placeholder="Shown on the medication card"
                   disabled={submitting}
-                  className={medicineInput}
+                  className={medicineShortTextarea}
                 />
               </MedicineField>
 
               <MedicineField label="Long description" error={errors.long_description?.message}>
                 <Textarea
                   {...register("long_description")}
-                  rows={3}
+                  rows={5}
                   placeholder="Full description in the Learn More modal"
                   disabled={submitting}
                   className={medicineTextarea}

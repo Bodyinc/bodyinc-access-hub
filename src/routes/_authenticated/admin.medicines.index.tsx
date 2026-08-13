@@ -52,6 +52,7 @@ import {
   MEDICINE_STATUS_LABELS,
   type MedicineStatus,
 } from "@/lib/medicines.schema";
+import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/medicines/")({
   head: () => ({
@@ -66,14 +67,6 @@ export const Route = createFileRoute("/_authenticated/admin/medicines/")({
 
 function truncate(text: string, max = 60) {
   return text.length > max ? `${text.slice(0, max)}…` : text;
-}
-
-function formatUpdated(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function unsyncedPackages(m: StoredMedicine) {
@@ -350,7 +343,7 @@ function MedicinesListPage() {
                     </TableCell>
 
                     <TableCell className="px-5 py-[14px] text-[14px] font-normal text-[#3B4759]/70">
-                      {formatUpdated(m.updated_at)}
+                      {formatDate(m.updated_at)}
                     </TableCell>
 
                     <TableCell

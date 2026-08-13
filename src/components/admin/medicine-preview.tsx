@@ -14,6 +14,7 @@ import {
   CardDivider,
   medicineCard,
   medicineCardTitle,
+  MedicineProductImage,
 } from "@/components/admin/medicine-form-styles";
 
 export type MedicinePreviewProps = {
@@ -63,9 +64,7 @@ export function MedicinePreview({
         <div className="rounded-[14px] border border-[#E8EEED] bg-white p-4">
           <div className="flex min-w-0 items-start gap-4">
             {image_url ? (
-              <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#E8EEED] p-2">
-                <img src={image_url} alt="" className="max-h-full max-w-full object-contain" />
-              </div>
+              <MedicineProductImage src={image_url} alt="" size="preview" />
             ) : (
               <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[14px] bg-[#E8EEED] text-[12px] font-normal text-[#3B4759]/50">
                 Image
@@ -103,15 +102,7 @@ export function MedicinePreview({
               </DialogDescription>
             </DialogHeader>
             <div className="my-2 space-y-4">
-              {image_url && (
-                <div className="mx-auto flex h-[200px] w-[200px] items-center justify-center rounded-[21px] bg-[#E8EEED] p-3">
-                  <img
-                    src={image_url}
-                    alt=""
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-              )}
+              {image_url && <MedicineProductImage src={image_url} alt="" size="modal" />}
               <p className="text-[16px] font-normal leading-[140%] text-[#152A51]">{displayLong}</p>
               {bullets.length > 0 && (
                 <ul className="space-y-2">

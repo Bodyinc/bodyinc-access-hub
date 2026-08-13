@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { getPrescription } from "@/lib/requests.functions";
-import { formatRecordId } from "@/lib/format";
+import { formatRecordId, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rx/$prescriptionId")({
   head: () => ({
@@ -18,14 +18,6 @@ export const Route = createFileRoute("/_authenticated/rx/$prescriptionId")({
   }),
   component: RxPage,
 });
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
 
 function RxPage() {
   const { prescriptionId } = Route.useParams();
