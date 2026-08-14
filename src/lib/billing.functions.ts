@@ -309,3 +309,122 @@ export const rejectRefund = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Refund history — paginated, filterable, read-only audit view of every refund
+// request ever raised (the Billing → Refunds tab only shows the live queue).
+// ---------------------------------------------------------------------------
+
+const refundHistoryInput = z
+  .object({
+    search: z.string().trim().max(200).optional(),
+    status: z.string().trim().max(40).optional(),
+    days: z.number().int().min(1).max(3650).optional(),
+    page: z.number().int().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(25),
+  })
+  .default({ page: 1, limit: 25 });
+
+export const listRefundHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => refundHistoryInput.parse(input ?? {}))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { uuidPrefixRange } = await import("@/lib/format");
+
+    const from = (data.page - 1) * data.limit;
+    const to = from + data.limit - 1;
+
+    let q = supabaseAdmin
+      .from("refund_requests")
+      .select(
+        "id, user_id, payment_id, amount_cents, reason, status, admin_note, stripe_refund_id, reviewed_by, reviewed_at, created_at",
+        { count: "exact" },
+      )
+      .order("created_at", { ascending: false });
+
+    if (data.status && data.status !== "all") q = q.eq("status", data.status);
+    if (data.days) {
+      const since = new Date(Date.now() - data.days * 86400000).toISOString();
+      q = q.gte("created_at", since);
+    }
+
+    // ID search hits the database so it finds rows outside the current page.
+    let idMatchOnly = false;
+    if (data.search) {
+      const range = uuidPrefixRange(data.search);
+      if (range) {
+        q = q.gte("id", range.lo).lte("id", range.hi);
+        idMatchOnly = true;
+      }
+    }
+
+    const { data: rows, count, error } = await q.range(from, to);
+    if (error) throw new Error(error.message);
+    const requests = rows ?? [];
+
+    const userIds = Array.from(
+      new Set(
+        requests
+          .flatMap((r: any) => [r.user_id, r.reviewed_by])
+          .filter(Boolean) as string[],
+      ),
+    );
+    const payIds = Array.from(new Set(requests.map((r: any) => r.payment_id).filter(Boolean)));
+
+    const [{ data: profiles }, { data: payments }] = await Promise.all([
+      userIds.length
+        ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+      payIds.length
+        ? supabaseAdmin.from("payments").select("id, stripe_invoice_id, raw_event").in("id", payIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    const payMap = new Map((payments ?? []).map((p: any) => [p.id, p]));
+
+    let result = requests.map((r: any) => {
+      const p = pMap.get(r.user_id) as any;
+      const reviewer = r.reviewed_by ? (pMap.get(r.reviewed_by) as any) : null;
+      const pay = payMap.get(r.payment_id) as any;
+      const { invoiceUrl, invoicePdfUrl } = invoiceUrls(pay?.raw_event);
+      return {
+        id: r.id,
+        customer_name: p?.full_name ?? null,
+        customer_email: p?.email ?? null,
+        amount: Number(r.amount_cents) / 100,
+        reason: r.reason,
+        status: r.status,
+        admin_note: r.admin_note,
+        stripe_refund_id: r.stripe_refund_id,
+        reviewed_by_name: reviewer?.full_name ?? reviewer?.email ?? null,
+        reviewed_at: r.reviewed_at,
+        invoice_url: invoiceUrl,
+        invoice_pdf_url: invoicePdfUrl,
+        created_at: r.created_at,
+      };
+    });
+
+    // Name / email / reason search is applied after the join (those live on other tables).
+    if (data.search && !idMatchOnly) {
+      const s = data.search.toLowerCase();
+      result = result.filter(
+        (r: any) =>
+          (r.customer_name ?? "").toLowerCase().includes(s) ||
+          (r.customer_email ?? "").toLowerCase().includes(s) ||
+          (r.reason ?? "").toLowerCase().includes(s) ||
+          (r.stripe_refund_id ?? "").toLowerCase().includes(s),
+      );
+    }
+
+    const total = count ?? 0;
+    return {
+      data: result,
+      total,
+      page: data.page,
+      page_size: data.limit,
+      total_pages: total ? Math.ceil(total / data.limit) : 0,
+    };
+  });
