@@ -574,6 +574,37 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     const variantName = (newPkg as any).medicine_variants?.name ?? null;
     const medLabel = variantName ? `${medName} (${variantName})` : medName;
 
+    // Structured audit row so the admin "Medicine changes" history has a complete record of
+    // who switched what, for both practitioner and admin initiated changes.
+    await supabaseAdmin.from("admin_activity_log").insert({
+      admin_user_id: context.userId,
+      action: "request.change_medicine",
+      entity: "medication_requests",
+      entity_id: req.id,
+      before: {
+        medicine_id: currentMedicineId,
+        medicine_name: curPkg?.medicines?.name ?? null,
+        variant_name: curPkg?.medicine_variants?.name ?? null,
+        package_id: req.package_id,
+        duration_months: curPkg?.duration_months ?? null,
+        price: currentPrice,
+      },
+      after: {
+        medicine_id: newPkg.medicine_id,
+        medicine_name: medName,
+        variant_name: variantName,
+        package_id: newPkg.id,
+        duration_months: (newPkg as any).duration_months ?? null,
+        price: Number(newPkg.price),
+        delta_cents: deltaCents,
+        cross_category: crossCategory,
+        cross_category_reason: data.crossCategoryReason ?? null,
+        note: data.note?.trim() || null,
+        actor_role: role,
+        user_id: req.user_id,
+      },
+    } as any);
+
     if (crossCategory) {
       await logEvent(
         supabaseAdmin,
