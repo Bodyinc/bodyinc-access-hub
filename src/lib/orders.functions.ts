@@ -275,8 +275,28 @@ export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
       action: "subscription.change_medicine",
       entity: "subscriptions",
       entity_id: sub.id,
-      before: { medicine_id: sub.medicine_id, package_id: sub.package_id },
-      after: { medicine_id: pkg.medicine_id, package_id: pkg.id },
+      before: {
+        medicine_id: sub.medicine_id,
+        medicine_name: (oldPkg as any)?.medicines?.name ?? null,
+        variant_name: (oldPkg as any)?.medicine_variants?.name ?? null,
+        package_id: sub.package_id,
+        duration_months: (oldPkg as any)?.duration_months ?? null,
+        price: oldPrice,
+      },
+      after: {
+        medicine_id: pkg.medicine_id,
+        medicine_name: (pkg as any).medicines?.name ?? null,
+        variant_name: (pkg as any).medicine_variants?.name ?? null,
+        package_id: pkg.id,
+        duration_months: (pkg as any).duration_months ?? null,
+        price: Number((pkg as any).price ?? 0),
+        delta_cents: Math.round((Number((pkg as any).price ?? 0) - oldPrice) * 100),
+        cross_category: false,
+        cross_category_reason: null,
+        note: null,
+        actor_role: "admin",
+        user_id: (sub as any).user_id ?? null,
+      },
     } as any);
 
     return { ok: true, description };
