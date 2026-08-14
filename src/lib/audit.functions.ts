@@ -40,9 +40,15 @@ export const listMedicineChanges = createServerFn({ method: "POST" })
     if (data.days) {
       q = q.gte("created_at", new Date(Date.now() - data.days * 86400000).toISOString());
     }
+    let idMatchOnly = false;
     if (data.search) {
       const s = normalizeIdSearch(data.search).toLowerCase();
-      if (s) q = q.ilike("entity_id", `${s}%`);
+      // Only treat the term as an ID when it reads like a uuid fragment; otherwise it is a
+      // name / medicine search that has to be applied after the profile join.
+      if (s && /^[0-9a-f-]+$/.test(s)) {
+        q = q.ilike("entity_id", `${s}%`);
+        idMatchOnly = true;
+      }
     }
 
     const { data: rows, count, error } = await q.range(from, to);
@@ -92,12 +98,10 @@ export const listMedicineChanges = createServerFn({ method: "POST" })
 
     if (data.role !== "all") result = result.filter((r) => r.actor_role === data.role);
     if (data.crossCategoryOnly) result = result.filter((r) => r.cross_category);
-    if (data.search) {
+    if (data.search && !idMatchOnly) {
       const s = data.search.toLowerCase();
-      const normalized = s.replace(/^#/, "").replace(/^bi-/, "");
       result = result.filter(
         (r) =>
-          String(r.entity_id ?? "").toLowerCase().startsWith(normalized) ||
           (r.patient_name ?? "").toLowerCase().includes(s) ||
           (r.patient_email ?? "").toLowerCase().includes(s) ||
           r.from_label.toLowerCase().includes(s) ||
