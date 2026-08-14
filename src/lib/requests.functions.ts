@@ -522,13 +522,15 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     }
 
     let currentPrice = 0;
+    let curPkg: any = null;
     if (req.package_id) {
-      const { data: curPkg } = await supabaseAdmin
+      const { data: cur } = await supabaseAdmin
         .from("packages")
-        .select("price")
+        .select("price, duration_months, medicines(name), medicine_variants(name)")
         .eq("id", req.package_id)
         .maybeSingle();
-      currentPrice = Number(curPkg?.price ?? 0);
+      curPkg = cur ?? null;
+      currentPrice = Number(cur?.price ?? 0);
     }
     const deltaCents = Math.round((Number(newPkg.price) - currentPrice) * 100);
 
