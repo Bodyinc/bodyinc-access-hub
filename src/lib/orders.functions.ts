@@ -263,6 +263,14 @@ export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
     }
 
     const { applyPackageChangeToSubscription } = await import("@/lib/subscription-reschedule");
+    const { data: oldPkg } = sub.package_id
+      ? await supabaseAdmin
+          .from("packages")
+          .select("price, duration_months, medicines(name), medicine_variants(name)")
+          .eq("id", sub.package_id)
+          .maybeSingle()
+      : { data: null as any };
+    const oldPrice = Number((oldPkg as any)?.price ?? 0);
     const { description } = await applyPackageChangeToSubscription({
       stripe,
       supabaseAdmin,
