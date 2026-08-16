@@ -59,6 +59,8 @@ const TITLES: Record<string, string> = {
   "/admin/intake-sessions": "Intake Sessions",
   "/admin/settings": "Settings",
   "/admin/billing": "Billing",
+  "/admin/billing/refund-history": "Refund History",
+  "/admin/medicine-changes": "Medicine Changes",
   "/admin/referrals": "Referrals",
   "/admin/promos": "Promo Codes",
 };

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Download, Eye, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +97,16 @@ export function RefundsTable() {
             className={`${adminInput} pl-10`}
           />
         </div>
-        <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+        <div className="flex items-center gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="h-[37px] rounded-[20px] border border-[#E8EEED] bg-white px-5 text-[14px] font-medium text-[#152A51] shadow-none hover:bg-[#F8F9FB] hover:text-[#152A51]"
+          >
+            <Link to="/admin/billing/refund-history">View full history</Link>
+          </Button>
+          <RefreshButton onClick={() => query.refetch()} loading={query.isFetching} />
+        </div>
       </div>
 
       <div className="admin-table-wrap">
