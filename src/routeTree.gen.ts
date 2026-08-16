@@ -45,6 +45,7 @@ import { Route as AuthenticatedAdminPromosIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminPatientsIndexRouteImport } from './routes/_authenticated/admin.patients.index'
 import { Route as AuthenticatedAdminOrdersIndexRouteImport } from './routes/_authenticated/admin.orders.index'
 import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_authenticated/admin.medicines.index'
+import { Route as AuthenticatedAdminMedicineChangesIndexRouteImport } from './routes/_authenticated/admin.medicine-changes.index'
 import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
 import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
 import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
@@ -273,6 +274,12 @@ const AuthenticatedAdminMedicinesIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAdminMedicinesRoute,
   } as any)
+const AuthenticatedAdminMedicineChangesIndexRoute =
+  AuthenticatedAdminMedicineChangesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminMedicineChangesRoute,
+  } as any)
 const AuthenticatedAdminMedicationRulesIndexRoute =
   AuthenticatedAdminMedicationRulesIndexRouteImport.update({
     id: '/',
@@ -412,7 +419,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
-  '/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesRoute
+  '/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesRouteWithChildren
   '/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
   '/admin/orders': typeof AuthenticatedAdminOrdersRouteWithChildren
   '/admin/patients': typeof AuthenticatedAdminPatientsRouteWithChildren
@@ -446,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
+  '/admin/medicine-changes/': typeof AuthenticatedAdminMedicineChangesIndexRoute
   '/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
   '/admin/orders/': typeof AuthenticatedAdminOrdersIndexRoute
   '/admin/patients/': typeof AuthenticatedAdminPatientsIndexRoute
@@ -464,7 +472,6 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesRoute
   '/provider/notifications': typeof AuthenticatedProviderNotificationsRoute
   '/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
@@ -492,6 +499,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AuthenticatedAdminCategoriesIndexRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesIndexRoute
+  '/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesIndexRoute
   '/admin/medicines': typeof AuthenticatedAdminMedicinesIndexRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersIndexRoute
   '/admin/patients': typeof AuthenticatedAdminPatientsIndexRoute
@@ -518,7 +526,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRouteWithChildren
   '/_authenticated/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
   '/_authenticated/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesRouteWithChildren
-  '/_authenticated/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesRoute
+  '/_authenticated/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesRouteWithChildren
   '/_authenticated/admin/medicines': typeof AuthenticatedAdminMedicinesRouteWithChildren
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRouteWithChildren
   '/_authenticated/admin/patients': typeof AuthenticatedAdminPatientsRouteWithChildren
@@ -552,6 +560,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
   '/_authenticated/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/_authenticated/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
+  '/_authenticated/admin/medicine-changes/': typeof AuthenticatedAdminMedicineChangesIndexRoute
   '/_authenticated/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
   '/_authenticated/admin/orders/': typeof AuthenticatedAdminOrdersIndexRoute
   '/_authenticated/admin/patients/': typeof AuthenticatedAdminPatientsIndexRoute
@@ -612,6 +621,7 @@ export interface FileRouteTypes {
     | '/admin/categories/'
     | '/admin/intake-sessions/'
     | '/admin/medication-rules/'
+    | '/admin/medicine-changes/'
     | '/admin/medicines/'
     | '/admin/orders/'
     | '/admin/patients/'
@@ -630,7 +640,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/dashboard'
-    | '/admin/medicine-changes'
     | '/provider/notifications'
     | '/provider/profile'
     | '/provider/queue'
@@ -658,6 +667,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/intake-sessions'
     | '/admin/medication-rules'
+    | '/admin/medicine-changes'
     | '/admin/medicines'
     | '/admin/orders'
     | '/admin/patients'
@@ -717,6 +727,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/categories/'
     | '/_authenticated/admin/intake-sessions/'
     | '/_authenticated/admin/medication-rules/'
+    | '/_authenticated/admin/medicine-changes/'
     | '/_authenticated/admin/medicines/'
     | '/_authenticated/admin/orders/'
     | '/_authenticated/admin/patients/'
@@ -992,6 +1003,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMedicinesIndexRouteImport
       parentRoute: typeof AuthenticatedAdminMedicinesRoute
     }
+    '/_authenticated/admin/medicine-changes/': {
+      id: '/_authenticated/admin/medicine-changes/'
+      path: '/'
+      fullPath: '/admin/medicine-changes/'
+      preLoaderRoute: typeof AuthenticatedAdminMedicineChangesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicineChangesRoute
+    }
     '/_authenticated/admin/medication-rules/': {
       id: '/_authenticated/admin/medication-rules/'
       path: '/'
@@ -1212,6 +1230,21 @@ const AuthenticatedAdminMedicationRulesRouteWithChildren =
     AuthenticatedAdminMedicationRulesRouteChildren,
   )
 
+interface AuthenticatedAdminMedicineChangesRouteChildren {
+  AuthenticatedAdminMedicineChangesIndexRoute: typeof AuthenticatedAdminMedicineChangesIndexRoute
+}
+
+const AuthenticatedAdminMedicineChangesRouteChildren: AuthenticatedAdminMedicineChangesRouteChildren =
+  {
+    AuthenticatedAdminMedicineChangesIndexRoute:
+      AuthenticatedAdminMedicineChangesIndexRoute,
+  }
+
+const AuthenticatedAdminMedicineChangesRouteWithChildren =
+  AuthenticatedAdminMedicineChangesRoute._addFileChildren(
+    AuthenticatedAdminMedicineChangesRouteChildren,
+  )
+
 interface AuthenticatedAdminMedicinesRouteChildren {
   AuthenticatedAdminMedicinesMedicineIdRoute: typeof AuthenticatedAdminMedicinesMedicineIdRoute
   AuthenticatedAdminMedicinesNewRoute: typeof AuthenticatedAdminMedicinesNewRoute
@@ -1328,7 +1361,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRouteWithChildren
   AuthenticatedAdminIntakeSessionsRoute: typeof AuthenticatedAdminIntakeSessionsRouteWithChildren
   AuthenticatedAdminMedicationRulesRoute: typeof AuthenticatedAdminMedicationRulesRouteWithChildren
-  AuthenticatedAdminMedicineChangesRoute: typeof AuthenticatedAdminMedicineChangesRoute
+  AuthenticatedAdminMedicineChangesRoute: typeof AuthenticatedAdminMedicineChangesRouteWithChildren
   AuthenticatedAdminMedicinesRoute: typeof AuthenticatedAdminMedicinesRouteWithChildren
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRouteWithChildren
   AuthenticatedAdminPatientsRoute: typeof AuthenticatedAdminPatientsRouteWithChildren
@@ -1352,7 +1385,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminMedicationRulesRoute:
     AuthenticatedAdminMedicationRulesRouteWithChildren,
   AuthenticatedAdminMedicineChangesRoute:
-    AuthenticatedAdminMedicineChangesRoute,
+    AuthenticatedAdminMedicineChangesRouteWithChildren,
   AuthenticatedAdminMedicinesRoute:
     AuthenticatedAdminMedicinesRouteWithChildren,
   AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRouteWithChildren,
