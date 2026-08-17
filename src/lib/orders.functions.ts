@@ -236,7 +236,9 @@ export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
 
     const { data: sub, error: subErr } = await supabaseAdmin
       .from("subscriptions")
-      .select("id, stripe_subscription_id, medicine_id, package_id, stripe_price_id, status")
+      .select(
+        "id, user_id, stripe_subscription_id, medicine_id, package_id, stripe_price_id, status",
+      )
       .eq("id", data.orderId)
       .maybeSingle();
     if (subErr) throw new Error(subErr.message);
