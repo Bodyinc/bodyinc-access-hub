@@ -56,9 +56,35 @@ export const listMedicineChanges = createServerFn({ method: "POST" })
     const list = (rows ?? []) as any[];
 
     const actorIds = Array.from(new Set(list.map((r) => r.admin_user_id).filter(Boolean)));
-    const patientIds = Array.from(
-      new Set(list.map((r) => r?.after?.user_id).filter(Boolean)),
-    ) as string[];
+
+    // Older rows (and subscription changes logged before user_id was captured) have no
+    // patient on the payload — resolve it from the linked record instead.
+    const ownerByEntityId = new Map<string, string>();
+    const missingSubs = list
+      .filter((r) => !r?.after?.user_id && r.entity === "subscriptions" && r.entity_id)
+      .map((r) => r.entity_id as string);
+    const missingReqs = list
+      .filter((r) => !r?.after?.user_id && r.entity === "medication_requests" && r.entity_id)
+      .map((r) => r.entity_id as string);
+    if (missingSubs.length) {
+      const { data: subs } = await supabaseAdmin
+        .from("subscriptions")
+        .select("id, user_id")
+        .in("id", Array.from(new Set(missingSubs)));
+      (subs ?? []).forEach((s: any) => s.user_id && ownerByEntityId.set(s.id, s.user_id));
+    }
+    if (missingReqs.length) {
+      const { data: reqs } = await supabaseAdmin
+        .from("medication_requests")
+        .select("id, user_id")
+        .in("id", Array.from(new Set(missingReqs)));
+      (reqs ?? []).forEach((s: any) => s.user_id && ownerByEntityId.set(s.id, s.user_id));
+    }
+
+    const ownerOf = (r: any): string | null =>
+      r?.after?.user_id ?? (r.entity_id ? (ownerByEntityId.get(r.entity_id) ?? null) : null);
+
+    const patientIds = Array.from(new Set(list.map(ownerOf).filter(Boolean))) as string[];
     const allIds = Array.from(new Set([...actorIds, ...patientIds])) as string[];
 
     const { data: profiles } = allIds.length
@@ -76,7 +102,8 @@ export const listMedicineChanges = createServerFn({ method: "POST" })
 
     let result = list.map((r) => {
       const actor = r.admin_user_id ? (pMap.get(r.admin_user_id) as any) : null;
-      const patient = r?.after?.user_id ? (pMap.get(r.after.user_id) as any) : null;
+      const ownerId = ownerOf(r);
+      const patient = ownerId ? (pMap.get(ownerId) as any) : null;
       return {
         id: r.id,
         created_at: r.created_at,
