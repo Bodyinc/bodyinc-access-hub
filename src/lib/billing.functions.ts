@@ -334,51 +334,73 @@ export const listRefundHistory = createServerFn({ method: "POST" })
     const { uuidPrefixRange } = await import("@/lib/format");
 
     const from = (data.page - 1) * data.limit;
-    const to = from + data.limit - 1;
+
+    const since = data.days
+      ? new Date(Date.now() - data.days * 86400000).toISOString()
+      : null;
+    const range = data.search ? uuidPrefixRange(data.search) : null;
+    const idMatchOnly = Boolean(range);
 
     let q = supabaseAdmin
       .from("refund_requests")
       .select(
         "id, user_id, payment_id, amount_cents, reason, status, admin_note, stripe_refund_id, reviewed_by, reviewed_at, created_at",
-        { count: "exact" },
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(1000);
 
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
-    if (data.days) {
-      const since = new Date(Date.now() - data.days * 86400000).toISOString();
-      q = q.gte("created_at", since);
-    }
+    if (since) q = q.gte("created_at", since);
+    if (range) q = q.gte("id", range.lo).lte("id", range.hi);
 
-    // ID search hits the database so it finds rows outside the current page.
-    let idMatchOnly = false;
-    if (data.search) {
-      const range = uuidPrefixRange(data.search);
-      if (range) {
-        q = q.gte("id", range.lo).lte("id", range.hi);
-        idMatchOnly = true;
-      }
-    }
+    // Refunds issued directly when an order is rejected never create a refund_requests
+    // row, so they are read from medication_requests and merged into the same history.
+    let dq = supabaseAdmin
+      .from("medication_requests")
+      .select(
+        "id, user_id, payment_id, stripe_refund_id, decision_by, decision_at, decision_note, updated_at",
+      )
+      .not("stripe_refund_id", "is", null)
+      .order("decision_at", { ascending: false })
+      .limit(1000);
 
-    const { data: rows, count, error } = await q.range(from, to);
-    if (error) throw new Error(error.message);
-    const requests = rows ?? [];
+    if (since) dq = dq.gte("decision_at", since);
+    if (range) dq = dq.gte("id", range.lo).lte("id", range.hi);
+
+    const [reqRes, directRes] = await Promise.all([q, dq]);
+    if (reqRes.error) throw new Error(reqRes.error.message);
+    if (directRes.error) throw new Error(directRes.error.message);
+
+    const requests = reqRes.data ?? [];
+    // Direct refunds are always completed refunds, so they only belong to "approved".
+    const direct =
+      data.status && data.status !== "all" && data.status !== "approved"
+        ? []
+        : (directRes.data ?? []);
 
     const userIds = Array.from(
       new Set(
-        requests
-          .flatMap((r: any) => [r.user_id, r.reviewed_by])
-          .filter(Boolean) as string[],
+        [
+          ...requests.flatMap((r: any) => [r.user_id, r.reviewed_by]),
+          ...direct.flatMap((r: any) => [r.user_id, r.decision_by]),
+        ].filter(Boolean) as string[],
       ),
     );
-    const payIds = Array.from(new Set(requests.map((r: any) => r.payment_id).filter(Boolean)));
+    const payIds = Array.from(
+      new Set(
+        [...requests, ...direct].map((r: any) => r.payment_id).filter(Boolean) as string[],
+      ),
+    );
 
     const [{ data: profiles }, { data: payments }] = await Promise.all([
       userIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
         : Promise.resolve({ data: [] as any[] }),
       payIds.length
-        ? supabaseAdmin.from("payments").select("id, stripe_invoice_id, raw_event").in("id", payIds)
+        ? supabaseAdmin
+            .from("payments")
+            .select("id, stripe_invoice_id, raw_event, amount_cents")
+            .in("id", payIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
@@ -407,6 +429,35 @@ export const listRefundHistory = createServerFn({ method: "POST" })
       };
     });
 
+    result = result.concat(
+      direct.map((r: any) => {
+        const p = pMap.get(r.user_id) as any;
+        const reviewer = r.decision_by ? (pMap.get(r.decision_by) as any) : null;
+        const pay = payMap.get(r.payment_id) as any;
+        const { invoiceUrl, invoicePdfUrl } = invoiceUrls(pay?.raw_event);
+        return {
+          id: r.id,
+          customer_name: p?.full_name ?? null,
+          customer_email: p?.email ?? null,
+          amount: Number(pay?.amount_cents ?? 0) / 100,
+          reason: "Order rejected — automatic refund",
+          status: "approved",
+          admin_note: r.decision_note ?? null,
+          stripe_refund_id: r.stripe_refund_id,
+          reviewed_by_name: reviewer?.full_name ?? reviewer?.email ?? null,
+          reviewed_at: r.decision_at ?? r.updated_at,
+          invoice_url: invoiceUrl,
+          invoice_pdf_url: invoicePdfUrl,
+          created_at: r.decision_at ?? r.updated_at,
+        };
+      }),
+    );
+
+    result.sort(
+      (a: any, b: any) =>
+        new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+    );
+
     // Name / email / reason search is applied after the join (those live on other tables).
     if (data.search && !idMatchOnly) {
       const s = data.search.toLowerCase();
@@ -419,9 +470,9 @@ export const listRefundHistory = createServerFn({ method: "POST" })
       );
     }
 
-    const total = count ?? 0;
+    const total = result.length;
     return {
-      data: result,
+      data: result.slice(from, from + data.limit),
       total,
       page: data.page,
       page_size: data.limit,
