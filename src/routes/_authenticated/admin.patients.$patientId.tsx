@@ -1,5 +1,6 @@
 import { titleCaseName, upperTrim } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
+import { ZIP_CODE_MAX_DIGITS, digitsOnlyZip } from "@/lib/zip";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -266,7 +267,7 @@ function PatientDetailPage() {
               apartment: d.apartment ?? "",
               city: d.city ?? "",
               state_code: d.state_code ?? "",
-              postal_code: d.postal_code ?? "",
+              postal_code: digitsOnlyZip(d.postal_code ?? ""),
               country: d.country ?? "",
             }}
             smsConsent={!!d.sms_consent}
@@ -735,7 +736,10 @@ function AddressCard({
     country: string | null;
   }) => void;
 }) {
-  const [form, setForm] = useState(defaultValues);
+  const [form, setForm] = useState({
+    ...defaultValues,
+    postal_code: digitsOnlyZip(defaultValues.postal_code),
+  });
 
   useEffect(() => {
     setForm({
@@ -743,7 +747,7 @@ function AddressCard({
       apartment: defaultValues.apartment,
       city: defaultValues.city,
       state_code: defaultValues.state_code,
-      postal_code: defaultValues.postal_code,
+      postal_code: digitsOnlyZip(defaultValues.postal_code),
       country: defaultValues.country,
     });
   }, [
@@ -755,7 +759,8 @@ function AddressCard({
     defaultValues.country,
   ]);
 
-  const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: keyof typeof form, value: string) =>
+    setForm((f) => ({ ...f, [key]: key === "postal_code" ? digitsOnlyZip(value) : value }));
 
   const consentBadge = (label: string, on: boolean) => (
     <Badge
@@ -850,7 +855,11 @@ function AddressCard({
               </Label>
               <Input
                 id="postal_code"
-                value={form.postal_code}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={ZIP_CODE_MAX_DIGITS}
+                autoComplete="postal-code"
+                value={digitsOnlyZip(form.postal_code)}
                 onChange={(e) => set("postal_code", e.target.value)}
                 className={adminInput}
               />

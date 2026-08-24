@@ -321,7 +321,7 @@ export const approveRequest = createServerFn({ method: "POST" })
     );
 
     const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
-    void notifyPatientRequestEvent({
+    await notifyPatientRequestEvent({
       supabaseAdmin,
       request: req,
       template: "patient_approved",
@@ -436,7 +436,7 @@ export const rejectRequest = createServerFn({ method: "POST" })
     );
 
     const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
-    void notifyPatientRequestEvent({
+    await notifyPatientRequestEvent({
       supabaseAdmin,
       request: req,
       template: "patient_rejected",
@@ -649,7 +649,8 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
 
       const { notifyPatientRequestEvent, notifyProviderRequestEvent } =
         await import("@/lib/email.notifications");
-      void notifyPatientRequestEvent({
+      const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+      await notifyPatientRequestEvent({
         supabaseAdmin,
         request: { ...req, medicine_id: newPkg.medicine_id },
         template: "patient_additional_payment",
@@ -657,9 +658,10 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
           MEDICINE_NAME: medLabel,
           AMOUNT_DUE: (deltaCents / 100).toFixed(2),
           AMOUNT_DUE_CENTS: deltaCents,
+          PORTAL_URL: portalBase ? `${portalBase}/orders/${req.id}/pay` : "",
         },
       });
-      void notifyProviderRequestEvent({
+      await notifyProviderRequestEvent({
         supabaseAdmin,
         providerId: req.provider_id,
         requestId: req.id,
@@ -701,7 +703,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     );
 
     const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
-    void notifyPatientRequestEvent({
+    await notifyPatientRequestEvent({
       supabaseAdmin,
       request: { ...req, medicine_id: newPkg.medicine_id },
       template: "patient_medicine_changed",
@@ -780,7 +782,7 @@ export const generatePrescription = createServerFn({ method: "POST" })
     await logEvent(supabaseAdmin, req.id, "prescribed", role, context.userId);
 
     const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
-    void notifyPatientRequestEvent({
+    await notifyPatientRequestEvent({
       supabaseAdmin,
       request: req,
       template: "patient_prescription_ready",
@@ -828,7 +830,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       );
 
       const { notifyProviderRequestEvent } = await import("@/lib/email.notifications");
-      void notifyProviderRequestEvent({
+      await notifyProviderRequestEvent({
         supabaseAdmin,
         providerId: data.providerId,
         requestId: data.requestId,
@@ -837,7 +839,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
         actorUserId: context.userId,
       });
       if ((existing as any)?.status === "pending_review") {
-        void notifyProviderRequestEvent({
+        await notifyProviderRequestEvent({
           supabaseAdmin,
           providerId: data.providerId,
           requestId: data.requestId,
@@ -885,6 +887,7 @@ export const getPrescription = createServerFn({ method: "POST" })
 
 const FULFILLMENT_STATUSES = ["sent_to_pharmacy", "dispatched", "delivered", "cancelled"] as const;
 
+
 export const advanceRequestStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -902,23 +905,174 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const req = await loadScopedRequest(
-      supabaseAdmin,
-      data.requestId,
-      role,
-      context.userId,
-      "id, status, provider_id, user_id, medicine_id, tracking_number",
-    );
+  supabaseAdmin,
+  data.requestId,
+  role,
+  context.userId,
+  "id, status, provider_id, user_id, medicine_id, variant_id, tracking_number",
+);
 
-    const update: { status: string; updated_at: string; tracking_number?: string | null } = {
+let lifeFileOrderId: string | number | null = null;
+
+if (data.status === "sent_to_pharmacy") {
+  if (!req.user_id) {
+    throw new Error("This request has no patient account.");
+  }
+
+  if (!req.provider_id) {
+    throw new Error("This request has no assigned provider.");
+  }
+
+  const [{ data: patient }, { data: provider }, { data: prescription }] =
+    await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select(
+          "full_name, dob, sex, email, phone, street_address, apartment, city, state_code, postal_code, country",
+        )
+        .eq("id", req.user_id)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("providers")
+        .select(
+          "id, license_number, license_states, npi, dea",
+        )
+        .eq("id", req.provider_id)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("prescriptions")
+        .select(
+          "id, medicine_name, directions, medicine_id, variant_id, created_at",
+        )
+        .eq("request_id", req.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  if (!patient) {
+    throw new Error("Patient profile not found.");
+  }
+
+  if (!provider) {
+    throw new Error("Provider record not found.");
+  }
+
+  if (!prescription) {
+    throw new Error("Prescription not found. Generate the prescription first.");
+  }
+
+  const { data: providerProfile } = await supabaseAdmin
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", req.provider_id)
+    .maybeSingle();
+
+  if (!providerProfile) {
+    throw new Error("Provider profile not found.");
+  }
+
+  const medicineId = prescription.medicine_id ?? req.medicine_id;
+  const variantId = (prescription as { variant_id?: string | null }).variant_id ?? req.variant_id;
+  const [{ data: liveMedicine }, { data: liveVariant }] = await Promise.all([
+    medicineId
+      ? supabaseAdmin.from("medicines").select("name").eq("id", medicineId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    variantId
+      ? supabaseAdmin
+          .from("medicine_variants")
+          .select("name")
+          .eq("id", variantId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const { createLifeFileSandboxOrder } = await import(
+    "@/integrations/lifefile/orders.server"
+  );
+
+  const lifeFileResponse = await createLifeFileSandboxOrder({
+    requestId: req.id,
+
+    patient: {
+      fullName: patient.full_name,
+      dob: patient.dob,
+      sex: patient.sex,
+      email: patient.email,
+      phone: patient.phone,
+      streetAddress: patient.street_address,
+      apartment: patient.apartment,
+      city: patient.city,
+      stateCode: patient.state_code,
+      postalCode: patient.postal_code,
+      country: patient.country,
+    },
+
+    provider: {
+      fullName: providerProfile.full_name,
+      npi: provider.npi,
+      licenseNumber: provider.license_number,
+      licenseState: provider.license_states?.[0] ?? null,
+      dea: provider.dea,
+      email: providerProfile.email,
+    },
+
+    prescription: {
+      medicineName: prescription.medicine_name,
+      alternateNames: [liveMedicine?.name, liveVariant?.name],
+      directions: prescription.directions,
+      medicineId: prescription.medicine_id,
+    },
+  });
+
+  /*
+   * Life File's API response wraps the result in `data`.
+   * The OpenAPI document leaves `data` as an open object, so we accept a
+   * primitive id or the common nested property names.
+   */
+  const responseData = lifeFileResponse?.data;
+  lifeFileOrderId =
+    typeof responseData === "string" || typeof responseData === "number"
+      ? responseData
+      : (responseData?.orderId ??
+        responseData?.orderID ??
+        responseData?.id ??
+        responseData?.order?.id ??
+        null);
+
+  console.log("[Life File] Created order:", {
+    requestId: req.id,
+    lifeFileOrderId,
+    response: lifeFileResponse,
+  });
+
+  if (!lifeFileOrderId) {
+    throw new Error(
+      "Life File accepted the request, but no Order ID was found in the response. Check the server console for the full response.",
+    );
+  }
+}
+
+    const update: {
+      status: string;
+      updated_at: string;
+      tracking_number?: string | null;
+    } = {
       status: data.status,
       updated_at: new Date().toISOString(),
     };
-    if (data.trackingNumber !== undefined) update.tracking_number = data.trackingNumber || null;
+
+    if (data.trackingNumber !== undefined) {
+      update.tracking_number = data.trackingNumber || null;
+    }
 
     const { error } = await supabaseAdmin
       .from("medication_requests")
       .update(update)
       .eq("id", req.id);
+
     if (error) throw new Error(error.message);
 
     await logEvent(
@@ -927,7 +1081,12 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
       data.status,
       role,
       context.userId,
-      data.note?.trim() || (data.trackingNumber ? `Tracking: ${data.trackingNumber}` : null),
+      data.note?.trim() ||
+        (lifeFileOrderId != null
+          ? `Life File order ID: ${lifeFileOrderId}`
+          : data.trackingNumber
+            ? `Tracking: ${data.trackingNumber}`
+            : null),
     );
 
     const tracking =
@@ -945,21 +1104,25 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
             : null;
 
     if (statusTemplate) {
-      const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
-      void notifyPatientRequestEvent({
+      const { notifyPatientRequestEvent } = await import(
+        "@/lib/email.notifications"
+      );
+
+      await notifyPatientRequestEvent({
         supabaseAdmin,
         request: { ...req, tracking_number: tracking },
         template: statusTemplate,
-        extraParams: { TRACKING_NUMBER: tracking ?? "" },
+        extraParams: {
+          TRACKING_NUMBER: tracking ?? "",
+        },
       });
     }
 
-    return { ok: true };
+    return {
+  ok: true,
+  lifeFileOrderId,
+};
   });
-
-// ---------------------------------------------------------------------------
-// Clinical notes (internal): visible to admins and to the assigned practitioner.
-// ---------------------------------------------------------------------------
 
 export const listRequestNotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

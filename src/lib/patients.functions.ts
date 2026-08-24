@@ -152,7 +152,12 @@ const profileUpdate = z.object({
   apartment: z.string().trim().max(60).nullable().optional(),
   city: z.string().trim().max(120).nullable().optional(),
   state_code: z.string().trim().max(2).nullable().optional(),
-  postal_code: z.string().trim().max(20).nullable().optional(),
+  postal_code: z
+    .string()
+    .trim()
+    .nullable()
+    .optional()
+    .transform((v) => (v ? v.replace(/\D/g, "").slice(0, 6) : v)),
   country: z.string().trim().max(120).nullable().optional(),
 });
 
