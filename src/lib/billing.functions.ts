@@ -250,7 +250,7 @@ export const approveRefund = createServerFn({ method: "POST" })
     await supabaseAdmin.from("payments").update({ status: "refunded" }).eq("id", payment.id);
 
     const { notifyUserById } = await import("@/lib/email.notifications");
-    void notifyUserById({
+    await notifyUserById({
       supabaseAdmin,
       userId: req.user_id,
       template: "patient_refund_approved",
@@ -295,7 +295,7 @@ export const rejectRefund = createServerFn({ method: "POST" })
     if (updateError) throw new Error(updateError.message);
 
     const { notifyUserById } = await import("@/lib/email.notifications");
-    void notifyUserById({
+    await notifyUserById({
       supabaseAdmin,
       userId: req.user_id,
       template: "patient_refund_rejected",

@@ -6,7 +6,7 @@ export const REQUEST_STATUS_LABELS: Record<string, string> = {
   provider_assigned: "Practitioner assigned",
   pending_review: "Under review",
   awaiting_additional_payment: "Additional payment required",
-  approved: "Approved",
+  approved: "Ready to prescribe",
   prescribed: "Prescription generated",
   sent_to_pharmacy: "Sent to pharmacy",
   dispatched: "Dispatched",

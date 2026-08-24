@@ -155,12 +155,19 @@ export function RequestReviewPanel({
       status: "sent_to_pharmacy" | "dispatched" | "delivered";
       trackingNumber?: string;
     }) => advance({ data: { requestId, ...vars } }),
-    onSuccess: () => {
-      toast.success("Status updated.");
-      setTrackOpen(false);
-      setTracking("");
-      refresh();
-    },
+    onSuccess: (result) => {
+  if (result.lifeFileOrderId) {
+    toast.success(
+      `Life File order created: ${result.lifeFileOrderId}`,
+    );
+  } else {
+    toast.success("Status updated.");
+  }
+
+  setTrackOpen(false);
+  setTracking("");
+  refresh();
+},
     onError: (e: Error) => toast.error(toastError(e)),
   });
 
@@ -204,6 +211,10 @@ export function RequestReviewPanel({
   const canChange = ["pending_review", "approved", "awaiting_additional_payment"].includes(status);
   const canGenerate = status === "approved";
   const nextStep = nextFulfillmentStep(status);
+  const lifeFileOrderId = (events as { note?: string | null }[])
+    .map((ev) => ev.note)
+    .find((note) => typeof note === "string" && note.startsWith("Life File order ID:"))
+    ?.replace("Life File order ID: ", "");
 
   return (
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
@@ -257,6 +268,7 @@ export function RequestReviewPanel({
             {request.tracking_number ? (
               <Row label="Tracking #" value={request.tracking_number} />
             ) : null}
+            {lifeFileOrderId ? <Row label="Life File order ID" value={lifeFileOrderId} /> : null}
           </div>
 
           {canManage ? (

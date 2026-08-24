@@ -53,9 +53,21 @@ function orderShort(params: EmailParams): string {
 function cta(url: string, label: string): { html: string; text: string } {
   if (!url) return { html: "", text: "" };
   return {
-    html: `<p style="margin:24px 0 0;"><a href="${escapeHtml(url)}" style="display:inline-block;background:#1F2A37;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(label)}</a></p>`,
+    html: `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;">
+      <tr>
+        <td bgcolor="#E3E084" style="background-color:#E3E084;background:#E3E084;border-radius:999px;">
+          <a href="${escapeHtml(url)}" style="display:inline-block;background-color:#E3E084;background:#E3E084;color:#152A51;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;font-size:14px;line-height:1.2;">${escapeHtml(label)}</a>
+        </td>
+      </tr>
+    </table>`,
     text: `\n${label}: ${url}\n`,
   };
+}
+
+function noteBox(html: string, variant: "mist" | "clay" = "mist"): string {
+  const bg = variant === "clay" ? "#FBF1EC" : "#F3F6F6";
+  const border = variant === "clay" ? "#E8D48A" : "#E8EEED";
+  return `<p style="margin-top:16px;padding:14px 16px;background:${bg};border:1px solid ${border};border-radius:12px;color:#445575;">${html}</p>`;
 }
 
 function layout(opts: {
@@ -65,30 +77,42 @@ function layout(opts: {
   bodyText: string;
 }): RenderedEmail {
   const brand = "Body Inc";
+  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
   <title>${escapeHtml(opts.title)}</title>
 </head>
-<body style="margin:0;padding:0;background:#F4F6F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1F2A37;">
+<body bgcolor="#F3F6F6" style="margin:0;padding:0;background-color:#F3F6F6;background:#F3F6F6;font-family:${font};color:#152A51;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.preheader)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6F8;padding:32px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F3F6F6" style="background-color:#F3F6F6;background:#F3F6F6;padding:32px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E9EF;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:560px;background-color:#ffffff;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #E8EEED;">
           <tr>
-            <td style="padding:24px 28px 8px;font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6B7785;">${escapeHtml(brand)}</td>
+            <td bgcolor="#152A51" style="background-color:#152A51;background:#152A51;padding:20px 28px;">
+              <span style="font-size:16px;font-weight:600;letter-spacing:-0.3px;color:#ffffff;">${escapeHtml(brand)}</span>
+            </td>
           </tr>
           <tr>
-            <td style="padding:8px 28px 0;font-size:22px;font-weight:700;line-height:1.3;color:#1F2A37;">${escapeHtml(opts.title)}</td>
+            <td bgcolor="#6A9B9C" style="height:4px;line-height:4px;font-size:0;background-color:#6A9B9C;background:#6A9B9C;">&nbsp;</td>
           </tr>
           <tr>
-            <td style="padding:16px 28px 28px;font-size:15px;line-height:1.55;color:#3B4759;">${opts.bodyHtml}</td>
+            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:28px 28px 8px;font-size:22px;font-weight:500;letter-spacing:-0.4px;line-height:1.3;color:#152A51;">${escapeHtml(opts.title)}</td>
+          </tr>
+          <tr>
+            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:0 28px 28px;font-size:14px;line-height:1.65;color:#445575;">${opts.bodyHtml}</td>
+          </tr>
+          <tr>
+            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:16px 28px 24px;border-top:1px solid #E8EEED;font-size:12px;line-height:1.5;color:#8A94A8;">
+              This email was sent by ${escapeHtml(brand)}. If you have questions, reply to this email or contact support.
+            </td>
           </tr>
         </table>
-        <p style="margin:16px 0 0;font-size:12px;color:#8A96A3;">${escapeHtml(brand)} · Care notifications</p>
       </td>
     </tr>
   </table>
@@ -125,7 +149,7 @@ const builders: Record<EmailTemplateKey, Builder> = {
       title: "Consultation approved",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
         <p>Good news — your consultation for <strong>${escapeHtml(med)}</strong> has been approved.</p>
-        ${note ? `<p style="margin-top:12px;padding:12px;background:#F4F6F8;border-radius:8px;"><strong>Note:</strong> ${escapeHtml(note)}</p>` : ""}
+        ${note ? noteBox(`<strong>Note:</strong> ${escapeHtml(note)}`) : ""}
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\nYour consultation for ${med} has been approved.${note ? `\nNote: ${note}` : ""}${link.text}`,
     });
@@ -140,7 +164,7 @@ const builders: Record<EmailTemplateKey, Builder> = {
       title: "Order not approved",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
         <p>Your order for <strong>${escapeHtml(med)}</strong> was not approved. Any payment for this order is being refunded.</p>
-        ${note ? `<p style="margin-top:12px;padding:12px;background:#F4F6F8;border-radius:8px;"><strong>Reason:</strong> ${escapeHtml(note)}</p>` : ""}
+        ${note ? noteBox(`<strong>Reason:</strong> ${escapeHtml(note)}`, "clay") : ""}
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\nYour order for ${med} was not approved. Any payment for this order is being refunded.${note ? `\nReason: ${note}` : ""}${link.text}`,
     });
@@ -248,7 +272,7 @@ const builders: Record<EmailTemplateKey, Builder> = {
       title: "Refund request update",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
         <p>Your refund request for <strong>$${escapeHtml(amount)}</strong> was not approved.</p>
-        ${note ? `<p style="margin-top:12px;padding:12px;background:#F4F6F8;border-radius:8px;"><strong>Reason:</strong> ${escapeHtml(note)}</p>` : ""}
+        ${note ? noteBox(`<strong>Reason:</strong> ${escapeHtml(note)}`, "clay") : ""}
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\nYour refund request for $${amount} was not approved.${note ? `\nReason: ${note}` : ""}${link.text}`,
     });

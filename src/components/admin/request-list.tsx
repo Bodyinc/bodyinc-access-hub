@@ -31,7 +31,7 @@ const STATUS_FILTERS = [
   { value: "all", label: "All" },
   { value: "pending_review", label: "Under review" },
   { value: "awaiting_additional_payment", label: "Awaiting payment" },
-  { value: "approved", label: "Approved" },
+  { value: "approved", label: "Ready to prescribe" },
   { value: "prescribed", label: "Prescribed" },
   { value: "dispatched", label: "Dispatched" },
   { value: "delivered", label: "Delivered" },

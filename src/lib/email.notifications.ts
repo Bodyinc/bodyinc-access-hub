@@ -45,16 +45,16 @@ type NotifyOpts = {
   params?: Record<string, string | number | boolean | null | undefined>;
 };
 
-/** Resolve contact + queue email. Never throws. */
-export async function notifyUserById(opts: NotifyOpts): Promise<void> {
+/** Resolve contact + send email. Never throws. Returns whether Brevo accepted the message. */
+export async function notifyUserById(opts: NotifyOpts): Promise<boolean> {
   try {
     const contact = await resolveProfileContact(opts.supabaseAdmin, opts.userId);
     if (!contact) {
       console.warn(`[email] no contact for user ${opts.userId}; skip ${opts.template}`);
-      return;
+      return false;
     }
-    const { queueTransactionalEmail } = await import("@/integrations/brevo/client.server");
-    queueTransactionalEmail({
+    const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+    const result = await sendTransactionalEmail({
       to: { email: contact.email, name: contact.name },
       template: opts.template,
       params: {
@@ -63,8 +63,54 @@ export async function notifyUserById(opts: NotifyOpts): Promise<void> {
         ...opts.params,
       },
     });
+    if (!result.ok) {
+      if (result.skipped) {
+        console.warn(`[brevo] skipped ${opts.template}: ${result.reason}`);
+      } else {
+        console.error(`[brevo] ${opts.template} failed: ${result.error}`);
+      }
+      return false;
+    }
+    return true;
   } catch (e) {
     console.error(`[email] notifyUserById ${opts.template} failed:`, e);
+    return false;
+  }
+}
+
+const PATIENT_TEMPLATE_STATUS: Partial<Record<EmailTemplateKey, string>> = {
+  patient_approved: "approved",
+  patient_rejected: "rejected",
+  patient_additional_payment: "awaiting_additional_payment",
+  patient_prescription_ready: "prescribed",
+  patient_sent_to_pharmacy: "sent_to_pharmacy",
+  patient_shipped: "dispatched",
+  patient_delivered: "delivered",
+};
+
+async function markPatientOrderEmailSent(
+  supabaseAdmin: any,
+  requestId: string,
+  template: EmailTemplateKey,
+): Promise<void> {
+  const status = PATIENT_TEMPLATE_STATUS[template];
+  if (!status) return;
+  const { data: ev } = await supabaseAdmin
+    .from("medication_request_events")
+    .select("id")
+    .eq("request_id", requestId)
+    .eq("status", status)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!ev?.id) return;
+  const { error } = await supabaseAdmin.from("email_reminders").insert({
+    reminder_type: "order_status",
+    target_id: ev.id,
+    period_key: "",
+  });
+  if (error && error.code !== "23505") {
+    console.error(`[email] failed to record ${template}/${ev.id}: ${error.message}`);
   }
 }
 
@@ -80,7 +126,7 @@ export async function notifyPatientRequestEvent(opts: {
   extraParams?: Record<string, string | number | boolean | null | undefined>;
 }): Promise<void> {
   const medicineName = await resolveMedicineName(opts.supabaseAdmin, opts.request.medicine_id);
-  await notifyUserById({
+  const sent = await notifyUserById({
     supabaseAdmin: opts.supabaseAdmin,
     userId: opts.request.user_id,
     template: opts.template,
@@ -92,6 +138,9 @@ export async function notifyPatientRequestEvent(opts: {
       ...opts.extraParams,
     },
   });
+  if (sent) {
+    await markPatientOrderEmailSent(opts.supabaseAdmin, opts.request.id, opts.template);
+  }
 }
 
 export async function notifyProviderRequestEvent(opts: {

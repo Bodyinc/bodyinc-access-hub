@@ -35,6 +35,7 @@ import {
   adminBtnPrimary,
   adminBtnSecondary,
 } from "@/lib/admin-ui";
+import { ZIP_CODE_MAX_DIGITS, digitsOnlyZip } from "@/lib/zip";
 
 export type ProviderFormProps = {
   defaultValues?: Partial<ProviderFormValues>;
@@ -304,9 +305,16 @@ export function ProviderForm({
           </Field>
           <Field label="ZIP" error={errors.zip?.message}>
             <Input
-              {...register("zip")}
-              placeholder="e.g. 12345 or 12345-6789"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={ZIP_CODE_MAX_DIGITS}
+              autoComplete="postal-code"
+              placeholder="12345"
               className={inputFull}
+              value={digitsOnlyZip(watch("zip") ?? "")}
+              onChange={(e) =>
+                setValue("zip", digitsOnlyZip(e.target.value), { shouldValidate: true })
+              }
             />
           </Field>
           <Field label="Country">

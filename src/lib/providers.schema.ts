@@ -104,7 +104,8 @@ export const providerFormSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(""))
-    .refine((v) => !v || /^\d{5}(-\d{4})?$/.test(v), "ZIP must be 5 or 9 digits")
+    .transform((v) => (v ? v.replace(/\D/g, "").slice(0, 6) : v))
+    .refine((v) => !v || /^\d{1,6}$/.test(v), "ZIP must be up to 6 digits")
     .transform((v) => (v ? v : undefined)),
   country: z.string().trim().default("US"),
 
