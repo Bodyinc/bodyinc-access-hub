@@ -28,29 +28,67 @@ export type SendTransactionalEmailResult =
   | { ok: false; skipped: true; reason: string }
   | { ok: false; skipped: false; error: string };
 
-function brevoApiKey(): string | null {
-  // Prefer the REST API key; fall back to SMTP key if that's what was configured.
-  return process.env.BREVO_API_KEY?.trim() || process.env.BREVO_SMTP_KEY?.trim() || null;
+function isSmtpKey(value: string): boolean {
+  return value.startsWith("xsmtpsib-");
+}
+
+function brevoApiKey(): { key: string } | { skipped: string } {
+  const candidates = [process.env.BREVO_API_KEY, process.env.BREVO_SMTP_KEY]
+    .map((v) => v?.trim())
+    .filter((v): v is string => Boolean(v));
+  if (candidates.length === 0) {
+    return { skipped: "BREVO_API_KEY not set" };
+  }
+  // SMTP keys 401 the REST API. Prefer a v3 API key (xkeysib-…).
+  const restKey = candidates.find((k) => !isSmtpKey(k));
+  if (!restKey) {
+    return {
+      skipped:
+        "BREVO_API_KEY is an SMTP key (xsmtpsib-). Use a REST API key (xkeysib-) from Brevo → SMTP & API → API keys.",
+    };
+  }
+  return { key: restKey };
+}
+
+function parseFromAddress(from: string): { email: string; name?: string } {
+  const trimmed = from.trim();
+  const match = trimmed.match(/^(?:"([^"]*)"|([^<]*?))\s*<([^>]+)>$/);
+  if (match) {
+    const name = (match[1] ?? match[2] ?? "").trim();
+    const email = match[3].trim();
+    return name ? { email, name } : { email };
+  }
+  return { email: trimmed };
 }
 
 function sender(): { email: string; name?: string } | null {
-  const email = process.env.BREVO_SENDER_EMAIL?.trim();
-  if (!email) return null;
-  const name = process.env.BREVO_SENDER_NAME?.trim();
-  return name ? { email, name } : { email };
+  const dedicated = process.env.BREVO_SENDER_EMAIL?.trim();
+  if (dedicated) {
+    const name = process.env.BREVO_SENDER_NAME?.trim();
+    return name ? { email: dedicated, name } : { email: dedicated };
+  }
+  // Same keys the patient portal already uses (EMAIL_FROM="Body Inc <noreply@...>").
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!from) return null;
+  const parsed = parseFromAddress(from);
+  if (!parsed.email) return null;
+  if (!parsed.name && process.env.BREVO_SENDER_NAME?.trim()) {
+    return { email: parsed.email, name: process.env.BREVO_SENDER_NAME.trim() };
+  }
+  return parsed;
 }
 
 export async function sendTransactionalEmail(
   input: SendTransactionalEmailInput,
 ): Promise<SendTransactionalEmailResult> {
   const apiKey = brevoApiKey();
-  if (!apiKey) {
-    return { ok: false, skipped: true, reason: "BREVO_API_KEY not set" };
+  if ("skipped" in apiKey) {
+    return { ok: false, skipped: true, reason: apiKey.skipped };
   }
 
   const from = sender();
   if (!from) {
-    return { ok: false, skipped: true, reason: "BREVO_SENDER_EMAIL not set" };
+    return { ok: false, skipped: true, reason: "BREVO_SENDER_EMAIL or EMAIL_FROM not set" };
   }
 
   const recipients = (Array.isArray(input.to) ? input.to : [input.to])
@@ -87,7 +125,7 @@ export async function sendTransactionalEmail(
       headers: {
         accept: "application/json",
         "content-type": "application/json",
-        "api-key": apiKey,
+        "api-key": apiKey.key,
       },
       body: JSON.stringify(body),
     });

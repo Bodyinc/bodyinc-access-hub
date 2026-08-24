@@ -250,7 +250,7 @@ export const approveRefund = createServerFn({ method: "POST" })
     await supabaseAdmin.from("payments").update({ status: "refunded" }).eq("id", payment.id);
 
     const { notifyUserById } = await import("@/lib/email.notifications");
-    await notifyUserById({
+    const email_sent = await notifyUserById({
       supabaseAdmin,
       userId: req.user_id,
       template: "patient_refund_approved",
@@ -262,7 +262,7 @@ export const approveRefund = createServerFn({ method: "POST" })
       },
     });
 
-    return { ok: true, stripe_refund_id: refund.id };
+    return { ok: true, stripe_refund_id: refund.id, email_sent };
   });
 
 export const rejectRefund = createServerFn({ method: "POST" })
@@ -295,7 +295,7 @@ export const rejectRefund = createServerFn({ method: "POST" })
     if (updateError) throw new Error(updateError.message);
 
     const { notifyUserById } = await import("@/lib/email.notifications");
-    await notifyUserById({
+    const email_sent = await notifyUserById({
       supabaseAdmin,
       userId: req.user_id,
       template: "patient_refund_rejected",
@@ -307,7 +307,7 @@ export const rejectRefund = createServerFn({ method: "POST" })
       },
     });
 
-    return { ok: true };
+    return { ok: true, email_sent };
   });
 
 // ---------------------------------------------------------------------------
@@ -335,9 +335,7 @@ export const listRefundHistory = createServerFn({ method: "POST" })
 
     const from = (data.page - 1) * data.limit;
 
-    const since = data.days
-      ? new Date(Date.now() - data.days * 86400000).toISOString()
-      : null;
+    const since = data.days ? new Date(Date.now() - data.days * 86400000).toISOString() : null;
     const range = data.search ? uuidPrefixRange(data.search) : null;
     const idMatchOnly = Boolean(range);
 
@@ -387,9 +385,7 @@ export const listRefundHistory = createServerFn({ method: "POST" })
       ),
     );
     const payIds = Array.from(
-      new Set(
-        [...requests, ...direct].map((r: any) => r.payment_id).filter(Boolean) as string[],
-      ),
+      new Set([...requests, ...direct].map((r: any) => r.payment_id).filter(Boolean) as string[]),
     );
 
     const [{ data: profiles }, { data: payments }] = await Promise.all([
