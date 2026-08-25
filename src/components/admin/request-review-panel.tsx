@@ -1,5 +1,5 @@
 import { sentenceCase } from "@/lib/text-normalize";
-import { toastError } from "@/lib/toast-message";
+import { toastError, toastActionWithEmail } from "@/lib/toast-message";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -120,8 +120,8 @@ export function RequestReviewPanel({
 
   const approveMut = useMutation({
     mutationFn: () => approve({ data: { requestId } }),
-    onSuccess: () => {
-      toast.success("Order approved.");
+    onSuccess: (res) => {
+      toastActionWithEmail("Order approved.", res?.email_sent);
       refresh();
     },
     onError: (e: Error) => toast.error(toastError(e)),
@@ -129,8 +129,8 @@ export function RequestReviewPanel({
 
   const rejectMut = useMutation({
     mutationFn: () => reject({ data: { requestId, note: sentenceCase(rejectNote) || undefined } }),
-    onSuccess: () => {
-      toast.success("Order rejected and refunded.");
+    onSuccess: (res) => {
+      toastActionWithEmail("Order rejected and refunded.", res?.email_sent);
       setRejectOpen(false);
       setRejectNote("");
       refresh();
@@ -141,8 +141,8 @@ export function RequestReviewPanel({
   const generateMut = useMutation({
     mutationFn: () =>
       generate({ data: { requestId, directions: sentenceCase(directions) || undefined } }),
-    onSuccess: () => {
-      toast.success("Prescription generated.");
+    onSuccess: (res) => {
+      toastActionWithEmail("Prescription generated.", res?.email_sent);
       setRxOpen(false);
       setDirections("");
       refresh();
@@ -156,18 +156,15 @@ export function RequestReviewPanel({
       trackingNumber?: string;
     }) => advance({ data: { requestId, ...vars } }),
     onSuccess: (result) => {
-  if (result.lifeFileOrderId) {
-    toast.success(
-      `Life File order created: ${result.lifeFileOrderId}`,
-    );
-  } else {
-    toast.success("Status updated.");
-  }
+      const ok = result.lifeFileOrderId
+        ? `Life File order created: ${result.lifeFileOrderId}`
+        : "Status updated.";
+      toastActionWithEmail(ok, result.email_sent);
 
-  setTrackOpen(false);
-  setTracking("");
-  refresh();
-},
+      setTrackOpen(false);
+      setTracking("");
+      refresh();
+    },
     onError: (e: Error) => toast.error(toastError(e)),
   });
 

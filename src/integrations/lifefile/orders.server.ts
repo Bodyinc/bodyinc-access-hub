@@ -1,4 +1,4 @@
-import { lifeFileRequest, PRACTICE_ID } from "./client.server";
+import { getPracticeId, lifeFileRequest } from "./client.server";
 
 type LifeFileResponse = {
   type?: "success" | "error";
@@ -208,7 +208,7 @@ export async function createLifeFileSandboxOrder(
       },
 
       practice: {
-        id: PRACTICE_ID,
+        id: getPracticeId(),
       },
 
       patient: {

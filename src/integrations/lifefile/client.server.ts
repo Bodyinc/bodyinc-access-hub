@@ -1,23 +1,40 @@
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
+function readEnv(name: string): string {
+  // Bracket access so Vite does not replace this with `undefined` at bundle time.
+  const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(`${name} is not configured.`);
   }
-
   return value;
 }
 
-const BASE_URL = requireEnv("LIFE_FILE_API_BASE_URL");
-const API_USERNAME = requireEnv("LIFE_FILE_API_USERNAME");
-const API_PASSWORD = requireEnv("LIFE_FILE_API_PASSWORD");
-const VENDOR_ID = requireEnv("LIFE_FILE_VENDOR_ID");
-const LOCATION_ID = requireEnv("LIFE_FILE_LOCATION_ID");
-const API_NETWORK_ID = requireEnv("LIFE_FILE_API_NETWORK_ID");
-export const PRACTICE_ID = Number(requireEnv("LIFE_FILE_PRACTICE_ID"));
+type LifeFileConfig = {
+  baseUrl: string;
+  apiUsername: string;
+  apiPassword: string;
+  vendorId: string;
+  locationId: string;
+  apiNetworkId: string;
+  practiceId: number;
+};
 
-if (!Number.isFinite(PRACTICE_ID) || PRACTICE_ID <= 0) {
-  throw new Error("LIFE_FILE_PRACTICE_ID must be a positive number.");
+function getLifeFileConfig(): LifeFileConfig {
+  const practiceId = Number(readEnv("LIFE_FILE_PRACTICE_ID"));
+  if (!Number.isFinite(practiceId) || practiceId <= 0) {
+    throw new Error("LIFE_FILE_PRACTICE_ID must be a positive number.");
+  }
+  return {
+    baseUrl: readEnv("LIFE_FILE_API_BASE_URL"),
+    apiUsername: readEnv("LIFE_FILE_API_USERNAME"),
+    apiPassword: readEnv("LIFE_FILE_API_PASSWORD"),
+    vendorId: readEnv("LIFE_FILE_VENDOR_ID"),
+    locationId: readEnv("LIFE_FILE_LOCATION_ID"),
+    apiNetworkId: readEnv("LIFE_FILE_API_NETWORK_ID"),
+    practiceId,
+  };
+}
+
+export function getPracticeId(): number {
+  return getLifeFileConfig().practiceId;
 }
 
 export async function lifeFileRequest<T>(
@@ -27,17 +44,16 @@ export async function lifeFileRequest<T>(
     body?: unknown;
   } = {},
 ): Promise<T> {
-  const url = `${BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const config = getLifeFileConfig();
+  const url = `${config.baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
-  const auth = Buffer.from(
-    `${API_USERNAME}:${API_PASSWORD}`,
-  ).toString("base64");
+  const auth = Buffer.from(`${config.apiUsername}:${config.apiPassword}`).toString("base64");
 
   console.log("[Life File] HTTP request", {
     method: options.method ?? "GET",
     url,
-    username: API_USERNAME,
-    passwordLength: API_PASSWORD.length,
+    username: config.apiUsername,
+    passwordLength: config.apiPassword.length,
   });
 
   let response: Response;
@@ -48,14 +64,11 @@ export async function lifeFileRequest<T>(
         Authorization: `Basic ${auth}`,
         Accept: "application/json",
         "Content-Type": "application/json",
-        "X-Vendor-ID": VENDOR_ID,
-        "X-Location-ID": LOCATION_ID,
-        "X-API-Network-ID": API_NETWORK_ID,
+        "X-Vendor-ID": config.vendorId,
+        "X-Location-ID": config.locationId,
+        "X-API-Network-ID": config.apiNetworkId,
       },
-      body:
-        options.body === undefined
-          ? undefined
-          : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch (error) {
     const cause =
@@ -82,16 +95,12 @@ export async function lifeFileRequest<T>(
 
   if (!response.ok) {
     throw new Error(
-      `Life File API error ${response.status}: ${
-        payload?.message ?? text ?? "Unknown error"
-      }`,
+      `Life File API error ${response.status}: ${payload?.message ?? text ?? "Unknown error"}`,
     );
   }
 
   if (payload?.type === "error") {
-    throw new Error(
-      payload.message ?? "Life File returned an error.",
-    );
+    throw new Error(payload.message ?? "Life File returned an error.");
   }
 
   return payload as T;

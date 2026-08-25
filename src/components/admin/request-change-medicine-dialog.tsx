@@ -1,5 +1,5 @@
 import { sentenceCase } from "@/lib/text-normalize";
-import { toastError } from "@/lib/toast-message";
+import { toastError, toastActionWithEmail } from "@/lib/toast-message";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -183,10 +183,11 @@ export function RequestChangeMedicineDialog({
         },
       }),
     onSuccess: (res: any) => {
-      toast.success(
+      toastActionWithEmail(
         res?.status === "awaiting_additional_payment"
-          ? "Order updated. The patient has been sent a payment request for the difference."
+          ? "Order updated. Additional payment is required for the difference."
           : "Order updated and approved.",
+        res?.email_sent,
       );
       onChanged();
       onOpenChange(false);

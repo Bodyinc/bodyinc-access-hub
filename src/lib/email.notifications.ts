@@ -88,13 +88,13 @@ const PATIENT_TEMPLATE_STATUS: Partial<Record<EmailTemplateKey, string>> = {
   patient_delivered: "delivered",
 };
 
-async function markPatientOrderEmailSent(
+async function latestEventId(
   supabaseAdmin: any,
   requestId: string,
   template: EmailTemplateKey,
-): Promise<void> {
+): Promise<string | null> {
   const status = PATIENT_TEMPLATE_STATUS[template];
-  if (!status) return;
+  if (!status) return null;
   const { data: ev } = await supabaseAdmin
     .from("medication_request_events")
     .select("id")
@@ -103,14 +103,40 @@ async function markPatientOrderEmailSent(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!ev?.id) return;
+  return ev?.id ?? null;
+}
+
+async function patientOrderEmailAlreadySent(
+  supabaseAdmin: any,
+  requestId: string,
+  template: EmailTemplateKey,
+): Promise<boolean> {
+  const eventId = await latestEventId(supabaseAdmin, requestId, template);
+  if (!eventId) return false;
+  const { data } = await supabaseAdmin
+    .from("email_reminders")
+    .select("target_id")
+    .eq("reminder_type", "order_status")
+    .eq("target_id", eventId)
+    .eq("period_key", "")
+    .maybeSingle();
+  return Boolean(data);
+}
+
+async function markPatientOrderEmailSent(
+  supabaseAdmin: any,
+  requestId: string,
+  template: EmailTemplateKey,
+): Promise<void> {
+  const eventId = await latestEventId(supabaseAdmin, requestId, template);
+  if (!eventId) return;
   const { error } = await supabaseAdmin.from("email_reminders").insert({
     reminder_type: "order_status",
-    target_id: ev.id,
+    target_id: eventId,
     period_key: "",
   });
   if (error && error.code !== "23505") {
-    console.error(`[email] failed to record ${template}/${ev.id}: ${error.message}`);
+    console.error(`[email] failed to record ${template}/${eventId}: ${error.message}`);
   }
 }
 
@@ -124,7 +150,11 @@ export async function notifyPatientRequestEvent(opts: {
   };
   template: EmailTemplateKey;
   extraParams?: Record<string, string | number | boolean | null | undefined>;
-}): Promise<void> {
+}): Promise<boolean> {
+  if (await patientOrderEmailAlreadySent(opts.supabaseAdmin, opts.request.id, opts.template)) {
+    return true;
+  }
+
   const medicineName = await resolveMedicineName(opts.supabaseAdmin, opts.request.medicine_id);
   const sent = await notifyUserById({
     supabaseAdmin: opts.supabaseAdmin,
@@ -140,7 +170,10 @@ export async function notifyPatientRequestEvent(opts: {
   });
   if (sent) {
     await markPatientOrderEmailSent(opts.supabaseAdmin, opts.request.id, opts.template);
+    return true;
   }
+  // Patient portal may already have delivered this status email even if admin Brevo failed.
+  return patientOrderEmailAlreadySent(opts.supabaseAdmin, opts.request.id, opts.template);
 }
 
 export async function notifyProviderRequestEvent(opts: {
