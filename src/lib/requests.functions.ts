@@ -974,20 +974,31 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
       }
 
       const medicineId = prescription.medicine_id ?? req.medicine_id;
-      const variantId =
-        (prescription as { variant_id?: string | null }).variant_id ?? req.variant_id;
-      const [{ data: liveMedicine }, { data: liveVariant }] = await Promise.all([
-        medicineId
-          ? supabaseAdmin.from("medicines").select("name").eq("id", medicineId).maybeSingle()
-          : Promise.resolve({ data: null }),
-        variantId
-          ? supabaseAdmin.from("medicine_variants").select("name").eq("id", variantId).maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
+      const { data: liveMedicine } = medicineId
+        ? await supabaseAdmin
+            .from("medicines")
+            .select("name, lf_product_id")
+            .eq("id", medicineId)
+            .maybeSingle()
+        : { data: null };
 
-      const { createLifeFileSandboxOrder } = await import("@/integrations/lifefile/orders.server");
+      const lfProductIdRaw = liveMedicine?.lf_product_id;
+      const lfProductID =
+        typeof lfProductIdRaw === "number"
+          ? lfProductIdRaw
+          : lfProductIdRaw != null && lfProductIdRaw !== ""
+            ? Number(lfProductIdRaw)
+            : NaN;
 
-      const lifeFileResponse = await createLifeFileSandboxOrder({
+      if (!Number.isInteger(lfProductID) || lfProductID <= 0) {
+        throw new Error(
+          `This medicine has no Life File product ID. Add it on the medicine in Admin → Medicines before sending to pharmacy.`,
+        );
+      }
+
+      const { createLifeFileOrder } = await import("@/integrations/lifefile/orders.server");
+
+      const lifeFileResponse = await createLifeFileOrder({
         requestId: req.id,
 
         patient: {
@@ -1014,10 +1025,9 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
         },
 
         prescription: {
-          medicineName: prescription.medicine_name,
-          alternateNames: [liveMedicine?.name, liveVariant?.name],
+          medicineName: liveMedicine?.name || prescription.medicine_name,
           directions: prescription.directions,
-          medicineId: prescription.medicine_id,
+          lfProductID,
         },
       });
 

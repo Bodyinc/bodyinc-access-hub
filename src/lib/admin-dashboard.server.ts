@@ -40,7 +40,7 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
   const startISO = new Date(now.getTime() - days * 86400000).toISOString();
   const prevStartISO = new Date(now.getTime() - days * 2 * 86400000).toISOString();
 
-  const [paymentsRes, profilesRes, requestsRes, subsRes, refundsRes, sessionsRes, activityRes] =
+  const [paymentsRes, profilesRes, patientRolesRes, requestsRes, subsRes, sessionsRes, activityRes] =
     await Promise.all([
       supabaseAdmin
         .from("payments")
@@ -49,16 +49,16 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
         .limit(5000),
       supabaseAdmin
         .from("profiles")
-        .select("created_at")
+        .select("id, created_at")
         .gte("created_at", prevStartISO)
         .limit(5000),
+      supabaseAdmin.from("user_roles").select("user_id").eq("role", "patient").limit(5000),
       supabaseAdmin
         .from("medication_requests")
         .select("id, status, provider_id, medicine_id, user_id, session_id, created_at")
         .order("created_at", { ascending: false })
         .limit(2000),
       supabaseAdmin.from("subscriptions").select("status").limit(5000),
-      supabaseAdmin.from("refund_requests").select("id, status").eq("status", "pending").limit(500),
       supabaseAdmin
         .from("intake_sessions")
         .select("id, status, created_at, expires_at")
@@ -72,7 +72,10 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
     ]);
 
   const payments = (paymentsRes.data ?? []) as Row[];
-  const profiles = (profilesRes.data ?? []) as Row[];
+  const patientIds = new Set(
+    ((patientRolesRes.data ?? []) as Row[]).map((r) => r.user_id as string),
+  );
+  const profiles = ((profilesRes.data ?? []) as Row[]).filter((p) => patientIds.has(p.id));
   const requests = (requestsRes.data ?? []) as Row[];
   const subs = (subsRes.data ?? []) as Row[];
   const sessions = (sessionsRes.data ?? []) as Row[];
@@ -134,7 +137,6 @@ export async function buildAdminDashboard(supabaseAdmin: any, days: number) {
       .length,
     pending_review: requests.filter((r) => r.status === "pending_review").length,
     awaiting_payment: requests.filter((r) => r.status === "awaiting_additional_payment").length,
-    refunds_pending: (refundsRes.data ?? []).length,
     failed_payments: payments.filter((p) => p.status === "failed" && inWindow(p.created_at)).length,
     abandoned_sessions: sessions.filter((s) => s.expires_at < nowISO || s.created_at < startISO)
       .length,

@@ -6,16 +6,7 @@ type LifeFileResponse = {
   data?: any;
 };
 
-type SandboxProduct = {
-  lfProductID: number;
-  drugName: string;
-  drugStrength: string;
-  drugForm: string;
-  scheduleCode: "2" | "3" | "4" | "5" | "L" | "O";
-  quantityUnits: string;
-};
-
-type LifeFileTestOrderInput = {
+type LifeFileOrderInput = {
   requestId: string;
   patient: {
     fullName: string;
@@ -40,92 +31,10 @@ type LifeFileTestOrderInput = {
   };
   prescription: {
     medicineName: string;
-    alternateNames?: Array<string | null | undefined>;
     directions: string | null;
-    medicineId: string | null;
+    lfProductID: number;
   };
 };
-
-const SANDBOX_PRODUCTS: SandboxProduct[] = [
-  {
-    lfProductID: 305157968,
-    drugName: "Benzocaine, Lidocaine, Tetracaine Susp Dental",
-    drugStrength: "10%, 10%, 4%.",
-    drugForm: "Paste",
-    scheduleCode: "L",
-    quantityUnits: "grams",
-  },
-  {
-    lfProductID: 305492218,
-    drugName: "Baclofen, Dexamethasone, Flurbiprofen Emulsion",
-    drugStrength: "2.5%,0.5%,5%",
-    drugForm: "Cream",
-    scheduleCode: "L",
-    quantityUnits: "grams",
-  },
-  {
-    lfProductID: 305492220,
-    drugName: "Acarbose1",
-    drugStrength: "50mg",
-    drugForm: "Tablet",
-    scheduleCode: "L",
-    quantityUnits: "each",
-  },
-  {
-    lfProductID: 305492221,
-    drugName: "Acetaminophen",
-    drugStrength: "500mg",
-    drugForm: "Tablet",
-    scheduleCode: "O",
-    quantityUnits: "each",
-  },
-  {
-    lfProductID: 305492222,
-    drugName: "Acyclovir",
-    drugStrength: "5%",
-    drugForm: "Ointment",
-    scheduleCode: "L",
-    quantityUnits: "Grams",
-  },
-];
-
-/** Strip copy/paste punctuation and invisible characters from admin medicine names. */
-function catalogKey(value: string): string {
-  return value
-    .normalize("NFKC")
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function resolveSandboxProduct(
-  ...candidates: Array<string | null | undefined>
-): SandboxProduct | null {
-  const needles = candidates
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-    .map(catalogKey)
-    .filter(Boolean);
-
-  const ranked = [...SANDBOX_PRODUCTS].sort(
-    (a, b) => catalogKey(b.drugName).length - catalogKey(a.drugName).length,
-  );
-
-  for (const needle of needles) {
-    const exact = ranked.find((product) => catalogKey(product.drugName) === needle);
-    if (exact) return exact;
-  }
-
-  for (const needle of needles) {
-    const prefixed = ranked.find((product) => {
-      const key = catalogKey(product.drugName);
-      return needle.startsWith(`${key} `);
-    });
-    if (prefixed) return prefixed;
-  }
-
-  return null;
-}
 
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/);
@@ -160,9 +69,7 @@ function withTestDirections(existing: string | null): string {
   return `${current} ${TEST_DIRECTIONS_MARKER}`;
 }
 
-export async function createLifeFileSandboxOrder(
-  input: LifeFileTestOrderInput,
-) {
+export async function createLifeFileOrder(input: LifeFileOrderInput) {
   if (!input.patient.dob) {
     throw new Error("Patient date of birth is required for Life File.");
   }
@@ -173,17 +80,7 @@ export async function createLifeFileSandboxOrder(
 
   const patientName = splitName(input.patient.fullName);
   const providerName = splitName(input.provider.fullName);
-
-  const product = resolveSandboxProduct(
-    input.prescription.medicineName,
-    ...(input.prescription.alternateNames ?? []),
-  );
-
-  if (!product) {
-    throw new Error(
-      `No Life File sandbox product mapping exists for "${input.prescription.medicineName}". Use one of the sandbox product names from Life File.`,
-    );
-  }
+  const product = input.prescription;
 
   const payload = {
     message: {
@@ -244,13 +141,9 @@ export async function createLifeFileSandboxOrder(
       rxs: [
         {
           rxType: "new",
-          drugName: product.drugName,
-          drugStrength: product.drugStrength,
-          drugForm: product.drugForm,
+          drugName: product.medicineName,
           lfProductID: product.lfProductID,
-          directions: withTestDirections(input.prescription.directions),
-          quantityUnits: product.quantityUnits,
-          scheduleCode: product.scheduleCode,
+          directions: withTestDirections(product.directions),
           uuid: crypto.randomUUID(),
         },
       ],
@@ -259,7 +152,7 @@ export async function createLifeFileSandboxOrder(
 
   console.log("[Life File] Sending order:", {
     requestId: input.requestId,
-    medicine: product.drugName,
+    medicine: product.medicineName,
     lfProductID: product.lfProductID,
   });
 

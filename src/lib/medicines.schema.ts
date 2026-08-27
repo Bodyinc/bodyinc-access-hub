@@ -148,6 +148,14 @@ export const medicineFormSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform((v) => (v ? sentenceCase(v) : undefined)),
+  lf_product_id: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .refine((v) => !v || /^\d{1,18}$/.test(v), {
+      message: "Enter a valid Life File product ID",
+    }),
   sort_order: z.coerce.number().int().min(0).default(0),
   requires_questionnaire: z.boolean().default(false),
   requires_consultation: z.boolean().default(false),

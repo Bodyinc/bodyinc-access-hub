@@ -67,6 +67,7 @@ const EMPTY: MedicineFormValues = {
   status: "draft",
   important_info: [],
   notice_text: "",
+  lf_product_id: "",
   sort_order: 0,
   requires_questionnaire: false,
   requires_consultation: false,
@@ -312,6 +313,23 @@ export function MedicineForm({
               </div>
             </div>
           </div>
+        </Card>
+
+        <Card className={`w-full min-w-0 max-w-full p-4 sm:p-6 ${medicineCard}`}>
+          <div className="mb-5 space-y-4 sm:mb-6">
+            <h2 className={medicineCardTitle}>Life File pharmacy</h2>
+            <CardDivider />
+          </div>
+
+          <MedicineField label="Life File product ID" error={errors.lf_product_id?.message}>
+            <Input
+              {...register("lf_product_id")}
+              inputMode="numeric"
+              placeholder="e.g. 305492222"
+              disabled={submitting}
+              className={medicineInput}
+            />
+          </MedicineField>
         </Card>
 
         {/* Categories card */}

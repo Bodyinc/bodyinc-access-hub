@@ -20,7 +20,9 @@ function BillingPage() {
     <div className="admin-page-shell space-y-4 sm:space-y-5 font-['DM_Sans',sans-serif]">
       <div className="min-w-0 space-y-2 sm:space-y-4">
         <h2 className={adminPageTitle}>Billing</h2>
-        <p className={adminPageSubtitle}>Recurring subscriptions and patient refund requests.</p>
+        <p className={adminPageSubtitle}>
+          Recurring subscriptions and admin-issued refunds. Patients cannot submit refund requests.
+        </p>
       </div>
 
       <Tabs defaultValue="subscriptions" className="w-full min-w-0">

@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Download, Eye, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,21 +24,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import { approveRefund, listRefunds, rejectRefund } from "@/lib/billing.functions";
+import { issueAdminRefund, listRefundablePayments } from "@/lib/billing.functions";
 import { adminInput } from "@/lib/admin-ui";
 import { formatDate, formatDollars, normalizeIdSearch } from "@/lib/format";
 
 export function RefundsTable() {
   const [search, setSearch] = useState("");
-  const [rejecting, setRejecting] = useState<any | null>(null);
-  const [note, setNote] = useState("");
+  const [issuing, setIssuing] = useState<any | null>(null);
+  const [reason, setReason] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const qc = useQueryClient();
-  const list = useServerFn(listRefunds);
-  const approve = useServerFn(approveRefund);
-  const reject = useServerFn(rejectRefund);
-  const query = useQuery({ queryKey: ["admin-refunds"], queryFn: () => list({ data: {} }) });
+  const list = useServerFn(listRefundablePayments);
+  const issue = useServerFn(issueAdminRefund);
+  const query = useQuery({
+    queryKey: ["admin-refundable-payments"],
+    queryFn: () => list({ data: {} }),
+  });
 
   const rows = useMemo(() => {
     const all = (query.data as any[]) ?? [];
@@ -50,33 +51,23 @@ export function RefundsTable() {
       (r) =>
         (r.customer_name ?? "").toLowerCase().includes(s) ||
         (r.customer_email ?? "").toLowerCase().includes(s) ||
-        (r.reason ?? "").toLowerCase().includes(s) ||
+        (r.description ?? "").toLowerCase().includes(s) ||
         String(r.id).toLowerCase().replace(/-/g, "").startsWith(idTerm),
     );
   }, [query.data, search]);
 
-  async function onApprove(id: string) {
-    setBusyId(id);
+  async function onIssue() {
+    if (!issuing) return;
+    setBusyId(issuing.id);
     try {
-      await approve({ data: { id } });
-      toast.success("Refund approved and issued via Stripe.");
-      qc.invalidateQueries({ queryKey: ["admin-refunds"] });
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function onReject() {
-    if (!rejecting) return;
-    setBusyId(rejecting.id);
-    try {
-      await reject({ data: { id: rejecting.id, note } });
-      toast.success("Refund request rejected.");
-      setRejecting(null);
-      setNote("");
-      qc.invalidateQueries({ queryKey: ["admin-refunds"] });
+      await issue({
+        data: { paymentId: issuing.id, reason: reason.trim() || undefined },
+      });
+      toast.success("Refund issued via Stripe and recorded in Refund History.");
+      setIssuing(null);
+      setReason("");
+      qc.invalidateQueries({ queryKey: ["admin-refundable-payments"] });
+      qc.invalidateQueries({ queryKey: ["admin-refund-history"] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -86,12 +77,20 @@ export function RefundsTable() {
 
   return (
     <div className="space-y-4">
-      {/* Search and Refresh Bar styled to match Subscriptions */}
+      <p className="text-sm text-[#3B4759]/70">
+        Patients cannot request refunds in the portal. Issue a refund here when appropriate; completed
+        refunds appear in{" "}
+        <Link to="/admin/billing/refund-history" className="font-semibold text-[#3B4759] underline">
+          Refund History
+        </Link>
+        .
+      </p>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative min-w-0 w-full sm:max-w-[390px]">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6A9B9C]/60" />
           <Input
-            placeholder="Search by refund ID, patient, or reason…"
+            placeholder="Search by payment ID, patient, or description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`${adminInput} pl-10`}
@@ -118,19 +117,16 @@ export function RefundsTable() {
                   Patient
                 </TableHead>
                 <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
-                  Amount
+                  Description
                 </TableHead>
                 <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
-                  Reason
+                  Amount
                 </TableHead>
                 <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
                   Invoice
                 </TableHead>
                 <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
-                  Status
-                </TableHead>
-                <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 border-r border-[#D5DEDD]">
-                  Requested
+                  Paid
                 </TableHead>
                 <TableHead className="h-14 text-[#3B4759] font-semibold text-[14px] px-6 text-right">
                   Actions
@@ -141,7 +137,7 @@ export function RefundsTable() {
               {query.isLoading && (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={6}
                     className="py-12 text-center text-[15px] text-[#3B4759]/70"
                   >
                     Loading rows...
@@ -151,10 +147,10 @@ export function RefundsTable() {
               {!query.isLoading && rows.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={6}
                     className="py-12 text-center text-[15px] text-[#3B4759]/70"
                   >
-                    No refund requests.
+                    No refundable payments.
                   </TableCell>
                 </TableRow>
               )}
@@ -171,18 +167,11 @@ export function RefundsTable() {
                       {r.customer_email ?? "—"}
                     </div>
                   </TableCell>
+                  <TableCell className="px-6 py-4 text-[14px] font-medium text-[#3B4759]/80 border-r border-[#D5DEDD]">
+                    {r.description}
+                  </TableCell>
                   <TableCell className="px-6 py-4 text-[14px] font-semibold text-[#3B4759] border-r border-[#D5DEDD]">
                     {formatDollars(r.amount)}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 max-w-[220px] border-r border-[#D5DEDD]">
-                    <span className="text-[14px] font-medium text-[#3B4759]/80">
-                      {r.reason || "—"}
-                    </span>
-                    {r.admin_note ? (
-                      <span className="block text-[12px] font-medium text-[#3B4759]/70 mt-1">
-                        Note: {r.admin_note}
-                      </span>
-                    ) : null}
                   </TableCell>
                   <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
                     <div className="flex items-center gap-2">
@@ -213,49 +202,21 @@ export function RefundsTable() {
                       ) : null}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 border-r border-[#D5DEDD]">
-                    <Badge
-                      className={`rounded-md px-3 py-1 text-[12px] font-bold shadow-none border ${
-                        r.status === "approved"
-                          ? "bg-[#6A9B9C] border-transparent text-white"
-                          : r.status === "rejected"
-                            ? "bg-red-50 border-red-200 text-red-700"
-                            : "bg-[#F2F7F6] border-[#D5DEDD] text-[#3B4759]/70"
-                      }`}
-                    >
-                      {r.status}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="px-6 py-4 text-[14px] font-medium text-[#3B4759]/70 border-r border-[#D5DEDD]">
                     {formatDate(r.created_at)}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right">
-                    {r.status === "pending" ? (
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => onApprove(r.id)}
-                          disabled={busyId === r.id}
-                          className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white font-semibold rounded-lg text-xs"
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setRejecting(r);
-                            setNote("");
-                          }}
-                          disabled={busyId === r.id}
-                          className="border-[#D5DEDD] text-[#3B4759]/70 hover:bg-[#F2F7F6] font-semibold rounded-lg text-xs"
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-xs font-semibold text-[#3B4759]/60">Resolved</span>
-                    )}
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setIssuing(r);
+                        setReason("");
+                      }}
+                      disabled={busyId === r.id}
+                      className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white font-semibold rounded-lg text-xs"
+                    >
+                      Issue refund
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -264,25 +225,22 @@ export function RefundsTable() {
         </div>
       </div>
 
-      {/* Reject Modal styled to match Figma design guidelines */}
-      <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
+      <Dialog open={issuing !== null} onOpenChange={(open) => !open && setIssuing(null)}>
         <DialogContent className="rounded-xl max-w-sm p-6 bg-white border border-[#D5DEDD] shadow-xl">
           <DialogHeader className="space-y-1">
-            <DialogTitle className="text-[18px] font-bold text-[#3B4759]">
-              Reject refund request
-            </DialogTitle>
+            <DialogTitle className="text-[18px] font-bold text-[#3B4759]">Issue refund</DialogTitle>
             <DialogDescription className="text-sm text-[#6A9B9C]/90 leading-relaxed">
-              {rejecting
-                ? `Reject the ${formatDollars(rejecting.amount)} refund for ${
-                    rejecting.customer_email ?? "this patient"
-                  }. The reason is shown to the patient.`
+              {issuing
+                ? `Refund ${formatDollars(issuing.amount)} to ${
+                    issuing.customer_email ?? "this patient"
+                  }. This is recorded in Refund History.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Reason for rejecting (optional)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason for refund (optional)"
             rows={4}
             maxLength={500}
             className="border-[#D5DEDD] bg-[#F8FBFA] text-foreground placeholder:text-[#6A9B9C]/40 rounded-xl focus-visible:ring-[#3B4759] text-[14px] mt-2 resize-none"
@@ -290,19 +248,18 @@ export function RefundsTable() {
           <DialogFooter className="mt-5 gap-2">
             <Button
               variant="outline"
-              onClick={() => setRejecting(null)}
+              onClick={() => setIssuing(null)}
               disabled={busyId !== null}
               className="rounded-lg border border-[#D5DEDD] text-[#6A9B9C] hover:bg-[#F2F7F6]"
             >
               Cancel
             </Button>
             <Button
-              variant="destructive"
-              onClick={onReject}
+              onClick={onIssue}
               disabled={busyId !== null}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-none"
+              className="bg-[#6A9B9C] hover:bg-[#5B8788] text-white rounded-lg shadow-none"
             >
-              {busyId ? "Rejecting…" : "Reject request"}
+              {busyId ? "Issuing…" : "Confirm refund"}
             </Button>
           </DialogFooter>
         </DialogContent>

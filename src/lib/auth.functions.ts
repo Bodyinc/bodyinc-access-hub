@@ -125,16 +125,163 @@ export const signInWithPassword = createServerFn({ method: "POST" })
     return result;
   });
 
+function adminAppUrl(): string {
+  return (process.env.ADMIN_APP_URL || process.env.APP_URL || PORTAL_URLS.admin)
+    .trim()
+    .replace(/\/$/, "");
+}
+
+async function roleForEmail(supabaseAdmin: any, email: string): Promise<string | null> {
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .ilike("email", email.replace(/[%_]/g, ""))
+    .maybeSingle();
+  if (!profile?.id) return null;
+  const { data: roleRow } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", profile.id)
+    .maybeSingle();
+  return (roleRow?.role as string | null) ?? null;
+}
+
+export type RequestPasswordResetResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: "wrong_portal" | "send_failed";
+      message: string;
+      actualRole?: string;
+      redirectUrl?: string;
+    };
+
 export const sendLoginOtp = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => emailSchema.parse(input))
   .handler(async ({ data }): Promise<{ ok: true }> => {
-    const supabase = serverSupabase();
-    // Don't leak whether the account exists. Always return ok.
-    await supabase.auth.signInWithOtp({
-      email: data.email,
-      options: { shouldCreateUser: false },
-    });
+    // Don't leak whether the account exists. Always return ok to the client.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email: data.email,
+      });
+      if (error) {
+        console.error("[auth] sendLoginOtp generateLink failed:", error.message);
+        return { ok: true };
+      }
+
+      const code = linkData?.properties?.email_otp?.trim();
+      if (!code) {
+        console.error("[auth] sendLoginOtp missing email_otp from generateLink");
+        return { ok: true };
+      }
+
+      let fullName: string | null = null;
+      if (linkData.user?.id) {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("full_name")
+          .eq("id", linkData.user.id)
+          .maybeSingle();
+        fullName = (profile as { full_name?: string | null } | null)?.full_name ?? null;
+      }
+
+      const { verificationCodeEmail } = await import("@/lib/email/auth-emails");
+      const { subject, html } = verificationCodeEmail({ code, fullName, purpose: "login" });
+      const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+      const sent = await sendTransactionalEmail({
+        to: { email: data.email, name: fullName },
+        subject,
+        html,
+      });
+      if (!sent.ok) {
+        console.error("[auth] sendLoginOtp email failed:", sent.skipped ? sent.reason : sent.error);
+      }
+    } catch (e) {
+      console.error("[auth] sendLoginOtp failed:", e);
+    }
     return { ok: true };
+  });
+
+export const requestPasswordReset = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => emailSchema.parse(input))
+  .handler(async ({ data }): Promise<RequestPasswordResetResult> => {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const role = await roleForEmail(supabaseAdmin, data.email);
+
+      if (role === "patient" || role === "provider") {
+        const redirectUrl = PORTAL_URLS[role];
+        const label = role === "patient" ? "patient" : role;
+        return {
+          ok: false,
+          error: "wrong_portal",
+          message: redirectUrl
+            ? `This email is registered as a ${label}. Please log in at ${redirectUrl}.`
+            : `This email is registered as a ${label}. Please use the correct portal.`,
+          actualRole: role,
+          redirectUrl,
+        };
+      }
+
+      // Unknown / non-admin: same as the built-in reset — do not reveal the account.
+      if (role !== "admin") return { ok: true };
+
+      const redirectTo = `${adminAppUrl()}/auth/callback?next=/reset-password`;
+      const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: data.email,
+        options: { redirectTo },
+      });
+      const resetUrl = linkData?.properties?.action_link?.trim();
+      if (error || !resetUrl) {
+        console.error("[auth] requestPasswordReset generateLink failed:", error?.message);
+        return {
+          ok: false,
+          error: "send_failed",
+          message: "Could not send a reset link. Please try again.",
+        };
+      }
+
+      let fullName: string | null = null;
+      if (linkData.user?.id) {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("full_name")
+          .eq("id", linkData.user.id)
+          .maybeSingle();
+        fullName = (profile as { full_name?: string | null } | null)?.full_name ?? null;
+      }
+
+      const { passwordResetEmail } = await import("@/lib/email/auth-emails");
+      const { subject, html } = passwordResetEmail({ resetUrl, fullName });
+      const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+      const sent = await sendTransactionalEmail({
+        to: { email: data.email, name: fullName },
+        subject,
+        html,
+      });
+      if (!sent.ok) {
+        console.error(
+          "[auth] requestPasswordReset email failed:",
+          sent.skipped ? sent.reason : sent.error,
+        );
+        return {
+          ok: false,
+          error: "send_failed",
+          message: "Could not send email. Please try again.",
+        };
+      }
+      return { ok: true };
+    } catch (e) {
+      console.error("[auth] requestPasswordReset failed:", e);
+      return {
+        ok: false,
+        error: "send_failed",
+        message: "Could not send a reset link. Please try again.",
+      };
+    }
   });
 
 export const verifyLoginOtp = createServerFn({ method: "POST" })

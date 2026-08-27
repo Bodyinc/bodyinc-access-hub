@@ -21,6 +21,7 @@ export function isPasswordRecoveryUrl(
   if (!href) return false;
   const url = new URL(href);
   if (url.pathname === "/reset-password") return false;
+  if (url.pathname === "/auth/callback") return false;
   if (url.searchParams.get("type") === "recovery") return true;
   if (url.searchParams.has("token_hash") && url.searchParams.get("type") === "recovery")
     return true;
