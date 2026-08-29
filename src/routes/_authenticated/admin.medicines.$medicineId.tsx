@@ -85,6 +85,7 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
     requires_questionnaire: m.requires_questionnaire,
     requires_consultation: m.requires_consultation,
     requires_followup: m.requires_followup,
+    lf_product_id: m.lf_product_id != null ? String(m.lf_product_id) : "",
     category_ids: m.category_ids,
   };
 }

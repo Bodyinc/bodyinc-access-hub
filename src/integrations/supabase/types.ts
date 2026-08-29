@@ -883,6 +883,7 @@ export type Database = {
           image_url: string | null
           important_info: Json
           is_active: boolean
+          lf_product_id: number | null
           long_description: string | null
           name: string
           notice_text: string | null
@@ -902,6 +903,7 @@ export type Database = {
           image_url?: string | null
           important_info?: Json
           is_active?: boolean
+          lf_product_id?: number | null
           long_description?: string | null
           name: string
           notice_text?: string | null
@@ -921,6 +923,7 @@ export type Database = {
           image_url?: string | null
           important_info?: Json
           is_active?: boolean
+          lf_product_id?: number | null
           long_description?: string | null
           name?: string
           notice_text?: string | null

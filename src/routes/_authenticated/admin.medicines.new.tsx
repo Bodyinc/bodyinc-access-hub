@@ -45,6 +45,7 @@ function NewMedicinePage() {
     status: "draft",
     important_info: [],
     notice_text: "",
+    lf_product_id: "",
     sort_order: 0,
     requires_questionnaire: false,
     category_ids: [],

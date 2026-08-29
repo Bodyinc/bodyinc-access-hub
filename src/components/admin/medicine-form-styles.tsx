@@ -81,16 +81,21 @@ export function CardDivider() {
 export function MedicineField({
   label,
   error,
+  hint,
   children,
 }: {
   label: string;
   error?: string;
+  hint?: string;
   children: ReactNode;
 }) {
   return (
     <div className="min-w-0 space-y-2">
       <label className="block text-[16px] font-medium text-[#152A51]">{label}</label>
       {children}
+      {hint && !error ? (
+        <p className="text-[12px] font-normal leading-snug text-[#3B4759]/70">{hint}</p>
+      ) : null}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

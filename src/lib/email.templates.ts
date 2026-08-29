@@ -50,13 +50,29 @@ function orderShort(params: EmailParams): string {
   return id ? id.slice(0, 8).toUpperCase() : "";
 }
 
+/** Admin UI tokens (`src/lib/admin-ui.ts`) — keep email chrome in lockstep with the portal. */
+const THEME = {
+  page: "#F8FBFA",
+  card: "#ffffff",
+  border: "#D5DEDD",
+  header: "#3B4759",
+  accent: "#6A9B9C",
+  text: "#3B4759",
+  muted: "#626C7A",
+  footer: "#9DA3AC",
+  ctaText: "#ffffff",
+  mistBg: "#F8FBFA",
+  clayBg: "#F8EDE8",
+  clayBorder: "#E2C4B8",
+} as const;
+
 function cta(url: string, label: string): { html: string; text: string } {
   if (!url) return { html: "", text: "" };
   return {
     html: `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;">
       <tr>
-        <td bgcolor="#E3E084" style="background-color:#E3E084;background:#E3E084;border-radius:999px;">
-          <a href="${escapeHtml(url)}" style="display:inline-block;background-color:#E3E084;background:#E3E084;color:#152A51;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;font-size:14px;line-height:1.2;">${escapeHtml(label)}</a>
+        <td bgcolor="${THEME.accent}" style="background-color:${THEME.accent};background:${THEME.accent};border-radius:8px;">
+          <a href="${escapeHtml(url)}" style="display:inline-block;background-color:${THEME.accent};background:${THEME.accent};color:${THEME.ctaText};text-decoration:none;padding:13px 24px;border-radius:8px;font-weight:600;font-size:14px;line-height:1.2;">${escapeHtml(label)}</a>
         </td>
       </tr>
     </table>`,
@@ -65,9 +81,9 @@ function cta(url: string, label: string): { html: string; text: string } {
 }
 
 function noteBox(html: string, variant: "mist" | "clay" = "mist"): string {
-  const bg = variant === "clay" ? "#FBF1EC" : "#F3F6F6";
-  const border = variant === "clay" ? "#E8D48A" : "#E8EEED";
-  return `<p style="margin-top:16px;padding:14px 16px;background:${bg};border:1px solid ${border};border-radius:12px;color:#445575;">${html}</p>`;
+  const bg = variant === "clay" ? THEME.clayBg : THEME.mistBg;
+  const border = variant === "clay" ? THEME.clayBorder : THEME.border;
+  return `<p style="margin-top:16px;padding:14px 16px;background:${bg};border:1px solid ${border};border-radius:12px;color:${THEME.muted};">${html}</p>`;
 }
 
 function layout(opts: {
@@ -77,7 +93,7 @@ function layout(opts: {
   bodyText: string;
 }): RenderedEmail {
   const brand = "Body Inc";
-  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const font = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,28 +103,28 @@ function layout(opts: {
   <meta name="supported-color-schemes" content="light" />
   <title>${escapeHtml(opts.title)}</title>
 </head>
-<body bgcolor="#F3F6F6" style="margin:0;padding:0;background-color:#F3F6F6;background:#F3F6F6;font-family:${font};color:#152A51;">
+<body bgcolor="${THEME.page}" style="margin:0;padding:0;background-color:${THEME.page};background:${THEME.page};font-family:${font};color:${THEME.text};">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.preheader)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F3F6F6" style="background-color:#F3F6F6;background:#F3F6F6;padding:32px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${THEME.page}" style="background-color:${THEME.page};background:${THEME.page};padding:32px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:560px;background-color:#ffffff;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #E8EEED;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${THEME.card}" style="max-width:560px;background-color:${THEME.card};background:${THEME.card};border-radius:12px;overflow:hidden;border:1px solid ${THEME.border};">
           <tr>
-            <td bgcolor="#152A51" style="background-color:#152A51;background:#152A51;padding:20px 28px;">
+            <td bgcolor="${THEME.header}" style="background-color:${THEME.header};background:${THEME.header};padding:20px 28px;">
               <span style="font-size:16px;font-weight:600;letter-spacing:-0.3px;color:#ffffff;">${escapeHtml(brand)}</span>
             </td>
           </tr>
           <tr>
-            <td bgcolor="#6A9B9C" style="height:4px;line-height:4px;font-size:0;background-color:#6A9B9C;background:#6A9B9C;">&nbsp;</td>
+            <td bgcolor="${THEME.accent}" style="height:4px;line-height:4px;font-size:0;background-color:${THEME.accent};background:${THEME.accent};">&nbsp;</td>
           </tr>
           <tr>
-            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:28px 28px 8px;font-size:22px;font-weight:500;letter-spacing:-0.4px;line-height:1.3;color:#152A51;">${escapeHtml(opts.title)}</td>
+            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:28px 28px 8px;font-size:22px;font-weight:600;letter-spacing:-0.4px;line-height:1.3;color:${THEME.text};">${escapeHtml(opts.title)}</td>
           </tr>
           <tr>
-            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:0 28px 28px;font-size:14px;line-height:1.65;color:#445575;">${opts.bodyHtml}</td>
+            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:0 28px 28px;font-size:14px;line-height:1.65;color:${THEME.muted};">${opts.bodyHtml}</td>
           </tr>
           <tr>
-            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:16px 28px 24px;border-top:1px solid #E8EEED;font-size:12px;line-height:1.5;color:#8A94A8;">
+            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:16px 28px 24px;border-top:1px solid ${THEME.border};font-size:12px;line-height:1.5;color:${THEME.footer};">
               This email was sent by ${escapeHtml(brand)}. If you have questions, reply to this email or contact support.
             </td>
           </tr>

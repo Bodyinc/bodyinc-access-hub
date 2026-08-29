@@ -5,12 +5,19 @@
  *
  * Missing API key / sender → skip quietly (log warning).
  * Network/API failures → log and return; callers must not fail clinical actions.
+ *
+ * Preferred: BREVO_API_KEY (xkeysib-…). SMTP fallback uses smtp-relay.brevo.com with
+ * BREVO_SMTP_LOGIN (xxx@smtp-brevo.com, not the host) + BREVO_SMTP_KEY.
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { EMAIL_LOGO_CID, htmlWithInlineLogo } from "@/lib/email/layout";
 import {
   renderEmailTemplate,
   type EmailParams,
   type EmailTemplateKey,
+  type RenderedEmail,
 } from "@/lib/email.templates";
 
 export type { EmailTemplateKey };
@@ -19,8 +26,11 @@ export type EmailRecipient = { email: string; name?: string | null };
 
 export type SendTransactionalEmailInput = {
   to: EmailRecipient | EmailRecipient[];
-  template: EmailTemplateKey;
+  template?: EmailTemplateKey;
   params?: EmailParams;
+  subject?: string;
+  html?: string;
+  text?: string;
 };
 
 export type SendTransactionalEmailResult =
@@ -28,26 +38,58 @@ export type SendTransactionalEmailResult =
   | { ok: false; skipped: true; reason: string }
   | { ok: false; skipped: false; error: string };
 
+const BREVO_SMTP_HOST = "smtp-relay.brevo.com";
+const BREVO_SMTP_PORT = 587;
+
 function isSmtpKey(value: string): boolean {
   return value.startsWith("xsmtpsib-");
 }
 
-function brevoApiKey(): { key: string } | { skipped: string } {
-  const candidates = [process.env.BREVO_API_KEY, process.env.BREVO_SMTP_KEY]
-    .map((v) => v?.trim())
-    .filter((v): v is string => Boolean(v));
-  if (candidates.length === 0) {
-    return { skipped: "BREVO_API_KEY not set" };
+function restApiKey(): string | null {
+  const key = process.env.BREVO_API_KEY?.trim();
+  if (!key) return null;
+  if (isSmtpKey(key)) {
+    console.error(
+      "[brevo] BREVO_API_KEY is an SMTP key (xsmtpsib-). Use a REST API key (xkeysib-) from Brevo → SMTP & API → API keys.",
+    );
+    return null;
   }
-  // SMTP keys 401 the REST API. Prefer a v3 API key (xkeysib-…).
-  const restKey = candidates.find((k) => !isSmtpKey(k));
-  if (!restKey) {
-    return {
-      skipped:
-        "BREVO_API_KEY is an SMTP key (xsmtpsib-). Use a REST API key (xkeysib-) from Brevo → SMTP & API → API keys.",
-    };
+  return key;
+}
+
+function smtpAuth(): { user: string; pass: string } | null {
+  const login = process.env.BREVO_SMTP_LOGIN?.trim();
+  const pass = process.env.BREVO_SMTP_KEY?.trim();
+  if (!login || !pass) return null;
+  if (login === BREVO_SMTP_HOST || /smtp-relay\.brevo\.com/i.test(login)) {
+    console.error(
+      "[brevo] BREVO_SMTP_LOGIN is the relay host, not the SMTP login. Use the Login value from Brevo → SMTP & API → SMTP (looks like xxx@smtp-brevo.com).",
+    );
+    return null;
   }
-  return { key: restKey };
+  return { user: login, pass };
+}
+
+let transporter: any = null;
+let transporterAuth: string | null = null;
+
+async function getTransporter(login: string, key: string) {
+  const nodemailer = (await import("nodemailer")).default;
+  const auth = `${login}:${key}`;
+  if (!transporter || transporterAuth !== auth) {
+    transporter = nodemailer.createTransport({
+      host: BREVO_SMTP_HOST,
+      port: BREVO_SMTP_PORT,
+      secure: false,
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
+      auth: { user: login, pass: key },
+      family: 4,
+    });
+    transporterAuth = auth;
+  }
+  return transporter;
 }
 
 function parseFromAddress(from: string): { email: string; name?: string } {
@@ -67,7 +109,6 @@ function sender(): { email: string; name?: string } | null {
     const name = process.env.BREVO_SENDER_NAME?.trim();
     return name ? { email: dedicated, name } : { email: dedicated };
   }
-  // Same keys the patient portal already uses (EMAIL_FROM="Body Inc <noreply@...>").
   const from = process.env.EMAIL_FROM?.trim();
   if (!from) return null;
   const parsed = parseFromAddress(from);
@@ -78,12 +119,36 @@ function sender(): { email: string; name?: string } | null {
   return parsed;
 }
 
+function labelOf(input: SendTransactionalEmailInput): string {
+  return input.template ?? input.subject ?? "email";
+}
+
+function renderContent(input: SendTransactionalEmailInput): RenderedEmail | { error: string } {
+  if (input.subject && input.html) {
+    return { subject: input.subject, html: input.html, text: input.text ?? "" };
+  }
+  if (input.template) {
+    try {
+      return renderEmailTemplate(input.template, input.params ?? {});
+    } catch (e) {
+      const error = e instanceof Error ? e.message : String(e);
+      return { error };
+    }
+  }
+  return { error: "no template or html content" };
+}
+
 export async function sendTransactionalEmail(
   input: SendTransactionalEmailInput,
 ): Promise<SendTransactionalEmailResult> {
-  const apiKey = brevoApiKey();
-  if ("skipped" in apiKey) {
-    return { ok: false, skipped: true, reason: apiKey.skipped };
+  const apiKey = restApiKey();
+  const smtp = smtpAuth();
+  if (!apiKey && !smtp) {
+    return {
+      ok: false,
+      skipped: true,
+      reason: "BREVO_API_KEY not set (or SMTP fallback missing BREVO_SMTP_LOGIN + BREVO_SMTP_KEY)",
+    };
   }
 
   const from = sender();
@@ -102,46 +167,83 @@ export async function sendTransactionalEmail(
     return { ok: false, skipped: true, reason: "no recipient email" };
   }
 
-  let rendered;
-  try {
-    rendered = renderEmailTemplate(input.template, input.params ?? {});
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error(`[brevo] render ${input.template} failed:`, error);
-    return { ok: false, skipped: false, error };
+  const rendered = renderContent(input);
+  if ("error" in rendered) {
+    console.error(`[brevo] render ${labelOf(input)} failed:`, rendered.error);
+    return { ok: false, skipped: false, error: rendered.error };
   }
 
-  const body = {
-    sender: from,
-    to: recipients,
-    subject: rendered.subject,
-    htmlContent: rendered.html,
-    textContent: rendered.text,
-  };
+  if (apiKey) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          "api-key": apiKey,
+        },
+        body: JSON.stringify({
+          sender: from,
+          to: recipients,
+          subject: rendered.subject,
+          htmlContent: rendered.html,
+          ...(rendered.text ? { textContent: rendered.text } : {}),
+        }),
+      });
 
-  try {
-    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        "api-key": apiKey.key,
-      },
-      body: JSON.stringify(body),
-    });
+      if (res.ok) {
+        const json = (await res.json().catch(() => null)) as { messageId?: string } | null;
+        return { ok: true, messageId: json?.messageId ?? null };
+      }
 
-    if (!res.ok) {
       const text = await res.text().catch(() => "");
       const error = `Brevo ${res.status}: ${text.slice(0, 400)}`;
-      console.error(`[brevo] ${input.template} failed:`, error);
-      return { ok: false, skipped: false, error };
+      console.error(`[brevo] ${labelOf(input)} REST failed:`, error);
+      if (smtp) {
+        console.warn(`[brevo] ${labelOf(input)} falling back to SMTP`);
+      } else {
+        return { ok: false, skipped: false, error };
+      }
+    } catch (e) {
+      const error = e instanceof Error ? e.message : String(e);
+      console.error(`[brevo] ${labelOf(input)} request error:`, error);
+      if (smtp) {
+        console.warn(`[brevo] ${labelOf(input)} falling back to SMTP`);
+      } else {
+        return { ok: false, skipped: false, error };
+      }
     }
+  }
 
-    const json = (await res.json().catch(() => null)) as { messageId?: string } | null;
-    return { ok: true, messageId: json?.messageId ?? null };
+  if (!smtp) {
+    return { ok: false, skipped: true, reason: "SMTP fallback not configured" };
+  }
+
+  try {
+    const fromHeader = from.name ? `"${from.name}" <${from.email}>` : from.email;
+    const logoPath = path.join(process.cwd(), "public", "email-logo.png");
+    const logo = existsSync(logoPath)
+      ? {
+          filename: "email-logo.png",
+          content: readFileSync(logoPath),
+          cid: EMAIL_LOGO_CID,
+          contentType: "image/png" as const,
+          contentDisposition: "inline" as const,
+        }
+      : null;
+    const html = logo ? htmlWithInlineLogo(rendered.html) : rendered.html;
+    const info = await (await getTransporter(smtp.user, smtp.pass)).sendMail({
+      from: fromHeader,
+      to: recipients.map((r) => (r.name ? `"${r.name}" <${r.email}>` : r.email)),
+      subject: rendered.subject,
+      html,
+      text: rendered.text || undefined,
+      ...(logo ? { attachments: [logo] } : {}),
+    });
+    return { ok: true, messageId: info.messageId ?? null };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
-    console.error(`[brevo] ${input.template} request error:`, error);
+    console.error(`[brevo] ${labelOf(input)} SMTP error:`, error);
     return { ok: false, skipped: false, error };
   }
 }
@@ -150,7 +252,7 @@ export async function sendTransactionalEmail(
 export function queueTransactionalEmail(input: SendTransactionalEmailInput): void {
   void sendTransactionalEmail(input).then((result) => {
     if (!result.ok && result.skipped) {
-      console.warn(`[brevo] skipped ${input.template}: ${result.reason}`);
+      console.warn(`[brevo] skipped ${labelOf(input)}: ${result.reason}`);
     }
   });
 }

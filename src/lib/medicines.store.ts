@@ -40,6 +40,7 @@ export type StoredMedicine = {
   requires_questionnaire: boolean;
   requires_consultation: boolean;
   requires_followup: boolean;
+  lf_product_id: number | null;
   category_ids: string[];
   packages: StoredMedicinePackage[];
   variants: StoredMedicineVariant[];
@@ -81,6 +82,23 @@ function sortPackages(rows: any[]): StoredMedicinePackage[] {
   return rows
     .map(packageRowToStored)
     .sort((a, b) => a.duration_months - b.duration_months || a.sort_order - b.sort_order);
+}
+
+function parseLfProductId(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+function lfProductIdFromForm(values: MedicineFormValues): number | null {
+  return parseLfProductId(values.lf_product_id);
+}
+
+function medicineWriteError(error: { code?: string; message: string }): Error {
+  if (error.code === "23505" && /lf_product_id/i.test(error.message)) {
+    return new Error("That Life File product ID is already used on another medicine.");
+  }
+  return new Error(error.message);
 }
 
 function rowToStored(row: any): StoredMedicine {
@@ -126,6 +144,7 @@ function rowToStored(row: any): StoredMedicine {
     requires_questionnaire: !!row.requires_questionnaire,
     requires_consultation: !!row.requires_consultation,
     requires_followup: !!row.requires_followup,
+    lf_product_id: parseLfProductId(row.lf_product_id),
     category_ids: cats,
     packages: pkgs,
     variants,
@@ -147,6 +166,7 @@ function fromForm(values: MedicineFormValues) {
     requires_questionnaire: !!values.requires_questionnaire,
     requires_consultation: !!values.requires_consultation,
     requires_followup: !!values.requires_followup,
+    lf_product_id: lfProductIdFromForm(values),
   };
 }
 
@@ -375,7 +395,7 @@ export async function createMedicine(
     .insert(payload as any)
     .select("id")
     .single();
-  if (error) throw new Error(error.message);
+  if (error) throw medicineWriteError(error);
   await syncMedicineCategories(data.id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(data.id, values);
   return { id: data.id, ...pricing };
@@ -390,7 +410,7 @@ export async function updateMedicine(
     .from("medicines")
     .update(payload as any)
     .eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) throw medicineWriteError(error);
   await syncMedicineCategories(id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(id, values);
   return { id, ...pricing };

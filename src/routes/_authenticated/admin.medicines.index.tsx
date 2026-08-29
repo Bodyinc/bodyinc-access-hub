@@ -278,6 +278,9 @@ function MedicinesListPage() {
                     Status
                   </TableHead>
                   <TableHead className="h-12 px-5 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-5 sm:text-[13px]">
+                    Life File
+                  </TableHead>
+                  <TableHead className="h-12 px-5 text-[12px] font-medium uppercase tracking-[0.04em] text-[#3B4759]/70 sm:h-14 sm:px-5 sm:text-[13px]">
                     Last Updated
                   </TableHead>
                   <TableHead className="h-12 w-16 px-4 text-center sm:h-14" />
@@ -287,7 +290,7 @@ function MedicinesListPage() {
                 {query.isLoading && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-[15px] text-[#3B4759]/60"
                     >
                       Loading rows...
@@ -340,6 +343,10 @@ function MedicinesListPage() {
                       >
                         {MEDICINE_STATUS_LABELS[m.status]}
                       </Badge>
+                    </TableCell>
+
+                    <TableCell className="px-5 py-[14px] text-[13px] font-normal text-[#3B4759]/80">
+                      {m.lf_product_id != null ? String(m.lf_product_id) : "—"}
                     </TableCell>
 
                     <TableCell className="px-5 py-[14px] text-[14px] font-normal text-[#3B4759]/70">

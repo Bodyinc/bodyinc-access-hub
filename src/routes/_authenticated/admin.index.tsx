@@ -128,7 +128,7 @@ function AdminDashboard() {
 
           <TrendChart
             title="New patients"
-            subtitle={`Accounts created, last ${days} days`}
+            subtitle={`Patient accounts created, last ${days} days`}
             points={d.series.map((p) => ({ date: p.date, value: p.patients }))}
             format={(v) => String(v)}
             color="#B8684B"

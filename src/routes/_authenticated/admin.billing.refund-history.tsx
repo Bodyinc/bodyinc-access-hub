@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/admin/billing/refund-histo
       { title: "Refund history · Body Inc Admin" },
       {
         name: "description",
-        content: "Complete history of patient refund requests and their outcomes.",
+        content: "Complete history of admin-issued and automatic order refunds.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin/billing/refund-histo
   component: RefundHistoryPage,
 });
 
-const STATUSES = ["all", "pending", "approved", "rejected"] as const;
+const STATUSES = ["all", "approved", "pending", "rejected"] as const;
 const RANGES: Array<{ label: string; days?: number }> = [
   { label: "7 days", days: 7 },
   { label: "30 days", days: 30 },
@@ -114,7 +114,7 @@ function RefundHistoryPage() {
         backTo="/admin/billing"
         backLabel="Billing"
         title="Refund history"
-        subtitle="Every refund request raised by a patient, with its outcome and who resolved it."
+        subtitle="Every refund processed by admins or automatic order rejection, with status and who resolved it."
         crumbs={[{ label: "Billing", to: "/admin/billing" }]}
         actions={
           <>

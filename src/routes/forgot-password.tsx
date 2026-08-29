@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { markPasswordRecoveryPending } from "@/lib/password-recovery";
+import { requestPasswordReset } from "@/lib/auth.functions";
 import {
   adminLabel,
   adminInput,
@@ -37,14 +38,20 @@ export const Route = createFileRoute("/forgot-password")({
 const schema = z.object({ email: z.string().trim().email().max(255) });
 
 function ForgotPasswordPage() {
+  const requestReset = useServerFn(requestPasswordReset);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [portalError, setPortalError] = useState<{
+    message: string;
+    redirectUrl?: string;
+  } | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setPortalError(null);
     const parsed = schema.safeParse({ email });
     if (!parsed.success) {
       setError("Enter a valid email.");
@@ -52,15 +59,19 @@ function ForgotPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (err) {
-        toast.error(toastError(err));
+      const result = await requestReset({ data: { email: parsed.data.email } });
+      if (!result.ok) {
+        if (result.error === "wrong_portal") {
+          setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
+          return;
+        }
+        toast.error(result.message);
         return;
       }
       markPasswordRecoveryPending();
       setSent(true);
+    } catch (err) {
+      toast.error(toastError(err));
     } finally {
       setSubmitting(false);
     }
@@ -85,6 +96,19 @@ function ForgotPasswordPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+          {portalError ? (
+            <div className="mb-4 rounded-[10px] border border-[#B8684B]/40 bg-[#FBF1EC] p-3 text-sm">
+              <p className="font-medium text-[#3B4759]">{portalError.message}</p>
+              {portalError.redirectUrl && (
+                <a
+                  href={portalError.redirectUrl}
+                  className="mt-2 inline-block font-semibold text-[#B8684B] underline-offset-4 hover:underline"
+                >
+                  Go to the correct portal →
+                </a>
+              )}
+            </div>
+          ) : null}
           {sent ? (
             <div className="space-y-4 text-center">
               <p className="text-[14px] font-medium text-[#3B4759]/80">

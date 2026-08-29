@@ -4,7 +4,9 @@ Transactional emails are **rendered in-repo** ([`src/lib/email.templates.ts`](..
 
 Missing config skips the send (logs a warning) and never fails the clinical action.
 
-**Keep using Supabase Auth** for: login OTP, forgot password, patient password reset, provider invite / resend invite.
+**Supabase Auth still generates** login OTP and password-reset tokens. **This app sends those emails** via Brevo (Body Inc HTML) — not the Supabase mailer.
+
+Keep using Supabase Auth templates only for: patient password reset (from this admin app), provider invite / resend invite.
 
 Providers also get **in-app** rows in `notifications` (DB trigger). Email is for offline practitioners.
 
@@ -28,16 +30,16 @@ flowchart TD
 
 ## Wired in this repo
 
-| Event | To | Hook | Template key |
-|-------|-----|------|--------------|
-| Consultation approved | Patient | `approveRequest` | `patient_approved` |
-| Order rejected + refund | Patient | `rejectRequest` | `patient_rejected` |
-| Additional payment required | Patient + Provider | `changeRequestMedicine` | `patient_additional_payment`, `provider_needs_attention` |
-| Medicine changed (same/cheaper) | Patient | `changeRequestMedicine` | `patient_medicine_changed` |
-| Prescription ready | Patient | `generatePrescription` | `patient_prescription_ready` |
-| Sent to pharmacy / Shipped / Delivered | Patient | `advanceRequestStatus` | `patient_sent_to_pharmacy`, `patient_shipped`, `patient_delivered` |
-| Refund approved / rejected | Patient | `approveRefund` / `rejectRefund` | `patient_refund_approved`, `patient_refund_rejected` |
-| Provider assigned (+ ready for review if already pending) | Provider | `assignRequestProvider` | `provider_assigned`, `provider_ready_for_review` |
+| Event                                                     | To                 | Hook                             | Template key                                                       |
+| --------------------------------------------------------- | ------------------ | -------------------------------- | ------------------------------------------------------------------ |
+| Consultation approved                                     | Patient            | `approveRequest`                 | `patient_approved`                                                 |
+| Order rejected + refund                                   | Patient            | `rejectRequest`                  | `patient_rejected`                                                 |
+| Additional payment required                               | Patient + Provider | `changeRequestMedicine`          | `patient_additional_payment`, `provider_needs_attention`           |
+| Medicine changed (same/cheaper)                           | Patient            | `changeRequestMedicine`          | `patient_medicine_changed`                                         |
+| Prescription ready                                        | Patient            | `generatePrescription`           | `patient_prescription_ready`                                       |
+| Sent to pharmacy / Shipped / Delivered                    | Patient            | `advanceRequestStatus`           | `patient_sent_to_pharmacy`, `patient_shipped`, `patient_delivered` |
+| Refund approved / rejected                                | Patient            | `approveRefund` / `rejectRefund` | `patient_refund_approved`, `patient_refund_rejected`               |
+| Provider assigned (+ ready for review if already pending) | Provider           | `assignRequestProvider`          | `provider_assigned`, `provider_ready_for_review`                   |
 
 Skip provider email when the actor is the assigned provider (same rule as in-app notifications).
 
@@ -45,12 +47,12 @@ Skip provider email when the actor is the assigned provider (same rule as in-app
 
 ## Not wired here (outside this app’s server fns)
 
-| Event | Why | Suggested next step |
-|-------|-----|---------------------|
-| **Order confirmed** | Created by DB trigger `create_medication_order_on_payment` | Patient portal / Stripe webhook / Edge Function calling `sendTransactionalEmail` with `patient_order_confirmed` |
-| **Auto provider assign / pending_review** | Same SQL trigger + `notify_provider_on_request_change` | Edge Function or HTTP webhook → Brevo |
-| **Additional payment received** | Patient portal / Stripe webhook | Call from that service |
-| Subscription cancel, wallet, referral, admin ops | Other portals / lower priority | Add later |
+| Event                                            | Why                                                        | Suggested next step                                                                                             |
+| ------------------------------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Order confirmed**                              | Created by DB trigger `create_medication_order_on_payment` | Patient portal / Stripe webhook / Edge Function calling `sendTransactionalEmail` with `patient_order_confirmed` |
+| **Auto provider assign / pending_review**        | Same SQL trigger + `notify_provider_on_request_change`     | Edge Function or HTTP webhook → Brevo                                                                           |
+| **Additional payment received**                  | Patient portal / Stripe webhook                            | Call from that service                                                                                          |
+| Subscription cancel, wallet, referral, admin ops | Other portals / lower priority                             | Add later                                                                                                       |
 
 ---
 

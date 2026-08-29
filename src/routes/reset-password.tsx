@@ -64,10 +64,17 @@ function ResetPasswordPage() {
       const type = url.searchParams.get("type");
       const errorDesc =
         url.searchParams.get("error_description") ||
+        url.searchParams.get("error") ||
         url.hash.match(/error_description=([^&]+)/)?.[1];
 
       if (errorDesc) {
-        if (!cancelled) setLinkError(decodeURIComponent(errorDesc));
+        if (!cancelled) {
+          setLinkError(
+            errorDesc === "link_expired"
+              ? "This reset link is invalid or has expired. Please request a new one."
+              : decodeURIComponent(errorDesc),
+          );
+        }
         return;
       }
 
