@@ -53,6 +53,7 @@ export function MedicinePricingSection({
         <MedicinePackagesEditor
           control={control}
           register={register}
+          setValue={setValue}
           name="packages"
           packageErrors={errors.packages}
           submitting={submitting}
@@ -131,6 +132,7 @@ export function MedicinePricingSection({
             <MedicinePackagesEditor
               control={control}
               register={register}
+              setValue={setValue}
               name={`variants.${vIndex}.packages`}
               packageErrors={errors.variants?.[vIndex]?.packages}
               submitting={submitting}

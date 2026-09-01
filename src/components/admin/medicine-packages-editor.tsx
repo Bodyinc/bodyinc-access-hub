@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { useFieldArray, Controller, type Control, type UseFormRegister } from "react-hook-form";
+import {
+  useFieldArray,
+  Controller,
+  type Control,
+  type UseFormRegister,
+  type UseFormSetValue,
+} from "react-hook-form";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +19,7 @@ import { medicineInput, medicineTextarea } from "@/components/admin/medicine-for
 type Props = {
   control: Control<MedicineFormValues>;
   register: UseFormRegister<MedicineFormValues>;
+  setValue: UseFormSetValue<MedicineFormValues>;
   name: string;
   packageErrors?: any;
   submitting?: boolean;
@@ -22,6 +29,7 @@ type Props = {
 export function MedicinePackagesEditor({
   control,
   register,
+  setValue,
   name,
   packageErrors,
   submitting,
@@ -53,7 +61,9 @@ export function MedicinePackagesEditor({
           key={field.id}
           control={control}
           register={register}
+          setValue={setValue}
           name={name}
+          packageCount={fields.length}
           rowErrors={packageErrors?.[index]}
           index={index}
           submitting={submitting}
@@ -108,7 +118,9 @@ export function MedicinePackagesEditor({
 function PackageRow({
   control,
   register,
+  setValue,
   name,
+  packageCount,
   rowErrors,
   index,
   submitting,
@@ -116,7 +128,9 @@ function PackageRow({
 }: {
   control: Control<MedicineFormValues>;
   register: UseFormRegister<MedicineFormValues>;
+  setValue: UseFormSetValue<MedicineFormValues>;
   name: string;
+  packageCount: number;
   rowErrors?: any;
   index: number;
   submitting?: boolean;
@@ -199,7 +213,18 @@ function PackageRow({
             <div className="flex min-w-0 items-center gap-2.5">
               <Switch
                 checked={!!field.value}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    for (let i = 0; i < packageCount; i++) {
+                      if (i !== index) {
+                        setValue(`${name}.${i}.is_most_popular` as any, false, {
+                          shouldDirty: true,
+                        });
+                      }
+                    }
+                  }
+                  field.onChange(checked);
+                }}
                 disabled={submitting}
               />
               <span className="text-[14px] font-normal text-[#152A51]">Most popular</span>
