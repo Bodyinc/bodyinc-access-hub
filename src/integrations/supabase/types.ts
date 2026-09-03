@@ -830,6 +830,7 @@ export type Database = {
           from_price_cents: number | null
           id: string
           is_active: boolean
+          lf_product_id: number | null
           medicine_id: string
           name: string
           sort_order: number
@@ -841,6 +842,7 @@ export type Database = {
           from_price_cents?: number | null
           id?: string
           is_active?: boolean
+          lf_product_id?: number | null
           medicine_id: string
           name: string
           sort_order?: number
@@ -852,6 +854,7 @@ export type Database = {
           from_price_cents?: number | null
           id?: string
           is_active?: boolean
+          lf_product_id?: number | null
           medicine_id?: string
           name?: string
           sort_order?: number

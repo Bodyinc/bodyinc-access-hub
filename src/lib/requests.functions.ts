@@ -974,15 +974,29 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
       }
 
       const medicineId = prescription.medicine_id ?? req.medicine_id;
-      const { data: liveMedicine } = medicineId
-        ? await supabaseAdmin
-            .from("medicines")
-            .select("name, lf_product_id")
-            .eq("id", medicineId)
-            .maybeSingle()
-        : { data: null };
+      const variantId = prescription.variant_id ?? req.variant_id;
 
-      const lfProductIdRaw = liveMedicine?.lf_product_id;
+      const [{ data: liveMedicine }, { data: liveVariant }] = await Promise.all([
+        medicineId
+          ? supabaseAdmin
+              .from("medicines")
+              .select("name, lf_product_id")
+              .eq("id", medicineId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        variantId
+          ? supabaseAdmin
+              .from("medicine_variants")
+              .select("name, lf_product_id")
+              .eq("id", variantId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const lfFromVariant = liveVariant?.lf_product_id;
+      const lfFromMedicine = liveMedicine?.lf_product_id;
+      const lfProductIdRaw =
+        lfFromVariant != null && lfFromVariant !== "" ? lfFromVariant : lfFromMedicine;
       const lfProductID =
         typeof lfProductIdRaw === "number"
           ? lfProductIdRaw
@@ -992,9 +1006,15 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
 
       if (!Number.isInteger(lfProductID) || lfProductID <= 0) {
         throw new Error(
-          `This medicine has no Life File product ID. Add it on the medicine in Admin → Medicines before sending to pharmacy.`,
+          variantId
+            ? "This variant has no Life File product ID. Add it on the medicine variant in Admin → Medicines before sending to pharmacy."
+            : "This medicine has no Life File product ID. Add it on the medicine in Admin → Medicines before sending to pharmacy.",
         );
       }
+
+      const medicineName = liveMedicine?.name || prescription.medicine_name;
+      const variantName = liveVariant?.name ?? null;
+      const medicineLabel = variantName ? `${medicineName} (${variantName})` : medicineName;
 
       const { createLifeFileOrder } = await import("@/integrations/lifefile/orders.server");
 
@@ -1025,7 +1045,7 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
         },
 
         prescription: {
-          medicineName: liveMedicine?.name || prescription.medicine_name,
+          medicineName: medicineLabel,
           directions: prescription.directions,
           lfProductID,
         },

@@ -71,6 +71,15 @@ export const medicinePackageSchema = z
 
 export type MedicinePackageValues = z.input<typeof medicinePackageSchema>;
 
+const lfProductIdField = z
+  .string()
+  .trim()
+  .optional()
+  .or(z.literal(""))
+  .refine((v) => !v || /^\d{1,18}$/.test(v), {
+    message: "Enter a valid Life File product ID",
+  });
+
 export const medicineVariantSchema = z.object({
   id: z.string().uuid().optional(),
   name: z
@@ -80,6 +89,7 @@ export const medicineVariantSchema = z.object({
     .max(120)
     .transform((v) => titleCaseName(v)),
   is_active: z.boolean().default(true),
+  lf_product_id: lfProductIdField,
   packages: z
     .array(medicinePackageSchema)
     .max(
@@ -148,14 +158,7 @@ export const medicineFormSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform((v) => (v ? sentenceCase(v) : undefined)),
-  lf_product_id: z
-    .string()
-    .trim()
-    .optional()
-    .or(z.literal(""))
-    .refine((v) => !v || /^\d{1,18}$/.test(v), {
-      message: "Enter a valid Life File product ID",
-    }),
+  lf_product_id: lfProductIdField,
   sort_order: z.coerce.number().int().min(0).default(0),
   requires_questionnaire: z.boolean().default(false),
   requires_consultation: z.boolean().default(false),

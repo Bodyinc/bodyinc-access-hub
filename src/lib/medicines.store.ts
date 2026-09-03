@@ -20,6 +20,7 @@ export type StoredMedicineVariant = {
   id: string;
   name: string;
   is_active: boolean;
+  lf_product_id: number | null;
   from_price_cents: number | null;
   sort_order: number;
   packages: StoredMedicinePackage[];
@@ -52,6 +53,20 @@ export type ListMedicinesInput = {
   search?: string;
   status?: "all" | MedicineStatus;
 };
+
+export function formatMedicineLifeFileSummary(m: StoredMedicine): string {
+  if (m.variants.length > 0) {
+    const ids = m.variants
+      .map((v) => v.lf_product_id)
+      .filter((id): id is number => id != null && id > 0);
+    if (ids.length === 0) return "—";
+    if (ids.length === m.variants.length) {
+      return ids.length === 1 ? String(ids[0]) : `${ids.length} variants set`;
+    }
+    return `${ids.length}/${m.variants.length} set`;
+  }
+  return m.lf_product_id != null ? String(m.lf_product_id) : "—";
+}
 
 function packageRowToStored(row: any): StoredMedicinePackage {
   const feat = Array.isArray(row.features) ? row.features : [];
@@ -94,9 +109,16 @@ function lfProductIdFromForm(values: MedicineFormValues): number | null {
   return parseLfProductId(values.lf_product_id);
 }
 
-function medicineWriteError(error: { code?: string; message: string }): Error {
+function lfProductIdWriteError(
+  error: { code?: string; message: string },
+  scope: "medicine" | "variant",
+): Error {
   if (error.code === "23505" && /lf_product_id/i.test(error.message)) {
-    return new Error("That Life File product ID is already used on another medicine.");
+    return new Error(
+      scope === "variant"
+        ? "That Life File product ID is already used on another variant."
+        : "That Life File product ID is already used on another medicine.",
+    );
   }
   return new Error(error.message);
 }
@@ -116,6 +138,7 @@ function rowToStored(row: any): StoredMedicine {
       id: v.id,
       name: v.name,
       is_active: v.is_active !== false,
+      lf_product_id: parseLfProductId(v.lf_product_id),
       from_price_cents: v.from_price_cents == null ? null : Number(v.from_price_cents),
       sort_order: Number(v.sort_order ?? 0),
       packages: sortPackages(allPackages.filter((p: any) => p.variant_id === v.id)),
@@ -154,6 +177,7 @@ function rowToStored(row: any): StoredMedicine {
 }
 
 function fromForm(values: MedicineFormValues) {
+  const hasVariants = (values.variants ?? []).length > 0;
   return {
     name: values.name,
     short_description: values.short_description,
@@ -166,7 +190,7 @@ function fromForm(values: MedicineFormValues) {
     requires_questionnaire: !!values.requires_questionnaire,
     requires_consultation: !!values.requires_consultation,
     requires_followup: !!values.requires_followup,
-    lf_product_id: lfProductIdFromForm(values),
+    lf_product_id: hasVariants ? null : lfProductIdFromForm(values),
   };
 }
 
@@ -259,13 +283,14 @@ export async function reconcileMedicinePricing(
       name: v.name.trim(),
       is_active: v.is_active ?? true,
       sort_order: i,
+      lf_product_id: parseLfProductId(v.lf_product_id),
     };
     if (v.id && existingVariantIds.has(v.id)) {
       const { error } = await supabase
         .from("medicine_variants")
         .update(payload as any)
         .eq("id", v.id);
-      if (error) throw new Error(error.message);
+      if (error) throw lfProductIdWriteError(error, "variant");
       variantIdByIndex[i] = v.id;
     } else {
       const { data, error } = await supabase
@@ -273,7 +298,7 @@ export async function reconcileMedicinePricing(
         .insert(payload as any)
         .select("id")
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw lfProductIdWriteError(error, "variant");
       variantIdByIndex[i] = data.id;
     }
   }
@@ -395,7 +420,7 @@ export async function createMedicine(
     .insert(payload as any)
     .select("id")
     .single();
-  if (error) throw medicineWriteError(error);
+  if (error) throw lfProductIdWriteError(error, "medicine");
   await syncMedicineCategories(data.id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(data.id, values);
   return { id: data.id, ...pricing };
@@ -410,7 +435,7 @@ export async function updateMedicine(
     .from("medicines")
     .update(payload as any)
     .eq("id", id);
-  if (error) throw medicineWriteError(error);
+  if (error) throw lfProductIdWriteError(error, "medicine");
   await syncMedicineCategories(id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(id, values);
   return { id, ...pricing };
