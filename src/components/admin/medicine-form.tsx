@@ -315,23 +315,6 @@ export function MedicineForm({
           </div>
         </Card>
 
-        <Card className={`w-full min-w-0 max-w-full p-4 sm:p-6 ${medicineCard}`}>
-          <div className="mb-5 space-y-4 sm:mb-6">
-            <h2 className={medicineCardTitle}>Life File pharmacy</h2>
-            <CardDivider />
-          </div>
-
-          <MedicineField label="Life File product ID" error={errors.lf_product_id?.message}>
-            <Input
-              {...register("lf_product_id")}
-              inputMode="numeric"
-              placeholder="e.g. 305492222"
-              disabled={submitting}
-              className={medicineInput}
-            />
-          </MedicineField>
-        </Card>
-
         {/* Categories card */}
         <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
           <div className="mb-5 space-y-2 sm:mb-6">
@@ -375,14 +358,16 @@ export function MedicineForm({
           />
         </Card>
 
-        <MedicinePricingSection
-          control={control}
-          register={register}
-          getValues={form.getValues}
-          setValue={setValue}
-          errors={errors}
-          submitting={submitting}
-        />
+        <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>
+          <MedicinePricingSection
+            control={control}
+            register={register}
+            getValues={form.getValues}
+            setValue={setValue}
+            errors={errors}
+            submitting={submitting}
+          />
+        </Card>
 
         {/* Important Info */}
         <Card className={`w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 ${medicineCard}`}>

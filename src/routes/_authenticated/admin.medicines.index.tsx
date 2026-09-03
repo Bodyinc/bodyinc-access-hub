@@ -43,7 +43,7 @@ import {
 import { medicinesQueryKey, medicinesQueryOptions } from "@/lib/query-options/medicines";
 import { packagesQueryKey } from "@/lib/query-options/packages";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import { setMedicineActive, type StoredMedicine } from "@/lib/medicines.store";
+import { formatMedicineLifeFileSummary, setMedicineActive, type StoredMedicine } from "@/lib/medicines.store";
 import { syncUnpricedPackages } from "@/lib/packages.functions";
 import { deleteMedicineSafely, getMedicineDeletionImpact } from "@/lib/medicines.functions";
 import {
@@ -346,7 +346,7 @@ function MedicinesListPage() {
                     </TableCell>
 
                     <TableCell className="px-5 py-[14px] text-[13px] font-normal text-[#3B4759]/80">
-                      {m.lf_product_id != null ? String(m.lf_product_id) : "—"}
+                      {formatMedicineLifeFileSummary(m)}
                     </TableCell>
 
                     <TableCell className="px-5 py-[14px] text-[14px] font-normal text-[#3B4759]/70">

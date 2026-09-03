@@ -76,6 +76,7 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
       id: v.id,
       name: v.name,
       is_active: v.is_active,
+      lf_product_id: v.lf_product_id != null ? String(v.lf_product_id) : "",
       packages: v.packages.map(packageToForm),
     })),
     status: m.status,
