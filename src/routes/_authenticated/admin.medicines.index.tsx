@@ -1,5 +1,5 @@
 import { toastError } from "@/lib/toast-message";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -77,6 +77,7 @@ function unsyncedPackages(m: StoredMedicine) {
 
 function MedicinesListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -302,6 +303,12 @@ function MedicinesListPage() {
                   <TableRow
                     key={m.id}
                     className="cursor-pointer border-b border-[#E8EEED] bg-white transition-colors hover:bg-[#F8F9FB]"
+                    onPointerEnter={() => {
+                      void router.preloadRoute({
+                        to: "/admin/medicines/$medicineId",
+                        params: { medicineId: m.id },
+                      });
+                    }}
                     onClick={() =>
                       navigate({
                         to: "/admin/medicines/$medicineId",

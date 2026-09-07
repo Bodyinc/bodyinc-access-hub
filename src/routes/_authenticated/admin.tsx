@@ -1,17 +1,17 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { RoutePending } from "@/components/route-pending";
 import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSession } from "@/lib/auth-session-cache";
 import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
+  shouldReload: false,
   head: () => ({
     meta: [{ title: "Admin — Body Inc" }, { name: "robots", content: "noindex" }],
   }),
-  pendingComponent: () => <RoutePending />,
   beforeLoad: async ({ context }) => {
     if (!isBrowser()) {
       return;
@@ -20,10 +20,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
     let role = (context as { role?: string }).role;
 
     if (!role) {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session?.user) throw redirect({ to: "/auth" });
+      const session = await ensureSession();
+      if (!session?.user) throw redirect({ to: "/auth" });
 
-      const userId = data.session.user.id;
+      const userId = session.user.id;
       role = readCachedPortalRole(userId) ?? undefined;
 
       if (!role) {
@@ -62,6 +62,7 @@ const TITLES: Record<string, string> = {
   "/admin/billing/refund-history": "Refund History",
   "/admin/medicine-changes": "Medicine Changes",
   "/admin/referrals": "Referrals",
+  "/admin/feedback": "Feedback",
   "/admin/promos": "Promo Codes",
 };
 

@@ -49,6 +49,7 @@ import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_
 import { Route as AuthenticatedAdminMedicineChangesIndexRouteImport } from './routes/_authenticated/admin.medicine-changes.index'
 import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
 import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
+import { Route as AuthenticatedAdminFeedbackIndexRouteImport } from './routes/_authenticated/admin.feedback.index'
 import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
 import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
 import { Route as AuthenticatedProviderRequestsRequestIdRouteImport } from './routes/_authenticated/provider.requests.$requestId'
@@ -298,6 +299,12 @@ const AuthenticatedAdminIntakeSessionsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAdminIntakeSessionsRoute,
   } as any)
+const AuthenticatedAdminFeedbackIndexRoute =
+  AuthenticatedAdminFeedbackIndexRouteImport.update({
+    id: '/feedback/',
+    path: '/feedback/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCategoriesIndexRoute =
   AuthenticatedAdminCategoriesIndexRouteImport.update({
     id: '/',
@@ -458,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
+  '/admin/feedback/': typeof AuthenticatedAdminFeedbackIndexRoute
   '/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
   '/admin/medicine-changes/': typeof AuthenticatedAdminMedicineChangesIndexRoute
@@ -505,6 +513,7 @@ export interface FileRoutesByTo {
   '/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/admin/billing': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesIndexRoute
+  '/admin/feedback': typeof AuthenticatedAdminFeedbackIndexRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesIndexRoute
   '/admin/medicine-changes': typeof AuthenticatedAdminMedicineChangesIndexRoute
@@ -567,6 +576,7 @@ export interface FileRoutesById {
   '/_authenticated/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/_authenticated/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/_authenticated/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
+  '/_authenticated/admin/feedback/': typeof AuthenticatedAdminFeedbackIndexRoute
   '/_authenticated/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/_authenticated/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
   '/_authenticated/admin/medicine-changes/': typeof AuthenticatedAdminMedicineChangesIndexRoute
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/provider/requests/$requestId'
     | '/admin/billing/'
     | '/admin/categories/'
+    | '/admin/feedback/'
     | '/admin/intake-sessions/'
     | '/admin/medication-rules/'
     | '/admin/medicine-changes/'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/provider/requests/$requestId'
     | '/admin/billing'
     | '/admin/categories'
+    | '/admin/feedback'
     | '/admin/intake-sessions'
     | '/admin/medication-rules'
     | '/admin/medicine-changes'
@@ -737,6 +749,7 @@ export interface FileRouteTypes {
     | '/_authenticated/provider/requests/$requestId'
     | '/_authenticated/admin/billing/'
     | '/_authenticated/admin/categories/'
+    | '/_authenticated/admin/feedback/'
     | '/_authenticated/admin/intake-sessions/'
     | '/_authenticated/admin/medication-rules/'
     | '/_authenticated/admin/medicine-changes/'
@@ -1042,6 +1055,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/intake-sessions/'
       preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminIntakeSessionsRoute
+    }
+    '/_authenticated/admin/feedback/': {
+      id: '/_authenticated/admin/feedback/'
+      path: '/feedback'
+      fullPath: '/admin/feedback/'
+      preLoaderRoute: typeof AuthenticatedAdminFeedbackIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/categories/': {
       id: '/_authenticated/admin/categories/'
@@ -1390,6 +1410,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminPromosPromoIdRoute: typeof AuthenticatedAdminPromosPromoIdRoute
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
+  AuthenticatedAdminFeedbackIndexRoute: typeof AuthenticatedAdminFeedbackIndexRoute
   AuthenticatedAdminPromosIndexRoute: typeof AuthenticatedAdminPromosIndexRoute
   AuthenticatedAdminReferralsIndexRoute: typeof AuthenticatedAdminReferralsIndexRoute
   AuthenticatedAdminSettingsIndexRoute: typeof AuthenticatedAdminSettingsIndexRoute
@@ -1417,6 +1438,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminPromosPromoIdRoute: AuthenticatedAdminPromosPromoIdRoute,
   AuthenticatedAdminPromosNewRoute: AuthenticatedAdminPromosNewRoute,
+  AuthenticatedAdminFeedbackIndexRoute: AuthenticatedAdminFeedbackIndexRoute,
   AuthenticatedAdminPromosIndexRoute: AuthenticatedAdminPromosIndexRoute,
   AuthenticatedAdminReferralsIndexRoute: AuthenticatedAdminReferralsIndexRoute,
   AuthenticatedAdminSettingsIndexRoute: AuthenticatedAdminSettingsIndexRoute,

@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Search } from "lucide-react";
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/admin/intake-sessions/")({
 
 function IntakeSessionsListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const list = useServerFn(listIntakeSessions);
   const [search, setSearch] = useState("");
   const debounced = useDebouncedValue(search);
@@ -48,6 +49,7 @@ function IntakeSessionsListPage() {
   const q = useQuery({
     queryKey: ["admin-intake-sessions", { search: debounced, status, claimed }],
     queryFn: () => list({ data: { search: debounced || undefined, status, claimed } }),
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -157,6 +159,12 @@ function IntakeSessionsListPage() {
                 <TableRow
                   key={s.id}
                   className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onPointerEnter={() => {
+                    void router.preloadRoute({
+                      to: "/admin/intake-sessions/$sessionId",
+                      params: { sessionId: s.id },
+                    });
+                  }}
                   onClick={() =>
                     navigate({
                       to: "/admin/intake-sessions/$sessionId",

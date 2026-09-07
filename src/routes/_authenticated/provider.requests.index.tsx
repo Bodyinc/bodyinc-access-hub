@@ -19,7 +19,9 @@ function ProviderRequestsPage() {
       title="My Requests"
       subtitle="Review and approve the medication orders assigned to you."
       showProvider={false}
+      clinicalOnly
       onOpen={(id) => navigate({ to: "/provider/requests/$requestId", params: { requestId: id } })}
+      preloadTo="/provider/requests/$requestId"
     />
   );
 }

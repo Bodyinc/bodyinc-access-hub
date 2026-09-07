@@ -1,6 +1,6 @@
 import { toastError } from "@/lib/toast-message";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useState } from "react";
@@ -69,6 +69,7 @@ export const Route = createFileRoute("/_authenticated/admin/providers/")({
 
 function ProvidersListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
   const list = useServerFn(listProviders);
   const resend = useServerFn(resendInvite);
@@ -84,6 +85,7 @@ function ProvidersListPage() {
   const query = useQuery({
     queryKey: ["providers", { search: debouncedSearch, status }],
     queryFn: () => list({ data: { search: debouncedSearch || undefined, status } }),
+    placeholderData: keepPreviousData,
   });
 
   const resendMut = useMutation({
@@ -215,6 +217,12 @@ function ProvidersListPage() {
                 <TableRow
                   key={p.id}
                   className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onPointerEnter={() => {
+                    void router.preloadRoute({
+                      to: "/admin/providers/$providerId",
+                      params: { providerId: p.id },
+                    });
+                  }}
                   onClick={() =>
                     navigate({
                       to: "/admin/providers/$providerId",

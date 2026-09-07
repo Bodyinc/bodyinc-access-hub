@@ -1,25 +1,25 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProviderSidebar } from "@/components/provider/provider-sidebar";
-import { RoutePending } from "@/components/route-pending";
 import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSession } from "@/lib/auth-session-cache";
 import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/_authenticated/provider")({
   ssr: false,
+  shouldReload: false,
   head: () => ({
     meta: [{ title: "Provider — Body Inc" }, { name: "robots", content: "noindex" }],
   }),
-  pendingComponent: () => <RoutePending />,
   beforeLoad: async ({ context }) => {
     if (!isBrowser()) return;
 
     let role = (context as { role?: string }).role;
     if (!role) {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session?.user) throw redirect({ to: "/auth" });
-      const userId = data.session.user.id;
+      const session = await ensureSession();
+      if (!session?.user) throw redirect({ to: "/auth" });
+      const userId = session.user.id;
       role = readCachedPortalRole(userId) ?? undefined;
       if (!role) {
         const { data: fetched, error } = await supabase.rpc("get_user_portal", {

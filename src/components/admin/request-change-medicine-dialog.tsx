@@ -32,8 +32,11 @@ import { changeRequestMedicine } from "@/lib/requests.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
 import { formatDollars } from "@/lib/format";
 
-function planLabel(p: StoredMedicinePackage) {
+function planLabel(p: StoredMedicinePackage, hideFinancial = false) {
   const dur = p.duration_months === 1 ? "Monthly" : `${p.duration_months}-Month`;
+  if (hideFinancial) {
+    return p.duration_months > 1 ? `${dur} (every ${p.duration_months} mo)` : dur;
+  }
   return `${dur} — ${formatDollars(p.price)}${p.duration_months > 1 ? ` (every ${p.duration_months} mo)` : "/mo"}`;
 }
 
@@ -55,6 +58,7 @@ export function RequestChangeMedicineDialog({
   currentMedicineId,
   currentVariantId,
   currentPackageId,
+  hideFinancial = false,
 }: {
   requestId: string;
   open: boolean;
@@ -64,6 +68,7 @@ export function RequestChangeMedicineDialog({
   currentMedicineId?: string | null;
   currentVariantId?: string | null;
   currentPackageId?: string | null;
+  hideFinancial?: boolean;
 }) {
   const medicinesQ = useQuery(medicinesQueryOptions());
   const categoriesQ = useQuery(categoriesQueryOptions());
@@ -185,7 +190,9 @@ export function RequestChangeMedicineDialog({
     onSuccess: (res: any) => {
       toastActionWithEmail(
         res?.status === "awaiting_additional_payment"
-          ? "Order updated. Additional payment is required for the difference."
+          ? hideFinancial
+            ? "Order updated. The patient needs to confirm the new plan before prescribing."
+            : "Order updated. Additional payment is required for the difference."
           : "Order updated and approved.",
         res?.email_sent,
       );
@@ -203,10 +210,9 @@ export function RequestChangeMedicineDialog({
         <DialogHeader>
           <DialogTitle>Change medicine</DialogTitle>
           <DialogDescription>
-            Switch this order to a different medicine, or keep the same medicine and change its
-            variant/dose or plan. If it costs more, the patient is sent a payment request for the
-            difference before the prescription is generated; if it costs less, the difference is
-            credited to their next cycle.
+            {hideFinancial
+              ? "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. The patient may need to confirm before the prescription can be generated."
+              : "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. If it costs more, the patient is sent a payment request for the difference before the prescription is generated; if it costs less, the difference is credited to their next cycle."}
           </DialogDescription>
         </DialogHeader>
 
@@ -221,9 +227,11 @@ export function RequestChangeMedicineDialog({
                 <div className="text-muted-foreground">{currentVariantName}</div>
               ) : null}
               <div className="text-muted-foreground">{current.planName ?? "—"}</div>
-              <div className="text-lg font-bold text-foreground">
-                {current.price != null ? formatDollars(current.price) : "—"}
-              </div>
+              {hideFinancial ? null : (
+                <div className="text-lg font-bold text-foreground">
+                  {current.price != null ? formatDollars(current.price) : "—"}
+                </div>
+              )}
               {categoryNames.length > 0 ? (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {categoryNames.map((n) => (
@@ -367,7 +375,7 @@ export function RequestChangeMedicineDialog({
                     <SelectContent>
                       {packages.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {planLabel(p)}
+                          {planLabel(p, hideFinancial)}
                           {p.id === currentPackageId ? " (current)" : ""}
                         </SelectItem>
                       ))}
@@ -386,7 +394,14 @@ export function RequestChangeMedicineDialog({
           </p>
         ) : null}
 
-        {selectedPkg && !isUnchanged && diff != null ? (
+        {selectedPkg && !isUnchanged && hideFinancial ? (
+          <p className="text-xs text-muted-foreground">
+            If this plan differs from the current one, the patient may need to confirm before the
+            prescription can be generated.
+          </p>
+        ) : null}
+
+        {selectedPkg && !isUnchanged && diff != null && !hideFinancial ? (
           <div className="rounded-lg border bg-muted/20 p-3 text-sm space-y-1">
             <div className="flex items-center justify-between">
               <span className="font-semibold">Price difference</span>

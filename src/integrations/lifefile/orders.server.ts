@@ -58,17 +58,6 @@ function mapGender(sex: string | null): "m" | "f" | "u" {
   return "u";
 }
 
-const TEST_DIRECTIONS_MARKER = "Test Order Do Not Fill";
-
-function withTestDirections(existing: string | null): string {
-  const current = existing?.trim() ?? "";
-  if (!current) return TEST_DIRECTIONS_MARKER;
-  if (current.toLowerCase().includes(TEST_DIRECTIONS_MARKER.toLowerCase())) {
-    return current;
-  }
-  return `${current} ${TEST_DIRECTIONS_MARKER}`;
-}
-
 export async function createLifeFileOrder(input: LifeFileOrderInput) {
   if (!input.patient.dob) {
     throw new Error("Patient date of birth is required for Life File.");
@@ -109,7 +98,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
       },
 
       patient: {
-        firstName: "Test",
+        firstName: patientName.firstName,
         lastName: patientName.lastName,
         gender: mapGender(input.patient.sex),
         dateOfBirth: input.patient.dob,
@@ -126,7 +115,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
       shipping: {
         recipientType: "patient",
         recipientLastName: patientName.lastName,
-        recipientFirstName: "Test",
+        recipientFirstName: patientName.firstName,
         recipientPhone: input.patient.phone ?? undefined,
         recipientEmail: input.patient.email ?? undefined,
         addressLine1: input.patient.streetAddress ?? undefined,
@@ -143,7 +132,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
           rxType: "new",
           drugName: product.medicineName,
           lfProductID: product.lfProductID,
-          directions: withTestDirections(product.directions),
+          directions: product.directions?.trim() || undefined,
           uuid: crypto.randomUUID(),
         },
       ],

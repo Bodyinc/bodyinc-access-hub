@@ -327,12 +327,12 @@ const builders: Record<EmailTemplateKey, Builder> = {
     const order = orderShort(p);
     const link = cta(str(p, "REQUEST_URL"), "Open order");
     return layout({
-      preheader: `Order for ${med} needs attention (additional payment).`,
+      preheader: `Order for ${med} needs the patient's confirmation.`,
       title: "Order needs attention",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> is awaiting an additional payment from the patient.</p>
+        <p>Order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> needs the patient to confirm a plan change.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` #${order}` : ""} for ${med} is awaiting an additional payment from the patient.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` #${order}` : ""} for ${med} needs the patient to confirm a plan change.${link.text}`,
     });
   },
 };

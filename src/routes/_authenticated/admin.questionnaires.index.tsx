@@ -1,5 +1,5 @@
 import { toastError } from "@/lib/toast-message";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
 import { useState } from "react";
@@ -57,6 +57,7 @@ const listQO = queryOptions({
 
 function QuestionnairesListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
   const [confirm, setConfirm] = useState<{ id: string; name: string } | null>(null);
   const query = useQuery(listQO);
@@ -145,6 +146,12 @@ function QuestionnairesListPage() {
                   <TableRow
                     key={r.id}
                     className="cursor-pointer border-b border-[#D5DEDD] last:border-none hover:bg-[#F2F7F6]/20 transition-colors"
+                    onPointerEnter={() => {
+                      void router.preloadRoute({
+                        to: "/admin/questionnaires/$questionnaireId",
+                        params: { questionnaireId: r.id },
+                      });
+                    }}
                     onClick={() =>
                       navigate({
                         to: "/admin/questionnaires/$questionnaireId",

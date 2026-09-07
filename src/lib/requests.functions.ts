@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertReviewer, assertAdmin } from "@/lib/admin-guard";
+import { clinicalEventNote } from "@/lib/request-status";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -185,11 +186,14 @@ export const listRequests = createServerFn({ method: "POST" })
       result = result.filter(
         (r: any) =>
           (r.customer_name ?? "").toLowerCase().includes(s) ||
-          (r.customer_email ?? "").toLowerCase().includes(s) ||
+          (role !== "provider" && (r.customer_email ?? "").toLowerCase().includes(s)) ||
           (r.medicine_name ?? "").toLowerCase().includes(s) ||
           r.id.toLowerCase().replace(/-/g, "").startsWith(s.replace(/-/g, "")) ||
           r.id.toLowerCase().includes(s),
       );
+    }
+    if (role === "provider") {
+      result = result.map(({ customer_email: _email, ...row }: any) => row);
     }
     return result;
   });
@@ -258,16 +262,48 @@ export const getRequest = createServerFn({ method: "POST" })
       ]);
 
     const patient = (profileRes.data as any) ?? (sessionRes.data as any) ?? null;
+    const patientPayload = patient
+      ? {
+          name: patient.full_name ?? null,
+          email: patient.email ?? null,
+          state_code: patient.state_code ?? null,
+          is_guest: !profileRes.data && !!sessionRes.data,
+        }
+      : null;
+
+    if (role === "provider") {
+      const {
+        payment_id: _paymentId,
+        subscription_id: _subscriptionId,
+        stripe_invoice_id: _invoiceId,
+        stripe_refund_id: _refundId,
+        ...safeRequest
+      } = req as Record<string, unknown>;
+      const pkg = pkgRes.data as { id?: string; name?: string; duration_months?: number } | null;
+      return {
+        request: safeRequest,
+        patient: patientPayload
+          ? {
+              name: patientPayload.name,
+              state_code: patientPayload.state_code,
+              is_guest: patientPayload.is_guest,
+            }
+          : null,
+        medicine: medRes.data ?? null,
+        package: pkg ? { id: pkg.id, name: pkg.name, duration_months: pkg.duration_months } : null,
+        provider: provRes.data ?? null,
+        events: ((eventsRes.data ?? []) as { note?: string | null }[]).map((ev) => ({
+          ...ev,
+          note: clinicalEventNote(ev.note),
+        })),
+        prescriptions: rxRes.data ?? [],
+        additional_payments: [],
+      };
+    }
+
     return {
       request: req,
-      patient: patient
-        ? {
-            name: patient.full_name ?? null,
-            email: patient.email ?? null,
-            state_code: patient.state_code ?? null,
-            is_guest: !profileRes.data && !!sessionRes.data,
-          }
-        : null,
+      patient: patientPayload,
       medicine: medRes.data ?? null,
       package: pkgRes.data ?? null,
       provider: provRes.data ?? null,
@@ -745,7 +781,9 @@ export const generatePrescription = createServerFn({ method: "POST" })
     if (req.status !== "approved") {
       throw new Error(
         req.status === "awaiting_additional_payment"
-          ? "The additional payment must be completed before generating the prescription."
+          ? role === "provider"
+            ? "The patient needs to confirm the plan change before a prescription can be generated."
+            : "The additional payment must be completed before generating the prescription."
           : `Cannot generate a prescription for a request that is ${req.status}.`,
       );
     }
@@ -757,7 +795,11 @@ export const generatePrescription = createServerFn({ method: "POST" })
       .eq("status", "pending")
       .maybeSingle();
     if (pendingPay) {
-      throw new Error("An additional payment is still pending for this order.");
+      throw new Error(
+        role === "provider"
+          ? "The patient still needs to confirm the plan change."
+          : "An additional payment is still pending for this order.",
+      );
     }
 
     const { data: med } = req.medicine_id
@@ -819,9 +861,21 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       .eq("id", data.requestId)
       .maybeSingle();
 
+    const patch: Record<string, unknown> = {
+      provider_id: data.providerId,
+      updated_at: new Date().toISOString(),
+    };
+    if (
+      data.providerId &&
+      ((existing as any)?.status === "payment_completed" ||
+        (existing as any)?.status === "provider_assigned")
+    ) {
+      patch.status = "pending_review";
+    }
+
     const { error } = await supabaseAdmin
       .from("medication_requests")
-      .update({ provider_id: data.providerId, updated_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", data.requestId);
     if (error) throw new Error(error.message);
     if (data.providerId) {

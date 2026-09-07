@@ -180,9 +180,24 @@ export const claimRequest = createServerFn({ method: "POST" })
       );
     }
 
+    const { data: current } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, status")
+      .eq("id", data.requestId)
+      .maybeSingle();
+
+    const nextStatus =
+      current?.status === "payment_completed" || current?.status === "provider_assigned"
+        ? "pending_review"
+        : undefined;
+
     const { data: updated, error } = await supabaseAdmin
       .from("medication_requests")
-      .update({ provider_id: me, updated_at: new Date().toISOString() })
+      .update({
+        provider_id: me,
+        updated_at: new Date().toISOString(),
+        ...(nextStatus ? { status: nextStatus } : {}),
+      })
       .eq("id", data.requestId)
       .is("provider_id", null)
       .select("id")

@@ -1,17 +1,17 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { RoutePending } from "@/components/route-pending";
 import {
   getPasswordRecoveryRedirectUrl,
   haltForPasswordRecoveryRedirect,
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
 import { isBrowser } from "@/lib/is-browser";
+import { ensureSession } from "@/lib/auth-session-cache";
 import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  pendingComponent: () => <RoutePending />,
+  shouldReload: false,
   beforeLoad: async () => {
     if (!isBrowser()) {
       return;
@@ -23,8 +23,8 @@ export const Route = createFileRoute("/_authenticated")({
       await haltForPasswordRecoveryRedirect();
     }
 
-    const { data, error } = await supabase.auth.getSession();
-    if (error || !data.session?.user) {
+    const session = await ensureSession();
+    if (!session?.user) {
       throw redirect({ to: "/auth" });
     }
 
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated")({
       await haltForPasswordRecoveryRedirect();
     }
 
-    const user = data.session.user;
+    const user = session.user;
     let role = readCachedPortalRole(user.id);
 
     if (!role) {
