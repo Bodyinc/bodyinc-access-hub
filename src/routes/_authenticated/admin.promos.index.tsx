@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ function discountLabel(p: any) {
 
 function PromosListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
   const list = useServerFn(listPromos);
   const setActive = useServerFn(setPromoActive);
@@ -119,6 +120,12 @@ function PromosListPage() {
                 <TableRow
                   key={p.id}
                   className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onPointerEnter={() => {
+                    void router.preloadRoute({
+                      to: "/admin/promos/$promoId",
+                      params: { promoId: p.id },
+                    });
+                  }}
                   onClick={() =>
                     navigate({ to: "/admin/promos/$promoId", params: { promoId: p.id } })
                   }

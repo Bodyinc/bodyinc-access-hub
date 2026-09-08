@@ -1,5 +1,5 @@
 import { toastError } from "@/lib/toast-message";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/admin/categories/")({
 
 function CategoriesListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
   const [confirm, setConfirm] = useState<{ id: string; name: string } | null>(null);
   const query = useQuery(categoriesQueryOptions());
@@ -168,6 +169,12 @@ function CategoriesListPage() {
                     <TableRow
                       key={c.id}
                       className="border-b border-[#E8EEED] transition-all cursor-pointer select-none bg-white hover:bg-[#F8F9FB]"
+                      onPointerEnter={() => {
+                        void router.preloadRoute({
+                          to: "/admin/categories/$categoryId",
+                          params: { categoryId: c.id },
+                        });
+                      }}
                       onClick={() =>
                         navigate({
                           to: "/admin/categories/$categoryId",

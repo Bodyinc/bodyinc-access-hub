@@ -41,6 +41,8 @@ import {
   requestStatusTone,
   REQUEST_STATUS_BADGE,
   nextFulfillmentStep,
+  clinicalStatusLabel,
+  clinicalEventNote,
 } from "@/lib/request-status";
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
@@ -130,7 +132,10 @@ export function RequestReviewPanel({
   const rejectMut = useMutation({
     mutationFn: () => reject({ data: { requestId, note: sentenceCase(rejectNote) || undefined } }),
     onSuccess: (res) => {
-      toastActionWithEmail("Order rejected and refunded.", res?.email_sent);
+      toastActionWithEmail(
+        clinicalOnly ? "Order rejected." : "Order rejected and refunded.",
+        res?.email_sent,
+      );
       setRejectOpen(false);
       setRejectNote("");
       refresh();
@@ -238,7 +243,7 @@ export function RequestReviewPanel({
               REQUEST_STATUS_BADGE[requestStatusTone(status)]
             }`}
           >
-            {requestStatusLabel(status)}
+            {clinicalOnly ? clinicalStatusLabel(status) : requestStatusLabel(status)}
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
@@ -363,21 +368,22 @@ export function RequestReviewPanel({
                 onClick={() => setRejectOpen(true)}
                 className="h-10 border-[#E7CFC3] px-4 text-[13px] font-semibold text-[#8F4A33] hover:bg-[#F6E4DA]"
               >
-                <X className="mr-1 h-4 w-4" /> Reject &amp; refund
+                <X className="mr-1 h-4 w-4" /> {clinicalOnly ? "Reject" : "Reject & refund"}
               </Button>
             ) : null}
           </div>
 
           {status === "awaiting_additional_payment" ? (
             <p className="rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
-              Waiting for the patient to pay the price difference. The prescription can be generated
-              once payment succeeds.
+              {clinicalOnly
+                ? "Waiting for the patient to confirm the new plan. The prescription can be generated after they confirm."
+                : "Waiting for the patient to pay the price difference. The prescription can be generated once payment succeeds."}
             </p>
           ) : null}
         </CardContent>
       </Card>
 
-      {additional_payments.length > 0 ? (
+      {!clinicalOnly && additional_payments.length > 0 ? (
         <Card className={adminCard}>
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className={adminSectionTitle}>Additional payments</CardTitle>
@@ -458,11 +464,17 @@ export function RequestReviewPanel({
               <li key={ev.id} className="flex gap-3 text-[14px]">
                 <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#6A9B9C]" />
                 <div className="min-w-0">
-                  <div className="font-medium text-[#3B4759]">{requestStatusLabel(ev.status)}</div>
+                  <div className="font-medium text-[#3B4759]">
+                    {clinicalOnly ? clinicalStatusLabel(ev.status) : requestStatusLabel(ev.status)}
+                  </div>
                   <div className="text-[12px] text-[#3B4759]/60">
                     {ev.actor_role} · {formatDateTimeFull(ev.created_at)}
                   </div>
-                  {ev.note ? <div className="text-[13px] text-[#3B4759]/80">{ev.note}</div> : null}
+                  {ev.note ? (
+                    <div className="text-[13px] text-[#3B4759]/80">
+                      {clinicalOnly ? clinicalEventNote(ev.note) : ev.note}
+                    </div>
+                  ) : null}
                 </div>
               </li>
             ))}
@@ -475,13 +487,14 @@ export function RequestReviewPanel({
         open={changeOpen}
         onOpenChange={setChangeOpen}
         onChanged={refresh}
+        hideFinancial={clinicalOnly}
         currentMedicineId={medicine?.id ?? request.medicine_id ?? null}
         currentVariantId={request.variant_id ?? null}
         currentPackageId={pkg?.id ?? request.package_id ?? null}
         current={{
           medicineName: medicine?.name ?? null,
           planName: pkg?.name ?? null,
-          price: pkg?.price != null ? Number(pkg.price) : null,
+          price: clinicalOnly ? null : pkg?.price != null ? Number(pkg.price) : null,
         }}
       />
 
@@ -489,10 +502,11 @@ export function RequestReviewPanel({
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject &amp; refund</DialogTitle>
+            <DialogTitle>{clinicalOnly ? "Reject order" : "Reject & refund"}</DialogTitle>
             <DialogDescription>
-              This refunds the patient&apos;s payment, cancels the subscription, and closes the
-              order. This cannot be undone.
+              {clinicalOnly
+                ? "This closes the order. The patient will be notified. This cannot be undone."
+                : "This refunds the patient's payment, cancels the subscription, and closes the order. This cannot be undone."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -513,7 +527,7 @@ export function RequestReviewPanel({
               disabled={rejectMut.isPending}
               className="bg-[#8F4A33] text-white hover:bg-[#8F4A33]"
             >
-              {rejectMut.isPending ? "Rejecting…" : "Reject & refund"}
+              {rejectMut.isPending ? "Rejecting…" : clinicalOnly ? "Reject" : "Reject & refund"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -526,7 +540,8 @@ export function RequestReviewPanel({
             <DialogTitle>Generate prescription</DialogTitle>
             <DialogDescription>
               Creates the prescription for {medicine?.name ?? "this medication"}, visible to the
-              patient, provider, and admin.
+              patient, provider, and admin. These directions are sent to the pharmacy. For a Life
+              File test order, include: Test Order Do Not Fill.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -534,7 +549,7 @@ export function RequestReviewPanel({
             <Textarea
               value={directions}
               onChange={(e) => setDirections(e.target.value)}
-              placeholder="Dosage and sig instructions"
+              placeholder="e.g. Take as directed. Test Order Do Not Fill"
               className="min-h-[80px]"
             />
           </div>

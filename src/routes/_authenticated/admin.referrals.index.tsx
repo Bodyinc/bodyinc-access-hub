@@ -1,7 +1,7 @@
 import { sentenceCase } from "@/lib/text-normalize";
 import { toastError } from "@/lib/toast-message";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -196,6 +196,7 @@ function ReferralsPage() {
   const query = useQuery({
     queryKey: ["referrals", { search: debounced, status }],
     queryFn: () => list({ data: { search: debounced || undefined, status } }),
+    placeholderData: keepPreviousData,
   });
 
   const stats = query.data?.stats;

@@ -1,4 +1,5 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Link, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/lib/use-notifications";
@@ -26,9 +27,16 @@ const items = [
 
 export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { unread } = useNotifications();
+
+  useEffect(() => {
+    for (const item of items) {
+      void router.preloadRoute({ to: item.url } as Parameters<typeof router.preloadRoute>[0]);
+    }
+  }, [router]);
 
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
@@ -103,7 +111,7 @@ export function ProviderSidebar() {
                           : "bg-transparent hover:bg-[#D5DEDD]/80 !text-[#3B4759]"
                       }`}
                     >
-                      <Link to={item.url}>
+                      <Link to={item.url} preload="intent">
                         <span className="truncate">{item.title}</span>
                         {item.badge && unread > 0 && (
                           <>

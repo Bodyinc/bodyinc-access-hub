@@ -1,6 +1,6 @@
 import { toastError } from "@/lib/toast-message";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -64,6 +64,7 @@ export const Route = createFileRoute("/_authenticated/admin/patients/")({
 
 function PatientsListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
   const list = useServerFn(listPatients);
   const setActive = useServerFn(setPatientActive);
@@ -81,6 +82,7 @@ function PatientsListPage() {
   const query = useQuery({
     queryKey: ["patients", { search: searchTerm, status }],
     queryFn: () => list({ data: { search: searchTerm || undefined, status } }),
+    placeholderData: keepPreviousData,
   });
 
   const activeMut = useMutation({
@@ -202,6 +204,12 @@ function PatientsListPage() {
                 <TableRow
                   key={p.id}
                   className="cursor-pointer border-b border-[#D5DEDD] hover:bg-[#E8EEED]/40 transition-colors"
+                  onPointerEnter={() => {
+                    void router.preloadRoute({
+                      to: "/admin/patients/$patientId",
+                      params: { patientId: p.id },
+                    });
+                  }}
                   onClick={() =>
                     navigate({
                       to: "/admin/patients/$patientId",

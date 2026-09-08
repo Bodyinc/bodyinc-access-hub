@@ -1,4 +1,5 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Link, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
@@ -32,6 +33,7 @@ const items: NavItem[] = [
   { title: "Providers", url: "/admin/providers" },
   { title: "Patients", url: "/admin/patients" },
   { title: "Intake Sessions", url: "/admin/intake-sessions" },
+  { title: "Feedback", url: "/admin/feedback" },
 ];
 
 const navItemBase =
@@ -44,8 +46,16 @@ const navIdle = "bg-transparent hover:!bg-[#F2F7F6]/70";
 
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const urls = [...items.map((item) => item.url), "/admin/settings"];
+    for (const url of urls) {
+      void router.preloadRoute({ to: url } as Parameters<typeof router.preloadRoute>[0]);
+    }
+  }, [router]);
 
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
@@ -119,7 +129,7 @@ export function AdminSidebar() {
                       tooltip={item.title}
                       className={`${navItemBase} ${active ? navActive : navIdle}`}
                     >
-                      <Link to={item.url}>
+                      <Link to={item.url} preload="intent">
                         <span className="truncate">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -142,7 +152,7 @@ export function AdminSidebar() {
                     isActive("/admin/settings") ? navActive : navIdle
                   }`}
                 >
-                  <Link to="/admin/settings">
+                  <Link to="/admin/settings" preload="intent">
                     <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>

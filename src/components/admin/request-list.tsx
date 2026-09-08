@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listRequests } from "@/lib/requests.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
+import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE, clinicalStatusLabel } from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 import { formatDateTime, normalizeIdSearch } from "@/lib/format";
 
@@ -43,12 +44,17 @@ export function RequestList({
   subtitle,
   showProvider,
   onOpen,
+  preloadTo,
+  clinicalOnly = false,
 }: {
   title: string;
   subtitle: string;
   showProvider: boolean;
   onOpen: (id: string) => void;
+  preloadTo: "/admin/requests/$requestId" | "/provider/requests/$requestId";
+  clinicalOnly?: boolean;
 }) {
+  const router = useRouter();
   const list = useServerFn(listRequests);
   const [search, setSearch] = useState("");
   const debounced = useDebouncedValue(search);
@@ -59,6 +65,7 @@ export function RequestList({
   const query = useQuery({
     queryKey: ["requests", { search: searchTerm, status }],
     queryFn: () => list({ data: { search: searchTerm || undefined, status } }),
+    placeholderData: keepPreviousData,
   });
 
   const rows = (query.data as any[]) ?? [];
@@ -79,7 +86,11 @@ export function RequestList({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by order ID, patient, email, or medicine…"
+            placeholder={
+              clinicalOnly
+                ? "Search by order ID, patient, or medicine…"
+                : "Search by order ID, patient, email, or medicine…"
+            }
             className={`${adminInput} pl-10`}
           />
         </div>
@@ -90,7 +101,9 @@ export function RequestList({
           <SelectContent className="font-['DM_Sans',sans-serif]">
             {STATUS_FILTERS.map((s) => (
               <SelectItem key={s.value} value={s.value} className="text-[16px] text-[#3B4759]">
-                {s.label}
+                {clinicalOnly && s.value === "awaiting_additional_payment"
+                  ? "Waiting on patient"
+                  : s.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -144,12 +157,20 @@ export function RequestList({
                 rows.map((r) => (
                   <TableRow
                     key={r.id}
+                    onPointerEnter={() => {
+                      void router.preloadRoute({
+                        to: preloadTo,
+                        params: { requestId: r.id },
+                      });
+                    }}
                     onClick={() => onOpen(r.id)}
                     className="cursor-pointer border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                   >
                     <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       <div>{r.customer_name ?? (r.is_guest ? "Guest" : "—")}</div>
-                      <div className="text-[12px] text-[#3B4759]/60">{r.customer_email ?? ""}</div>
+                      {clinicalOnly ? null : (
+                        <div className="text-[12px] text-[#3B4759]/60">{r.customer_email ?? ""}</div>
+                      )}
                     </TableCell>
                     <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       {r.medicine_name}
@@ -168,7 +189,7 @@ export function RequestList({
                           REQUEST_STATUS_BADGE[requestStatusTone(r.status)]
                         }`}
                       >
-                        {requestStatusLabel(r.status)}
+                        {clinicalOnly ? clinicalStatusLabel(r.status) : requestStatusLabel(r.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-[14px] font-medium text-[#3B4759]/70">

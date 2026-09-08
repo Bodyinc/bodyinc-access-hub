@@ -1053,6 +1053,39 @@ export type Database = {
           },
         ]
       }
+      patient_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          message: string
+          page_path: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          message: string
+          page_path?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          message?: string
+          page_path?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_cents: number

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,7 @@ function MedicineChangesPage() {
           limit: 25,
         },
       }),
+    placeholderData: keepPreviousData,
   });
 
   const rows = (query.data?.data as any[]) ?? [];

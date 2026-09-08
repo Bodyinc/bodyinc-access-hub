@@ -9,7 +9,7 @@ import { MedicineFormPageHeader } from "@/components/admin/medicine-form";
 import { medicinesQueryKey } from "@/lib/query-options/medicines";
 import { createMedicine } from "@/lib/medicines.store";
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
-import { syncPackageToStripe } from "@/lib/packages.functions";
+import { syncPackagesToStripe } from "@/lib/packages.functions";
 import { computeMedicineFromPriceCents, type MedicineFormValues } from "@/lib/medicines.schema";
 
 const MedicineForm = lazy(() =>
@@ -34,7 +34,7 @@ function NewMedicinePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const syncMedicine = useServerFn(syncMedicineToStripe);
-  const syncPackage = useServerFn(syncPackageToStripe);
+  const syncPackages = useServerFn(syncPackagesToStripe);
   const [previewValues, setPreviewValues] = useState<MedicineFormValues>({
     name: "",
     short_description: "",
@@ -62,14 +62,10 @@ function NewMedicinePage() {
       }
       // A plan with no Stripe price cannot be bought, so a swallowed failure here surfaces
       // later as "This plan is not available for purchase yet" at the patient's checkout.
-      const failedSyncs: string[] = [];
-      for (const target of syncTargets) {
-        try {
-          await syncPackage({ data: { packageId: target.id } });
-        } catch {
-          failedSyncs.push(target.name);
-        }
-      }
+      const failedSyncs =
+        syncTargets.length === 0
+          ? []
+          : (await syncPackages({ data: { packages: syncTargets } })).failed;
       return { id, failedSyncs };
     },
     onSuccess: ({ failedSyncs }) => {

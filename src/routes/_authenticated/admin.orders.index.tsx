@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Search } from "lucide-react";
@@ -86,6 +86,7 @@ function OrderStatusBadge({ status }: { status?: string | null }) {
 
 function OrdersListPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const list = useServerFn(listOrders);
   const [search, setSearch] = useState("");
   const debounced = useDebouncedValue(search);
@@ -96,6 +97,7 @@ function OrdersListPage() {
   const query = useQuery({
     queryKey: ["admin-orders", { search: searchTerm, status }],
     queryFn: () => list({ data: { search: searchTerm || undefined, status } }),
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -181,6 +183,12 @@ function OrdersListPage() {
                 <TableRow
                   key={o.id}
                   className="cursor-pointer border-b border-[#E8EEED] bg-white transition-colors hover:bg-[#F8F9FB]"
+                  onPointerEnter={() => {
+                    void router.preloadRoute({
+                      to: "/admin/orders/$orderId",
+                      params: { orderId: o.id },
+                    });
+                  }}
                   onClick={() =>
                     navigate({ to: "/admin/orders/$orderId", params: { orderId: o.id } })
                   }

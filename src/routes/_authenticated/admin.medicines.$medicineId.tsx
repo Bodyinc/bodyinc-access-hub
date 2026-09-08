@@ -15,7 +15,7 @@ import {
 import { syncMedicineToStripe } from "@/lib/medicines.functions";
 import {
   archiveStripeObjects,
-  syncPackageToStripe,
+  syncPackagesToStripe,
   syncUnpricedPackages,
 } from "@/lib/packages.functions";
 import { AlertTriangle } from "lucide-react";
@@ -98,7 +98,7 @@ export default function EditMedicinePage() {
 
   const medicineQuery = useQuery(medicineQueryOptions(medicineId));
   const syncMedicine = useServerFn(syncMedicineToStripe);
-  const syncPackage = useServerFn(syncPackageToStripe);
+  const syncPackages = useServerFn(syncPackagesToStripe);
   const syncPrices = useServerFn(syncUnpricedPackages);
   const archiveStripe = useServerFn(archiveStripeObjects);
 
@@ -130,14 +130,14 @@ export default function EditMedicinePage() {
 
   const mutation = useMutation({
     mutationFn: async (values: MedicineFormValues) => {
-      const { syncTargets, orphanedPriceIds, orphanedProductIds } = await updateMedicine(
-        medicineId,
-        values,
-      );
-      try {
-        await syncMedicine({ data: { medicineId } });
-      } catch {
-        // Product sync is best-effort; package sync will also ensure the product exists.
+      const { syncTargets, orphanedPriceIds, orphanedProductIds, needsProductSync } =
+        await updateMedicine(medicineId, values);
+      if (needsProductSync) {
+        try {
+          await syncMedicine({ data: { medicineId } });
+        } catch {
+          // Product sync is best-effort; package sync will also ensure the product exists.
+        }
       }
       // Plans/variants removed by this save leave live Stripe objects behind — deactivate them so
       // they cannot back a new subscription. Existing subscribers are unaffected.
@@ -151,18 +151,9 @@ export default function EditMedicinePage() {
           // from the catalogue, so a failure here cannot sell anything by accident.
         }
       }
-      // A plan with no Stripe price cannot be bought, so a swallowed failure here surfaces
-      // later as "This plan is not available for purchase yet" at the patient's checkout.
-      // Save still succeeds — the row is persisted — but the admin has to be told.
-      const failedSyncs: string[] = [];
-      for (const target of syncTargets) {
-        try {
-          await syncPackage({ data: { packageId: target.id } });
-        } catch {
-          failedSyncs.push(target.name);
-        }
-      }
-      return { failedSyncs };
+      if (syncTargets.length === 0) return { failedSyncs: [] as string[] };
+      const { failed } = await syncPackages({ data: { packages: syncTargets } });
+      return { failedSyncs: failed };
     },
     onSuccess: ({ failedSyncs }) => {
       qc.invalidateQueries({ queryKey: medicinesQueryKey });

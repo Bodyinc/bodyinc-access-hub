@@ -58,9 +58,9 @@ function ProviderDashboard() {
       to: "/provider/requests",
     },
     {
-      label: "Awaiting patient payment",
+      label: "Waiting on patient",
       value: d.awaiting_additional_payment ?? 0,
-      hint: "Price difference not yet paid",
+      hint: "Plan change needs the patient's confirmation",
       to: "/provider/requests",
     },
     {

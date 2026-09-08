@@ -232,6 +232,7 @@ export type PricingReconcileResult = {
   // Stripe objects left behind by rows this save deleted; the caller archives them.
   orphanedPriceIds: string[];
   orphanedProductIds: string[];
+  needsProductSync: boolean;
 };
 
 export async function reconcileMedicinePricing(
@@ -244,10 +245,23 @@ export async function reconcileMedicinePricing(
   //    cascade-deletes its packages (intended — the variant's plans go with it).
   const { data: existingVariantRows, error: vErr } = await supabase
     .from("medicine_variants")
-    .select("id, stripe_product_id")
+    .select("id, name, stripe_product_id")
     .eq("medicine_id", medicineId);
   if (vErr) throw new Error(vErr.message);
   const existingVariantIds = new Set((existingVariantRows ?? []).map((r: any) => String(r.id)));
+  const existingVariantNameById = new Map(
+    (existingVariantRows ?? []).map((r: any) => [String(r.id), String(r.name ?? "")]),
+  );
+  const renamedVariantIds = new Set(
+    variants
+      .filter(
+        (v) =>
+          v.id &&
+          existingVariantNameById.has(v.id) &&
+          existingVariantNameById.get(v.id) !== v.name.trim(),
+      )
+      .map((v) => v.id as string),
+  );
   const keptVariantIds = new Set(variants.map((v) => v.id).filter((id): id is string => !!id));
   const variantsToDelete = [...existingVariantIds].filter((id) => !keptVariantIds.has(id));
 
@@ -275,33 +289,34 @@ export async function reconcileMedicinePricing(
     if (error) throw new Error(error.message);
   }
 
-  const variantIdByIndex: string[] = [];
-  for (let i = 0; i < variants.length; i++) {
-    const v = variants[i];
-    const payload = {
-      medicine_id: medicineId,
-      name: v.name.trim(),
-      is_active: v.is_active ?? true,
-      sort_order: i,
-      lf_product_id: parseLfProductId(v.lf_product_id),
-    };
-    if (v.id && existingVariantIds.has(v.id)) {
-      const { error } = await supabase
-        .from("medicine_variants")
-        .update(payload as any)
-        .eq("id", v.id);
-      if (error) throw lfProductIdWriteError(error, "variant");
-      variantIdByIndex[i] = v.id;
-    } else {
-      const { data, error } = await supabase
-        .from("medicine_variants")
-        .insert(payload as any)
-        .select("id")
-        .single();
-      if (error) throw lfProductIdWriteError(error, "variant");
-      variantIdByIndex[i] = data.id;
-    }
-  }
+  const variantIdByIndex: string[] = new Array(variants.length);
+  await Promise.all(
+    variants.map(async (v, i) => {
+      const payload = {
+        medicine_id: medicineId,
+        name: v.name.trim(),
+        is_active: v.is_active ?? true,
+        sort_order: i,
+        lf_product_id: parseLfProductId(v.lf_product_id),
+      };
+      if (v.id && existingVariantIds.has(v.id)) {
+        const { error } = await supabase
+          .from("medicine_variants")
+          .update(payload as any)
+          .eq("id", v.id);
+        if (error) throw lfProductIdWriteError(error, "variant");
+        variantIdByIndex[i] = v.id;
+      } else {
+        const { data, error } = await supabase
+          .from("medicine_variants")
+          .insert(payload as any)
+          .select("id")
+          .single();
+        if (error) throw lfProductIdWriteError(error, "variant");
+        variantIdByIndex[i] = data.id;
+      }
+    }),
+  );
 
   // 2. Flatten the desired packages with their target variant (null = medicine-level).
   const desired: {
@@ -322,10 +337,11 @@ export async function reconcileMedicinePricing(
   // 3. Id-based package reconcile across the whole medicine.
   const { data: existingPkgRows, error: pErr } = await supabase
     .from("packages")
-    .select("id, stripe_price_id")
+    .select("id, stripe_price_id, price, duration_months, variant_id")
     .eq("medicine_id", medicineId);
   if (pErr) throw new Error(pErr.message);
   const existingPkgIds = new Set((existingPkgRows ?? []).map((r: any) => String(r.id)));
+  const existingPkgById = new Map((existingPkgRows ?? []).map((r: any) => [String(r.id), r]));
   const keptPkgIds = new Set(desired.map((d) => d.pkg.id).filter((id): id is string => !!id));
   const pkgsToDelete = [...existingPkgIds].filter((id) => !keptPkgIds.has(id));
   if (pkgsToDelete.length > 0) {
@@ -340,27 +356,47 @@ export async function reconcileMedicinePricing(
     if (error) throw new Error(error.message);
   }
 
-  const syncTargets: PackageSyncTarget[] = [];
-  for (const d of desired) {
-    const payload = packageFromForm(medicineId, d.variantId, d.pkg, d.sort);
-    if (d.pkg.id && existingPkgIds.has(d.pkg.id)) {
-      const { error } = await supabase
-        .from("packages")
-        .update(payload as any)
-        .eq("id", d.pkg.id);
-      if (error) throw new Error(error.message);
-      syncTargets.push({ id: d.pkg.id, name: d.pkg.name ?? "Unnamed plan" });
-    } else {
+  const written = await Promise.all(
+    desired.map(async (d) => {
+      const payload = packageFromForm(medicineId, d.variantId, d.pkg, d.sort);
+      const label = d.pkg.name ?? "Unnamed plan";
+      if (d.pkg.id && existingPkgIds.has(d.pkg.id)) {
+        const { error } = await supabase
+          .from("packages")
+          .update(payload as any)
+          .eq("id", d.pkg.id);
+        if (error) throw new Error(error.message);
+        return { id: d.pkg.id, name: label, payload, existing: existingPkgById.get(d.pkg.id) };
+      }
       const { data, error } = await supabase
         .from("packages")
         .insert(payload as any)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      syncTargets.push({ id: data.id, name: d.pkg.name ?? "Unnamed plan" });
+      return { id: data.id, name: label, payload, existing: null as any };
+    }),
+  );
+
+  const syncTargets: PackageSyncTarget[] = [];
+  for (const row of written) {
+    if (!row.existing || !row.existing.stripe_price_id) {
+      syncTargets.push({ id: row.id, name: row.name });
+      continue;
+    }
+    const priceChanged = Number(row.existing.price) !== Number(row.payload.price);
+    const durationChanged =
+      Number(row.existing.duration_months) !== Number(row.payload.duration_months);
+    const variantChanged =
+      String(row.existing.variant_id ?? "") !== String(row.payload.variant_id ?? "");
+    const variantRenamed = !!(
+      row.payload.variant_id && renamedVariantIds.has(String(row.payload.variant_id))
+    );
+    if (priceChanged || durationChanged || variantChanged || variantRenamed) {
+      syncTargets.push({ id: row.id, name: row.name });
     }
   }
-  return { syncTargets, orphanedPriceIds, orphanedProductIds };
+  return { syncTargets, orphanedPriceIds, orphanedProductIds, needsProductSync: false };
 }
 
 async function syncMedicineCategories(medicineId: string, categoryIds: string[]) {
@@ -423,7 +459,7 @@ export async function createMedicine(
   if (error) throw lfProductIdWriteError(error, "medicine");
   await syncMedicineCategories(data.id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(data.id, values);
-  return { id: data.id, ...pricing };
+  return { id: data.id, ...pricing, needsProductSync: true };
 }
 
 export async function updateMedicine(
@@ -431,6 +467,12 @@ export async function updateMedicine(
   values: MedicineFormValues,
 ): Promise<{ id: string } & PricingReconcileResult> {
   const payload = fromForm(values);
+  const { data: current, error: readErr } = await supabase
+    .from("medicines")
+    .select("name, short_description")
+    .eq("id", id)
+    .maybeSingle();
+  if (readErr) throw new Error(readErr.message);
   const { error } = await supabase
     .from("medicines")
     .update(payload as any)
@@ -438,7 +480,11 @@ export async function updateMedicine(
   if (error) throw lfProductIdWriteError(error, "medicine");
   await syncMedicineCategories(id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(id, values);
-  return { id, ...pricing };
+  const needsProductSync =
+    !current ||
+    current.name !== payload.name ||
+    (current.short_description ?? "") !== (payload.short_description ?? "");
+  return { id, ...pricing, needsProductSync };
 }
 
 export async function deleteMedicine(id: string): Promise<{ ok: true }> {

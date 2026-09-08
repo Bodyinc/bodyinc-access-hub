@@ -134,6 +134,36 @@ async function syncOnePackage(
   }
 }
 
+const bulkPackagesInput = z.object({
+  packages: z.array(z.object({ id: z.string().uuid(), name: z.string().max(200) })).max(50),
+});
+
+/** One server round-trip for many plans. Used by medicine save instead of N sequential syncs. */
+export const syncPackagesToStripe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => bulkPackagesInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getStripe } = await import("@/integrations/stripe/client.server");
+    const stripe = getStripe();
+    const failed: string[] = [];
+    const chunkSize = 4;
+    for (let i = 0; i < data.packages.length; i += chunkSize) {
+      const chunk = data.packages.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map(async (pkg) => {
+          try {
+            await syncOnePackage(pkg.id, supabaseAdmin, stripe);
+          } catch {
+            failed.push(pkg.name);
+          }
+        }),
+      );
+    }
+    return { failed };
+  });
+
 export const syncPackageToStripe = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => syncInput.parse(input))

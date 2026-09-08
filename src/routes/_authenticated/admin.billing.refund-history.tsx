@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Download, Eye, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,7 @@ function RefundHistoryPage() {
     queryKey: ["admin-refund-history", debounced, status, days, page],
     queryFn: () =>
       list({ data: { search: debounced || undefined, status, days, page, limit: 25 } }),
+    placeholderData: keepPreviousData,
   });
 
   const rows = (query.data?.data as any[]) ?? [];

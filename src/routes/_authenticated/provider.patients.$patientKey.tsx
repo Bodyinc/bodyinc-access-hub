@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMyPatient } from "@/lib/provider.functions";
-import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
+import { requestStatusTone, REQUEST_STATUS_BADGE, clinicalStatusLabel } from "@/lib/request-status";
 import { adminCard, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
 import { formatDateTimeFull } from "@/lib/format";
 
@@ -181,7 +181,7 @@ function ProviderPatientDetail() {
                   REQUEST_STATUS_BADGE[requestStatusTone(o.status)]
                 }`}
               >
-                {requestStatusLabel(o.status)}
+                {clinicalStatusLabel(o.status)}
               </Badge>
             </button>
           ))}

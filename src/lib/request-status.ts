@@ -19,6 +19,31 @@ export function requestStatusLabel(status: string): string {
   return REQUEST_STATUS_LABELS[status] ?? status;
 }
 
+/** Practitioner-facing labels: no payment / price / refund wording. */
+const CLINICAL_STATUS_LABELS: Record<string, string> = {
+  payment_completed: "New order",
+  awaiting_additional_payment: "Waiting on patient",
+};
+
+export function clinicalStatusLabel(status: string): string {
+  return CLINICAL_STATUS_LABELS[status] ?? requestStatusLabel(status);
+}
+
+/** Strip dollar amounts and billing phrases from timeline notes shown to practitioners. */
+export function clinicalEventNote(note: string | null | undefined): string | null {
+  if (!note) return null;
+  const cleaned = note
+    .replace(/;\s*additional\s+\$[\d,.]+ due\.?/gi, ".")
+    .replace(/;\s*\$[\d,.]+ credited next cycle\.?/gi, ".")
+    .replace(/Additional payment received\.?/gi, "Patient confirmed the plan change.")
+    .replace(/\$[\d,.]+/g, "")
+    .replace(/price difference[^.]*\.?/gi, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+\./g, ".")
+    .trim();
+  return cleaned || null;
+}
+
 type Tone = "attention" | "progress" | "success" | "danger" | "muted";
 
 export function requestStatusTone(status: string): Tone {

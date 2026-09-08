@@ -185,6 +185,37 @@ export const updatePatientProfile = createServerFn({ method: "POST" })
       .update(patch as any)
       .eq("id", userId);
     if (error) throw new Error(error.message);
+
+    if (typeof rest.full_name === "string") {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const metadata = (authUser.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: { ...metadata, full_name: rest.full_name },
+      });
+      if (authErr) console.error("[patients] auth name sync failed:", authErr);
+
+      const { error: sessionErr } = await supabaseAdmin
+        .from("intake_sessions")
+        .update({ full_name: rest.full_name })
+        .eq("claimed_by_user_id", userId);
+      if (sessionErr) console.error("[patients] intake name sync failed:", sessionErr);
+
+      try {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("stripe_customer_id")
+          .eq("id", userId)
+          .maybeSingle();
+        if (profile?.stripe_customer_id) {
+          const { getStripe } = await import("@/integrations/stripe/client.server");
+          await getStripe().customers.update(profile.stripe_customer_id, { name: rest.full_name });
+        }
+      } catch (err) {
+        console.error("[patients] stripe name sync failed:", err);
+      }
+    }
+
     return { ok: true };
   });
 

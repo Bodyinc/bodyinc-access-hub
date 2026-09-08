@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listClaimableRequests, claimRequest } from "@/lib/provider.functions";
-import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE } from "@/lib/request-status";
+import { requestStatusTone, REQUEST_STATUS_BADGE, clinicalStatusLabel } from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput } from "@/lib/admin-ui";
 
 export const Route = createFileRoute("/_authenticated/provider/queue")({
@@ -117,7 +117,7 @@ function ProviderQueuePage() {
                         REQUEST_STATUS_BADGE[requestStatusTone(r.status)]
                       }`}
                     >
-                      {requestStatusLabel(r.status)}
+                        {clinicalStatusLabel(r.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="space-x-2 text-right">

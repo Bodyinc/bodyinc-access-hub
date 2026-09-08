@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
+import { RoutePending } from "@/components/route-pending";
 import { routeTree } from "./routeTree.gen";
 
 // Admin CRUD: 1 min staleTime avoids refetch storms; localStorage queries override with Infinity.
@@ -19,7 +20,12 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    defaultPreload: "intent",
+    defaultPreloadDelay: 0,
     defaultPreloadStaleTime: 30_000,
+    defaultPendingMs: 200,
+    defaultPendingMinMs: 0,
+    defaultPendingComponent: RoutePending,
   });
 
   return router;

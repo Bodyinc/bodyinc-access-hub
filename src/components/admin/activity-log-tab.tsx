@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -36,6 +36,7 @@ export function ActivityLogTab() {
   const query = useQuery({
     queryKey: ["admin-activity-log", { search: debounced, page }],
     queryFn: () => listFn({ data: { search: debounced || undefined, page, limit: 20 } }),
+    placeholderData: keepPreviousData,
   });
 
   const rows = query.data?.data ?? [];

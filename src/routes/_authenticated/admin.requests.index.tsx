@@ -20,6 +20,7 @@ function AdminRequestsPage() {
       subtitle="Approve, change, and track every medication order through fulfillment."
       showProvider
       onOpen={(id) => navigate({ to: "/admin/requests/$requestId", params: { requestId: id } })}
+      preloadTo="/admin/requests/$requestId"
     />
   );
 }
