@@ -135,11 +135,18 @@ export const syncMedicineToStripe = createServerFn({ method: "POST" })
     if (!medicine) throw new Error("Medicine not found.");
 
     if (medicine.stripe_product_id) {
-      await stripe.products.update(medicine.stripe_product_id, {
-        name: medicine.name,
-        description: medicine.short_description || undefined,
-      });
-      return { ok: true, stripe_product_id: medicine.stripe_product_id };
+      try {
+        const existing = await stripe.products.retrieve(medicine.stripe_product_id);
+        if (!existing.deleted) {
+          await stripe.products.update(medicine.stripe_product_id, {
+            name: medicine.name,
+            description: medicine.short_description || undefined,
+          });
+          return { ok: true, stripe_product_id: medicine.stripe_product_id };
+        }
+      } catch {
+        // Product IDs from a previous Stripe account 404; create a new one below.
+      }
     }
 
     const product = await stripe.products.create({

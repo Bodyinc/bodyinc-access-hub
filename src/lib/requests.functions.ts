@@ -857,9 +857,46 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
 
     const { data: existing } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, medicine_id, status, provider_id")
+      .select("id, medicine_id, status, provider_id, user_id, session_id")
       .eq("id", data.requestId)
       .maybeSingle();
+
+    if (data.providerId) {
+      let patientState: string | null = null;
+      if (existing?.user_id) {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("state_code")
+          .eq("id", existing.user_id)
+          .maybeSingle();
+        patientState = profile?.state_code?.trim().toUpperCase() || null;
+      }
+      if (!patientState && existing?.session_id) {
+        const { data: session } = await supabaseAdmin
+          .from("intake_sessions")
+          .select("state_code")
+          .eq("id", existing.session_id)
+          .maybeSingle();
+        patientState = session?.state_code?.trim().toUpperCase() || null;
+      }
+      if (!patientState) {
+        throw new Error("This patient has no state on file, so a provider cannot be assigned yet.");
+      }
+
+      const { data: provider } = await supabaseAdmin
+        .from("providers")
+        .select("license_states")
+        .eq("id", data.providerId)
+        .maybeSingle();
+      const licensed = ((provider?.license_states ?? []) as string[]).map((s) =>
+        String(s).toUpperCase(),
+      );
+      if (!licensed.includes(patientState)) {
+        throw new Error(
+          `This practitioner is not licensed in ${patientState}. Choose someone licensed in the patient's state.`,
+        );
+      }
+    }
 
     const patch: Record<string, unknown> = {
       provider_id: data.providerId,

@@ -13,7 +13,7 @@ export const adminTextarea =
   "admin-textarea min-h-[80px] sm:min-h-[90px] px-4 py-[14px] !rounded-[6px] border border-[#D5DEDD] bg-white text-[#3B4759] placeholder:text-[#3B4759]/40 focus-visible:ring-1 focus-visible:ring-[#3B4759] text-[16px] font-normal leading-[140%] tracking-normal resize-none shadow-none";
 
 export const adminSelect =
-  "admin-select h-[44px] sm:h-[53px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-[100%] text-[#3B4759] shadow-none";
+  "admin-select h-[44px] sm:h-[53px] w-full !rounded-[6px] border border-[#D5DEDD] bg-white px-4 text-[16px] font-normal leading-normal text-[#3B4759] shadow-none [&>span]:line-clamp-none [&>span]:overflow-visible";
 
 export const adminSectionTitle =
   "admin-section-title text-[20px] font-semibold text-[#3B4759] leading-[100%] tracking-normal";

@@ -15,6 +15,7 @@ export type EmailTemplateKey =
   | "patient_delivered"
   | "patient_refund_approved"
   | "patient_refund_rejected"
+  | "patient_inquiry_update"
   | "provider_assigned"
   | "provider_ready_for_review"
   | "provider_needs_attention";
@@ -89,11 +90,19 @@ function noteBox(html: string, variant: "mist" | "clay" = "mist"): string {
 function layout(opts: {
   preheader: string;
   title: string;
+  hideTitle?: boolean;
+  subject?: string;
   bodyHtml: string;
   bodyText: string;
 }): RenderedEmail {
   const brand = "Body Inc";
   const font = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const heading = opts.hideTitle
+    ? ""
+    : `<tr>
+            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:28px 28px 8px;font-size:22px;font-weight:600;letter-spacing:-0.4px;line-height:1.3;color:${THEME.text};">${escapeHtml(opts.title)}</td>
+          </tr>`;
+  const bodyPad = opts.hideTitle ? "28px 28px 28px" : "0 28px 28px";
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,7 +110,7 @@ function layout(opts: {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light" />
   <meta name="supported-color-schemes" content="light" />
-  <title>${escapeHtml(opts.title)}</title>
+  <title>${escapeHtml(opts.subject ?? opts.title)}</title>
 </head>
 <body bgcolor="${THEME.page}" style="margin:0;padding:0;background-color:${THEME.page};background:${THEME.page};font-family:${font};color:${THEME.text};">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.preheader)}</div>
@@ -117,11 +126,9 @@ function layout(opts: {
           <tr>
             <td bgcolor="${THEME.accent}" style="height:4px;line-height:4px;font-size:0;background-color:${THEME.accent};background:${THEME.accent};">&nbsp;</td>
           </tr>
+          ${heading}
           <tr>
-            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:28px 28px 8px;font-size:22px;font-weight:600;letter-spacing:-0.4px;line-height:1.3;color:${THEME.text};">${escapeHtml(opts.title)}</td>
-          </tr>
-          <tr>
-            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:0 28px 28px;font-size:14px;line-height:1.65;color:${THEME.muted};">${opts.bodyHtml}</td>
+            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:${bodyPad};font-size:14px;line-height:1.65;color:${THEME.muted};">${opts.bodyHtml}</td>
           </tr>
           <tr>
             <td bgcolor="${THEME.card}" style="background-color:${THEME.card};padding:16px 28px 24px;border-top:1px solid ${THEME.border};font-size:12px;line-height:1.5;color:${THEME.footer};">
@@ -135,8 +142,10 @@ function layout(opts: {
 </body>
 </html>`;
 
-  const text = `${brand}\n\n${opts.title}\n\n${opts.bodyText}\n`;
-  return { subject: opts.title, html, text };
+  const text = opts.hideTitle
+    ? `${brand}\n\n${opts.bodyText}\n`
+    : `${brand}\n\n${opts.title}\n\n${opts.bodyText}\n`;
+  return { subject: opts.subject ?? opts.title, html, text };
 }
 
 type Builder = (params: EmailParams) => RenderedEmail;
@@ -291,6 +300,89 @@ const builders: Record<EmailTemplateKey, Builder> = {
         ${note ? noteBox(`<strong>Reason:</strong> ${escapeHtml(note)}`, "clay") : ""}
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\nYour refund request for $${amount} was not approved.${note ? `\nReason: ${note}` : ""}${link.text}`,
+    });
+  },
+
+  patient_inquiry_update: (p) => {
+    const name = escapeHtml(firstName(p));
+    const status = str(p, "STATUS") || str(p, "STATUS_LABEL");
+    const original = str(p, "ORIGINAL_MESSAGE");
+    const note = str(p, "ADMIN_NOTE");
+    const link = cta(str(p, "PORTAL_URL"), "View your inquiries");
+    const originalHtml = original
+      ? noteBox(`<strong>Your message:</strong><br/>${escapeHtml(original)}`)
+      : "";
+    const noteHtml = note
+      ? noteBox(`<strong>From the Body Inc team:</strong><br/>${escapeHtml(note)}`)
+      : "";
+
+    const copy: Record<string, { subject: string; preheader: string; html: string; text: string }> =
+      {
+        needs_info: {
+          subject: "A quick follow-up on your inquiry",
+          preheader: "We need a little more from you to keep going.",
+          html: `<p>Hi ${name},</p>
+        <p>We have an update on your inquiry — we need a little more information from you before we can continue.</p>
+        <p>Use the button below to read the note and send a reply.</p>`,
+          text: `Hi ${firstName(p)},\n\nWe have an update on your inquiry — we need a little more information from you before we can continue.\n\nUse the link below to read the note and send a reply.`,
+        },
+        awaiting_confirmation: {
+          subject: "Please check if this solves your inquiry",
+          preheader: "We sent a reply — let us know if it helped.",
+          html: `<p>Hi ${name},</p>
+        <p>We've sent a reply on your inquiry. Please take a look and let us know if that solves it.</p>
+        <p>If we don't hear back in 3 days, we'll mark it as resolved. You can still reopen it anytime from your portal.</p>`,
+          text: `Hi ${firstName(p)},\n\nWe've sent a reply on your inquiry. Please take a look and let us know if that solves it.\n\nIf we don't hear back in 3 days, we'll mark it as resolved. You can still reopen it anytime from your portal.`,
+        },
+        resolved: {
+          subject: "Your inquiry has been resolved",
+          preheader: "We've looked into your inquiry and it's all sorted.",
+          html: `<p>Hi ${name},</p>
+        <p>Good news — we've looked into your inquiry and it's been resolved.</p>
+        <p>You can read the details below, or open the link to view it in your portal.</p>`,
+          text: `Hi ${firstName(p)},\n\nGood news — we've looked into your inquiry and it's been resolved.\n\nYou can read the details below, or open the link to view it in your portal.`,
+        },
+        in_progress: {
+          subject: "We're looking into your inquiry",
+          preheader: "A quick update on the inquiry you sent us.",
+          html: `<p>Hi ${name},</p>
+        <p>Just a quick note that we're looking into your inquiry.</p>
+        <p>You can follow along anytime using the button below.</p>`,
+          text: `Hi ${firstName(p)},\n\nJust a quick note that we're looking into your inquiry.\n\nYou can follow along anytime using the link below.`,
+        },
+        closed: {
+          subject: "Update on your inquiry",
+          preheader: "We've closed this inquiry.",
+          html: `<p>Hi ${name},</p>
+        <p>We've closed this inquiry. If anything else comes up, you can send a new one from your portal.</p>`,
+          text: `Hi ${firstName(p)},\n\nWe've closed this inquiry. If anything else comes up, you can send a new one from your portal.`,
+        },
+        open: {
+          subject: "Update on your inquiry",
+          preheader: "There's an update on your inquiry.",
+          html: `<p>Hi ${name},</p>
+        <p>There's an update on your inquiry. Use the button below to view it.</p>`,
+          text: `Hi ${firstName(p)},\n\nThere's an update on your inquiry. Use the link below to view it.`,
+        },
+      };
+
+    const picked =
+      copy[status] ??
+      ({
+        subject: "Update on your inquiry",
+        preheader: "There's an update on your inquiry.",
+        html: `<p>Hi ${name},</p>
+        <p>There's an update on your inquiry. Use the button below to view it.</p>`,
+        text: `Hi ${firstName(p)},\n\nThere's an update on your inquiry. Use the link below to view it.`,
+      } satisfies (typeof copy)[string]);
+
+    return layout({
+      preheader: picked.preheader,
+      title: picked.subject,
+      hideTitle: true,
+      subject: picked.subject,
+      bodyHtml: `${picked.html}${originalHtml}${noteHtml}${link.html}`,
+      bodyText: `${picked.text}${original ? `\n\nYour message:\n${original}` : ""}${note ? `\n\nFrom the Body Inc team:\n${note}` : ""}${link.text}`,
     });
   },
 

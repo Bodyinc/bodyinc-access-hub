@@ -415,7 +415,9 @@ async function syncMedicineCategories(medicineId: string, categoryIds: string[])
 export async function listMedicines(input: ListMedicinesInput = {}): Promise<StoredMedicine[]> {
   let query = supabase
     .from("medicines")
-    .select("*, medication_category_medicines(category_id), packages(*), medicine_variants(*)")
+    .select(
+      "id, name, short_description, long_description, image_url, from_price_cents, status, important_info, notice_text, sort_order, is_active, requires_questionnaire, requires_consultation, requires_followup, lf_product_id, created_at, updated_at, medication_category_medicines(category_id), packages(id, name, duration_months, original_price, price, is_most_popular, is_active, features, clinical_note, sort_order, stripe_price_id, variant_id), medicine_variants(id, name, is_active, lf_product_id, from_price_cents, sort_order)",
+    )
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -440,7 +442,9 @@ export async function listActiveMedicines(): Promise<StoredMedicine[]> {
 export async function getMedicine(id: string): Promise<StoredMedicine | null> {
   const { data, error } = await supabase
     .from("medicines")
-    .select("*, medication_category_medicines(category_id), packages(*), medicine_variants(*)")
+    .select(
+      "id, name, short_description, long_description, image_url, from_price_cents, status, important_info, notice_text, sort_order, is_active, requires_questionnaire, requires_consultation, requires_followup, lf_product_id, stripe_product_id, created_at, updated_at, medication_category_medicines(category_id), packages(id, name, duration_months, original_price, price, is_most_popular, is_active, features, clinical_note, sort_order, stripe_price_id, variant_id), medicine_variants(id, name, is_active, lf_product_id, from_price_cents, sort_order, stripe_product_id)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -485,12 +489,6 @@ export async function updateMedicine(
     current.name !== payload.name ||
     (current.short_description ?? "") !== (payload.short_description ?? "");
   return { id, ...pricing, needsProductSync };
-}
-
-export async function deleteMedicine(id: string): Promise<{ ok: true }> {
-  const { error } = await supabase.from("medicines").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  return { ok: true };
 }
 
 export async function setMedicineActive(id: string, status: MedicineStatus): Promise<{ ok: true }> {

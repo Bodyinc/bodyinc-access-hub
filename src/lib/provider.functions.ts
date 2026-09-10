@@ -139,7 +139,77 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
 }
 
 async function countClaimable(supabaseAdmin: any, me: string): Promise<number> {
-  return (await loadClaimable(supabaseAdmin, me)).length;
+  const states = await providerStates(supabaseAdmin, me);
+  if (states.length === 0) return 0;
+
+  const { data: rows } = await supabaseAdmin
+    .from("medication_requests")
+    .select("id, user_id, session_id")
+    .is("provider_id", null)
+    .in("status", OPEN_STATUSES)
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  const list = (rows ?? []) as any[];
+  if (list.length === 0) return 0;
+
+  const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
+  const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
+
+  const [{ data: profiles }, { data: sessions }] = await Promise.all([
+    userIds.length
+      ? supabaseAdmin.from("profiles").select("id, state_code").in("id", userIds)
+      : Promise.resolve({ data: [] as any[] }),
+    sessionIds.length
+      ? supabaseAdmin.from("intake_sessions").select("id, state_code").in("id", sessionIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p.state_code]));
+  const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s.state_code]));
+
+  return list.filter((r) => {
+    const state = (pMap.get(r.user_id) ?? sMap.get(r.session_id) ?? null) as string | null;
+    return !!state && states.includes(String(state).toUpperCase());
+  }).length;
+}
+
+/** True when this unassigned open request is in one of the provider's licensed states. */
+async function canClaimRequest(
+  supabaseAdmin: any,
+  me: string,
+  requestId: string,
+): Promise<boolean> {
+  const states = await providerStates(supabaseAdmin, me);
+  if (states.length === 0) return false;
+
+  const { data: req } = await supabaseAdmin
+    .from("medication_requests")
+    .select("id, user_id, session_id, provider_id, status")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (!req || req.provider_id || !OPEN_STATUSES.includes(req.status)) return false;
+
+  let state: string | null = null;
+  if (req.user_id) {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("state_code")
+      .eq("id", req.user_id)
+      .maybeSingle();
+    state = profile?.state_code ?? null;
+  }
+  if (!state && req.session_id) {
+    const { data: session } = await supabaseAdmin
+      .from("intake_sessions")
+      .select("state_code")
+      .eq("id", req.session_id)
+      .maybeSingle();
+    state = session?.state_code ?? null;
+  }
+
+  return !!state && states.includes(String(state).toUpperCase());
 }
 
 export const listClaimableRequests = createServerFn({ method: "POST" })
@@ -173,8 +243,7 @@ export const claimRequest = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const me = context.userId;
 
-    const claimable = await loadClaimable(supabaseAdmin, me);
-    if (!claimable.some((r) => r.id === data.requestId)) {
+    if (!(await canClaimRequest(supabaseAdmin, me, data.requestId))) {
       throw new Error(
         "This order is no longer available to claim, or is outside your licensed states.",
       );

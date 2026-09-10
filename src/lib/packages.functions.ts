@@ -4,13 +4,11 @@ import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 import { archiveInStripe } from "@/lib/stripe-objects";
 
-const syncInput = z.object({ packageId: z.string().uuid() });
 const bulkSyncInput = z.object({ medicineId: z.string().uuid().optional() });
 const archiveInput = z.object({
   priceIds: z.array(z.string()).default([]),
   productIds: z.array(z.string()).default([]),
 });
-const archiveMedicineInput = z.object({ medicineId: z.string().uuid() });
 
 // Creates/updates the Stripe Product (per medicine) and recurring Price (per package),
 // then stores their ids back on the rows. Stripe Prices are immutable, so a changed
@@ -52,17 +50,26 @@ async function syncOnePackage(
       if (!variant) throw new Error("Linked variant not found.");
 
       const productName = `${medicine.name} — ${variant.name}`;
+      productId = "";
       if (variant.stripe_product_id) {
-        productId = variant.stripe_product_id;
         try {
-          await stripe.products.update(productId, {
-            name: productName,
-            description: medicine.short_description || undefined,
-          });
+          const existing = await stripe.products.retrieve(variant.stripe_product_id);
+          if (!existing.deleted) {
+            productId = variant.stripe_product_id;
+            try {
+              await stripe.products.update(productId, {
+                name: productName,
+                description: medicine.short_description || undefined,
+              });
+            } catch {
+              // Non-fatal: keep the existing product if the name update fails.
+            }
+          }
         } catch {
-          // Non-fatal: keep the existing product if the name update fails.
+          // Product IDs from a previous Stripe account 404; create a new one below.
         }
-      } else {
+      }
+      if (!productId) {
         const product = await stripe.products.create({
           name: productName,
           description: medicine.short_description || undefined,
@@ -75,7 +82,15 @@ async function syncOnePackage(
           .eq("id", variant.id);
       }
     } else {
-      productId = medicine.stripe_product_id ?? "";
+      productId = "";
+      if (medicine.stripe_product_id) {
+        try {
+          const existing = await stripe.products.retrieve(medicine.stripe_product_id);
+          if (!existing.deleted) productId = medicine.stripe_product_id;
+        } catch {
+          // Product IDs from a previous Stripe account 404; create a new one below.
+        }
+      }
       if (!productId) {
         const product = await stripe.products.create({
           name: medicine.name,
@@ -164,16 +179,6 @@ export const syncPackagesToStripe = createServerFn({ method: "POST" })
     return { failed };
   });
 
-export const syncPackageToStripe = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => syncInput.parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getStripe } = await import("@/integrations/stripe/client.server");
-    return syncOnePackage(data.packageId, supabaseAdmin, getStripe());
-  });
-
 // Backfills every package that has no Stripe price yet — scoped to one medicine, or the whole
 // catalogue when no medicineId is given. Per-package failures are collected rather than thrown so
 // one bad row cannot abort the rest of the run.
@@ -222,37 +227,4 @@ export const archiveStripeObjects = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { getStripe } = await import("@/integrations/stripe/client.server");
     return archiveInStripe(getStripe(), data.priceIds, data.productIds);
-  });
-
-// Archives everything a medicine owns in Stripe. Must run BEFORE the medicine row is deleted:
-// packages and variants cascade-delete, taking their Stripe ids with them and orphaning the
-// Stripe objects with no record left to find them by.
-export const archiveMedicineStripeObjects = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => archiveMedicineInput.parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getStripe } = await import("@/integrations/stripe/client.server");
-
-    const [{ data: medicine }, { data: packages }, { data: variants }] = await Promise.all([
-      supabaseAdmin
-        .from("medicines")
-        .select("stripe_product_id")
-        .eq("id", data.medicineId)
-        .maybeSingle(),
-      supabaseAdmin.from("packages").select("stripe_price_id").eq("medicine_id", data.medicineId),
-      supabaseAdmin
-        .from("medicine_variants")
-        .select("stripe_product_id")
-        .eq("medicine_id", data.medicineId),
-    ]);
-
-    const priceIds = (packages ?? []).map((p: any) => p.stripe_price_id).filter(Boolean);
-    const productIds = [
-      ...(variants ?? []).map((v: any) => v.stripe_product_id),
-      medicine?.stripe_product_id,
-    ].filter(Boolean) as string[];
-
-    return archiveInStripe(getStripe(), priceIds, productIds);
   });

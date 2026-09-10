@@ -35,7 +35,9 @@ export function useNotifications() {
   const { data, isLoading } = useQuery({
     queryKey: notificationsQueryKey,
     queryFn: () => fetchNotifications({ data: undefined as never }),
-    refetchInterval: 60_000,
+    staleTime: 60_000,
+    // Realtime invalidation is the primary update path; poll only as a slow fallback.
+    refetchInterval: 5 * 60_000,
   });
 
   const mark = useMutation({
