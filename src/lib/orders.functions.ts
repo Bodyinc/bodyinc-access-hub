@@ -164,7 +164,7 @@ export const getOrder = createServerFn({ method: "POST" })
         : Promise.resolve({ data: null as any }),
       supabaseAdmin
         .from("payments")
-        .select("*")
+        .select("id, amount_cents, currency, status, created_at, stripe_invoice_id, raw_event")
         .eq("stripe_subscription_id", sub.stripe_subscription_id)
         .order("created_at", { ascending: false }),
     ]);
@@ -206,13 +206,28 @@ export const getOrder = createServerFn({ method: "POST" })
           }
         : null;
 
+    const slimPayments = (payments ?? []).map((p: any) => ({
+      id: p.id,
+      amount_cents: p.amount_cents,
+      currency: p.currency,
+      status: p.status,
+      created_at: p.created_at,
+      stripe_invoice_id: p.stripe_invoice_id,
+      raw_event: p.raw_event
+        ? {
+            hosted_invoice_url: p.raw_event.hosted_invoice_url ?? null,
+            invoice_pdf: p.raw_event.invoice_pdf ?? null,
+          }
+        : null,
+    }));
+
     return {
       subscription: sub,
       package: pkg ?? null,
       variant_name: (pkg as any)?.medicine_variants?.name ?? null,
       medicine: med ?? null,
       customer,
-      payments: payments ?? [],
+      payments: slimPayments,
       display_status: displayStatus(sub.status),
     };
   });

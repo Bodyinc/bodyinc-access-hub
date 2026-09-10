@@ -7,7 +7,11 @@ export async function assertAdmin(context: RoleContext): Promise<void> {
 // Allows admin OR provider. Returns which one so callers can scope a provider to their own
 // assigned rows while letting admins act on anything.
 export async function assertReviewer(context: RoleContext): Promise<"admin" | "provider"> {
-  if (await hasRoleCached(context, "admin")) return "admin";
-  if (await hasRoleCached(context, "provider")) return "provider";
+  const [isAdmin, isProvider] = await Promise.all([
+    hasRoleCached(context, "admin"),
+    hasRoleCached(context, "provider"),
+  ]);
+  if (isAdmin) return "admin";
+  if (isProvider) return "provider";
   throw new Error("Forbidden");
 }

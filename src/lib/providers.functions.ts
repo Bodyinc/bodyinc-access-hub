@@ -48,13 +48,29 @@ export const listProviders = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
+    const ids = (rows ?? []).map((r: { id: string }) => r.id).filter(Boolean);
+    const { data: licenses } =
+      ids.length > 0
+        ? await context.supabase.from("providers").select("id, license_states").in("id", ids)
+        : { data: [] as { id: string; license_states: string[] | null }[] };
+    const licenseMap = new Map(
+      (licenses ?? []).map((p: { id: string; license_states: string[] | null }) => [
+        p.id,
+        ((p.license_states ?? []) as string[]).map((s) => String(s).toUpperCase()),
+      ]),
+    );
+
     const { data: def } = await context.supabase
       .from("providers")
       .select("id")
       .eq("is_default", true)
       .maybeSingle();
     const defaultId = (def as { id?: string } | null)?.id ?? null;
-    return (rows ?? []).map((r: any) => ({ ...r, is_default: r.id === defaultId }));
+    return (rows ?? []).map((r: any) => ({
+      ...r,
+      is_default: r.id === defaultId,
+      license_states: licenseMap.get(r.id) ?? [],
+    }));
   });
 
 // Admin: mark one provider as the default (used when no consultation is needed, or when no

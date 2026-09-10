@@ -191,9 +191,6 @@ export const listRefundablePayments = createServerFn({ method: "POST" })
     return result;
   });
 
-/** @deprecated Patient-submitted refund queue — use listRefundablePayments + issueAdminRefund. */
-export const listRefunds = listRefundablePayments;
-
 async function processAdminRefund(params: {
   supabaseAdmin: any;
   stripe: any;
@@ -327,43 +324,6 @@ export const issueAdminRefund = createServerFn({ method: "POST" })
       paymentId: data.paymentId,
       reason: data.reason,
     });
-  });
-
-export const approveRefund = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getStripe } = await import("@/integrations/stripe/client.server");
-
-    const { data: req, error } = await supabaseAdmin
-      .from("refund_requests")
-      .select("id, payment_id, status")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!req) throw new Error("Refund record not found");
-    if (req.status !== "pending") throw new Error("This refund has already been resolved.");
-
-    return processAdminRefund({
-      supabaseAdmin,
-      stripe: getStripe(),
-      adminUserId: context.userId,
-      paymentId: req.payment_id,
-      reason: "Admin-approved refund",
-    });
-  });
-
-export const rejectRefund = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid(), note: z.string().trim().max(500).optional() }).parse(input),
-  )
-  .handler(async () => {
-    throw new Error(
-      "Patient refund requests are disabled. Issue a refund from Billing → Refunds when appropriate.",
-    );
   });
 
 // ---------------------------------------------------------------------------

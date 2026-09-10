@@ -93,6 +93,11 @@ export function RequestReviewPanel({
   const [trackOpen, setTrackOpen] = useState(false);
   const [tracking, setTracking] = useState("");
   const [assignId, setAssignId] = useState("");
+  const patientState = (q.data?.patient?.state_code ?? "").trim().toUpperCase();
+  const matchingProviders = ((providersQ.data as any[]) ?? []).filter((p) => {
+    const states = ((p.license_states ?? []) as string[]).map((s) => String(s).toUpperCase());
+    return patientState ? states.includes(patientState) : false;
+  });
 
   const assignMut = useMutation({
     mutationFn: () => assign({ data: { requestId, providerId: assignId || null } }),
@@ -278,13 +283,22 @@ export function RequestReviewPanel({
               <div className="min-w-[220px] space-y-1">
                 <div className="text-[13px] font-medium text-[#3B4759]/60">
                   Assign / reassign provider
+                  {patientState ? ` (licensed in ${patientState})` : ""}
                 </div>
                 <Select value={assignId} onValueChange={setAssignId}>
                   <SelectTrigger className="h-10 border-[#D5DEDD] text-[13px] text-[#3B4759]">
-                    <SelectValue placeholder="Select a provider" />
+                    <SelectValue
+                      placeholder={
+                        !patientState
+                          ? "Patient state is missing"
+                          : matchingProviders.length === 0
+                            ? `No practitioner licensed in ${patientState}`
+                            : "Select a provider"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent className="font-['DM_Sans',sans-serif]">
-                    {((providersQ.data as any[]) ?? []).map((p) => (
+                    {matchingProviders.map((p) => (
                       <SelectItem key={p.id} value={p.id} className="text-[14px] text-[#3B4759]">
                         {p.full_name}
                         {p.is_default ? " (default)" : ""}
@@ -296,7 +310,7 @@ export function RequestReviewPanel({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={!assignId || assignMut.isPending}
+                disabled={!assignId || assignMut.isPending || matchingProviders.length === 0}
                 onClick={() => assignMut.mutate()}
                 className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
               >

@@ -168,14 +168,6 @@ export const medicineFormSchema = z.object({
 
 export type MedicineFormValues = z.input<typeof medicineFormSchema>;
 
-export function isMedicineActive(status: MedicineStatus) {
-  return status === "active";
-}
-
-export function formatPrice(amount: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-}
-
 type PricedPackage = { price: number; duration_months: number; is_active?: boolean };
 
 // Lowest effective per-month rate (in cents) across a medicine's active packages.

@@ -1060,8 +1060,12 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          intake_session_id: string | null
           message: string
           page_path: string | null
+          resolved_at: string | null
+          status: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -1070,8 +1074,12 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          intake_session_id?: string | null
           message: string
           page_path?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -1080,11 +1088,58 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          intake_session_id?: string | null
           message?: string
           page_path?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patient_feedback_intake_session_id_fkey"
+            columns: ["intake_session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_feedback_replies: {
+        Row: {
+          author_role: string
+          author_user_id: string | null
+          body: string
+          created_at: string
+          feedback_id: string
+          id: string
+        }
+        Insert: {
+          author_role: string
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          feedback_id: string
+          id?: string
+        }
+        Update: {
+          author_role?: string
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          feedback_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_feedback_replies_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "patient_feedback"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
