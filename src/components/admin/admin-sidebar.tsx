@@ -32,6 +32,7 @@ const items: NavItem[] = [
   { title: "Promo Codes", url: "/admin/promos" },
   { title: "Providers", url: "/admin/providers" },
   { title: "Patients", url: "/admin/patients" },
+  { title: "Consultations", url: "/admin/consultations" },
   { title: "Intake Sessions", url: "/admin/intake-sessions" },
   { title: "Feedback", url: "/admin/feedback" },
 ];

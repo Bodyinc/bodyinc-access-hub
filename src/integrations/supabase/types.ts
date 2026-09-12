@@ -1141,6 +1141,50 @@ export type Database = {
           },
         ]
       }
+      patient_consultations: {
+        Row: {
+          created_at: string
+          id: string
+          qb_appointment_id: string
+          qb_dialog_id: string | null
+          qb_user_id: number
+          started_at: string
+          subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qb_appointment_id: string
+          qb_dialog_id?: string | null
+          qb_user_id: number
+          started_at?: string
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qb_appointment_id?: string
+          qb_dialog_id?: string | null
+          qb_user_id?: number
+          started_at?: string
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_consultations_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: true
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount_cents: number
