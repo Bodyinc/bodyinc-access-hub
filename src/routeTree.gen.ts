@@ -37,6 +37,7 @@ import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedProviderRequestsIndexRouteImport } from './routes/_authenticated/provider.requests.index'
 import { Route as AuthenticatedProviderPatientsIndexRouteImport } from './routes/_authenticated/provider.patients.index'
+import { Route as AuthenticatedProviderConsultationsIndexRouteImport } from './routes/_authenticated/provider.consultations.index'
 import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
 import { Route as AuthenticatedAdminRequestsIndexRouteImport } from './routes/_authenticated/admin.requests.index'
 import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
@@ -50,6 +51,7 @@ import { Route as AuthenticatedAdminMedicineChangesIndexRouteImport } from './ro
 import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
 import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
 import { Route as AuthenticatedAdminFeedbackIndexRouteImport } from './routes/_authenticated/admin.feedback.index'
+import { Route as AuthenticatedAdminConsultationsIndexRouteImport } from './routes/_authenticated/admin.consultations.index'
 import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
 import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
 import { Route as AuthenticatedProviderRequestsRequestIdRouteImport } from './routes/_authenticated/provider.requests.$requestId'
@@ -227,6 +229,12 @@ const AuthenticatedProviderPatientsIndexRoute =
     path: '/patients/',
     getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
+const AuthenticatedProviderConsultationsIndexRoute =
+  AuthenticatedProviderConsultationsIndexRouteImport.update({
+    id: '/consultations/',
+    path: '/consultations/',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
 const AuthenticatedAdminSettingsIndexRoute =
   AuthenticatedAdminSettingsIndexRouteImport.update({
     id: '/settings/',
@@ -303,6 +311,12 @@ const AuthenticatedAdminFeedbackIndexRoute =
   AuthenticatedAdminFeedbackIndexRouteImport.update({
     id: '/feedback/',
     path: '/feedback/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminConsultationsIndexRoute =
+  AuthenticatedAdminConsultationsIndexRouteImport.update({
+    id: '/consultations/',
+    path: '/consultations/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminCategoriesIndexRoute =
@@ -465,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
+  '/admin/consultations/': typeof AuthenticatedAdminConsultationsIndexRoute
   '/admin/feedback/': typeof AuthenticatedAdminFeedbackIndexRoute
   '/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
@@ -478,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
   '/admin/requests/': typeof AuthenticatedAdminRequestsIndexRoute
   '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
+  '/provider/consultations/': typeof AuthenticatedProviderConsultationsIndexRoute
   '/provider/patients/': typeof AuthenticatedProviderPatientsIndexRoute
   '/provider/requests/': typeof AuthenticatedProviderRequestsIndexRoute
 }
@@ -513,6 +529,7 @@ export interface FileRoutesByTo {
   '/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/admin/billing': typeof AuthenticatedAdminBillingIndexRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesIndexRoute
+  '/admin/consultations': typeof AuthenticatedAdminConsultationsIndexRoute
   '/admin/feedback': typeof AuthenticatedAdminFeedbackIndexRoute
   '/admin/intake-sessions': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/admin/medication-rules': typeof AuthenticatedAdminMedicationRulesIndexRoute
@@ -526,6 +543,7 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AuthenticatedAdminReferralsIndexRoute
   '/admin/requests': typeof AuthenticatedAdminRequestsIndexRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
+  '/provider/consultations': typeof AuthenticatedProviderConsultationsIndexRoute
   '/provider/patients': typeof AuthenticatedProviderPatientsIndexRoute
   '/provider/requests': typeof AuthenticatedProviderRequestsIndexRoute
 }
@@ -576,6 +594,7 @@ export interface FileRoutesById {
   '/_authenticated/provider/requests/$requestId': typeof AuthenticatedProviderRequestsRequestIdRoute
   '/_authenticated/admin/billing/': typeof AuthenticatedAdminBillingIndexRoute
   '/_authenticated/admin/categories/': typeof AuthenticatedAdminCategoriesIndexRoute
+  '/_authenticated/admin/consultations/': typeof AuthenticatedAdminConsultationsIndexRoute
   '/_authenticated/admin/feedback/': typeof AuthenticatedAdminFeedbackIndexRoute
   '/_authenticated/admin/intake-sessions/': typeof AuthenticatedAdminIntakeSessionsIndexRoute
   '/_authenticated/admin/medication-rules/': typeof AuthenticatedAdminMedicationRulesIndexRoute
@@ -589,6 +608,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals/': typeof AuthenticatedAdminReferralsIndexRoute
   '/_authenticated/admin/requests/': typeof AuthenticatedAdminRequestsIndexRoute
   '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
+  '/_authenticated/provider/consultations/': typeof AuthenticatedProviderConsultationsIndexRoute
   '/_authenticated/provider/patients/': typeof AuthenticatedProviderPatientsIndexRoute
   '/_authenticated/provider/requests/': typeof AuthenticatedProviderRequestsIndexRoute
 }
@@ -639,6 +659,7 @@ export interface FileRouteTypes {
     | '/provider/requests/$requestId'
     | '/admin/billing/'
     | '/admin/categories/'
+    | '/admin/consultations/'
     | '/admin/feedback/'
     | '/admin/intake-sessions/'
     | '/admin/medication-rules/'
@@ -652,6 +673,7 @@ export interface FileRouteTypes {
     | '/admin/referrals/'
     | '/admin/requests/'
     | '/admin/settings/'
+    | '/provider/consultations/'
     | '/provider/patients/'
     | '/provider/requests/'
   fileRoutesByTo: FileRoutesByTo
@@ -687,6 +709,7 @@ export interface FileRouteTypes {
     | '/provider/requests/$requestId'
     | '/admin/billing'
     | '/admin/categories'
+    | '/admin/consultations'
     | '/admin/feedback'
     | '/admin/intake-sessions'
     | '/admin/medication-rules'
@@ -700,6 +723,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/requests'
     | '/admin/settings'
+    | '/provider/consultations'
     | '/provider/patients'
     | '/provider/requests'
   id:
@@ -749,6 +773,7 @@ export interface FileRouteTypes {
     | '/_authenticated/provider/requests/$requestId'
     | '/_authenticated/admin/billing/'
     | '/_authenticated/admin/categories/'
+    | '/_authenticated/admin/consultations/'
     | '/_authenticated/admin/feedback/'
     | '/_authenticated/admin/intake-sessions/'
     | '/_authenticated/admin/medication-rules/'
@@ -762,6 +787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals/'
     | '/_authenticated/admin/requests/'
     | '/_authenticated/admin/settings/'
+    | '/_authenticated/provider/consultations/'
     | '/_authenticated/provider/patients/'
     | '/_authenticated/provider/requests/'
   fileRoutesById: FileRoutesById
@@ -972,6 +998,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProviderPatientsIndexRouteImport
       parentRoute: typeof AuthenticatedProviderRoute
     }
+    '/_authenticated/provider/consultations/': {
+      id: '/_authenticated/provider/consultations/'
+      path: '/consultations'
+      fullPath: '/provider/consultations/'
+      preLoaderRoute: typeof AuthenticatedProviderConsultationsIndexRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
+    }
     '/_authenticated/admin/settings/': {
       id: '/_authenticated/admin/settings/'
       path: '/settings'
@@ -1061,6 +1094,13 @@ declare module '@tanstack/react-router' {
       path: '/feedback'
       fullPath: '/admin/feedback/'
       preLoaderRoute: typeof AuthenticatedAdminFeedbackIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/consultations/': {
+      id: '/_authenticated/admin/consultations/'
+      path: '/consultations'
+      fullPath: '/admin/consultations/'
+      preLoaderRoute: typeof AuthenticatedAdminConsultationsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/categories/': {
@@ -1410,6 +1450,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminPromosPromoIdRoute: typeof AuthenticatedAdminPromosPromoIdRoute
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
+  AuthenticatedAdminConsultationsIndexRoute: typeof AuthenticatedAdminConsultationsIndexRoute
   AuthenticatedAdminFeedbackIndexRoute: typeof AuthenticatedAdminFeedbackIndexRoute
   AuthenticatedAdminPromosIndexRoute: typeof AuthenticatedAdminPromosIndexRoute
   AuthenticatedAdminReferralsIndexRoute: typeof AuthenticatedAdminReferralsIndexRoute
@@ -1438,6 +1479,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminPromosPromoIdRoute: AuthenticatedAdminPromosPromoIdRoute,
   AuthenticatedAdminPromosNewRoute: AuthenticatedAdminPromosNewRoute,
+  AuthenticatedAdminConsultationsIndexRoute:
+    AuthenticatedAdminConsultationsIndexRoute,
   AuthenticatedAdminFeedbackIndexRoute: AuthenticatedAdminFeedbackIndexRoute,
   AuthenticatedAdminPromosIndexRoute: AuthenticatedAdminPromosIndexRoute,
   AuthenticatedAdminReferralsIndexRoute: AuthenticatedAdminReferralsIndexRoute,
@@ -1454,6 +1497,7 @@ interface AuthenticatedProviderRouteChildren {
   AuthenticatedProviderIndexRoute: typeof AuthenticatedProviderIndexRoute
   AuthenticatedProviderPatientsPatientKeyRoute: typeof AuthenticatedProviderPatientsPatientKeyRoute
   AuthenticatedProviderRequestsRequestIdRoute: typeof AuthenticatedProviderRequestsRequestIdRoute
+  AuthenticatedProviderConsultationsIndexRoute: typeof AuthenticatedProviderConsultationsIndexRoute
   AuthenticatedProviderPatientsIndexRoute: typeof AuthenticatedProviderPatientsIndexRoute
   AuthenticatedProviderRequestsIndexRoute: typeof AuthenticatedProviderRequestsIndexRoute
 }
@@ -1468,6 +1512,8 @@ const AuthenticatedProviderRouteChildren: AuthenticatedProviderRouteChildren = {
     AuthenticatedProviderPatientsPatientKeyRoute,
   AuthenticatedProviderRequestsRequestIdRoute:
     AuthenticatedProviderRequestsRequestIdRoute,
+  AuthenticatedProviderConsultationsIndexRoute:
+    AuthenticatedProviderConsultationsIndexRoute,
   AuthenticatedProviderPatientsIndexRoute:
     AuthenticatedProviderPatientsIndexRoute,
   AuthenticatedProviderRequestsIndexRoute:

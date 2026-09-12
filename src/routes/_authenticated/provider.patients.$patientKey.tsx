@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConsultationsTable } from "@/components/consultations-table";
+import { listConsultations } from "@/lib/consultations.functions";
 import { getMyPatient } from "@/lib/provider.functions";
 import { requestStatusTone, REQUEST_STATUS_BADGE, clinicalStatusLabel } from "@/lib/request-status";
 import { adminCard, adminSectionTitle, adminSectionSubtitle } from "@/lib/admin-ui";
@@ -36,10 +38,18 @@ function ProviderPatientDetail() {
   const { patientKey } = Route.useParams();
   const navigate = useNavigate();
   const get = useServerFn(getMyPatient);
+  const listVisits = useServerFn(listConsultations);
+  const userId = patientKey.startsWith("u_") ? patientKey.slice(2) : null;
 
   const q = useQuery({
     queryKey: ["provider-patient", patientKey],
     queryFn: () => get({ data: { key: patientKey } }),
+  });
+
+  const consultations = useQuery({
+    queryKey: ["provider-patient", patientKey, "consultations"],
+    queryFn: () => listVisits({ data: { userId: userId! } }),
+    enabled: Boolean(userId) && !!q.data,
   });
 
   if (q.isLoading) {
@@ -107,6 +117,24 @@ function ProviderPatientDetail() {
           ) : null}
         </CardContent>
       </Card>
+
+      {userId ? (
+        <Card className={adminCard}>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className={adminSectionTitle}>Consultations</CardTitle>
+            <CardDescription className={adminSectionSubtitle}>
+              Join this patient&apos;s video or chat visit if they have started one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ConsultationsTable
+              result={consultations.data}
+              loading={consultations.isLoading}
+              error={(consultations.error as Error) ?? null}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
       {answers.length > 0 ? (
         <Card className={adminCard}>

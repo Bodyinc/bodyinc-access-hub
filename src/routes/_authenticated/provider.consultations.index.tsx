@@ -1,0 +1,97 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { Search } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { RefreshButton } from "@/components/admin/refresh-button";
+import { ConsultationsTable, openExternalUrl } from "@/components/consultations-table";
+import { listConsultations, openProviderInbox } from "@/lib/consultations.functions";
+import { adminBtnSecondary, adminInput, adminPageSubtitle, adminPageTitle } from "@/lib/admin-ui";
+import { toastError } from "@/lib/toast-message";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { normalizeIdSearch } from "@/lib/format";
+
+export const Route = createFileRoute("/_authenticated/provider/consultations/")({
+  head: () => ({
+    meta: [
+      { title: "Consultations · Body Inc Practitioner" },
+      {
+        name: "description",
+        content: "Patient video and chat consultations — Practitioner area of the Body Inc portal.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: ProviderConsultationsPage,
+});
+
+function ProviderConsultationsPage() {
+  const list = useServerFn(listConsultations);
+  const inbox = useServerFn(openProviderInbox);
+  const [search, setSearch] = useState("");
+  const debounced = useDebouncedValue(search);
+  const searchTerm = normalizeIdSearch(debounced);
+
+  const q = useQuery({
+    queryKey: ["provider-consultations", { search: searchTerm }],
+    queryFn: () => list({ data: { search: searchTerm || undefined } }),
+    placeholderData: keepPreviousData,
+  });
+
+  const inboxMut = useMutation({
+    mutationFn: () => inbox(),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
+      openExternalUrl(res.url);
+    },
+    onError: (e: Error) => toast.error(toastError(e)),
+  });
+
+  return (
+    <div className="admin-page-shell !max-w-none space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
+      <div className="admin-page-header">
+        <div className="min-w-0 space-y-2 sm:space-y-4">
+          <h2 className={adminPageTitle}>Consultations</h2>
+          <p className={adminPageSubtitle}>
+            Join video or chat visits for your assigned patients. Patients start the visit from
+            their portal Consultation tab.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            className={adminBtnSecondary}
+            disabled={inboxMut.isPending || q.data?.configured === false}
+            onClick={() => inboxMut.mutate()}
+          >
+            {inboxMut.isPending ? "Opening…" : "Open QuickBlox inbox"}
+          </Button>
+          <RefreshButton onClick={() => q.refetch()} loading={q.isFetching} />
+        </div>
+      </div>
+
+      <div className="relative min-w-0 max-w-xl">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3B4759]/40" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search patient or medication…"
+          className={`${adminInput} pl-9`}
+        />
+      </div>
+
+      <ConsultationsTable
+        result={q.data}
+        loading={q.isLoading}
+        error={(q.error as Error) ?? null}
+        showPatient
+      />
+    </div>
+  );
+}

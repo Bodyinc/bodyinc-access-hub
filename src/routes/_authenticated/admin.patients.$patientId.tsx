@@ -53,6 +53,8 @@ import {
 } from "@/lib/admin-ui";
 import { US_STATES } from "@/lib/us-states";
 import { formatDateTime, formatRecordId } from "@/lib/format";
+import { listConsultations } from "@/lib/consultations.functions";
+import { ConsultationsTable } from "@/components/consultations-table";
 
 export const Route = createFileRoute("/_authenticated/admin/patients/$patientId")({
   head: () => ({
@@ -72,6 +74,7 @@ function PatientDetailPage() {
   const get = useServerFn(getPatient);
   const getRelated = useServerFn(getPatientRelated);
   const getClinical = useServerFn(getPatientClinical);
+  const listVisits = useServerFn(listConsultations);
   const update = useServerFn(updatePatientProfile);
   const setActive = useServerFn(setPatientActive);
   const reset = useServerFn(sendPatientPasswordReset);
@@ -90,6 +93,12 @@ function PatientDetailPage() {
   const clinical = useQuery({
     queryKey: ["patients", patientId, "clinical"],
     queryFn: () => getClinical({ data: { userId: patientId } }),
+    enabled: !!patient.data,
+  });
+
+  const consultations = useQuery({
+    queryKey: ["patients", patientId, "consultations"],
+    queryFn: () => listVisits({ data: { userId: patientId } }),
     enabled: !!patient.data,
   });
 
@@ -222,6 +231,12 @@ function PatientDetailPage() {
               Intake Sessions
             </TabsTrigger>
             <TabsTrigger
+              value="consultations"
+              className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
+            >
+              Consultations
+            </TabsTrigger>
+            <TabsTrigger
               value="orders"
               className="rounded-[8px] px-3 py-2 text-[14px] font-medium text-[#3B4759] shadow-none data-[state=active]:bg-white data-[state=active]:text-[#3B4759] data-[state=active]:shadow-sm"
             >
@@ -332,6 +347,18 @@ function PatientDetailPage() {
               </Table>
             </div>
           </RelatedList>
+        </TabsContent>
+
+        <TabsContent value="consultations" className="mt-0">
+          <Card className={adminCard}>
+            <CardContent className="p-0">
+              <ConsultationsTable
+                result={consultations.data}
+                loading={consultations.isLoading}
+                error={(consultations.error as Error) ?? null}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="orders" className="mt-0">

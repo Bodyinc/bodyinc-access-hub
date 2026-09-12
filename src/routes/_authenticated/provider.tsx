@@ -43,6 +43,7 @@ const TITLES: Record<string, string> = {
   "/provider/requests": "My Requests",
   "/provider/queue": "Unassigned queue",
   "/provider/patients": "My Patients",
+  "/provider/consultations": "Consultations",
   "/provider/notifications": "Notifications",
   "/provider/profile": "My Profile",
 };
