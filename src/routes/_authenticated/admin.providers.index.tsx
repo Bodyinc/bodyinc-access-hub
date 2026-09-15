@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   deleteProvider,
+  enableQuickbloxAgent,
   listProviders,
   resendInvite,
   setProviderActive,
@@ -76,6 +77,7 @@ function ProvidersListPage() {
   const setActive = useServerFn(setProviderActive);
   const setDefault = useServerFn(setDefaultProvider);
   const del = useServerFn(deleteProvider);
+  const enableQb = useServerFn(enableQuickbloxAgent);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search);
@@ -119,6 +121,17 @@ function ProvidersListPage() {
       qc.invalidateQueries({ queryKey: ["providers"] });
       toast.success("Provider deleted.");
       setConfirmDelete(null);
+    },
+    onError: (e: Error) => toast.error(toastError(e)),
+  });
+
+  const enableQbMut = useMutation({
+    mutationFn: (id: string) => enableQb({ data: { id } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["providers"] });
+      toast.success(
+        res.created ? "QuickBlox agent created for this provider." : "QuickBlox agent is linked.",
+      );
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -182,6 +195,9 @@ function ProvidersListPage() {
                 <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
                   Status
                 </TableHead>
+                <TableHead className="text-[#3B4759] font-semibold text-[13px] h-12 px-6">
+                  QuickBlox
+                </TableHead>
                 <TableHead className="w-12 px-6" />
               </TableRow>
             </TableHeader>
@@ -189,7 +205,7 @@ function ProvidersListPage() {
               {query.isLoading && (
                 <TableRow className="hover:bg-transparent">
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center text-[#6A9B9C]/60 font-medium py-12"
                   >
                     Loading provider records…
@@ -198,7 +214,7 @@ function ProvidersListPage() {
               )}
               {query.isError && (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={6} className="text-center text-[#B8684B] font-semibold py-12">
+                  <TableCell colSpan={7} className="text-center text-[#B8684B] font-semibold py-12">
                     {(query.error as Error).message}
                   </TableCell>
                 </TableRow>
@@ -206,7 +222,7 @@ function ProvidersListPage() {
               {!query.isLoading && query.data?.length === 0 && (
                 <TableRow className="hover:bg-transparent">
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center text-[#6A9B9C]/60 font-medium py-12"
                   >
                     No active provider accounts found matching criteria.
@@ -260,6 +276,17 @@ function ProvidersListPage() {
                       </Badge>
                     )}
                   </TableCell>
+                  <TableCell className="py-4 px-6">
+                    {p.qb_user_id ? (
+                      <Badge className="bg-[#6A9B9C] text-white hover:bg-[#6A9B9C] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                        Linked
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-[#FBF1EC] hover:bg-[#FBF1EC] text-[#B8684B] border border-transparent font-bold text-[12px] px-2.5 py-0.5 rounded-lg shadow-none">
+                        Not linked
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="py-4 px-6" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -295,6 +322,15 @@ function ProvidersListPage() {
                         >
                           {p.is_active ? "Deactivate Account" : "Activate Account"}
                         </DropdownMenuItem>
+                        {!p.qb_user_id ? (
+                          <DropdownMenuItem
+                            onClick={() => enableQbMut.mutate(p.id)}
+                            disabled={enableQbMut.isPending}
+                            className="rounded-lg font-semibold text-[13px] text-[#3B4759] focus:bg-[#E8EEED] focus:text-[#3B4759] px-3 py-2 cursor-pointer"
+                          >
+                            Create QuickBlox agent
+                          </DropdownMenuItem>
+                        ) : null}
                         {!p.is_default ? (
                           <DropdownMenuItem
                             onClick={() => setDefaultMut.mutate(p.id)}

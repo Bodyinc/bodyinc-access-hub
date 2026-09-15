@@ -6,10 +6,12 @@ import { isQuickbloxConfigured } from "@/lib/consultations/config";
 import {
   buildProviderAppointmentUrl,
   buildProviderInboxUrl,
-  getProviderAuth,
+  getOwnerProviderAuth,
   isAppointmentOpen,
   listProviderAppointments,
+  reassignAppointmentToProvider,
 } from "@/lib/consultations/quickblox";
+import { sessionForBodyIncProvider } from "@/lib/consultations/provider-agent";
 
 export type ConsultationVisitStatus = "open" | "ended" | "unknown";
 
@@ -62,18 +64,31 @@ async function assignedPatientIds(supabaseAdmin: any, providerId: string): Promi
   return [...new Set((data ?? []).map((row: { user_id: string | null }) => row.user_id).filter(Boolean))];
 }
 
-async function visitStatusByAppointmentId(): Promise<Map<string, ConsultationVisitStatus>> {
+async function visitStatusByAppointmentId(extraToken?: string) {
   const map = new Map<string, ConsultationVisitStatus>();
-  try {
-    const items = await listProviderAppointments();
-    for (const item of items) {
+  const lists = [listProviderAppointments()];
+  if (extraToken) lists.push(listProviderAppointments(extraToken));
+  const results = await Promise.allSettled(lists);
+  for (const result of results) {
+    if (result.status !== "fulfilled") {
+      console.warn("[consultations] list provider appointments failed:", result.reason);
+      continue;
+    }
+    for (const item of result.value) {
       if (!item._id) continue;
       map.set(item._id, isAppointmentOpen(item) ? "open" : "ended");
     }
-  } catch (error) {
-    console.warn("[consultations] list provider appointments failed:", error);
   }
   return map;
+}
+
+async function reviewerQuickbloxSession(
+  role: "admin" | "provider",
+  userId: string,
+  supabaseAdmin: any,
+) {
+  if (role === "provider") return sessionForBodyIncProvider(supabaseAdmin, userId);
+  return getOwnerProviderAuth();
 }
 
 export const listConsultations = createServerFn({ method: "POST" })
@@ -114,13 +129,29 @@ export const listConsultations = createServerFn({ method: "POST" })
     const userIds = [...new Set(consultations.map((row) => row.user_id))];
     const subIds = [...new Set(consultations.map((row) => row.subscription_id))];
 
+    let extraToken: string | undefined;
+    if (role === "provider") {
+      const { data: me, error: meErr } = await supabaseAdmin
+        .from("providers")
+        .select("qb_user_id")
+        .eq("id", context.userId)
+        .maybeSingle();
+      if (!meErr && me?.qb_user_id) {
+        try {
+          extraToken = (await sessionForBodyIncProvider(supabaseAdmin, context.userId)).token;
+        } catch (error) {
+          console.warn("[consultations] provider QuickBlox session failed:", error);
+        }
+      }
+    }
+
     const [{ data: profiles }, { data: subs }, visitStatus] = await Promise.all([
       supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds),
       supabaseAdmin
         .from("subscriptions")
         .select("id, status, medicine_id, package_id")
         .in("id", subIds),
-      visitStatusByAppointmentId(),
+      visitStatusByAppointmentId(extraToken),
     ]);
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
@@ -213,7 +244,17 @@ export const openConsultation = createServerFn({ method: "POST" })
     }
 
     try {
-      const session = await getProviderAuth();
+      const session = await reviewerQuickbloxSession(role, context.userId, supabaseAdmin);
+      if (role === "provider") {
+        try {
+          await reassignAppointmentToProvider({
+            appointmentId: row.qb_appointment_id,
+            qbProviderId: session.userId,
+          });
+        } catch (error) {
+          console.warn("[consultations] reassign failed:", error);
+        }
+      }
       return {
         ok: true,
         url: buildProviderAppointmentUrl({
@@ -233,12 +274,13 @@ export const openConsultation = createServerFn({ method: "POST" })
 export const openProviderInbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OpenConsultationResult> => {
-    await assertReviewer(context);
+    const role = await assertReviewer(context);
     if (!isQuickbloxConfigured()) {
       return { ok: false, message: "Consultations are not available yet." };
     }
     try {
-      const session = await getProviderAuth();
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const session = await reviewerQuickbloxSession(role, context.userId, supabaseAdmin);
       return { ok: true, url: buildProviderInboxUrl(session.token) };
     } catch (error) {
       console.error("[consultations] inbox open failed:", error);

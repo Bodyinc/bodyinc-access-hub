@@ -49,14 +49,36 @@ export const listProviders = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const ids = (rows ?? []).map((r: { id: string }) => r.id).filter(Boolean);
-    const { data: licenses } =
-      ids.length > 0
-        ? await context.supabase.from("providers").select("id, license_states").in("id", ids)
-        : { data: [] as { id: string; license_states: string[] | null }[] };
+    let licenseRows: { id: string; license_states: string[] | null; qb_user_id?: number | null }[] =
+      [];
+    if (ids.length > 0) {
+      const licenseSelect = await context.supabase
+        .from("providers")
+        .select("id, license_states, qb_user_id")
+        .in("id", ids);
+      if (licenseSelect.error && /qb_user_id/i.test(licenseSelect.error.message)) {
+        const fallback = await context.supabase
+          .from("providers")
+          .select("id, license_states")
+          .in("id", ids);
+        if (fallback.error) throw new Error(fallback.error.message);
+        licenseRows = fallback.data ?? [];
+      } else if (licenseSelect.error) {
+        throw new Error(licenseSelect.error.message);
+      } else {
+        licenseRows = licenseSelect.data ?? [];
+      }
+    }
     const licenseMap = new Map(
-      (licenses ?? []).map((p: { id: string; license_states: string[] | null }) => [
+      (licenseRows ?? []).map((p: { id: string; license_states: string[] | null }) => [
         p.id,
         ((p.license_states ?? []) as string[]).map((s) => String(s).toUpperCase()),
+      ]),
+    );
+    const qbMap = new Map(
+      (licenseRows ?? []).map((p: { id: string; qb_user_id?: number | null }) => [
+        p.id,
+        p.qb_user_id ?? null,
       ]),
     );
 
@@ -70,6 +92,7 @@ export const listProviders = createServerFn({ method: "POST" })
       ...r,
       is_default: r.id === defaultId,
       license_states: licenseMap.get(r.id) ?? [],
+      qb_user_id: qbMap.get(r.id) ?? null,
     }));
   });
 
@@ -162,14 +185,29 @@ export const createProvider = createServerFn({ method: "POST" })
       throw new Error(insertErr.message);
     }
 
+    let quickblox: { ok: true; created: boolean } | { ok: false; message: string } = {
+      ok: false,
+      message: "QuickBlox agent was not created.",
+    };
+    try {
+      const { provisionBodyIncProviderAgent } = await import("@/lib/consultations/provider-agent");
+      const agent = await provisionBodyIncProviderAgent(supabaseAdmin, userId);
+      quickblox = { ok: true, created: agent.created };
+    } catch (error) {
+      quickblox = {
+        ok: false,
+        message: error instanceof Error ? error.message : "QuickBlox agent was not created.",
+      };
+    }
+
     const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
       redirectTo: redirect_to,
     });
     if (linkErr) {
       // Provider exists; surface warning but don't roll back
-      return { id: userId, invite_sent: false, warning: linkErr.message };
+      return { id: userId, invite_sent: false, warning: linkErr.message, quickblox };
     }
-    return { id: userId, invite_sent: true };
+    return { id: userId, invite_sent: true, quickblox };
   });
 
 const updateInput = providerFormSchema.partial().extend({
@@ -228,6 +266,16 @@ export const resendInvite = createServerFn({ method: "POST" })
     });
     if (linkErr) throw new Error(linkErr.message);
     return { ok: true };
+  });
+
+export const enableQuickbloxAgent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { provisionBodyIncProviderAgent } = await import("@/lib/consultations/provider-agent");
+    return provisionBodyIncProviderAgent(supabaseAdmin, data.id);
   });
 
 export const setProviderActive = createServerFn({ method: "POST" })

@@ -7,7 +7,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import { ConsultationsTable, openExternalUrl } from "@/components/consultations-table";
+import {
+  closePendingTab,
+  ConsultationsTable,
+  openPendingTab,
+  sendTabToUrl,
+} from "@/components/consultations-table";
 import { listConsultations, openProviderInbox } from "@/lib/consultations.functions";
 import { adminBtnSecondary, adminInput, adminPageSubtitle, adminPageTitle } from "@/lib/admin-ui";
 import { toastError } from "@/lib/toast-message";
@@ -42,15 +47,19 @@ function ProviderConsultationsPage() {
   });
 
   const inboxMut = useMutation({
-    mutationFn: () => inbox(),
-    onSuccess: (res) => {
+    mutationFn: async ({ tab: _tab }: { tab: Window | null }) => inbox(),
+    onSuccess: (res, vars) => {
       if (!res.ok) {
+        closePendingTab(vars.tab);
         toast.error(res.message);
         return;
       }
-      openExternalUrl(res.url);
+      sendTabToUrl(vars.tab, res.url);
     },
-    onError: (e: Error) => toast.error(toastError(e)),
+    onError: (e: Error, vars) => {
+      closePendingTab(vars.tab);
+      toast.error(toastError(e));
+    },
   });
 
   return (
@@ -68,7 +77,11 @@ function ProviderConsultationsPage() {
             type="button"
             className={adminBtnSecondary}
             disabled={inboxMut.isPending || q.data?.configured === false}
-            onClick={() => inboxMut.mutate()}
+            onClick={() => {
+              const tab = openPendingTab();
+              if (!tab) return;
+              inboxMut.mutate({ tab });
+            }}
           >
             {inboxMut.isPending ? "Opening…" : "Open QuickBlox inbox"}
           </Button>
