@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { Link, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
+import { countOpenRequests } from "@/lib/requests.functions";
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +12,7 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
@@ -17,15 +20,15 @@ import {
 
 type NavItem = { title: string; url: string; exact?: boolean };
 
+export const openRequestCountQueryKey = ["open-request-count"] as const;
+
 const items: NavItem[] = [
   { title: "Dashboard", url: "/admin", exact: true },
   { title: "Categories", url: "/admin/categories" },
   { title: "Medications", url: "/admin/medicines" },
-  { title: "Medication Rules", url: "/admin/medication-rules" },
   { title: "Questionnaires", url: "/admin/questionnaires" },
   { title: "Requests", url: "/admin/requests" },
   { title: "Orders", url: "/admin/orders" },
-  { title: "Billing", url: "/admin/billing" },
   { title: "Refund History", url: "/admin/billing/refund-history" },
   { title: "Medicine Changes", url: "/admin/medicine-changes" },
   { title: "Referrals", url: "/admin/referrals" },
@@ -50,6 +53,14 @@ export function AdminSidebar() {
   const router = useRouter();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const countOpen = useServerFn(countOpenRequests);
+  const openCountQ = useQuery({
+    queryKey: openRequestCountQueryKey,
+    queryFn: () => countOpen({}),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const openCount = openCountQ.data ?? 0;
 
   useEffect(() => {
     const urls = [...items.map((item) => item.url), "/admin/settings"];
@@ -122,18 +133,26 @@ export function AdminSidebar() {
             <SidebarMenu className="gap-0.5">
               {items.map((item) => {
                 const active = isActive(item.url, item.exact);
+                const isRequests = item.url === "/admin/requests";
+                const badge =
+                  isRequests && openCount > 0 ? (openCount > 99 ? "99+" : String(openCount)) : null;
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={active}
-                      tooltip={item.title}
-                      className={`${navItemBase} ${active ? navActive : navIdle}`}
+                      tooltip={badge ? `${item.title} (${badge})` : item.title}
+                      className={`${navItemBase} ${active ? navActive : navIdle} ${badge ? "pr-9" : ""}`}
                     >
                       <Link to={item.url} preload="intent">
                         <span className="truncate">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
+                    {badge ? (
+                      <SidebarMenuBadge className="right-2 h-[18px] min-w-[18px] rounded-full bg-[#B8684B] px-1.5 text-[10px] font-bold text-white peer-hover/menu-button:text-white peer-data-[active=true]/menu-button:text-white">
+                        {badge}
+                      </SidebarMenuBadge>
+                    ) : null}
                   </SidebarMenuItem>
                 );
               })}

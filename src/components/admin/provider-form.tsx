@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { StateMultiSelect } from "@/components/admin/state-multi-select";
+import { AvatarUpload } from "@/components/admin/avatar-upload";
 import {
   providerFormSchema,
   US_STATES,
@@ -129,8 +130,12 @@ export function ProviderForm({
           <Field label="Phone" error={errors.phone?.message}>
             <Input {...register("phone")} placeholder="e.g. (555) 555-1234" className={inputFull} />
           </Field>
-          <Field label="Avatar URL" error={errors.avatar_url?.message}>
-            <Input {...register("avatar_url")} placeholder="https://…" className={inputFull} />
+          <Field label="Photo" error={errors.avatar_url?.message}>
+            <AvatarUpload
+              value={watch("avatar_url") || null}
+              onChange={(url) => setValue("avatar_url", url, { shouldDirty: true, shouldValidate: true })}
+              disabled={submitting}
+            />
           </Field>
           <div className={`sm:col-span-2 ${fieldShell}`}>
             <Field label="Bio" error={errors.bio?.message}>
@@ -186,6 +191,9 @@ export function ProviderForm({
                   setValue("license_states", toggleIn(licenseStates as string[], s) as any, {
                     shouldDirty: true,
                   })
+                }
+                onSetSelected={(states) =>
+                  setValue("license_states", states as any, { shouldDirty: true })
                 }
               />
             </div>
@@ -261,6 +269,9 @@ export function ProviderForm({
                   setValue("practice_states", toggleIn(practiceStates as string[], s) as any, {
                     shouldDirty: true,
                   })
+                }
+                onSetSelected={(states) =>
+                  setValue("practice_states", states as any, { shouldDirty: true })
                 }
               />
             </div>

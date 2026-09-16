@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMyProviderProfile, updateMyProviderProfile } from "@/lib/provider.functions";
 import { StateMultiSelect } from "@/components/admin/state-multi-select";
+import { AvatarUpload } from "@/components/admin/avatar-upload";
 import {
   adminCard,
   adminInput,
@@ -49,6 +50,7 @@ function ProviderProfilePage() {
     consultation_types: "",
   });
   const [licenseStates, setLicenseStates] = useState<string[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     const d = q.data as any;
@@ -63,6 +65,7 @@ function ProviderProfilePage() {
       consultation_types: (d.consultation_types ?? []).join(", "),
     });
     setLicenseStates(((d.license_states ?? []) as string[]).map((s) => String(s).toUpperCase()));
+    setAvatarUrl(typeof d.avatar_url === "string" ? d.avatar_url : "");
   }, [q.data]);
 
   const mut = useMutation({
@@ -83,6 +86,7 @@ function ProviderProfilePage() {
             .map((s) => s.trim())
             .filter(Boolean),
           license_states: licenseStates,
+          avatar_url: avatarUrl.trim() || null,
         },
       }),
     onSuccess: () => {
@@ -111,6 +115,10 @@ function ProviderProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 p-4 pt-0 sm:grid-cols-2 sm:p-6 sm:pt-0">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-[13px] text-[#3B4759]">Photo</Label>
+            <AvatarUpload value={avatarUrl || null} onChange={setAvatarUrl} disabled={mut.isPending} />
+          </div>
           <div className="space-y-1.5">
             <Label className="text-[13px] text-[#3B4759]">Full name</Label>
             <Input
@@ -203,6 +211,7 @@ function ProviderProfilePage() {
                     prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
                   )
                 }
+                onSetSelected={setLicenseStates}
               />
             </div>
           </div>

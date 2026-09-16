@@ -432,6 +432,7 @@ export function CategoryForm({
                         else set.add(s);
                         field.onChange(Array.from(set));
                       }}
+                      onSetSelected={(states) => field.onChange(states)}
                     />
                   </div>
                 )}

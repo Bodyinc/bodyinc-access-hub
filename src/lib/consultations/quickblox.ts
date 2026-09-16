@@ -43,9 +43,29 @@ function qbPasswordForProvider(userId: string) {
   return `Bi.${digest.slice(0, 24)}!`;
 }
 
-function normalizeFullName(name: string) {
-  const trimmed = name.trim() || "Provider";
-  return trimmed.length >= 3 ? trimmed.slice(0, 60) : `${trimmed} MD`.slice(0, 60);
+function normalizeFullName(name: string, fallback = "Provider") {
+  const trimmed = name.trim() || fallback;
+  if (trimmed.length >= 3) return trimmed.slice(0, 60);
+  return `${trimmed} ${fallback === "Provider" ? "MD" : "PT"}`.slice(0, 60);
+}
+
+function qbPasswordForPlan(userId: string, subscriptionId: string) {
+  const { userSecret } = getQuickbloxConfig();
+  if (!userSecret) throw new Error("QUICKBLOX_USER_SECRET is not configured.");
+  const digest = createHmac("sha256", userSecret)
+    .update(`${userId}:${subscriptionId}`)
+    .digest("base64url");
+  return `Bi.${digest.slice(0, 24)}!`;
+}
+
+function qbClientEmail(userId: string, subscriptionId: string) {
+  const { userSecret } = getQuickbloxConfig();
+  if (!userSecret) throw new Error("QUICKBLOX_USER_SECRET is not configured.");
+  const digest = createHmac("sha256", userSecret)
+    .update(`${userId}:${subscriptionId}`)
+    .digest("hex")
+    .slice(0, 20);
+  return `qb.${digest}@patients.bodyinc.com`;
 }
 
 async function qbFetch<T>(
@@ -201,17 +221,140 @@ export async function reassignAppointmentToProvider(params: {
   });
 }
 
+export async function claimAppointmentForSession(params: {
+  appointmentId: string;
+  qbProviderId: number;
+  token: string;
+}) {
+  try {
+    await reassignAppointmentToProvider({
+      appointmentId: params.appointmentId,
+      qbProviderId: params.qbProviderId,
+    });
+  } catch (error) {
+    console.warn("[consultations] owner reassign failed:", error);
+    await qbFetch(`/appointments/${params.appointmentId}`, {
+      method: "PATCH",
+      token: params.token,
+      body: JSON.stringify({ provider_id: params.qbProviderId }),
+    });
+  }
+}
+
+export async function endQuickbloxAppointment(params: {
+  appointmentId: string;
+  token?: string;
+  qbProviderId?: number;
+}) {
+  const body = JSON.stringify({ date_end: new Date().toISOString() });
+
+  const tryEnd = async (auth: { token?: string; apiKey?: string }) => {
+    await qbFetch(`/appointments/${params.appointmentId}`, {
+      method: "PATCH",
+      token: auth.token,
+      apiKey: auth.apiKey,
+      body,
+    });
+  };
+
+  if (params.token && params.qbProviderId) {
+    try {
+      await claimAppointmentForSession({
+        appointmentId: params.appointmentId,
+        qbProviderId: params.qbProviderId,
+        token: params.token,
+      });
+      await tryEnd({ token: params.token });
+      return;
+    } catch (error) {
+      console.warn("[consultations] claim/end with session failed:", error);
+    }
+  } else if (params.token) {
+    try {
+      await tryEnd({ token: params.token });
+      return;
+    } catch (error) {
+      console.warn("[consultations] end with session failed:", error);
+    }
+  }
+
+  const { apiKey } = getQuickbloxConfig();
+  if (apiKey) {
+    try {
+      await tryEnd({ apiKey });
+      return;
+    } catch (error) {
+      console.warn("[consultations] end with api key failed:", error);
+    }
+  }
+
+  const owner = await getOwnerProviderAuth();
+  if (params.qbProviderId) {
+    try {
+      await reassignAppointmentToProvider({
+        appointmentId: params.appointmentId,
+        qbProviderId: params.qbProviderId,
+      });
+    } catch (error) {
+      console.warn("[consultations] reassign before owner end failed:", error);
+    }
+  }
+  await tryEnd({ token: owner.token });
+}
+
 export function isAppointmentOpen(appointment: QbAppointment) {
   return appointment.date_end == null || appointment.date_end === "";
 }
 
+async function fetchAppointmentList(path: string, auth: { token?: string; apiKey?: string }) {
+  const listed = await qbFetch<{ items?: QbAppointment[] }>(path, auth);
+  return listed.items ?? [];
+}
+
 export async function listProviderAppointments(token?: string) {
   const session = token ? { token } : await getOwnerProviderAuth();
-  const listed = await qbFetch<{ items?: QbAppointment[] }>(
-    "/appointments/my?limit=1000&sort_desc=updated_at",
-    { token: session.token },
-  );
-  return listed.items ?? [];
+  return fetchAppointmentList("/appointments/my?limit=1000&sort_desc=updated_at", {
+    token: session.token,
+  });
+}
+
+/** Admin-wide list. Uses the API key so reassigned visits still appear. */
+export async function listAllAppointments() {
+  const { apiKey } = getQuickbloxConfig();
+  if (!apiKey) return [] as QbAppointment[];
+  try {
+    return await fetchAppointmentList("/appointments?limit=1000&sort_desc=updated_at", { apiKey });
+  } catch (error) {
+    console.warn("[consultations] list all appointments failed:", error);
+    return [];
+  }
+}
+
+export async function getAppointmentById(appointmentId: string, token?: string) {
+  if (token) {
+    try {
+      return await qbFetch<QbAppointment>(`/appointments/${appointmentId}`, { token });
+    } catch (error) {
+      console.warn("[consultations] get appointment with session failed:", appointmentId, error);
+    }
+  }
+
+  const { apiKey } = getQuickbloxConfig();
+  if (apiKey) {
+    try {
+      return await qbFetch<QbAppointment>(`/appointments/${appointmentId}`, { apiKey });
+    } catch (error) {
+      console.warn("[consultations] get appointment with api key failed:", appointmentId, error);
+    }
+  }
+
+  try {
+    const owner = await getOwnerProviderAuth();
+    return await qbFetch<QbAppointment>(`/appointments/${appointmentId}`, { token: owner.token });
+  } catch (error) {
+    console.warn("[consultations] get appointment with owner failed:", appointmentId, error);
+    return null;
+  }
 }
 
 export function buildProviderAppointmentUrl(params: { token: string; appointmentId: string }) {
@@ -226,4 +369,72 @@ export function buildProviderInboxUrl(token: string) {
   const url = new URL(providerAppUrl);
   url.searchParams.set("token", token);
   return url.toString();
+}
+
+/** Same HMAC identity the patient portal uses, so the patient can join this visit later. */
+export async function ensurePatientQuickbloxClient(params: {
+  userId: string;
+  subscriptionId: string;
+  fullName: string;
+  dob: string;
+  sex: string | null;
+}): Promise<{ token: string; userId: number }> {
+  const email = qbClientEmail(params.userId, params.subscriptionId);
+  const password = qbPasswordForPlan(params.userId, params.subscriptionId);
+  const fullName = normalizeFullName(params.fullName, "Patient");
+  const gender = params.sex === "female" ? "female" : "male";
+
+  try {
+    const created = await qbFetch<{ session: QbSession; user?: QbUser; data?: QbUser }>(
+      "/users/client",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          full_name: fullName,
+          email,
+          password,
+          birthdate: params.dob,
+          gender,
+        }),
+      },
+    );
+    const user = created.user ?? created.data;
+    if (!created.session?.token || !user?.id) {
+      throw new Error("QuickBlox did not return a patient session.");
+    }
+    return { token: created.session.token, userId: user.id };
+  } catch (error) {
+    const status = (error as Error & { status?: number }).status;
+    if (status !== 422 && status !== 409) throw error;
+  }
+
+  const loggedIn = await qbFetch<{ session: QbSession; data?: QbUser; user?: QbUser }>(
+    "/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify({ role: "client", email, password }),
+    },
+  );
+  const user = loggedIn.data ?? loggedIn.user;
+  if (!loggedIn.session?.token || !user?.id) {
+    throw new Error("QuickBlox login did not return a patient session.");
+  }
+  return { token: loggedIn.session.token, userId: user.id };
+}
+
+export async function createPatientAppointment(params: {
+  clientId: number;
+  providerId: number;
+  providerToken: string;
+  description: string;
+}): Promise<QbAppointment> {
+  return qbFetch<QbAppointment>("/appointments", {
+    method: "POST",
+    token: params.providerToken,
+    body: JSON.stringify({
+      provider_id: params.providerId,
+      client_id: params.clientId,
+      description: params.description.slice(0, 500),
+    }),
+  });
 }

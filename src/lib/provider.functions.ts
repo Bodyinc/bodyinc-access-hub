@@ -617,7 +617,10 @@ export const updateMyProviderProfile = createServerFn({ method: "POST" })
 
     const { error: profErr } = await supabaseAdmin
       .from("profiles")
-      .update({ full_name: data.full_name, avatar_url: data.avatar_url ?? null })
+      .update({
+        full_name: data.full_name,
+        ...(data.avatar_url !== undefined ? { avatar_url: data.avatar_url } : {}),
+      })
       .eq("id", me);
     if (profErr) throw new Error(profErr.message);
 

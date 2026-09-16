@@ -259,18 +259,27 @@ function MedicineChangesPage() {
                     ) : null}
                   </TableCell>
                   <TableCell className="border-r border-[#D5DEDD] px-6 py-4 text-[14px] font-semibold">
-                    <span
-                      className={
-                        r.delta_cents > 0
-                          ? "text-[#B8684B]"
-                          : r.delta_cents < 0
-                            ? "text-[#6A9B9C]"
-                            : "text-[#3B4759]/60"
-                      }
-                    >
-                      {r.delta_cents > 0 ? "+" : r.delta_cents < 0 ? "−" : ""}
-                      {formatDollars(Math.abs(r.delta_cents) / 100)}
-                    </span>
+                    {r.delta_cents === 0 ? (
+                      <span className="text-[#3B4759]/60">{formatDollars(0)}</span>
+                    ) : (
+                      <div className="space-y-0.5">
+                        <div
+                          className={`text-[16px] font-bold ${
+                            r.delta_cents > 0 ? "text-destructive" : "text-emerald-600"
+                          }`}
+                        >
+                          {r.delta_cents > 0 ? "+" : "−"}
+                          {formatDollars(Math.abs(r.delta_cents) / 100)}
+                        </div>
+                        <div
+                          className={`text-[11px] font-semibold ${
+                            r.delta_cents > 0 ? "text-destructive" : "text-emerald-600"
+                          }`}
+                        >
+                          {r.delta_cents > 0 ? "Additional payment" : "Credit on next refill"}
+                        </div>
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="border-r border-[#D5DEDD] px-6 py-4">
                     <div className="text-[14px] font-medium text-[#3B4759]">
