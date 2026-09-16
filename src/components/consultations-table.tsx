@@ -21,9 +21,41 @@ import {
 import { formatDateTime, formatRecordId } from "@/lib/format";
 import { toastError } from "@/lib/toast-message";
 
-export function openExternalUrl(url: string) {
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  if (!opened) window.location.assign(url);
+/** Open a blank tab in the click gesture, then send it to QuickBlox once the URL is ready. */
+export function openPendingTab(): Window | null {
+  const tab = window.open("about:blank", "_blank");
+  if (!tab) {
+    toast.error("Allow pop-ups for this site so QuickBlox can open in a new tab.");
+    return null;
+  }
+  try {
+    tab.document.write(
+      `<!doctype html><title>Opening consultation</title><body style="font-family:DM Sans,sans-serif;padding:32px;color:#152A51">Opening QuickBlox…</body>`,
+    );
+    tab.document.close();
+  } catch {
+    // Some browsers lock about:blank immediately; the later location replace still works.
+  }
+  return tab;
+}
+
+export function sendTabToUrl(tab: Window | null, url: string) {
+  if (tab && !tab.closed) {
+    tab.location.replace(url);
+    tab.focus();
+    return;
+  }
+  const opened = window.open(url, "_blank");
+  if (opened) return;
+  toast.error("Allow pop-ups for this site so QuickBlox can open in a new tab.");
+}
+
+export function closePendingTab(tab: Window | null) {
+  try {
+    tab?.close();
+  } catch {
+    // ignore
+  }
 }
 
 const STATUS_TONE: Record<ConsultationVisitStatus, string> = {
@@ -53,15 +85,20 @@ export function ConsultationsTable({
 }) {
   const openFn = useServerFn(openConsultation);
   const openMut = useMutation({
-    mutationFn: (consultationId: string) => openFn({ data: { consultationId } }),
-    onSuccess: (res) => {
+    mutationFn: async ({ consultationId }: { consultationId: string; tab: Window | null }) =>
+      openFn({ data: { consultationId } }),
+    onSuccess: (res, vars) => {
       if (!res.ok) {
+        closePendingTab(vars.tab);
         toast.error(res.message);
         return;
       }
-      openExternalUrl(res.url);
+      sendTabToUrl(vars.tab, res.url);
     },
-    onError: (e: Error) => toast.error(toastError(e)),
+    onError: (e: Error, vars) => {
+      closePendingTab(vars.tab);
+      toast.error(toastError(e));
+    },
   });
 
   const rows = result?.rows ?? [];
@@ -138,8 +175,12 @@ export function ConsultationsTable({
                   key={row.id}
                   row={row}
                   showPatient={showPatient}
-                  opening={openMut.isPending && openMut.variables === row.id}
-                  onOpen={() => openMut.mutate(row.id)}
+                  opening={openMut.isPending && openMut.variables?.consultationId === row.id}
+                  onOpen={() => {
+                    const tab = openPendingTab();
+                    if (!tab) return;
+                    openMut.mutate({ consultationId: row.id, tab });
+                  }}
                   onOpenPatient={onOpenPatient}
                 />
               ))

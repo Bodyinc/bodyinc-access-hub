@@ -38,7 +38,18 @@ function NewProviderPage() {
       }),
     onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ["providers"] });
-      toast.success(res.invite_sent ? "Provider created — invite sent" : "Provider created");
+      if (res.quickblox?.ok) {
+        toast.success(
+          res.invite_sent
+            ? "Provider created — invite sent. QuickBlox agent is ready."
+            : "Provider created. QuickBlox agent is ready.",
+        );
+      } else {
+        toast.success(res.invite_sent ? "Provider created — invite sent" : "Provider created");
+        if (res.quickblox?.message) {
+          toast.error(`QuickBlox agent: ${res.quickblox.message}`);
+        }
+      }
       navigate({ to: "/admin/providers" });
     },
     onError: (e: Error) => toast.error(toastError(e)),

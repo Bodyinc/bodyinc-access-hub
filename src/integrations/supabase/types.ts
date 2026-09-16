@@ -1575,6 +1575,7 @@ export type Database = {
           license_states: string[]
           npi: string | null
           practice_states: string[]
+          qb_user_id: number | null
           specialty: string | null
           state: string | null
           updated_at: string
@@ -1599,6 +1600,7 @@ export type Database = {
           license_states?: string[]
           npi?: string | null
           practice_states?: string[]
+          qb_user_id?: number | null
           specialty?: string | null
           state?: string | null
           updated_at?: string
@@ -1623,6 +1625,7 @@ export type Database = {
           license_states?: string[]
           npi?: string | null
           practice_states?: string[]
+          qb_user_id?: number | null
           specialty?: string | null
           state?: string | null
           updated_at?: string
