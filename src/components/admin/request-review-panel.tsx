@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Check, FileText, Repeat, Truck, X } from "lucide-react";
+import { ArrowLeft, Check, FileText, Repeat, Truck, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,8 @@ import {
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { RequestNotes } from "@/components/admin/request-notes";
+import { closePendingTab, openPendingTab, sendTabToUrl } from "@/components/consultations-table";
+import { startRequestConsultation } from "@/lib/consultations.functions";
 import { formatCents, formatDateTimeFull, formatRecordId } from "@/lib/format";
 
 export function RequestReviewPanel({
@@ -73,6 +75,7 @@ export function RequestReviewPanel({
   const assign = useServerFn(assignRequestProvider);
   const listProv = useServerFn(listProviders);
   const claim = useServerFn(claimRequest);
+  const startConsult = useServerFn(startRequestConsultation);
 
   const q = useQuery({
     queryKey: ["request", requestId],
@@ -120,9 +123,28 @@ export function RequestReviewPanel({
     onError: (e: Error) => toast.error(toastError(e)),
   });
 
+  const consultMut = useMutation({
+    mutationFn: async ({ tab }: { tab: Window | null }) =>
+      startConsult({ data: { requestId } }),
+    onSuccess: (res, vars) => {
+      if (!res.ok) {
+        closePendingTab(vars.tab);
+        toast.error(res.message);
+        return;
+      }
+      sendTabToUrl(vars.tab, res.url);
+      refresh();
+    },
+    onError: (e: Error, vars) => {
+      closePendingTab(vars.tab);
+      toast.error(toastError(e));
+    },
+  });
+
   function refresh() {
     qc.invalidateQueries({ queryKey: ["request", requestId] });
     qc.invalidateQueries({ queryKey: ["requests"] });
+    qc.invalidateQueries({ queryKey: ["open-request-count"] });
   }
 
   const approveMut = useMutation({
@@ -218,6 +240,9 @@ export function RequestReviewPanel({
   const canChange = ["pending_review", "approved", "awaiting_additional_payment"].includes(status);
   const canGenerate = status === "approved";
   const nextStep = nextFulfillmentStep(status);
+  const canStartConsult =
+    Boolean(request.user_id) &&
+    !["rejected", "delivered", "canceled", "cancelled"].includes(status);
   const lifeFileOrderId = (events as { note?: string | null }[])
     .map((ev) => ev.note)
     .find((note) => typeof note === "string" && note.startsWith("Life File order ID:"))
@@ -383,6 +408,21 @@ export function RequestReviewPanel({
                 className="h-10 border-[#E7CFC3] px-4 text-[13px] font-semibold text-[#8F4A33] hover:bg-[#F6E4DA]"
               >
                 <X className="mr-1 h-4 w-4" /> {clinicalOnly ? "Reject" : "Reject & refund"}
+              </Button>
+            ) : null}
+            {canStartConsult ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={consultMut.isPending}
+                onClick={() => {
+                  const tab = openPendingTab();
+                  consultMut.mutate({ tab });
+                }}
+                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
+              >
+                <Video className="mr-1 h-4 w-4" />{" "}
+                {consultMut.isPending ? "Opening…" : "Start consultation"}
               </Button>
             ) : null}
           </div>

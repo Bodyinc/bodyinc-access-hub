@@ -112,11 +112,8 @@ function RefundHistoryPage() {
   return (
     <div className="admin-page-shell font-['DM_Sans',sans-serif]">
       <PageHeader
-        backTo="/admin/billing"
-        backLabel="Billing"
         title="Refund history"
         subtitle="Every refund processed by admins or automatic order rejection, with status and who resolved it."
-        crumbs={[{ label: "Billing", to: "/admin/billing" }]}
         actions={
           <>
             {csvHref && (

@@ -1,10 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { ArrowLeft, Download, Eye, Repeat } from "lucide-react";
+import { ArrowLeft, Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChangeMedicineDialog } from "@/components/admin/change-medicine-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,12 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getOrder } from "@/lib/orders.functions";
-import {
-  adminSectionTitle,
-  adminSectionSubtitle,
-  adminCard,
-  adminBtnSecondary,
-} from "@/lib/admin-ui";
+import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { formatDateTimeFull, formatDollars, formatRecordId } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$orderId")({
@@ -43,7 +36,6 @@ function OrderDetailPage() {
     queryKey: ["admin-order", orderId],
     queryFn: () => get({ data: { orderId } }),
   });
-  const [changeOpen, setChangeOpen] = useState(false);
 
   if (q.isLoading) {
     return (
@@ -80,8 +72,6 @@ function OrderDetailPage() {
     display_status,
   } = q.data as any;
 
-  const canChangeMedicine = ["active", "trialing", "past_due"].includes(subscription.status);
-
   return (
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
       <Button
@@ -104,16 +94,6 @@ function OrderDetailPage() {
             </CardDescription>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            {canChangeMedicine ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setChangeOpen(true)}
-                className={`${adminBtnSecondary} h-10 px-4 text-[13px]`}
-              >
-                <Repeat className="mr-1 h-4 w-4" /> Change medicine
-              </Button>
-            ) : null}
             <Badge
               className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
                 display_status === "paid"
@@ -288,21 +268,6 @@ function OrderDetailPage() {
           </div>
         </CardContent>
       </Card>
-
-      <ChangeMedicineDialog
-        orderId={subscription.id}
-        open={changeOpen}
-        onOpenChange={setChangeOpen}
-        onChanged={() => q.refetch()}
-        current={{
-          medicineName: medicine?.name ?? null,
-          variantName: variant_name ?? null,
-          planName: pkg?.name ?? null,
-          price: pkg?.price != null ? Number(pkg.price) : null,
-          durationMonths: pkg?.duration_months ?? null,
-          renewsAt: subscription.current_period_end ?? null,
-        }}
-      />
     </div>
   );
 }

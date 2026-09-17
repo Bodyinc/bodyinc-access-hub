@@ -15,6 +15,7 @@ export type EmailTemplateKey =
   | "patient_delivered"
   | "patient_refund_approved"
   | "patient_refund_rejected"
+  | "patient_consultation_started"
   | "patient_inquiry_update"
   | "provider_assigned"
   | "provider_ready_for_review"
@@ -300,6 +301,19 @@ const builders: Record<EmailTemplateKey, Builder> = {
         ${note ? noteBox(`<strong>Reason:</strong> ${escapeHtml(note)}`, "clay") : ""}
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\nYour refund request for $${amount} was not approved.${note ? `\nReason: ${note}` : ""}${link.text}`,
+    });
+  },
+
+  patient_consultation_started: (p) => {
+    const med = str(p, "MEDICINE_NAME", "your medication");
+    const link = cta(str(p, "PORTAL_URL"), "Join consultation");
+    return layout({
+      preheader: `Your provider started a consultation for ${med}.`,
+      title: "Consultation started",
+      bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
+        <p>Your provider started a consultation for <strong>${escapeHtml(med)}</strong>. Open the patient portal to join the visit.</p>
+        ${link.html}`,
+      bodyText: `Hi ${firstName(p)},\n\nYour provider started a consultation for ${med}. Open the patient portal to join the visit.${link.text}`,
     });
   },
 

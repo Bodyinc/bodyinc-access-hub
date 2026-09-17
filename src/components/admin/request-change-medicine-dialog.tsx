@@ -404,7 +404,25 @@ export function RequestChangeMedicineDialog({
         {selectedPkg && !isUnchanged && diff != null && !hideFinancial ? (
           <div className="rounded-lg border bg-muted/20 p-3 text-sm space-y-1">
             <div className="flex items-center justify-between">
-              <span className="font-semibold">Price difference</span>
+              <span className="text-muted-foreground">Current price</span>
+              <span className="font-medium">
+                {current.price != null ? formatDollars(current.price) : "—"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">New price</span>
+              <span
+                className={`text-lg font-bold ${
+                  diff > 0 ? "text-destructive" : diff < 0 ? "text-emerald-600" : "text-foreground"
+                }`}
+              >
+                {formatDollars(selectedPkg.price)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">
+                {diff > 0 ? "Additional payment" : diff < 0 ? "Credit on next refill" : "Difference"}
+              </span>
               <span
                 className={`font-bold ${
                   diff > 0 ? "text-destructive" : diff < 0 ? "text-emerald-600" : "text-foreground"

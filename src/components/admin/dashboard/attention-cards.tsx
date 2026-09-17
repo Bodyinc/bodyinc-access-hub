@@ -21,7 +21,7 @@ const ITEMS: Array<{ key: keyof Attention; label: string; to: string }> = [
   { key: "unassigned", label: "Unassigned orders", to: "/admin/requests" },
   { key: "pending_review", label: "Awaiting review", to: "/admin/requests" },
   { key: "awaiting_payment", label: "Additional payment due", to: "/admin/requests" },
-  { key: "failed_payments", label: "Failed payments", to: "/admin/billing" },
+  { key: "failed_payments", label: "Failed payments", to: "/admin/orders" },
   { key: "abandoned_sessions", label: "Abandoned intakes", to: "/admin/intake-sessions" },
 ];
 

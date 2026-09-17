@@ -1144,6 +1144,7 @@ export type Database = {
       patient_consultations: {
         Row: {
           created_at: string
+          ended_at: string | null
           id: string
           qb_appointment_id: string
           qb_dialog_id: string | null
@@ -1155,6 +1156,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          ended_at?: string | null
           id?: string
           qb_appointment_id: string
           qb_dialog_id?: string | null
@@ -1162,10 +1164,11 @@ export type Database = {
           started_at?: string
           subscription_id: string
           updated_at?: string
-          user_id: string
+          user_id?: string
         }
         Update: {
           created_at?: string
+          ended_at?: string | null
           id?: string
           qb_appointment_id?: string
           qb_dialog_id?: string | null

@@ -61,12 +61,11 @@ export function closePendingTab(tab: Window | null) {
 const STATUS_TONE: Record<ConsultationVisitStatus, string> = {
   open: "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]",
   ended: "bg-[#D5DEDD] text-[#3B4759] hover:bg-[#D5DEDD]",
-  unknown: "bg-[#E8EEED] text-[#3B4759] hover:bg-[#E8EEED]",
+  unknown: "bg-[#6A9B9C] text-white hover:bg-[#6A9B9C]",
 };
 
 function visitLabel(status: ConsultationVisitStatus) {
-  if (status === "open") return "Open";
-  if (status === "ended") return "Ended";
+  if (status === "ended") return "Closed";
   return "Started";
 }
 

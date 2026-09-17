@@ -6,10 +6,15 @@ import { isQuickbloxConfigured } from "@/lib/consultations/config";
 import {
   buildProviderAppointmentUrl,
   buildProviderInboxUrl,
+  claimAppointmentForSession,
+  createPatientAppointment,
+  ensurePatientQuickbloxClient,
+  getAppointmentById,
   getOwnerProviderAuth,
   isAppointmentOpen,
+  listAllAppointments,
   listProviderAppointments,
-  reassignAppointmentToProvider,
+  type QbAppointment,
 } from "@/lib/consultations/quickblox";
 import { sessionForBodyIncProvider } from "@/lib/consultations/provider-agent";
 
@@ -49,9 +54,22 @@ const openInput = z.object({
   consultationId: z.string().uuid(),
 });
 
+const startFromRequestInput = z.object({
+  requestId: z.string().uuid(),
+});
+
 function missingTable(error: { message?: string; code?: string } | null) {
   const message = error?.message ?? "";
   return error?.code === "42P01" || /patient_consultations/i.test(message);
+}
+
+function missingEndedAtColumn(error: { message?: string; code?: string } | null) {
+  const message = error?.message ?? "";
+  return error?.code === "42703" || /ended_at/i.test(message);
+}
+
+function visitFromAppointment(item: QbAppointment): ConsultationVisitStatus {
+  return isAppointmentOpen(item) ? "open" : "ended";
 }
 
 async function assignedPatientIds(supabaseAdmin: any, providerId: string): Promise<string[]> {
@@ -64,9 +82,22 @@ async function assignedPatientIds(supabaseAdmin: any, providerId: string): Promi
   return [...new Set((data ?? []).map((row: { user_id: string | null }) => row.user_id).filter(Boolean))];
 }
 
-async function visitStatusByAppointmentId(extraToken?: string) {
+async function visitStatusByAppointmentId(
+  neededIds: string[],
+  extraToken?: string,
+) {
   const map = new Map<string, ConsultationVisitStatus>();
-  const lists = [listProviderAppointments()];
+  const dateEnd = new Map<string, string | null>();
+
+  const fill = (items: QbAppointment[]) => {
+    for (const item of items) {
+      if (!item._id) continue;
+      map.set(item._id, visitFromAppointment(item));
+      dateEnd.set(item._id, item.date_end ?? null);
+    }
+  };
+
+  const lists = [listProviderAppointments(), listAllAppointments()];
   if (extraToken) lists.push(listProviderAppointments(extraToken));
   const results = await Promise.allSettled(lists);
   for (const result of results) {
@@ -74,12 +105,56 @@ async function visitStatusByAppointmentId(extraToken?: string) {
       console.warn("[consultations] list provider appointments failed:", result.reason);
       continue;
     }
-    for (const item of result.value) {
-      if (!item._id) continue;
-      map.set(item._id, isAppointmentOpen(item) ? "open" : "ended");
+    fill(result.value);
+  }
+
+  const missing = neededIds.filter((id) => id && !map.has(id));
+  for (let i = 0; i < missing.length; i += 8) {
+    const chunk = missing.slice(i, i + 8);
+    const fetched = await Promise.all(
+      chunk.map(async (id) => {
+        const item = await getAppointmentById(id, extraToken);
+        return item ? [id, item] as const : null;
+      }),
+    );
+    for (const row of fetched) {
+      if (!row) continue;
+      fill([row[1]]);
     }
   }
-  return map;
+
+  return { status: map, dateEnd };
+}
+
+async function persistEndedAt(
+  supabaseAdmin: any,
+  rows: { id: string; qb_appointment_id: string; ended_at?: string | null }[],
+  visit: { status: Map<string, ConsultationVisitStatus>; dateEnd: Map<string, string | null> },
+) {
+  const now = new Date().toISOString();
+  const updates = rows.flatMap((row) => {
+    const status = visit.status.get(row.qb_appointment_id);
+    if (!status) return [];
+    if (status === "ended" && !row.ended_at) {
+      return [{ id: row.id, ended_at: visit.dateEnd.get(row.qb_appointment_id) || now }];
+    }
+    if (status === "open" && row.ended_at) {
+      return [{ id: row.id, ended_at: null as string | null }];
+    }
+    return [];
+  });
+
+  await Promise.all(
+    updates.map(async (update) => {
+      const { error } = await supabaseAdmin
+        .from("patient_consultations")
+        .update({ ended_at: update.ended_at, updated_at: now })
+        .eq("id", update.id);
+      if (error && !missingEndedAtColumn(error)) {
+        console.warn("[consultations] persist ended_at failed:", error.message);
+      }
+    }),
+  );
 }
 
 async function reviewerQuickbloxSession(
@@ -100,7 +175,7 @@ export const listConsultations = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("patient_consultations")
-      .select("id, user_id, subscription_id, qb_appointment_id, started_at")
+      .select("id, user_id, subscription_id, qb_appointment_id, started_at, ended_at")
       .order("started_at", { ascending: false })
       .limit(300);
 
@@ -115,13 +190,29 @@ export const listConsultations = createServerFn({ method: "POST" })
       q = q.in("user_id", ids);
     }
 
-    const { data: rows, error } = await q;
+    let { data: rows, error } = await q;
+    if (error && missingEndedAtColumn(error)) {
+      const fallback = supabaseAdmin
+        .from("patient_consultations")
+        .select("id, user_id, subscription_id, qb_appointment_id, started_at")
+        .order("started_at", { ascending: false })
+        .limit(300);
+      const retried = data.userId ? fallback.eq("user_id", data.userId) : fallback;
+      const scoped =
+        role === "provider"
+          ? retried.in("user_id", await assignedPatientIds(supabaseAdmin, context.userId))
+          : retried;
+      ({ data: rows, error } = await scoped);
+    }
     if (error) {
       if (missingTable(error)) return { configured: isQuickbloxConfigured(), rows: [] };
       throw new Error(error.message);
     }
 
-    const consultations = rows ?? [];
+    const consultations = (rows ?? []).map((row) => ({
+      ...row,
+      ended_at: "ended_at" in row ? ((row as { ended_at?: string | null }).ended_at ?? null) : null,
+    }));
     if (consultations.length === 0) {
       return { configured: isQuickbloxConfigured(), rows: [] };
     }
@@ -145,14 +236,19 @@ export const listConsultations = createServerFn({ method: "POST" })
       }
     }
 
-    const [{ data: profiles }, { data: subs }, visitStatus] = await Promise.all([
+    const [{ data: profiles }, { data: subs }, visit] = await Promise.all([
       supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds),
       supabaseAdmin
         .from("subscriptions")
         .select("id, status, medicine_id, package_id")
         .in("id", subIds),
-      visitStatusByAppointmentId(extraToken),
+      visitStatusByAppointmentId(
+        consultations.map((row) => row.qb_appointment_id),
+        extraToken,
+      ),
     ]);
+
+    void persistEndedAt(supabaseAdmin, consultations, visit);
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     const subMap = new Map((subs ?? []).map((s: any) => [s.id, s]));
@@ -193,7 +289,9 @@ export const listConsultations = createServerFn({ method: "POST" })
         medicine_name: sub?.medicine_id ? (medMap.get(sub.medicine_id) ?? null) : null,
         plan_label: sub?.package_id ? (pkgMap.get(sub.package_id) ?? null) : null,
         subscription_status: sub?.status ?? null,
-        visit_status: visitStatus.get(row.qb_appointment_id) ?? "unknown",
+        visit_status:
+          visit.status.get(row.qb_appointment_id) ??
+          (row.ended_at ? "ended" : "unknown"),
       };
     });
 
@@ -245,15 +343,14 @@ export const openConsultation = createServerFn({ method: "POST" })
 
     try {
       const session = await reviewerQuickbloxSession(role, context.userId, supabaseAdmin);
-      if (role === "provider") {
-        try {
-          await reassignAppointmentToProvider({
-            appointmentId: row.qb_appointment_id,
-            qbProviderId: session.userId,
-          });
-        } catch (error) {
-          console.warn("[consultations] reassign failed:", error);
-        }
+      try {
+        await claimAppointmentForSession({
+          appointmentId: row.qb_appointment_id,
+          qbProviderId: session.userId,
+          token: session.token,
+        });
+      } catch (error) {
+        console.warn("[consultations] reassign failed:", error);
       }
       return {
         ok: true,
@@ -267,6 +364,160 @@ export const openConsultation = createServerFn({ method: "POST" })
       return {
         ok: false,
         message: error instanceof Error ? error.message : "Unable to open this consultation.",
+      };
+    }
+  });
+
+export const startRequestConsultation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => startFromRequestInput.parse(input))
+  .handler(async ({ data, context }): Promise<OpenConsultationResult> => {
+    const role = await assertReviewer(context);
+    if (!isQuickbloxConfigured()) {
+      return { ok: false, message: "Consultations are not available yet." };
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: req, error } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, user_id, provider_id, subscription_id, medicine_id, status, session_id")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (error) return { ok: false, message: error.message };
+    if (!req) return { ok: false, message: "Request not found." };
+    if (role === "provider" && req.provider_id !== context.userId) {
+      return { ok: false, message: "Forbidden" };
+    }
+    if (!req.user_id) {
+      return {
+        ok: false,
+        message: "This patient does not have an account yet, so a consultation cannot start.",
+      };
+    }
+    if (!req.subscription_id) {
+      return { ok: false, message: "This order is missing a subscription." };
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from("patient_consultations")
+      .select("id, qb_appointment_id")
+      .eq("subscription_id", req.subscription_id)
+      .eq("user_id", req.user_id)
+      .maybeSingle();
+
+    try {
+      const session = await reviewerQuickbloxSession(role, context.userId, supabaseAdmin);
+
+      if (existing?.qb_appointment_id) {
+        try {
+          await claimAppointmentForSession({
+            appointmentId: existing.qb_appointment_id,
+            qbProviderId: session.userId,
+            token: session.token,
+          });
+        } catch (error) {
+          console.warn("[consultations] reassign failed:", error);
+        }
+        return {
+          ok: true,
+          url: buildProviderAppointmentUrl({
+            token: session.token,
+            appointmentId: existing.qb_appointment_id,
+          }),
+        };
+      }
+
+      const [{ data: profile }, { data: intake }, { data: medicine }] = await Promise.all([
+        supabaseAdmin
+          .from("profiles")
+          .select("full_name, dob, sex")
+          .eq("id", req.user_id)
+          .maybeSingle(),
+        req.session_id
+          ? supabaseAdmin
+              .from("intake_sessions")
+              .select("full_name, dob, sex")
+              .eq("id", req.session_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        req.medicine_id
+          ? supabaseAdmin.from("medicines").select("name").eq("id", req.medicine_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const dobRaw = profile?.dob ?? intake?.dob ?? null;
+      const dob = dobRaw ? String(dobRaw).slice(0, 10) : null;
+      if (!dob) {
+        return {
+          ok: false,
+          message: "Patient date of birth is required before starting a consultation.",
+        };
+      }
+
+      const fullName = profile?.full_name?.trim() || intake?.full_name?.trim() || "Patient";
+      const medicineName = medicine?.name?.trim() || "treatment";
+      const client = await ensurePatientQuickbloxClient({
+        userId: req.user_id,
+        subscriptionId: req.subscription_id,
+        fullName,
+        dob,
+        sex: profile?.sex ?? intake?.sex ?? null,
+      });
+
+      const appointment = await createPatientAppointment({
+        clientId: client.userId,
+        providerId: session.userId,
+        providerToken: session.token,
+        description: `${medicineName} consultation`,
+      });
+
+      const { error: insertError } = await supabaseAdmin.from("patient_consultations").insert({
+        user_id: req.user_id,
+        subscription_id: req.subscription_id,
+        qb_user_id: client.userId,
+        qb_appointment_id: appointment._id,
+        qb_dialog_id: appointment.dialog_id ?? null,
+      });
+      if (insertError && insertError.code !== "23505") {
+        return { ok: false, message: insertError.message };
+      }
+
+      await supabaseAdmin.from("medication_request_events").insert({
+        request_id: req.id,
+        status: req.status,
+        actor_role: role,
+        created_by: context.userId,
+        note: "Consultation started",
+      });
+
+      try {
+        const { notifyUserById } = await import("@/lib/email.notifications");
+        const portal = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+        await notifyUserById({
+          supabaseAdmin,
+          userId: req.user_id,
+          template: "patient_consultation_started",
+          params: {
+            MEDICINE_NAME: medicineName,
+            PORTAL_URL: portal ? `${portal}/consultations` : "",
+          },
+        });
+      } catch (error) {
+        console.warn("[consultations] patient start email failed:", error);
+      }
+
+      return {
+        ok: true,
+        url: buildProviderAppointmentUrl({
+          token: session.token,
+          appointmentId: appointment._id,
+        }),
+      };
+    } catch (error) {
+      console.error("[consultations] start from request failed:", error);
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : "Unable to start this consultation.",
       };
     }
   });

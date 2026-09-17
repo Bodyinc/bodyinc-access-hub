@@ -198,6 +198,19 @@ export const listRequests = createServerFn({ method: "POST" })
     return result;
   });
 
+export const countOpenRequests = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id", { count: "exact", head: true })
+      .in("status", OPEN_STATUSES);
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  });
+
 export const getRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
