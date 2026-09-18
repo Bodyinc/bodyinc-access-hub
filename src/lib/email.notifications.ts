@@ -209,3 +209,55 @@ export async function notifyProviderRequestEvent(opts: {
     },
   });
 }
+
+/** Email every admin when a provider clinically approves an order (ready for pharmacy send). */
+export async function notifyAdminsProviderApproved(opts: {
+  supabaseAdmin: any;
+  requestId: string;
+  medicineId?: string | null;
+  providerId?: string | null;
+  patientUserId?: string | null;
+}): Promise<number> {
+  try {
+    const { data: roleRows } = await opts.supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = Array.from(
+      new Set(((roleRows ?? []) as { user_id: string }[]).map((r) => r.user_id).filter(Boolean)),
+    );
+    if (adminIds.length === 0) return 0;
+
+    const medicineName = await resolveMedicineName(opts.supabaseAdmin, opts.medicineId);
+    const [provider, patient] = await Promise.all([
+      resolveProfileContact(opts.supabaseAdmin, opts.providerId),
+      resolveProfileContact(opts.supabaseAdmin, opts.patientUserId),
+    ]);
+
+    const adminPortal =
+      process.env.ADMIN_APP_URL?.replace(/\/$/, "") ||
+      process.env.APP_URL?.replace(/\/$/, "") ||
+      "https://admin.bodyinc.com";
+
+    let sentCount = 0;
+    for (const adminId of adminIds) {
+      const ok = await notifyUserById({
+        supabaseAdmin: opts.supabaseAdmin,
+        userId: adminId,
+        template: "admin_provider_approved",
+        params: {
+          ORDER_ID: opts.requestId,
+          MEDICINE_NAME: medicineName,
+          PROVIDER_NAME: provider?.name ?? "Provider",
+          PATIENT_NAME: patient?.name ?? "Patient",
+          REQUEST_URL: `${adminPortal}/admin/requests/${opts.requestId}`,
+        },
+      });
+      if (ok) sentCount += 1;
+    }
+    return sentCount;
+  } catch (e) {
+    console.error("[email] notifyAdminsProviderApproved failed:", e);
+    return 0;
+  }
+}

@@ -90,6 +90,12 @@ export const medicineVariantSchema = z.object({
     .transform((v) => titleCaseName(v)),
   is_active: z.boolean().default(true),
   lf_product_id: lfProductIdField,
+  life_file_pharmacy_id: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
   packages: z
     .array(medicinePackageSchema)
     .max(
@@ -159,6 +165,12 @@ export const medicineFormSchema = z.object({
     .or(z.literal(""))
     .transform((v) => (v ? sentenceCase(v) : undefined)),
   lf_product_id: lfProductIdField,
+  life_file_pharmacy_id: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
   sort_order: z.coerce.number().int().min(0).default(0),
   requires_questionnaire: z.boolean().default(false),
   requires_consultation: z.boolean().default(false),

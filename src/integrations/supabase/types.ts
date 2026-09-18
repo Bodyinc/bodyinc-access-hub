@@ -690,6 +690,11 @@ export type Database = {
           decision_note: string | null
           id: string
           kind: string
+          life_file_error: string | null
+          life_file_order_id: string | null
+          life_file_pharmacy_id: string | null
+          life_file_status: string | null
+          life_file_submitted_at: string | null
           medicine_id: string | null
           package_id: string | null
           payment_id: string | null
@@ -713,6 +718,11 @@ export type Database = {
           decision_note?: string | null
           id?: string
           kind?: string
+          life_file_error?: string | null
+          life_file_order_id?: string | null
+          life_file_pharmacy_id?: string | null
+          life_file_status?: string | null
+          life_file_submitted_at?: string | null
           medicine_id?: string | null
           package_id?: string | null
           payment_id?: string | null
@@ -736,6 +746,11 @@ export type Database = {
           decision_note?: string | null
           id?: string
           kind?: string
+          life_file_error?: string | null
+          life_file_order_id?: string | null
+          life_file_pharmacy_id?: string | null
+          life_file_status?: string | null
+          life_file_submitted_at?: string | null
           medicine_id?: string | null
           package_id?: string | null
           payment_id?: string | null
@@ -752,6 +767,13 @@ export type Database = {
           variant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "medication_requests_life_file_pharmacy_id_fkey"
+            columns: ["life_file_pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "life_file_pharmacies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "medication_requests_medicine_id_fkey"
             columns: ["medicine_id"]
@@ -817,6 +839,97 @@ export type Database = {
           },
           {
             foreignKeyName: "medication_requests_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "medicine_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      life_file_pharmacies: {
+        Row: {
+          api_base_url: string
+          api_network_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string | null
+          name: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          api_base_url: string
+          api_network_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          name: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          api_base_url?: string
+          api_network_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          name?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
+      medicine_life_file_products: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          lf_product_id: number
+          medicine_id: string
+          pharmacy_id: string
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lf_product_id: number
+          medicine_id: string
+          pharmacy_id: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lf_product_id?: number
+          medicine_id?: string
+          pharmacy_id?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicine_life_file_products_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicine_life_file_products_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "life_file_pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicine_life_file_products_variant_id_fkey"
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "medicine_variants"
@@ -1636,6 +1749,66 @@ export type Database = {
           zip?: string | null
         }
         Relationships: []
+      }
+      provider_life_file_credentials: {
+        Row: {
+          api_base_url: string | null
+          api_password: string
+          api_username: string
+          created_at: string
+          id: string
+          is_active: boolean
+          npi: string | null
+          pharmacy_id: string
+          practice_id: number | null
+          provider_id: string
+          provider_life_file_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_base_url?: string | null
+          api_password: string
+          api_username: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          npi?: string | null
+          pharmacy_id: string
+          practice_id?: number | null
+          provider_id: string
+          provider_life_file_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_base_url?: string | null
+          api_password?: string
+          api_username?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          npi?: string | null
+          pharmacy_id?: string
+          practice_id?: number | null
+          provider_id?: string
+          provider_life_file_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_life_file_credentials_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "life_file_pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_life_file_credentials_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       questionnaire_categories: {
         Row: {

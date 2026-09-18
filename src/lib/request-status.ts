@@ -80,7 +80,7 @@ export function nextFulfillmentStep(
 ): { status: "sent_to_pharmacy" | "dispatched" | "delivered"; label: string } | null {
   switch (status) {
     case "prescribed":
-      return { status: "sent_to_pharmacy", label: "Mark sent to pharmacy" };
+      return { status: "sent_to_pharmacy", label: "Send to LifeFile" };
     case "sent_to_pharmacy":
       return { status: "dispatched", label: "Mark dispatched" };
     case "dispatched":

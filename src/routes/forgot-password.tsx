@@ -59,7 +59,9 @@ function ForgotPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const result = await requestReset({ data: { email: parsed.data.email } });
+      const result = await requestReset({
+        data: { email: parsed.data.email, origin: window.location.origin },
+      });
       if (!result.ok) {
         if (result.error === "wrong_portal") {
           setPortalError({ message: result.message, redirectUrl: result.redirectUrl });

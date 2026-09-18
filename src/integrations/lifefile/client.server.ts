@@ -1,13 +1,4 @@
-function readEnv(name: string): string {
-  // Bracket access so Vite does not replace this with `undefined` at bundle time.
-  const value = process.env[name]?.trim();
-  if (!value) {
-    throw new Error(`${name} is not configured.`);
-  }
-  return value;
-}
-
-type LifeFileConfig = {
+export type LifeFileConfig = {
   baseUrl: string;
   apiUsername: string;
   apiPassword: string;
@@ -17,7 +8,17 @@ type LifeFileConfig = {
   practiceId: number;
 };
 
-function getLifeFileConfig(): LifeFileConfig {
+function readEnv(name: string): string {
+  // Bracket access so Vite does not replace this with `undefined` at bundle time.
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} is not configured.`);
+  }
+  return value;
+}
+
+/** Legacy single-account env config. Used only when no per-provider pharmacy credentials exist. */
+export function getLegacyLifeFileConfig(): LifeFileConfig {
   const practiceId = Number(readEnv("LIFE_FILE_PRACTICE_ID"));
   if (!Number.isFinite(practiceId) || practiceId <= 0) {
     throw new Error("LIFE_FILE_PRACTICE_ID must be a positive number.");
@@ -34,7 +35,7 @@ function getLifeFileConfig(): LifeFileConfig {
 }
 
 export function getPracticeId(): number {
-  return getLifeFileConfig().practiceId;
+  return getLegacyLifeFileConfig().practiceId;
 }
 
 export async function lifeFileRequest<T>(
@@ -42,9 +43,10 @@ export async function lifeFileRequest<T>(
   options: {
     method?: "GET" | "POST" | "PUT";
     body?: unknown;
+    config?: LifeFileConfig;
   } = {},
 ): Promise<T> {
-  const config = getLifeFileConfig();
+  const config = options.config ?? getLegacyLifeFileConfig();
   const url = `${config.baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
   const auth = Buffer.from(`${config.apiUsername}:${config.apiPassword}`).toString("base64");

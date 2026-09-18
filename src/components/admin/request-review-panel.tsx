@@ -33,6 +33,8 @@ import {
   generatePrescription,
   advanceRequestStatus,
   assignRequestProvider,
+  retryLifeFileSubmission,
+  sendRequestToPharmacy,
 } from "@/lib/requests.functions";
 import { listProviders } from "@/lib/providers.functions";
 import { claimRequest } from "@/lib/provider.functions";
@@ -72,6 +74,8 @@ export function RequestReviewPanel({
   const reject = useServerFn(rejectRequest);
   const generate = useServerFn(generatePrescription);
   const advance = useServerFn(advanceRequestStatus);
+  const retryLf = useServerFn(retryLifeFileSubmission);
+  const sendPharmacy = useServerFn(sendRequestToPharmacy);
   const assign = useServerFn(assignRequestProvider);
   const listProv = useServerFn(listProviders);
   const claim = useServerFn(claimRequest);
@@ -92,7 +96,10 @@ export function RequestReviewPanel({
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [rxOpen, setRxOpen] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [sendPharmacyOpen, setSendPharmacyOpen] = useState(false);
   const [directions, setDirections] = useState("");
+  const [approveNote, setApproveNote] = useState("");
   const [trackOpen, setTrackOpen] = useState(false);
   const [tracking, setTracking] = useState("");
   const [assignId, setAssignId] = useState("");
@@ -104,8 +111,14 @@ export function RequestReviewPanel({
 
   const assignMut = useMutation({
     mutationFn: () => assign({ data: { requestId, providerId: assignId || null } }),
-    onSuccess: () => {
-      toast.success("Provider assigned.");
+    onSuccess: (res) => {
+      if ((res as { alreadyAssigned?: boolean })?.alreadyAssigned) {
+        toast.message(
+          `Already assigned to ${(res as { providerName?: string }).providerName ?? "this provider"}.`,
+        );
+      } else {
+        toast.success("Provider assigned.");
+      }
       setAssignId("");
       refresh();
     },
@@ -148,9 +161,53 @@ export function RequestReviewPanel({
   }
 
   const approveMut = useMutation({
-    mutationFn: () => approve({ data: { requestId } }),
+    mutationFn: () =>
+      approve({
+        data: {
+          requestId,
+          note: sentenceCase(approveNote) || undefined,
+        },
+      }),
     onSuccess: (res) => {
-      toastActionWithEmail("Order approved.", res?.email_sent);
+      toastActionWithEmail("Order approved. Admin will send it to the pharmacy.", res?.email_sent);
+      setApproveOpen(false);
+      setApproveNote("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(toastError(e)),
+  });
+
+  const sendPharmacyMut = useMutation({
+    mutationFn: () =>
+      sendPharmacy({
+        data: {
+          requestId,
+          directions: sentenceCase(directions) || undefined,
+        },
+      }),
+    onSuccess: (res) => {
+      toastActionWithEmail(
+        res?.lifeFileOrderId
+          ? `Sent to LifeFile: ${res.lifeFileOrderId}`
+          : "Sent to pharmacy.",
+        res?.email_sent,
+      );
+      setSendPharmacyOpen(false);
+      setDirections("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(toastError(e)),
+  });
+
+  const retryLfMut = useMutation({
+    mutationFn: () => retryLf({ data: { requestId } }),
+    onSuccess: (res) => {
+      toastActionWithEmail(
+        res?.lifeFileOrderId
+          ? `Life File order created: ${res.lifeFileOrderId}`
+          : "LifeFile submission retried.",
+        res?.email_sent,
+      );
       refresh();
     },
     onError: (e: Error) => toast.error(toastError(e)),
@@ -235,18 +292,41 @@ export function RequestReviewPanel({
   } = q.data as any;
 
   const status: string = request.status;
-  const canApprove = status === "pending_review";
+  const canApprove = status === "pending_review" && clinicalOnly;
+  const needsProviderAssignment = status === "pending_review" && canManage && !provider;
+  const waitingOnProvider = status === "pending_review" && canManage && !!provider;
   const canReject = status === "pending_review" || status === "awaiting_additional_payment";
   const canChange = ["pending_review", "approved", "awaiting_additional_payment"].includes(status);
-  const canGenerate = status === "approved";
-  const nextStep = nextFulfillmentStep(status);
+  const canGenerate = status === "approved" && canManage;
   const canStartConsult =
     Boolean(request.user_id) &&
     !["rejected", "delivered", "canceled", "cancelled"].includes(status);
-  const lifeFileOrderId = (events as { note?: string | null }[])
-    .map((ev) => ev.note)
-    .find((note) => typeof note === "string" && note.startsWith("Life File order ID:"))
-    ?.replace("Life File order ID: ", "");
+  const lifeFileOrderId =
+    (request as { life_file_order_id?: string | null }).life_file_order_id ||
+    (events as { note?: string | null }[])
+      .map((ev) => ev.note)
+      .find((note) => typeof note === "string" && note.startsWith("Life File order ID:"))
+      ?.replace("Life File order ID: ", "");
+  const lifeFileStatus = (request as { life_file_status?: string | null }).life_file_status ?? null;
+  const lifeFileError = (request as { life_file_error?: string | null }).life_file_error ?? null;
+  const canRetryLifeFile = lifeFileStatus === "failed" && canManage;
+  const canSendToPharmacy =
+    canManage &&
+    ["approved", "prescribed"].includes(status) &&
+    lifeFileStatus !== "submitted" &&
+    lifeFileStatus !== "accepted";
+  const nextStep =
+    canManage && !(lifeFileStatus === "failed" && status === "prescribed")
+      ? nextFulfillmentStep(status)
+      : clinicalOnly
+        ? null
+        : nextFulfillmentStep(status);
+  // Providers don't advance fulfillment (dispatch/deliver); admins do.
+  const fulfillmentStep = canManage ? nextStep : null;
+  // When admin can send to pharmacy from approved/prescribed, hide the old "Mark sent" step.
+  const showFulfillmentStep =
+    fulfillmentStep &&
+    !(canSendToPharmacy && fulfillmentStep.status === "sent_to_pharmacy");
 
   return (
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
@@ -300,16 +380,42 @@ export function RequestReviewPanel({
             {request.tracking_number ? (
               <Row label="Tracking #" value={request.tracking_number} />
             ) : null}
+            {lifeFileStatus ? (
+              <Row
+                label="LifeFile status"
+                value={
+                  lifeFileStatus === "failed"
+                    ? "Failed"
+                    : lifeFileStatus === "submitted"
+                      ? "Submitted"
+                      : lifeFileStatus === "accepted"
+                        ? "Accepted"
+                        : lifeFileStatus
+                }
+              />
+            ) : null}
             {lifeFileOrderId ? <Row label="Life File order ID" value={lifeFileOrderId} /> : null}
+            {lifeFileError ? (
+              <div className="sm:col-span-2 space-y-1">
+                <div className="text-[13px] font-medium text-[#3B4759]/60">LifeFile error</div>
+                <div className="text-[14px] font-medium text-[#B8684B]">{lifeFileError}</div>
+              </div>
+            ) : null}
           </div>
 
           {canManage ? (
             <div className="flex flex-wrap items-end gap-2 border-t border-[#D5DEDD] pt-4">
               <div className="min-w-[220px] space-y-1">
                 <div className="text-[13px] font-medium text-[#3B4759]/60">
-                  Assign / reassign provider
-                  {patientState ? ` (licensed in ${patientState})` : ""}
+                  {provider
+                    ? `Change provider${patientState ? ` (licensed in ${patientState})` : ""}`
+                    : `Assign provider${patientState ? ` (licensed in ${patientState})` : ""}`}
                 </div>
+                {provider ? (
+                  <p className="text-[13px] font-medium text-[#3B4759]">
+                    Already assigned to {provider.full_name}
+                  </p>
+                ) : null}
                 <Select value={assignId} onValueChange={setAssignId}>
                   <SelectTrigger className="h-10 border-[#D5DEDD] text-[13px] text-[#3B4759]">
                     <SelectValue
@@ -318,7 +424,9 @@ export function RequestReviewPanel({
                           ? "Patient state is missing"
                           : matchingProviders.length === 0
                             ? `No practitioner licensed in ${patientState}`
-                            : "Select a provider"
+                            : provider
+                              ? "Select a different provider"
+                              : "Select a provider"
                       }
                     />
                   </SelectTrigger>
@@ -326,20 +434,39 @@ export function RequestReviewPanel({
                     {matchingProviders.map((p) => (
                       <SelectItem key={p.id} value={p.id} className="text-[14px] text-[#3B4759]">
                         {p.full_name}
+                        {p.id === provider?.id ? " (current)" : ""}
                         {p.is_default ? " (default)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {assignId && provider?.id === assignId ? (
+                  <p className="text-[12px] font-medium text-[#3B4759]/70">
+                    Already assigned to {provider.full_name}. Choose someone else to change.
+                  </p>
+                ) : null}
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                disabled={!assignId || assignMut.isPending || matchingProviders.length === 0}
+                disabled={
+                  assignMut.isPending ||
+                  matchingProviders.length === 0 ||
+                  (!!provider && (!assignId || assignId === provider.id)) ||
+                  (!provider && !assignId)
+                }
                 onClick={() => assignMut.mutate()}
                 className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
               >
-                Assign
+                {assignMut.isPending
+                  ? provider
+                    ? "Changing…"
+                    : "Assigning…"
+                  : provider && (!assignId || assignId === provider.id)
+                    ? "Assigned"
+                    : provider
+                      ? "Change provider"
+                      : "Assign"}
               </Button>
             </div>
           ) : null}
@@ -356,14 +483,36 @@ export function RequestReviewPanel({
                 {claimMut.isPending ? "Claiming…" : "Claim this order"}
               </Button>
             ) : null}
+            {needsProviderAssignment ? (
+              <p className="w-full text-[13px] font-medium text-[#3B4759]/80">
+                Please assign a provider. After they approve, you can send this order to the
+                pharmacy.
+              </p>
+            ) : null}
+            {waitingOnProvider ? (
+              <p className="w-full text-[13px] font-medium text-[#3B4759]/80">
+                Waiting for the assigned provider to approve. After they approve, you can send this
+                order to the pharmacy.
+              </p>
+            ) : null}
             {canApprove ? (
               <Button
                 size="sm"
-                onClick={() => approveMut.mutate()}
+                onClick={() => setApproveOpen(true)}
                 disabled={approveMut.isPending}
                 className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
               >
                 <Check className="mr-1 h-4 w-4" /> Approve
+              </Button>
+            ) : null}
+            {canSendToPharmacy ? (
+              <Button
+                size="sm"
+                onClick={() => setSendPharmacyOpen(true)}
+                disabled={sendPharmacyMut.isPending}
+                className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
+              >
+                <Truck className="mr-1 h-4 w-4" /> Approve &amp; send to pharmacy
               </Button>
             ) : null}
             {canChange ? (
@@ -376,7 +525,7 @@ export function RequestReviewPanel({
                 <Repeat className="mr-1 h-4 w-4" /> Change medicine
               </Button>
             ) : null}
-            {canGenerate ? (
+            {canGenerate && !canSendToPharmacy ? (
               <Button
                 size="sm"
                 onClick={() => setRxOpen(true)}
@@ -385,19 +534,31 @@ export function RequestReviewPanel({
                 <FileText className="mr-1 h-4 w-4" /> Generate prescription
               </Button>
             ) : null}
-            {nextStep ? (
+            {canRetryLifeFile ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => retryLfMut.mutate()}
+                disabled={retryLfMut.isPending}
+                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
+              >
+                <Truck className="mr-1 h-4 w-4" />{" "}
+                {retryLfMut.isPending ? "Retrying…" : "Retry LifeFile"}
+              </Button>
+            ) : null}
+            {showFulfillmentStep && fulfillmentStep ? (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() =>
-                  nextStep.status === "dispatched"
+                  fulfillmentStep.status === "dispatched"
                     ? setTrackOpen(true)
-                    : advanceMut.mutate({ status: nextStep.status })
+                    : advanceMut.mutate({ status: fulfillmentStep.status })
                 }
                 disabled={advanceMut.isPending}
                 className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
               >
-                <Truck className="mr-1 h-4 w-4" /> {nextStep.label}
+                <Truck className="mr-1 h-4 w-4" /> {fulfillmentStep.label}
               </Button>
             ) : null}
             {canReject ? (
@@ -582,6 +743,65 @@ export function RequestReviewPanel({
               className="bg-[#8F4A33] text-white hover:bg-[#8F4A33]"
             >
               {rejectMut.isPending ? "Rejecting…" : clinicalOnly ? "Reject" : "Reject & refund"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Provider clinical approve only */}
+      <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve order</DialogTitle>
+            <DialogDescription>
+              Clinically approve this order for {medicine?.name ?? "this medication"}. Admin will be
+              notified and can send it to the pharmacy (LifeFile).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <label className="text-[13px] font-medium text-[#3B4759]">Note (optional)</label>
+            <Textarea
+              value={approveNote}
+              onChange={(e) => setApproveNote(e.target.value)}
+              placeholder="Optional note for the record"
+              className="min-h-[80px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => approveMut.mutate()} disabled={approveMut.isPending}>
+              {approveMut.isPending ? "Approving…" : "Approve"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin send to LifeFile after provider approval */}
+      <Dialog open={sendPharmacyOpen} onOpenChange={setSendPharmacyOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve &amp; send to pharmacy</DialogTitle>
+            <DialogDescription>
+              This will send {medicine?.name ?? "this medication"} to the pharmacy.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <label className="text-[13px] font-medium text-[#3B4759]">Directions (optional)</label>
+            <Textarea
+              value={directions}
+              onChange={(e) => setDirections(e.target.value)}
+              placeholder="e.g. Take as directed. Test Order Do Not Fill"
+              className="min-h-[80px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendPharmacyOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => sendPharmacyMut.mutate()} disabled={sendPharmacyMut.isPending}>
+              {sendPharmacyMut.isPending ? "Sending…" : "Send to pharmacy"}
             </Button>
           </DialogFooter>
         </DialogContent>

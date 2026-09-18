@@ -1,4 +1,4 @@
-import { getPracticeId, lifeFileRequest } from "./client.server";
+import { lifeFileRequest, type LifeFileConfig } from "./client.server";
 
 type LifeFileResponse = {
   type?: "success" | "error";
@@ -6,7 +6,7 @@ type LifeFileResponse = {
   data?: any;
 };
 
-type LifeFileOrderInput = {
+export type LifeFileOrderInput = {
   requestId: string;
   patient: {
     fullName: string;
@@ -28,12 +28,14 @@ type LifeFileOrderInput = {
     licenseState: string | null;
     dea: string | null;
     email: string | null;
+    lifeFileProviderId?: string | null;
   };
   prescription: {
     medicineName: string;
     directions: string | null;
     lfProductID: number;
   };
+  config: LifeFileConfig;
 };
 
 function splitName(fullName: string) {
@@ -58,6 +60,20 @@ function mapGender(sex: string | null): "m" | "f" | "u" {
   return "u";
 }
 
+export function extractLifeFileOrderId(response: LifeFileResponse | null | undefined) {
+  const responseData = response?.data;
+  if (typeof responseData === "string" || typeof responseData === "number") {
+    return String(responseData);
+  }
+  const nested =
+    responseData?.orderId ??
+    responseData?.orderID ??
+    responseData?.id ??
+    responseData?.order?.id ??
+    null;
+  return nested != null ? String(nested) : null;
+}
+
 export async function createLifeFileOrder(input: LifeFileOrderInput) {
   if (!input.patient.dob) {
     throw new Error("Patient date of birth is required for Life File.");
@@ -80,7 +96,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
     order: {
       general: {
         referenceId: input.requestId,
-        memo: "OM Sandbox Test Order",
+        memo: `BodyInc order ${input.requestId}`,
       },
 
       prescriber: {
@@ -91,10 +107,13 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
         lastName: providerName.lastName,
         firstName: providerName.firstName,
         email: input.provider.email ?? undefined,
+        ...(input.provider.lifeFileProviderId
+          ? { id: input.provider.lifeFileProviderId }
+          : {}),
       },
 
       practice: {
-        id: getPracticeId(),
+        id: input.config.practiceId,
       },
 
       patient: {
@@ -143,11 +162,13 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
     requestId: input.requestId,
     medicine: product.medicineName,
     lfProductID: product.lfProductID,
+    practiceId: input.config.practiceId,
   });
 
   const response = await lifeFileRequest<LifeFileResponse>("/order", {
     method: "POST",
     body: payload,
+    config: input.config,
   });
 
   console.log("[Life File] Response:", JSON.stringify(response, null, 2));
