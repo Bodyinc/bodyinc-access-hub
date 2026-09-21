@@ -13,6 +13,39 @@ const PORTAL_URLS: Record<string, string> = {
   provider: "https://provider.bodyinc.com",
 };
 
+function normalizeOrigin(url: string): string {
+  return url.trim().replace(/\/$/, "");
+}
+
+/**
+ * Password-reset links must land on the correct portal host.
+ * Never fall back to APP_URL for providers — that env is often the patient site.
+ */
+function portalAppUrl(role: "admin" | "provider", clientOrigin?: string): string {
+  const providerOrigins = [
+    PORTAL_URLS.provider,
+    process.env.PROVIDER_APP_URL,
+    process.env.PROVIDER_PORTAL_URL,
+  ]
+    .filter(Boolean)
+    .map((u) => normalizeOrigin(String(u)));
+
+  const adminOrigins = [PORTAL_URLS.admin, process.env.ADMIN_APP_URL]
+    .filter(Boolean)
+    .map((u) => normalizeOrigin(String(u)));
+
+  if (clientOrigin) {
+    const origin = normalizeOrigin(clientOrigin);
+    if (role === "provider" && providerOrigins.includes(origin)) return origin;
+    if (role === "admin" && adminOrigins.includes(origin)) return origin;
+  }
+
+  if (role === "provider") {
+    return providerOrigins[0] || PORTAL_URLS.provider;
+  }
+  return adminOrigins[0] || PORTAL_URLS.admin;
+}
+
 const credentialsSchema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
@@ -20,6 +53,16 @@ const credentialsSchema = z.object({
 
 const emailSchema = z.object({
   email: z.string().trim().email().max(255),
+});
+
+const passwordResetSchema = z.object({
+  email: z.string().trim().email().max(255),
+  /** Browser origin of the forgot-password page, e.g. https://provider.bodyinc.com */
+  origin: z
+    .string()
+    .url()
+    .optional()
+    .transform((v) => (v ? normalizeOrigin(v) : undefined)),
 });
 
 const verifyOtpSchema = z.object({
@@ -125,12 +168,6 @@ export const signInWithPassword = createServerFn({ method: "POST" })
     return result;
   });
 
-function adminAppUrl(): string {
-  return (process.env.ADMIN_APP_URL || process.env.APP_URL || PORTAL_URLS.admin)
-    .trim()
-    .replace(/\/$/, "");
-}
-
 async function roleForEmail(supabaseAdmin: any, email: string): Promise<string | null> {
   const { data: profile } = await supabaseAdmin
     .from("profiles")
@@ -204,38 +241,50 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Rewrite Supabase action_link redirect_to so the final hop lands on the right portal. */
+function withRedirectTo(actionLink: string, redirectTo: string): string {
+  try {
+    const url = new URL(actionLink);
+    if (url.searchParams.has("redirect_to")) {
+      url.searchParams.set("redirect_to", redirectTo);
+    }
+    return url.toString();
+  } catch {
+    return actionLink;
+  }
+}
+
 export const requestPasswordReset = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => emailSchema.parse(input))
+  .inputValidator((input: unknown) => passwordResetSchema.parse(input))
   .handler(async ({ data }): Promise<RequestPasswordResetResult> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const role = await roleForEmail(supabaseAdmin, data.email);
 
-      if (role === "patient" || role === "provider") {
-        const redirectUrl = PORTAL_URLS[role];
-        const label = role === "patient" ? "patient" : role;
+      // Patients use a different portal — point them there.
+      if (role === "patient") {
+        const redirectUrl = PORTAL_URLS.patient;
         return {
           ok: false,
           error: "wrong_portal",
-          message: redirectUrl
-            ? `This email is registered as a ${label}. Please log in at ${redirectUrl}.`
-            : `This email is registered as a ${label}. Please use the correct portal.`,
+          message: `This email is registered as a patient. Please log in at ${redirectUrl}.`,
           actualRole: role,
           redirectUrl,
         };
       }
 
-      // Unknown / non-admin: same as the built-in reset — do not reveal the account.
-      if (role !== "admin") return { ok: true };
+      // Unknown: do not reveal whether the account exists.
+      if (role !== "admin" && role !== "provider") return { ok: true };
 
-      const redirectTo = `${adminAppUrl()}/auth/callback?next=/reset-password`;
+      const base = portalAppUrl(role, data.origin);
+      const redirectTo = `${base}/auth/callback?next=/reset-password`;
       const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
         type: "recovery",
         email: data.email,
         options: { redirectTo },
       });
-      const resetUrl = linkData?.properties?.action_link?.trim();
-      if (error || !resetUrl) {
+      const rawLink = linkData?.properties?.action_link?.trim();
+      if (error || !rawLink) {
         console.error("[auth] requestPasswordReset generateLink failed:", error?.message);
         return {
           ok: false,
@@ -243,6 +292,9 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
           message: "Could not send a reset link. Please try again.",
         };
       }
+
+      const resetUrl = withRedirectTo(rawLink, redirectTo);
+      console.log("[auth] password reset redirectTo", { role, base, redirectTo });
 
       let fullName: string | null = null;
       if (linkData.user?.id) {

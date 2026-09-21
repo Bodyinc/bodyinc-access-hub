@@ -6,11 +6,20 @@ import type {
   UseFormSetValue,
   FieldErrors,
 } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Layers, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MedicinePackagesEditor } from "@/components/admin/medicine-packages-editor";
 import type { MedicineFormValues } from "@/lib/medicines.schema";
 import {
@@ -18,6 +27,7 @@ import {
   medicineCardTitle,
   medicineInput,
 } from "@/components/admin/medicine-form-styles";
+import { listLifeFilePharmacies } from "@/lib/lifefile-pharmacies.functions";
 
 type Props = {
   control: Control<MedicineFormValues>;
@@ -28,31 +38,89 @@ type Props = {
   submitting?: boolean;
 };
 
-function LifeFileProductIdField({
+function usePharmacies() {
+  const list = useServerFn(listLifeFilePharmacies);
+  return useQuery({
+    queryKey: ["life-file-pharmacies"],
+    queryFn: () => list({}),
+    staleTime: 60_000,
+  });
+}
+
+function LifeFileRoutingFields({
   register,
-  name,
-  error,
+  control,
+  pharmacyField,
+  productField,
+  pharmacyError,
+  productError,
   submitting,
 }: {
   register: UseFormRegister<MedicineFormValues>;
-  name: "lf_product_id" | `variants.${number}.lf_product_id`;
-  error?: string;
+  control: Control<MedicineFormValues>;
+  pharmacyField: "life_file_pharmacy_id" | `variants.${number}.life_file_pharmacy_id`;
+  productField: "lf_product_id" | `variants.${number}.lf_product_id`;
+  pharmacyError?: string;
+  productError?: string;
   submitting?: boolean;
 }) {
+  const pharmaciesQ = usePharmacies();
+  const pharmacies = (pharmaciesQ.data ?? []).filter((p: any) => p.is_active !== false);
+
   return (
-    <div className="min-w-0 space-y-1">
-      <Label className="text-[12px] font-medium text-[#3B4759]/70">Life File product ID</Label>
-      <Input
-        {...register(name)}
-        inputMode="numeric"
-        placeholder="e.g. 201539236"
-        disabled={submitting}
-        className={medicineInput}
-      />
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      <p className="text-[12px] font-normal text-[#3B4759]/60">
-        From your MPS pricing sheet — one ID per strength/SKU.
-      </p>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="min-w-0 space-y-1">
+        <Label className="text-[12px] font-medium text-[#3B4759]/70">LifeFile pharmacy</Label>
+        <Controller
+          control={control}
+          name={pharmacyField}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)}
+              disabled={submitting || pharmaciesQ.isLoading}
+            >
+              <SelectTrigger className={medicineInput}>
+                <SelectValue
+                  placeholder={
+                    pharmaciesQ.isLoading
+                      ? "Loading…"
+                      : pharmacies.length === 0
+                        ? "Add a pharmacy first"
+                        : "Select pharmacy"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {pharmacies.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {pharmacyError && <p className="text-xs text-destructive">{pharmacyError}</p>}
+        <p className="text-[12px] font-normal text-[#3B4759]/60">
+          Orders for this SKU route to this pharmacy.
+        </p>
+      </div>
+      <div className="min-w-0 space-y-1">
+        <Label className="text-[12px] font-medium text-[#3B4759]/70">Life File product ID</Label>
+        <Input
+          {...register(productField)}
+          inputMode="numeric"
+          placeholder="e.g. 201539236"
+          disabled={submitting}
+          className={medicineInput}
+        />
+        {productError && <p className="text-xs text-destructive">{productError}</p>}
+        <p className="text-[12px] font-normal text-[#3B4759]/60">
+          Product/NFI ID from that pharmacy&apos;s catalog.
+        </p>
+      </div>
     </div>
   );
 }
@@ -71,23 +139,29 @@ export function MedicinePricingSection({
   function addFirstVariant() {
     const current = getValues("packages") ?? [];
     const medLfId = getValues("lf_product_id") ?? "";
+    const medPharmacy = getValues("life_file_pharmacy_id") ?? "";
     variantsArray.append({
       name: "",
       is_active: true,
       lf_product_id: medLfId,
+      life_file_pharmacy_id: medPharmacy,
       packages: current,
     } as any);
     setValue("packages", []);
     if (medLfId) setValue("lf_product_id", "");
+    if (medPharmacy) setValue("life_file_pharmacy_id", undefined);
   }
 
   if (!hasVariants) {
     return (
       <div className="space-y-4">
-        <LifeFileProductIdField
+        <LifeFileRoutingFields
           register={register}
-          name="lf_product_id"
-          error={errors.lf_product_id?.message}
+          control={control}
+          pharmacyField="life_file_pharmacy_id"
+          productField="lf_product_id"
+          pharmacyError={errors.life_file_pharmacy_id?.message}
+          productError={errors.lf_product_id?.message}
           submitting={submitting}
         />
         <MedicinePackagesEditor
@@ -115,76 +189,79 @@ export function MedicinePricingSection({
       <div className="space-y-2">
         <h3 className={medicineCardTitle}>Variants</h3>
         <p className="text-[16px] font-normal text-[#3B4759]/70">
-          Dose or strength options (e.g. 2mg/0.5ml, 4mg/0.5ml). Each variant needs its own Life
-          File product ID and packages (up to 2). Patients pick a variant in the shop.
+          Dose or strength options (e.g. 2mg/0.5ml, 4mg/0.5ml). Each variant needs its own LifeFile
+          pharmacy + product ID and packages (up to 2). Patients pick a variant in the shop.
         </p>
         <CardDivider />
       </div>
 
       {variantsArray.fields.map((field, vIndex) => (
-          <div
-            key={field.id}
-            className="min-w-0 space-y-4 rounded-[14px] border border-[#E8EEED] bg-white p-4 sm:p-5"
-          >
-            <div className="grid grid-cols-1 items-start gap-3 min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto]">
-              <div className="min-w-0 space-y-1">
-                <Label className="text-[16px] font-medium text-[#152A51]">Variant name</Label>
-                <Input
-                  {...register(`variants.${vIndex}.name`)}
-                  placeholder="e.g. 2mg/0.5ml (2mL Vial)"
-                  disabled={submitting}
-                  className={medicineInput}
-                />
-                {errors.variants?.[vIndex]?.name?.message && (
-                  <p className="text-xs text-destructive">
-                    {errors.variants[vIndex]!.name!.message}
-                  </p>
-                )}
-              </div>
-              <Controller
-                control={control}
-                name={`variants.${vIndex}.is_active`}
-                render={({ field: sw }) => (
-                  <div className="flex flex-col items-center gap-1.5 pt-6">
-                    <Switch
-                      checked={sw.value ?? true}
-                      onCheckedChange={sw.onChange}
-                      disabled={submitting}
-                    />
-                    <span className="text-[11px] font-semibold text-[#3B4759]/70">Active</span>
-                  </div>
-                )}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="mt-0 h-[45px] w-[45px] rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive min-[480px]:mt-6"
+        <div
+          key={field.id}
+          className="min-w-0 space-y-4 rounded-[14px] border border-[#E8EEED] bg-white p-4 sm:p-5"
+        >
+          <div className="grid grid-cols-1 items-start gap-3 min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto]">
+            <div className="min-w-0 space-y-1">
+              <Label className="text-[16px] font-medium text-[#152A51]">Variant name</Label>
+              <Input
+                {...register(`variants.${vIndex}.name`)}
+                placeholder="e.g. 2mg/0.5ml (2mL Vial)"
                 disabled={submitting}
-                onClick={() => variantsArray.remove(vIndex)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                className={medicineInput}
+              />
+              {errors.variants?.[vIndex]?.name?.message && (
+                <p className="text-xs text-destructive">
+                  {errors.variants[vIndex]!.name!.message}
+                </p>
+              )}
             </div>
-
-            <LifeFileProductIdField
-              register={register}
-              name={`variants.${vIndex}.lf_product_id`}
-              error={errors.variants?.[vIndex]?.lf_product_id?.message}
-              submitting={submitting}
-            />
-
-            <MedicinePackagesEditor
+            <Controller
               control={control}
-              register={register}
-              setValue={setValue}
-              name={`variants.${vIndex}.packages`}
-              packageErrors={errors.variants?.[vIndex]?.packages}
-              submitting={submitting}
-              embedded
+              name={`variants.${vIndex}.is_active`}
+              render={({ field: sw }) => (
+                <div className="flex flex-col items-center gap-1.5 pt-6">
+                  <Switch
+                    checked={sw.value ?? true}
+                    onCheckedChange={sw.onChange}
+                    disabled={submitting}
+                  />
+                  <span className="text-[11px] font-semibold text-[#3B4759]/70">Active</span>
+                </div>
+              )}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="mt-0 h-[45px] w-[45px] rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive min-[480px]:mt-6"
+              disabled={submitting}
+              onClick={() => variantsArray.remove(vIndex)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
-        ))}
+
+          <LifeFileRoutingFields
+            register={register}
+            control={control}
+            pharmacyField={`variants.${vIndex}.life_file_pharmacy_id`}
+            productField={`variants.${vIndex}.lf_product_id`}
+            pharmacyError={errors.variants?.[vIndex]?.life_file_pharmacy_id?.message}
+            productError={errors.variants?.[vIndex]?.lf_product_id?.message}
+            submitting={submitting}
+          />
+
+          <MedicinePackagesEditor
+            control={control}
+            register={register}
+            setValue={setValue}
+            name={`variants.${vIndex}.packages`}
+            packageErrors={errors.variants?.[vIndex]?.packages}
+            submitting={submitting}
+            embedded
+          />
+        </div>
+      ))}
 
       <button
         type="button"
@@ -194,6 +271,7 @@ export function MedicinePricingSection({
             name: "",
             is_active: true,
             lf_product_id: "",
+            life_file_pharmacy_id: undefined,
             packages: [],
           } as any)
         }

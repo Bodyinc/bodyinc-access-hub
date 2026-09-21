@@ -21,6 +21,7 @@ export type StoredMedicineVariant = {
   name: string;
   is_active: boolean;
   lf_product_id: number | null;
+  life_file_pharmacy_id: string | null;
   from_price_cents: number | null;
   sort_order: number;
   packages: StoredMedicinePackage[];
@@ -42,6 +43,7 @@ export type StoredMedicine = {
   requires_consultation: boolean;
   requires_followup: boolean;
   lf_product_id: number | null;
+  life_file_pharmacy_id: string | null;
   category_ids: string[];
   packages: StoredMedicinePackage[];
   variants: StoredMedicineVariant[];
@@ -123,7 +125,7 @@ function lfProductIdWriteError(
   return new Error(error.message);
 }
 
-function rowToStored(row: any): StoredMedicine {
+function rowToStored(row: any, pharmacyByKey?: Map<string, string>): StoredMedicine {
   const info = Array.isArray(row.important_info) ? row.important_info : [];
   const cats = Array.isArray(row.medication_category_medicines)
     ? row.medication_category_medicines.map((r: any) => String(r.category_id))
@@ -139,6 +141,7 @@ function rowToStored(row: any): StoredMedicine {
       name: v.name,
       is_active: v.is_active !== false,
       lf_product_id: parseLfProductId(v.lf_product_id),
+      life_file_pharmacy_id: pharmacyByKey?.get(`v:${v.id}`) ?? null,
       from_price_cents: v.from_price_cents == null ? null : Number(v.from_price_cents),
       sort_order: Number(v.sort_order ?? 0),
       packages: sortPackages(allPackages.filter((p: any) => p.variant_id === v.id)),
@@ -168,12 +171,103 @@ function rowToStored(row: any): StoredMedicine {
     requires_consultation: !!row.requires_consultation,
     requires_followup: !!row.requires_followup,
     lf_product_id: parseLfProductId(row.lf_product_id),
+    life_file_pharmacy_id: pharmacyByKey?.get(`m:${row.id}`) ?? null,
     category_ids: cats,
     packages: pkgs,
     variants,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+async function loadPharmacyMap(medicineIds: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (medicineIds.length === 0) return map;
+  const { data, error } = await supabase
+    .from("medicine_life_file_products")
+    .select("medicine_id, variant_id, pharmacy_id")
+    .in("medicine_id", medicineIds)
+    .eq("is_active", true);
+  if (error) {
+    // Table may not exist until migration is applied.
+    if (/medicine_life_file_products|does not exist|schema cache/i.test(error.message)) {
+      return map;
+    }
+    throw new Error(error.message);
+  }
+  for (const row of data ?? []) {
+    const key = row.variant_id ? `v:${row.variant_id}` : `m:${row.medicine_id}`;
+    // Prefer first active mapping (SKU should have one pharmacy for routing).
+    if (!map.has(key)) map.set(key, String(row.pharmacy_id));
+  }
+  return map;
+}
+
+export async function syncMedicineLifeFileProducts(
+  medicineId: string,
+  values: MedicineFormValues,
+  variantIdsByIndex: string[],
+): Promise<void> {
+  const variants = values.variants ?? [];
+  const rows: {
+    medicine_id: string;
+    variant_id: string | null;
+    pharmacy_id: string;
+    lf_product_id: number;
+    is_active: boolean;
+  }[] = [];
+
+  if (variants.length === 0) {
+    const pharmacyId = values.life_file_pharmacy_id;
+    const productId = parseLfProductId(values.lf_product_id);
+    if (pharmacyId && productId) {
+      rows.push({
+        medicine_id: medicineId,
+        variant_id: null,
+        pharmacy_id: pharmacyId,
+        lf_product_id: productId,
+        is_active: true,
+      });
+    }
+  } else {
+    variants.forEach((v, i) => {
+      const pharmacyId = v.life_file_pharmacy_id;
+      const productId = parseLfProductId(v.lf_product_id);
+      const variantId = variantIdsByIndex[i];
+      if (pharmacyId && productId && variantId) {
+        rows.push({
+          medicine_id: medicineId,
+          variant_id: variantId,
+          pharmacy_id: pharmacyId,
+          lf_product_id: productId,
+          is_active: v.is_active !== false,
+        });
+      }
+    });
+  }
+
+  const { error: delError } = await supabase
+    .from("medicine_life_file_products")
+    .delete()
+    .eq("medicine_id", medicineId);
+  if (delError) {
+    if (/medicine_life_file_products|does not exist|schema cache/i.test(delError.message)) {
+      return;
+    }
+    throw new Error(delError.message);
+  }
+
+  if (rows.length === 0) return;
+
+  const { error } = await supabase.from("medicine_life_file_products").insert(rows as any);
+  if (error) {
+    if (error.code === "23505" && /lf_product_id|pharmacy/i.test(error.message)) {
+      throw new Error(
+        "That Life File product ID is already used for this pharmacy on another medicine.",
+      );
+    }
+    throw new Error(error.message);
+  }
 }
 
 function fromForm(values: MedicineFormValues) {
@@ -431,7 +525,8 @@ export async function listMedicines(input: ListMedicinesInput = {}): Promise<Sto
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []).map(rowToStored);
+  const pharmacyMap = await loadPharmacyMap((data ?? []).map((r: any) => String(r.id)));
+  return (data ?? []).map((row) => rowToStored(row, pharmacyMap));
 }
 
 export async function listActiveMedicines(): Promise<StoredMedicine[]> {
@@ -448,7 +543,9 @@ export async function getMedicine(id: string): Promise<StoredMedicine | null> {
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? rowToStored(data) : null;
+  if (!data) return null;
+  const pharmacyMap = await loadPharmacyMap([id]);
+  return rowToStored(data, pharmacyMap);
 }
 
 export async function createMedicine(
@@ -463,6 +560,16 @@ export async function createMedicine(
   if (error) throw lfProductIdWriteError(error, "medicine");
   await syncMedicineCategories(data.id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(data.id, values);
+  const { data: variantRows } = await supabase
+    .from("medicine_variants")
+    .select("id")
+    .eq("medicine_id", data.id)
+    .order("sort_order", { ascending: true });
+  await syncMedicineLifeFileProducts(
+    data.id,
+    values,
+    (variantRows ?? []).map((r: any) => String(r.id)),
+  );
   return { id: data.id, ...pricing, needsProductSync: true };
 }
 
@@ -484,6 +591,16 @@ export async function updateMedicine(
   if (error) throw lfProductIdWriteError(error, "medicine");
   await syncMedicineCategories(id, values.category_ids ?? []);
   const pricing = await reconcileMedicinePricing(id, values);
+  const { data: variantRows } = await supabase
+    .from("medicine_variants")
+    .select("id")
+    .eq("medicine_id", id)
+    .order("sort_order", { ascending: true });
+  await syncMedicineLifeFileProducts(
+    id,
+    values,
+    (variantRows ?? []).map((r: any) => String(r.id)),
+  );
   const needsProductSync =
     !current ||
     current.name !== payload.name ||

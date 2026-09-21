@@ -77,6 +77,7 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
       name: v.name,
       is_active: v.is_active,
       lf_product_id: v.lf_product_id != null ? String(v.lf_product_id) : "",
+      life_file_pharmacy_id: v.life_file_pharmacy_id ?? undefined,
       packages: v.packages.map(packageToForm),
     })),
     status: m.status,
@@ -87,6 +88,7 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
     requires_consultation: m.requires_consultation,
     requires_followup: m.requires_followup,
     lf_product_id: m.lf_product_id != null ? String(m.lf_product_id) : "",
+    life_file_pharmacy_id: m.life_file_pharmacy_id ?? undefined,
     category_ids: m.category_ids,
   };
 }

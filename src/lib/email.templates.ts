@@ -19,7 +19,8 @@ export type EmailTemplateKey =
   | "patient_inquiry_update"
   | "provider_assigned"
   | "provider_ready_for_review"
-  | "provider_needs_attention";
+  | "provider_needs_attention"
+  | "admin_provider_approved";
 
 export type EmailParams = Record<string, string | number | boolean | null | undefined>;
 
@@ -439,6 +440,23 @@ const builders: Record<EmailTemplateKey, Builder> = {
         <p>Order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> needs the patient to confirm a plan change.</p>
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` #${order}` : ""} for ${med} needs the patient to confirm a plan change.${link.text}`,
+    });
+  },
+
+  admin_provider_approved: (p) => {
+    const med = str(p, "MEDICINE_NAME", "a treatment");
+    const order = orderShort(p);
+    const provider = str(p, "PROVIDER_NAME", "A provider");
+    const patient = str(p, "PATIENT_NAME", "a patient");
+    const link = cta(str(p, "REQUEST_URL"), "Send to pharmacy");
+    return layout({
+      preheader: `${provider} approved ${med} — ready to send to pharmacy.`,
+      title: "Provider approved an order",
+      bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
+        <p><strong>${escapeHtml(provider)}</strong> approved order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(patient)}</strong> — <strong>${escapeHtml(med)}</strong>.</p>
+        <p>You can now send this order to the pharmacy (LifeFile).</p>
+        ${link.html}`,
+      bodyText: `Hi ${firstName(p)},\n\n${provider} approved order${order ? ` #${order}` : ""} for ${patient} — ${med}.\nYou can now send this order to the pharmacy (LifeFile).${link.text}`,
     });
   },
 };

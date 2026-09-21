@@ -25,7 +25,7 @@ import { listRequests } from "@/lib/requests.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE, clinicalStatusLabel } from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
-import { formatDateTime, normalizeIdSearch } from "@/lib/format";
+import { formatDateTime, normalizeIdSearch, formatRecordId } from "@/lib/format";
 
 const STATUS_FILTERS = [
   { value: "open", label: "Open" },
@@ -116,6 +116,9 @@ export function RequestList({
             <TableHeader className="bg-[#F8FBFA]">
               <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
                 <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                  Order
+                </TableHead>
+                <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                   Patient
                 </TableHead>
                 <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
@@ -126,9 +129,19 @@ export function RequestList({
                     Provider
                   </TableHead>
                 ) : null}
+                {!clinicalOnly ? (
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    Pharmacy
+                  </TableHead>
+                ) : null}
                 <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                   Status
                 </TableHead>
+                {!clinicalOnly ? (
+                  <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
+                    LifeFile
+                  </TableHead>
+                ) : null}
                 <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                   Created
                 </TableHead>
@@ -138,7 +151,7 @@ export function RequestList({
               {query.isLoading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={showProvider ? 5 : 4}
+                    colSpan={clinicalOnly ? (showProvider ? 5 : 4) : showProvider ? 8 : 7}
                     className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60"
                   >
                     Loading…
@@ -147,7 +160,7 @@ export function RequestList({
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={showProvider ? 5 : 4}
+                    colSpan={clinicalOnly ? (showProvider ? 5 : 4) : showProvider ? 8 : 7}
                     className="py-12 text-center text-[14px] font-medium text-[#3B4759]/60"
                   >
                     No orders.
@@ -166,6 +179,9 @@ export function RequestList({
                     onClick={() => onOpen(r.id)}
                     className="cursor-pointer border-b border-[#D5DEDD] transition-colors hover:bg-[#E8EEED]/40"
                   >
+                    <TableCell className="font-mono text-[13px] font-medium text-[#3B4759]">
+                      {formatRecordId(r.id)}
+                    </TableCell>
                     <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       <div>{r.customer_name ?? (r.is_guest ? "Guest" : "—")}</div>
                       {clinicalOnly ? null : (
@@ -183,6 +199,11 @@ export function RequestList({
                         {r.provider_name ?? "Unassigned"}
                       </TableCell>
                     ) : null}
+                    {!clinicalOnly ? (
+                      <TableCell className="text-[14px] font-medium text-[#3B4759]/80">
+                        {r.pharmacy_name ?? "—"}
+                      </TableCell>
+                    ) : null}
                     <TableCell>
                       <Badge
                         className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${
@@ -192,6 +213,33 @@ export function RequestList({
                         {clinicalOnly ? clinicalStatusLabel(r.status) : requestStatusLabel(r.status)}
                       </Badge>
                     </TableCell>
+                    {!clinicalOnly ? (
+                      <TableCell className="text-[13px] font-medium text-[#3B4759]">
+                        {r.life_file_status === "failed" ? (
+                          <div>
+                            <span className="text-[#B8684B]">Failed</span>
+                            {r.life_file_error ? (
+                              <div className="max-w-[220px] truncate text-[11px] font-normal text-[#B8684B]/80">
+                                {r.life_file_error}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : r.life_file_status === "submitted" || r.life_file_status === "accepted" ? (
+                          <div>
+                            <span className="text-[#6A9B9C]">
+                              {r.life_file_status === "accepted" ? "Accepted" : "Submitted"}
+                            </span>
+                            {r.life_file_order_id ? (
+                              <div className="font-mono text-[11px] text-[#3B4759]/70">
+                                {r.life_file_order_id}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-[#3B4759]/50">—</span>
+                        )}
+                      </TableCell>
+                    ) : null}
                     <TableCell className="text-[14px] font-medium text-[#3B4759]/70">
                       {formatDateTime(r.created_at)}
                     </TableCell>

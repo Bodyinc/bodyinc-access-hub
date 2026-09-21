@@ -46,6 +46,7 @@ function NewMedicinePage() {
     important_info: [],
     notice_text: "",
     lf_product_id: "",
+    life_file_pharmacy_id: undefined,
     sort_order: 0,
     requires_questionnaire: false,
     category_ids: [],

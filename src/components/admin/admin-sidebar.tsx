@@ -34,6 +34,7 @@ const items: NavItem[] = [
   { title: "Referrals", url: "/admin/referrals" },
   { title: "Promo Codes", url: "/admin/promos" },
   { title: "Providers", url: "/admin/providers" },
+  { title: "LifeFile Pharmacies", url: "/admin/lifefile-pharmacies" },
   { title: "Patients", url: "/admin/patients" },
   { title: "Consultations", url: "/admin/consultations" },
   { title: "Intake Sessions", url: "/admin/intake-sessions" },
