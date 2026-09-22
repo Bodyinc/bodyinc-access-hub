@@ -38,8 +38,6 @@ function applyBodyStyles(html: string): string {
     .replace(/<strong(?![^>]*\sstyle=)/gi, `<strong style="color:${t.navy};font-weight:600;"`);
 }
 
-export const EMAIL_LOGO_CID = "bodyinc-logo";
-
 function isLocalhost(value: string): boolean {
   return /localhost|127\.0\.0\.1/i.test(value);
 }
@@ -65,11 +63,6 @@ function appOrigin(): string {
 export function emailLogoHtml(): string {
   const origin = appOrigin();
   return `<img src="${origin}/email-logo.png" width="140" height="49" alt="BODY INC." class="email-logo" style="display:block;border:0;outline:none;text-decoration:none;height:36px;width:auto;max-width:140px;" />`;
-}
-
-/** SMTP clients show CID images even when the hosted PNG URL is unreachable. */
-export function htmlWithInlineLogo(html: string, cid = EMAIL_LOGO_CID): string {
-  return html.replace(/src="[^"]*email-logo\.png"/g, `src="cid:${cid}"`);
 }
 
 function darkModeLock(selectorList: string, declarations: string): string {

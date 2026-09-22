@@ -33,12 +33,27 @@ export async function sendThemedRecoveryEmail(params: {
     return { ok: false, message: error?.message ?? "Could not create a reset link." };
   }
 
+  const userId = (data?.user?.id as string | undefined)?.trim();
+  const tokenHash = (data?.properties?.hashed_token as string | undefined)?.trim();
+  // Patient-portal Send Email hook may already have delivered this recovery mail.
+  if (userId && tokenHash) {
+    const { error: claimErr } = await params.supabaseAdmin.from("email_reminders").insert({
+      reminder_type: "auth_recovery",
+      target_id: userId,
+      period_key: tokenHash,
+    });
+    if (claimErr?.code === "23505") return { ok: true };
+    if (claimErr) {
+      console.error("[auth] recovery claim failed:", claimErr.message);
+    }
+  }
+
   let fullName = params.fullName ?? null;
-  if (!fullName && data?.user?.id) {
+  if (!fullName && userId) {
     const { data: profile } = await params.supabaseAdmin
       .from("profiles")
       .select("full_name")
-      .eq("id", data.user.id)
+      .eq("id", userId)
       .maybeSingle();
     fullName = profile?.full_name ?? null;
   }
@@ -55,6 +70,14 @@ export async function sendThemedRecoveryEmail(params: {
     html,
   });
   if (!sent.ok) {
+    if (userId && tokenHash) {
+      await params.supabaseAdmin
+        .from("email_reminders")
+        .delete()
+        .eq("reminder_type", "auth_recovery")
+        .eq("target_id", userId)
+        .eq("period_key", tokenHash);
+    }
     return { ok: false, message: sent.skipped ? sent.reason : sent.error };
   }
   return { ok: true };

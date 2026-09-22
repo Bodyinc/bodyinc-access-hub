@@ -1,16 +1,20 @@
+function env(name: string) {
+  return (process.env[name] ?? "").trim();
+}
+
 export function getQuickbloxConfig() {
-  const apiUrl = (process.env.QUICKBLOX_API_URL ?? "https://api-bodyinc.quickblox.com").replace(
+  const apiUrl = (env("QUICKBLOX_API_URL") || "https://api-bodyinc.quickblox.com").replace(
     /\/$/,
     "",
   );
   const providerAppUrl = (
-    process.env.QUICKBLOX_PROVIDER_APP_URL ?? "https://provider-bodyinc.quickblox.com"
+    env("QUICKBLOX_PROVIDER_APP_URL") || "https://provider-bodyinc.quickblox.com"
   ).replace(/\/$/, "");
-  const providerEmail = process.env.QUICKBLOX_PROVIDER_EMAIL?.trim() || "";
-  const providerPassword = process.env.QUICKBLOX_PROVIDER_PASSWORD?.trim() || "";
-  const apiKey = process.env.QUICKBLOX_API_KEY?.trim() || "";
-  const userSecret = process.env.QUICKBLOX_USER_SECRET?.trim() || "";
-  const providerIdRaw = process.env.QUICKBLOX_PROVIDER_ID?.trim() || "";
+  const providerEmail = env("QUICKBLOX_PROVIDER_EMAIL");
+  const providerPassword = env("QUICKBLOX_PROVIDER_PASSWORD");
+  const apiKey = env("QUICKBLOX_API_KEY");
+  const userSecret = env("QUICKBLOX_USER_SECRET");
+  const providerIdRaw = env("QUICKBLOX_PROVIDER_ID");
   const providerId = providerIdRaw ? Number(providerIdRaw) : null;
 
   return {

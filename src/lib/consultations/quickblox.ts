@@ -121,7 +121,7 @@ async function loginProvider(email: string, password: string) {
     const message = error instanceof Error ? error.message : "";
     if (status === 401 || /unauthorized/i.test(message)) {
       throw new Error(
-        "QuickBlox rejected the provider login. QUICKBLOX_PROVIDER_EMAIL / PASSWORD must be the QuickBlox provider account (admin@quickblox.com), not the Body Inc portal login.",
+        "QuickBlox provider login failed. Check QUICKBLOX_PROVIDER_EMAIL and QUICKBLOX_PROVIDER_PASSWORD on the host, then redeploy.",
       );
     }
     throw error;

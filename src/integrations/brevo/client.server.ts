@@ -10,9 +10,6 @@
  * BREVO_SMTP_LOGIN (xxx@smtp-brevo.com, not the host) + BREVO_SMTP_KEY.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { EMAIL_LOGO_CID, htmlWithInlineLogo } from "@/lib/email/layout";
 import {
   renderEmailTemplate,
   type EmailParams,
@@ -221,24 +218,14 @@ export async function sendTransactionalEmail(
 
   try {
     const fromHeader = from.name ? `"${from.name}" <${from.email}>` : from.email;
-    const logoPath = path.join(process.cwd(), "public", "email-logo.png");
-    const logo = existsSync(logoPath)
-      ? {
-          filename: "email-logo.png",
-          content: readFileSync(logoPath),
-          cid: EMAIL_LOGO_CID,
-          contentType: "image/png" as const,
-          contentDisposition: "inline" as const,
-        }
-      : null;
-    const html = logo ? htmlWithInlineLogo(rendered.html) : rendered.html;
+    // Do not CID-attach the logo. Gmail shows unused (and even referenced) CID images
+    // as a separate paperclip file, split from the message body.
     const info = await (await getTransporter(smtp.user, smtp.pass)).sendMail({
       from: fromHeader,
       to: recipients.map((r) => (r.name ? `"${r.name}" <${r.email}>` : r.email)),
       subject: rendered.subject,
-      html,
+      html: rendered.html,
       text: rendered.text || undefined,
-      ...(logo ? { attachments: [logo] } : {}),
     });
     return { ok: true, messageId: info.messageId ?? null };
   } catch (e) {
