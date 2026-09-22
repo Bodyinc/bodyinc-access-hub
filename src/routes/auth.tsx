@@ -142,7 +142,13 @@ function AuthPage() {
     }
     setOtpSubmitting(true);
     try {
-      await sendOtp({ data: { email: parsed.data.email, origin: window.location.origin } });
+      const result = await sendOtp({
+        data: { email: parsed.data.email, origin: window.location.origin },
+      });
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
       setOtpStage("verify");
       toast.success("If an account exists, an 8-digit code was sent.");
     } catch (err) {

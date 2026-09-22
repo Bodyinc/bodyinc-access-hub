@@ -212,29 +212,46 @@ export type RequestPasswordResetResult =
       redirectUrl?: string;
     };
 
+export type SendLoginOtpResult =
+  | { ok: true }
+  | { ok: false; error: "send_failed"; message: string };
+
 export const sendLoginOtp = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => loginOtpSchema.parse(input))
-  .handler(async ({ data }): Promise<{ ok: true }> => {
-    // Don't leak whether the account exists. Always return ok to the client.
+  .handler(async ({ data }): Promise<SendLoginOtpResult> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const role = await roleForEmail(supabaseAdmin, data.email);
-      // Magic-link tokens reuse recovery under the hood. Point redirect_to at login,
-      // never /reset-password, so a leftover link cannot become a reset email hop.
+      // Optional redirect only. OTP login emails the numeric code, not the link —
+      // if this URL is not on the Supabase allow-list, generateLink must still succeed.
       const originIsLocal = Boolean(data.origin && /localhost|127\.0\.0\.1/i.test(data.origin));
       const redirectTo =
         role === "admin" || role === "provider"
           ? `${originIsLocal && data.origin ? data.origin : portalAppUrl(role, data.origin)}/auth/callback`
           : undefined;
 
-      const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
-        type: "magiclink",
-        email: data.email,
-        ...(redirectTo ? { options: { redirectTo } } : {}),
-      });
+      const generate = (withRedirect: boolean) =>
+        supabaseAdmin.auth.admin.generateLink({
+          type: "magiclink",
+          email: data.email,
+          ...(withRedirect && redirectTo ? { options: { redirectTo } } : {}),
+        });
+
+      let { data: linkData, error } = await generate(Boolean(redirectTo));
+      if (error && redirectTo) {
+        console.error(
+          "[auth] sendLoginOtp generateLink redirectTo failed, retrying without it:",
+          error.message,
+        );
+        ({ data: linkData, error } = await generate(false));
+      }
       if (error) {
         console.error("[auth] sendLoginOtp generateLink failed:", error.message);
-        return { ok: true };
+        return {
+          ok: false,
+          error: "send_failed",
+          message: "Could not send a sign-in code. Please try again, or use your password.",
+        };
       }
 
       const code = emailOtpFromGenerateLink(linkData);
@@ -243,7 +260,11 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
           verification_type: (linkData as { properties?: { verification_type?: string } } | null)
             ?.properties?.verification_type,
         });
-        return { ok: true };
+        return {
+          ok: false,
+          error: "send_failed",
+          message: "Could not send a sign-in code. Please try again, or use your password.",
+        };
       }
 
       let fullName: string | null = null;
@@ -259,6 +280,17 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
 
       const { verificationCodeEmail } = await import("@/lib/email/auth-emails");
       const { subject, html } = verificationCodeEmail({ code, fullName, purpose: "login" });
+      if (userId) {
+        const { error: claimErr } = await supabaseAdmin.from("email_reminders").insert({
+          reminder_type: "auth_magiclink",
+          target_id: userId,
+          period_key: code,
+        });
+        if (claimErr?.code === "23505") return { ok: true };
+        if (claimErr) {
+          console.error("[auth] login OTP claim failed:", claimErr.message);
+        }
+      }
       const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
       const sent = await sendTransactionalEmail({
         to: { email: data.email, name: fullName },
@@ -266,12 +298,30 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
         html,
       });
       if (!sent.ok) {
+        if (userId) {
+          await supabaseAdmin
+            .from("email_reminders")
+            .delete()
+            .eq("reminder_type", "auth_magiclink")
+            .eq("target_id", userId)
+            .eq("period_key", code);
+        }
         console.error("[auth] sendLoginOtp email failed:", sent.skipped ? sent.reason : sent.error);
+        return {
+          ok: false,
+          error: "send_failed",
+          message: "Could not send a sign-in code. Please try again, or use your password.",
+        };
       }
+      return { ok: true };
     } catch (e) {
       console.error("[auth] sendLoginOtp failed:", e);
+      return {
+        ok: false,
+        error: "send_failed",
+        message: "Could not send a sign-in code. Please try again, or use your password.",
+      };
     }
-    return { ok: true };
   });
 
 export const requestPasswordReset = createServerFn({ method: "POST" })

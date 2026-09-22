@@ -162,14 +162,23 @@ export const updatePatientFeedback = createServerFn({ method: "POST" })
     const now = new Date().toISOString();
     const resolvedNow = data.status === "resolved" || data.status === "closed" ? now : null;
 
+    let email_sent = false;
+    const to = row.email?.trim();
+    const statusChanged = row.status !== data.status;
+    let replyId: string | null = null;
     if (note) {
-      const { error: replyErr } = await supabaseAdmin.from("patient_feedback_replies").insert({
-        feedback_id: data.id,
-        author_role: "admin",
-        author_user_id: context.userId ?? null,
-        body: note,
-      });
+      const { data: replyRow, error: replyErr } = await supabaseAdmin
+        .from("patient_feedback_replies")
+        .insert({
+          feedback_id: data.id,
+          author_role: "admin",
+          author_user_id: context.userId ?? null,
+          body: note,
+        })
+        .select("id")
+        .maybeSingle();
       if (replyErr) throw new Error(replyErr.message);
+      replyId = replyRow?.id ?? null;
     }
 
     const { error: updErr } = await supabaseAdmin
@@ -182,30 +191,47 @@ export const updatePatientFeedback = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (updErr) throw new Error(updErr.message);
 
-    let email_sent = false;
-    const to = row.email?.trim();
-    const statusChanged = row.status !== data.status;
     if (to && (note || statusChanged)) {
       try {
-        const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
-        const portal =
-          process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ||
-          process.env.APP_URL?.replace(/\/$/, "") ||
-          "";
-        const result = await sendTransactionalEmail({
-          to: { email: to, name: row.full_name },
-          template: "patient_inquiry_update",
-          params: {
-            FIRSTNAME: row.full_name?.split(/\s+/)[0] ?? "",
-            FULLNAME: row.full_name ?? "",
-            STATUS: data.status,
-            STATUS_LABEL: feedbackStatusLabel(data.status).toLowerCase(),
-            ORIGINAL_MESSAGE: row.message,
-            ADMIN_NOTE: note,
-            PORTAL_URL: portal ? `${portal}/inquiries` : "",
-          },
+        const claimId = replyId ?? data.id;
+        const { error: claimErr } = await supabaseAdmin.from("email_reminders").insert({
+          reminder_type: "patient_inquiry_update",
+          target_id: claimId,
+          period_key: replyId ? "" : data.status,
         });
-        email_sent = result.ok;
+        const alreadyClaimed = claimErr?.code === "23505";
+        if (claimErr && !alreadyClaimed) {
+          console.error("[feedback] inquiry email claim failed:", claimErr.message);
+        }
+        if (!alreadyClaimed) {
+          const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+          const portal =
+            process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ||
+            process.env.APP_URL?.replace(/\/$/, "") ||
+            "";
+          const result = await sendTransactionalEmail({
+            to: { email: to, name: row.full_name },
+            template: "patient_inquiry_update",
+            params: {
+              FIRSTNAME: row.full_name?.split(/\s+/)[0] ?? "",
+              FULLNAME: row.full_name ?? "",
+              STATUS: data.status,
+              STATUS_LABEL: feedbackStatusLabel(data.status).toLowerCase(),
+              ORIGINAL_MESSAGE: row.message,
+              ADMIN_NOTE: note,
+              PORTAL_URL: portal ? `${portal}/inquiries` : "",
+            },
+          });
+          email_sent = result.ok;
+          if (!result.ok) {
+            await supabaseAdmin
+              .from("email_reminders")
+              .delete()
+              .eq("reminder_type", "patient_inquiry_update")
+              .eq("target_id", claimId)
+              .eq("period_key", replyId ? "" : data.status);
+          }
+        }
       } catch (e) {
         console.error("[feedback] patient update email failed:", e);
       }

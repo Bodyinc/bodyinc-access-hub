@@ -55,6 +55,8 @@ function orderShort(params: EmailParams): string {
   return id ? id.slice(0, 8).toUpperCase() : "";
 }
 
+import { emailLogoHtml } from "./email/layout";
+
 /** Admin UI tokens (`src/lib/admin-ui.ts`) — keep email chrome in lockstep with the portal. */
 const THEME = {
   page: "#F8FBFA",
@@ -123,9 +125,12 @@ function layout(opts: {
       <td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${THEME.card}" style="max-width:560px;background-color:${THEME.card};background:${THEME.card};border-radius:12px;overflow:hidden;border:1px solid ${THEME.border};">
           <tr>
-            <td bgcolor="${THEME.header}" style="background-color:${THEME.header};background:${THEME.header};padding:20px 28px;">
-              <span style="font-size:16px;font-weight:600;letter-spacing:-0.3px;color:#ffffff;">${escapeHtml(brand)}</span>
+            <td bgcolor="${THEME.card}" style="background-color:${THEME.card};background:${THEME.card};padding:20px 28px 14px;">
+              ${emailLogoHtml()}
             </td>
+          </tr>
+          <tr>
+            <td bgcolor="${THEME.header}" style="height:2px;line-height:2px;font-size:0;background-color:${THEME.header};background:${THEME.header};">&nbsp;</td>
           </tr>
           <tr>
             <td bgcolor="${THEME.accent}" style="height:4px;line-height:4px;font-size:0;background-color:${THEME.accent};background:${THEME.accent};">&nbsp;</td>
