@@ -20,6 +20,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedProviderIndexRouteImport } from './routes/_authenticated/provider.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
 import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
 import { Route as AuthenticatedProviderQueueRouteImport } from './routes/_authenticated/provider.queue'
 import { Route as AuthenticatedProviderProfileRouteImport } from './routes/_authenticated/provider.profile'
@@ -127,6 +128,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiInternalNewFeedbackRoute = ApiInternalNewFeedbackRouteImport.update({
+  id: '/api/internal/new-feedback',
+  path: '/api/internal/new-feedback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRxPrescriptionIdRoute =
   AuthenticatedRxPrescriptionIdRouteImport.update({
@@ -466,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
+  '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/provider/': typeof AuthenticatedProviderIndexRoute
   '/admin/billing/refund-history': typeof AuthenticatedAdminBillingRefundHistoryRoute
@@ -517,6 +524,7 @@ export interface FileRoutesByTo {
   '/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
+  '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/provider': typeof AuthenticatedProviderIndexRoute
   '/admin/billing/refund-history': typeof AuthenticatedAdminBillingRefundHistoryRoute
@@ -583,6 +591,7 @@ export interface FileRoutesById {
   '/_authenticated/provider/profile': typeof AuthenticatedProviderProfileRoute
   '/_authenticated/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/_authenticated/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
+  '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/provider/': typeof AuthenticatedProviderIndexRoute
   '/_authenticated/admin/billing/refund-history': typeof AuthenticatedAdminBillingRefundHistoryRoute
@@ -649,6 +658,7 @@ export interface FileRouteTypes {
     | '/provider/profile'
     | '/provider/queue'
     | '/rx/$prescriptionId'
+    | '/api/internal/new-feedback'
     | '/admin/'
     | '/provider/'
     | '/admin/billing/refund-history'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/provider/profile'
     | '/provider/queue'
     | '/rx/$prescriptionId'
+    | '/api/internal/new-feedback'
     | '/admin'
     | '/provider'
     | '/admin/billing/refund-history'
@@ -765,6 +776,7 @@ export interface FileRouteTypes {
     | '/_authenticated/provider/profile'
     | '/_authenticated/provider/queue'
     | '/_authenticated/rx/$prescriptionId'
+    | '/api/internal/new-feedback'
     | '/_authenticated/admin/'
     | '/_authenticated/provider/'
     | '/_authenticated/admin/billing/refund-history'
@@ -811,6 +823,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiInternalNewFeedbackRoute: typeof ApiInternalNewFeedbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -891,6 +904,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/internal/new-feedback': {
+      id: '/api/internal/new-feedback'
+      path: '/api/internal/new-feedback'
+      fullPath: '/api/internal/new-feedback'
+      preLoaderRoute: typeof ApiInternalNewFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/rx/$prescriptionId': {
       id: '/_authenticated/rx/$prescriptionId'
@@ -1581,6 +1601,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiInternalNewFeedbackRoute: ApiInternalNewFeedbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

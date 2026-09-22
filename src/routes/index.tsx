@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { RoutePending } from "@/components/route-pending";
-import { getPasswordRecoveryRedirectUrl, isPasswordRecoveryPending } from "@/lib/password-recovery";
+import { getPasswordRecoveryRedirectUrl, isOtpLogin, isPasswordRecoveryPending } from "@/lib/password-recovery";
 import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
 
 export const Route = createFileRoute("/")({
@@ -35,7 +35,7 @@ function HomePage() {
 
       const user = data.session?.user;
 
-      if (user && isPasswordRecoveryPending() && window.location.pathname !== "/reset-password") {
+      if (user && isPasswordRecoveryPending() && !isOtpLogin() && window.location.pathname !== "/reset-password") {
         window.location.replace("/reset-password");
         return;
       }

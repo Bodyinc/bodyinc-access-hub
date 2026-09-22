@@ -18,7 +18,7 @@ import {
   verifyLoginOtp,
   type SignInResult,
 } from "@/lib/auth.functions";
-import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
+import { clearOtpLogin, clearPasswordRecoveryPending, markOtpLogin } from "@/lib/password-recovery";
 import {
   adminLabel,
   adminInput,
@@ -75,7 +75,7 @@ function AuthPage() {
   const [otpSubmitting, setOtpSubmitting] = useState(false);
   const [otpEmailError, setOtpEmailError] = useState<string | undefined>();
 
-  async function handleSession(result: SignInResult) {
+  async function handleSession(result: SignInResult, source: "password" | "otp" = "password") {
     if (!result.ok) {
       if (result.error === "wrong_portal" || result.error === "no_access") {
         setPortalError({ message: result.message, redirectUrl: result.redirectUrl });
@@ -84,15 +84,18 @@ function AuthPage() {
       }
       return;
     }
+    if (source === "otp") markOtpLogin();
+    else clearOtpLogin();
+    clearPasswordRecoveryPending();
     const { error } = await supabase.auth.setSession({
       access_token: result.session.access_token,
       refresh_token: result.session.refresh_token,
     });
     if (error) {
+      clearOtpLogin();
       toast.error("Could not start your session. Please try again.");
       return;
     }
-    clearPasswordRecoveryPending();
     await router.invalidate();
     navigate({
       to: result.role === "admin" ? "/admin" : result.role === "provider" ? "/provider" : "/dashboard",
@@ -139,7 +142,7 @@ function AuthPage() {
     }
     setOtpSubmitting(true);
     try {
-      await sendOtp({ data: parsed.data });
+      await sendOtp({ data: { email: parsed.data.email, origin: window.location.origin } });
       setOtpStage("verify");
       toast.success("If an account exists, an 8-digit code was sent.");
     } catch (err) {
@@ -162,7 +165,7 @@ function AuthPage() {
       const result = await verifyOtp({
         data: { email: otpEmail, token: otpCode },
       });
-      await handleSession(result);
+      await handleSession(result, "otp");
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong. Please try again.");

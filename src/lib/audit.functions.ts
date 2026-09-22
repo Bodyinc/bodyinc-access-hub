@@ -3,6 +3,136 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 
+const MEDICINE_CHANGE_ACTIONS = [
+  "request.change_medicine",
+  "subscription.change_medicine",
+] as const;
+
+type MedicineChangeLogRow = {
+  id: string;
+  entity: string;
+  entity_id: string | null;
+  after: { user_id?: string | null } | null;
+};
+
+function logUserId(row: MedicineChangeLogRow): string | null {
+  return row.after?.user_id ?? null;
+}
+
+async function deleteActivityLogIds(supabaseAdmin: any, ids: string[]) {
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const { error } = await supabaseAdmin.from("admin_activity_log").delete().in("id", chunk);
+    if (error) {
+      console.error("[audit] delete medicine-change rows failed:", error.message);
+      throw new Error(error.message);
+    }
+  }
+}
+
+async function loadMedicineChangeLogs(supabaseAdmin: any): Promise<MedicineChangeLogRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from("admin_activity_log")
+    .select("id, entity, entity_id, after")
+    .in("action", MEDICINE_CHANGE_ACTIONS)
+    .limit(5000);
+  if (error) {
+    console.error("[audit] load medicine changes failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as MedicineChangeLogRow[];
+}
+
+export async function deleteMedicineChangeHistory(
+  supabaseAdmin: any,
+  opts: { userId?: string; entityIds?: string[]; all?: boolean },
+) {
+  if (opts.all) {
+    const { error } = await supabaseAdmin
+      .from("admin_activity_log")
+      .delete()
+      .in("action", MEDICINE_CHANGE_ACTIONS);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const entityIdSet = new Set(opts.entityIds ?? []);
+  const logs = await loadMedicineChangeLogs(supabaseAdmin);
+  const ids = logs
+    .filter((row) => {
+      if (opts.userId && logUserId(row) === opts.userId) return true;
+      if (row.entity_id && entityIdSet.has(row.entity_id)) return true;
+      return false;
+    })
+    .map((row) => row.id);
+
+  if (ids.length) await deleteActivityLogIds(supabaseAdmin, ids);
+}
+
+/** Drop medicine-change rows that no longer belong to a living patient. */
+export async function purgeOrphanedMedicineChangeHistory(supabaseAdmin: any) {
+  const list = await loadMedicineChangeLogs(supabaseAdmin);
+  if (list.length === 0) return;
+
+  const reqIds = Array.from(
+    new Set(
+      list
+        .filter((r) => r.entity === "medication_requests" && r.entity_id && !logUserId(r))
+        .map((r) => r.entity_id as string),
+    ),
+  );
+  const subIds = Array.from(
+    new Set(
+      list
+        .filter((r) => r.entity === "subscriptions" && r.entity_id && !logUserId(r))
+        .map((r) => r.entity_id as string),
+    ),
+  );
+
+  const ownerByEntityId = new Map<string, string>();
+  if (reqIds.length) {
+    const { data: reqs } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, user_id")
+      .in("id", reqIds);
+    (reqs ?? []).forEach((r: { id: string; user_id: string | null }) => {
+      if (r.user_id) ownerByEntityId.set(r.id, r.user_id);
+    });
+  }
+  if (subIds.length) {
+    const { data: subs } = await supabaseAdmin
+      .from("subscriptions")
+      .select("id, user_id")
+      .in("id", subIds);
+    (subs ?? []).forEach((s: { id: string; user_id: string | null }) => {
+      if (s.user_id) ownerByEntityId.set(s.id, s.user_id);
+    });
+  }
+
+  const ownerOf = (row: MedicineChangeLogRow): string | null =>
+    logUserId(row) ?? (row.entity_id ? (ownerByEntityId.get(row.entity_id) ?? null) : null);
+
+  const ownerIds = Array.from(new Set(list.map(ownerOf).filter((id): id is string => Boolean(id))));
+  const { data: profiles } = ownerIds.length
+    ? await supabaseAdmin.from("profiles").select("id").in("id", ownerIds)
+    : { data: [] as Array<{ id: string }> };
+  const livingPatients = new Set(((profiles ?? []) as Array<{ id: string }>).map((p) => p.id));
+
+  const orphanIds = list
+    .filter((row) => {
+      const ownerId = ownerOf(row);
+      return !ownerId || !livingPatients.has(ownerId);
+    })
+    .map((row) => row.id);
+
+  if (orphanIds.length === 0) return;
+  try {
+    await deleteActivityLogIds(supabaseAdmin, orphanIds);
+  } catch (error) {
+    console.error("[audit] purge orphaned medicine changes failed:", error);
+  }
+}
+
 const medicineChangesInput = z
   .object({
     search: z.string().trim().max(200).optional(),
@@ -25,6 +155,7 @@ export const listMedicineChanges = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { normalizeIdSearch } = await import("@/lib/format");
+    await purgeOrphanedMedicineChangeHistory(supabaseAdmin);
 
     const from = (data.page - 1) * data.limit;
     const to = from + data.limit - 1;
@@ -100,27 +231,30 @@ export const listMedicineChanges = createServerFn({ method: "POST" })
       return `${name}${variant}${months}`;
     };
 
-    let result = list.map((r) => {
+    let result = list.flatMap((r) => {
       const actor = r.admin_user_id ? (pMap.get(r.admin_user_id) as any) : null;
       const ownerId = ownerOf(r);
       const patient = ownerId ? (pMap.get(ownerId) as any) : null;
-      return {
-        id: r.id,
-        created_at: r.created_at,
-        entity: r.entity as string,
-        entity_id: r.entity_id as string | null,
-        source: r.action === "subscription.change_medicine" ? "subscription" : "order",
-        actor_name: actor?.full_name ?? actor?.email ?? null,
-        actor_role: (r?.after?.actor_role ?? "admin") as string,
-        patient_name: patient?.full_name ?? null,
-        patient_email: patient?.email ?? null,
-        from_label: label(r.before),
-        to_label: label(r.after),
-        delta_cents: Number(r?.after?.delta_cents ?? 0),
-        cross_category: Boolean(r?.after?.cross_category),
-        cross_category_reason: r?.after?.cross_category_reason ?? null,
-        note: r?.after?.note ?? null,
-      };
+      if (!patient) return [];
+      return [
+        {
+          id: r.id,
+          created_at: r.created_at,
+          entity: r.entity as string,
+          entity_id: r.entity_id as string | null,
+          source: r.action === "subscription.change_medicine" ? "subscription" : "order",
+          actor_name: actor?.full_name ?? actor?.email ?? null,
+          actor_role: (r?.after?.actor_role ?? "admin") as string,
+          patient_name: patient?.full_name ?? null,
+          patient_email: patient?.email ?? null,
+          from_label: label(r.before),
+          to_label: label(r.after),
+          delta_cents: Number(r?.after?.delta_cents ?? 0),
+          cross_category: Boolean(r?.after?.cross_category),
+          cross_category_reason: r?.after?.cross_category_reason ?? null,
+          note: r?.after?.note ?? null,
+        },
+      ];
     });
 
     if (data.role !== "all") result = result.filter((r) => r.actor_role === data.role);

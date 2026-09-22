@@ -251,7 +251,7 @@ export const claimRequest = createServerFn({ method: "POST" })
 
     const { data: current } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status")
+      .select("id, status, user_id, medicine_id")
       .eq("id", data.requestId)
       .maybeSingle();
 
@@ -281,6 +281,25 @@ export const claimRequest = createServerFn({ method: "POST" })
       created_by: me,
       note: "Claimed by practitioner",
     });
+
+    void import("@/lib/email.notifications")
+      .then(async ({ notifyPatientRequestEvent }) => {
+        const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+        await notifyPatientRequestEvent({
+          supabaseAdmin,
+          request: {
+            id: data.requestId,
+            user_id: current?.user_id,
+            medicine_id: current?.medicine_id,
+          },
+          template: "patient_provider_assigned",
+          extraParams: {
+            PORTAL_URL: portalBase ? `${portalBase}/consultations` : "",
+          },
+        });
+      })
+      .catch((e) => console.error("[claimRequest] patient email failed:", e));
+
     return { ok: true };
   });
 
@@ -636,6 +655,7 @@ export const updateMyProviderProfile = createServerFn({ method: "POST" })
         ...(data.license_states
           ? {
               license_states: Array.from(new Set(data.license_states.map((s) => s.toUpperCase()))),
+              practice_states: Array.from(new Set(data.license_states.map((s) => s.toUpperCase()))),
             }
           : {}),
         updated_at: new Date().toISOString(),

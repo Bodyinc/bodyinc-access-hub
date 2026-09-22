@@ -110,11 +110,22 @@ async function qbFetch<T>(
 }
 
 async function loginProvider(email: string, password: string) {
-  const result = await qbFetch<{ session: QbSession; data: QbUser }>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ role: "provider", email, password }),
-  });
-  return { token: result.session.token, user: result.data };
+  try {
+    const result = await qbFetch<{ session: QbSession; data: QbUser }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ role: "provider", email, password }),
+    });
+    return { token: result.session.token, user: result.data };
+  } catch (error) {
+    const status = (error as Error & { status?: number }).status;
+    const message = error instanceof Error ? error.message : "";
+    if (status === 401 || /unauthorized/i.test(message)) {
+      throw new Error(
+        "QuickBlox rejected the provider login. QUICKBLOX_PROVIDER_EMAIL / PASSWORD must be the QuickBlox provider account (admin@quickblox.com), not the Body Inc portal login.",
+      );
+    }
+    throw error;
+  }
 }
 
 function cacheSession(email: string, session: QuickbloxProviderSession) {

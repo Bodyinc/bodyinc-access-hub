@@ -39,7 +39,8 @@ flowchart TD
 | Prescription ready                                        | Patient            | `generatePrescription`           | `patient_prescription_ready`                                       |
 | Sent to pharmacy / Shipped / Delivered                    | Patient            | `advanceRequestStatus`           | `patient_sent_to_pharmacy`, `patient_shipped`, `patient_delivered` |
 | Refund approved / rejected                                | Patient            | `approveRefund` / `rejectRefund` | `patient_refund_approved`, `patient_refund_rejected`               |
-| Provider assigned (+ ready for review if already pending) | Provider           | `assignRequestProvider`          | `provider_assigned`, `provider_ready_for_review`                   |
+| Provider assigned (+ ready for review if already pending) | Provider           | `assignRequestProvider`          | `provider_assigned` **or** `provider_ready_for_review` (one email) |
+| Provider assigned                                         | Patient            | `assignRequestProvider` / `claimRequest` | `patient_provider_assigned` (also covers prescription under review) |
 
 Skip provider email when the actor is the assigned provider (same rule as in-app notifications).
 

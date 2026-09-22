@@ -26,6 +26,14 @@ export const ADMIN_SETTABLE_STATUSES: FeedbackStatus[] = [
   "closed",
 ];
 
+/** Open work — shown on the admin sidebar badge as unsolved. */
+export const UNSOLVED_FEEDBACK_STATUSES: FeedbackStatus[] = [
+  "open",
+  "in_progress",
+  "needs_info",
+  "awaiting_confirmation",
+];
+
 export const FEEDBACK_AUTO_RESOLVE_DAYS = 3;
 
 export function isFeedbackStatus(value: string): value is FeedbackStatus {

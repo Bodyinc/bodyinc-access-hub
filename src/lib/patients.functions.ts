@@ -288,6 +288,19 @@ export const deletePatient = createServerFn({ method: "POST" })
       .delete()
       .eq("user_id", data.userId);
 
+    const [{ data: reqs }, { data: patientSubs }] = await Promise.all([
+      supabaseAdmin.from("medication_requests").select("id").eq("user_id", data.userId),
+      supabaseAdmin.from("subscriptions").select("id").eq("user_id", data.userId),
+    ]);
+    const { deleteMedicineChangeHistory } = await import("@/lib/audit.functions");
+    await deleteMedicineChangeHistory(supabaseAdmin, {
+      userId: data.userId,
+      entityIds: [
+        ...(reqs ?? []).map((r: { id: string }) => r.id),
+        ...(patientSubs ?? []).map((s: { id: string }) => s.id),
+      ],
+    });
+
     // Cascades profiles + user_roles; payments, subscriptions, refund_requests and
     // intake_sessions keep their rows with user_id nulled, so financial history survives.
     // The email is freed for a brand-new signup.
@@ -306,7 +319,7 @@ export const sendPatientPasswordReset = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("email")
+      .select("email, full_name")
       .eq("id", data.userId)
       .maybeSingle();
     if (error || !profile?.email) throw new Error("Patient email not found");
@@ -318,10 +331,14 @@ export const sendPatientPasswordReset = createServerFn({ method: "POST" })
       ? `${portalUrl}/auth/callback?next=/reset-password`
       : data.redirect_to;
 
-    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(profile.email, {
+    const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
+    const sent = await sendThemedRecoveryEmail({
+      supabaseAdmin,
+      email: profile.email,
       redirectTo,
+      fullName: (profile as { full_name?: string | null }).full_name ?? null,
     });
-    if (linkErr) throw new Error(linkErr.message);
+    if (!sent.ok) throw new Error(sent.message);
     return { ok: true };
   });
 

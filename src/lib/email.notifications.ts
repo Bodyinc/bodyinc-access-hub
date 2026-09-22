@@ -86,57 +86,50 @@ const PATIENT_TEMPLATE_STATUS: Partial<Record<EmailTemplateKey, string>> = {
   patient_sent_to_pharmacy: "sent_to_pharmacy",
   patient_shipped: "dispatched",
   patient_delivered: "delivered",
+  patient_provider_assigned: "provider_assigned",
 };
 
-async function latestEventId(
-  supabaseAdmin: any,
-  requestId: string,
-  template: EmailTemplateKey,
-): Promise<string | null> {
+/** Must match patient-portal `sendUnsentOrderStatusEmails` claim keys. */
+const PATIENT_STATUS_REMINDER = "order_status";
+
+function patientStatusClaim(template: EmailTemplateKey, requestId: string): {
+  targetId: string;
+  periodKey: string;
+} {
   const status = PATIENT_TEMPLATE_STATUS[template];
-  if (!status) return null;
-  const { data: ev } = await supabaseAdmin
-    .from("medication_request_events")
-    .select("id")
-    .eq("request_id", requestId)
-    .eq("status", status)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return ev?.id ?? null;
+  if (status) return { targetId: requestId, periodKey: status };
+  return { targetId: requestId, periodKey: template };
 }
 
-async function patientOrderEmailAlreadySent(
+async function claimPatientOrderEmail(
   supabaseAdmin: any,
-  requestId: string,
-  template: EmailTemplateKey,
+  targetId: string,
+  periodKey: string,
 ): Promise<boolean> {
-  const eventId = await latestEventId(supabaseAdmin, requestId, template);
-  if (!eventId) return false;
-  const { data } = await supabaseAdmin
-    .from("email_reminders")
-    .select("target_id")
-    .eq("reminder_type", "order_status")
-    .eq("target_id", eventId)
-    .eq("period_key", "")
-    .maybeSingle();
-  return Boolean(data);
+  const { error } = await supabaseAdmin.from("email_reminders").insert({
+    reminder_type: PATIENT_STATUS_REMINDER,
+    target_id: targetId,
+    period_key: periodKey,
+  });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  console.error(`[email] failed to claim ${PATIENT_STATUS_REMINDER}/${targetId}: ${error.message}`);
+  return false;
 }
 
-async function markPatientOrderEmailSent(
+async function releasePatientOrderEmail(
   supabaseAdmin: any,
-  requestId: string,
-  template: EmailTemplateKey,
+  targetId: string,
+  periodKey: string,
 ): Promise<void> {
-  const eventId = await latestEventId(supabaseAdmin, requestId, template);
-  if (!eventId) return;
-  const { error } = await supabaseAdmin.from("email_reminders").insert({
-    reminder_type: "order_status",
-    target_id: eventId,
-    period_key: "",
-  });
-  if (error && error.code !== "23505") {
-    console.error(`[email] failed to record ${template}/${eventId}: ${error.message}`);
+  const { error } = await supabaseAdmin
+    .from("email_reminders")
+    .delete()
+    .eq("reminder_type", PATIENT_STATUS_REMINDER)
+    .eq("target_id", targetId)
+    .eq("period_key", periodKey);
+  if (error) {
+    console.error(`[email] failed to release ${PATIENT_STATUS_REMINDER}/${targetId}: ${error.message}`);
   }
 }
 
@@ -151,7 +144,8 @@ export async function notifyPatientRequestEvent(opts: {
   template: EmailTemplateKey;
   extraParams?: Record<string, string | number | boolean | null | undefined>;
 }): Promise<boolean> {
-  if (await patientOrderEmailAlreadySent(opts.supabaseAdmin, opts.request.id, opts.template)) {
+  const claim = patientStatusClaim(opts.template, opts.request.id);
+  if (!(await claimPatientOrderEmail(opts.supabaseAdmin, claim.targetId, claim.periodKey))) {
     return true;
   }
 
@@ -168,12 +162,9 @@ export async function notifyPatientRequestEvent(opts: {
       ...opts.extraParams,
     },
   });
-  if (sent) {
-    await markPatientOrderEmailSent(opts.supabaseAdmin, opts.request.id, opts.template);
-    return true;
-  }
-  // Patient portal may already have delivered this status email even if admin Brevo failed.
-  return patientOrderEmailAlreadySent(opts.supabaseAdmin, opts.request.id, opts.template);
+  if (sent) return true;
+  await releasePatientOrderEmail(opts.supabaseAdmin, claim.targetId, claim.periodKey);
+  return false;
 }
 
 export async function notifyProviderRequestEvent(opts: {
@@ -259,5 +250,125 @@ export async function notifyAdminsProviderApproved(opts: {
   } catch (e) {
     console.error("[email] notifyAdminsProviderApproved failed:", e);
     return 0;
+  }
+}
+
+const NEW_FEEDBACK_REMINDER = "admin_new_feedback";
+
+async function listAdminUserIds(supabaseAdmin: any): Promise<string[]> {
+  const { data: roleRows } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
+  return Array.from(
+    new Set(((roleRows ?? []) as { user_id: string }[]).map((r) => r.user_id).filter(Boolean)),
+  );
+}
+
+function adminPortalBase(): string {
+  return (
+    process.env.ADMIN_APP_URL?.replace(/\/$/, "") ||
+    process.env.APP_URL?.replace(/\/$/, "") ||
+    "https://admin.bodyinc.com"
+  );
+}
+
+/** Email every admin when a patient submits new feedback. */
+export async function notifyAdminsNewFeedback(opts: {
+  supabaseAdmin: any;
+  feedback: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+    message: string;
+    category?: string | null;
+  };
+}): Promise<number> {
+  try {
+    const adminIds = await listAdminUserIds(opts.supabaseAdmin);
+    if (adminIds.length === 0) return 0;
+
+    const patientName = opts.feedback.full_name?.trim() || "A patient";
+    const category = opts.feedback.category?.trim() || "inquiry";
+    let sentCount = 0;
+    for (const adminId of adminIds) {
+      const ok = await notifyUserById({
+        supabaseAdmin: opts.supabaseAdmin,
+        userId: adminId,
+        template: "admin_new_feedback",
+        params: {
+          PATIENT_NAME: patientName,
+          PATIENT_EMAIL: opts.feedback.email ?? "",
+          CATEGORY: category,
+          MESSAGE: opts.feedback.message,
+          FEEDBACK_URL: `${adminPortalBase()}/admin/feedback`,
+        },
+      });
+      if (ok) sentCount += 1;
+    }
+    return sentCount;
+  } catch (e) {
+    console.error("[email] notifyAdminsNewFeedback failed:", e);
+    return 0;
+  }
+}
+
+async function claimNewFeedbackEmail(supabaseAdmin: any, feedbackId: string): Promise<boolean> {
+  const { error } = await supabaseAdmin.from("email_reminders").insert({
+    reminder_type: NEW_FEEDBACK_REMINDER,
+    target_id: feedbackId,
+    period_key: "",
+  });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  console.error("[email] claim admin_new_feedback failed:", error.message);
+  return false;
+}
+
+export async function notifyNewFeedbackIfNeeded(
+  supabaseAdmin: any,
+  feedbackId: string,
+): Promise<boolean> {
+  const { data: row, error } = await supabaseAdmin
+    .from("patient_feedback")
+    .select("id, email, full_name, message, category")
+    .eq("id", feedbackId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) return false;
+  if (!(await claimNewFeedbackEmail(supabaseAdmin, feedbackId))) return true;
+  await notifyAdminsNewFeedback({ supabaseAdmin, feedback: row });
+  return true;
+}
+
+/** Send admin emails for any new feedback that has not been notified yet. */
+export async function dispatchPendingNewFeedbackEmails(supabaseAdmin: any): Promise<void> {
+  try {
+    const { data: rows } = await supabaseAdmin
+      .from("patient_feedback")
+      .select("id, email, full_name, message, category")
+      .gte("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (!rows?.length) return;
+
+    const ids = rows.map((r: { id: string }) => r.id);
+    const { data: sent } = await supabaseAdmin
+      .from("email_reminders")
+      .select("target_id")
+      .eq("reminder_type", NEW_FEEDBACK_REMINDER)
+      .in("target_id", ids);
+    const sentSet = new Set(((sent ?? []) as { target_id: string }[]).map((s) => s.target_id));
+
+    for (const row of rows as Array<{
+      id: string;
+      email: string | null;
+      full_name: string | null;
+      message: string;
+      category: string | null;
+    }>) {
+      if (sentSet.has(row.id)) continue;
+      if (!(await claimNewFeedbackEmail(supabaseAdmin, row.id))) continue;
+      await notifyAdminsNewFeedback({ supabaseAdmin, feedback: row });
+    }
+  } catch (e) {
+    console.error("[email] dispatchPendingNewFeedbackEmails failed:", e);
   }
 }

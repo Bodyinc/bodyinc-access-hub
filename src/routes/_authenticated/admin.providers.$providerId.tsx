@@ -143,7 +143,6 @@ function EditProviderPage() {
             years_experience: d.years_experience ?? undefined,
             languages: d.languages ?? [],
             consultation_types: d.consultation_types ?? [],
-            practice_states: d.practice_states ?? [],
             address_line1: d.address_line1 ?? "",
             address_line2: d.address_line2 ?? "",
             city: d.city ?? "",

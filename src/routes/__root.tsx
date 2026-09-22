@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import {
   clearPasswordRecoveryPending,
   getPasswordRecoveryRedirectUrl,
+  isOtpLogin,
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
@@ -140,6 +141,10 @@ function RootComponent() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
+        if (isOtpLogin()) {
+          clearPasswordRecoveryPending();
+          return;
+        }
         const redirectUrl = getPasswordRecoveryRedirectUrl();
         if (redirectUrl) {
           window.location.replace(redirectUrl);

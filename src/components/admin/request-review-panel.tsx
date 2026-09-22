@@ -586,6 +586,21 @@ export function RequestReviewPanel({
                 {consultMut.isPending ? "Opening…" : "Start consultation"}
               </Button>
             ) : null}
+            {canManage && request.session_id ? (
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
+              >
+                <Link
+                  to="/admin/intake-sessions/$sessionId"
+                  params={{ sessionId: request.session_id }}
+                >
+                  Open intake session
+                </Link>
+              </Button>
+            ) : null}
           </div>
 
           {status === "awaiting_additional_payment" ? (

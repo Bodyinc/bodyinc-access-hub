@@ -1131,25 +1131,25 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       const medicineId = existing.medicine_id ?? null;
       const status = existing.status;
       void import("@/lib/email.notifications")
-        .then(async ({ notifyProviderRequestEvent }) => {
+        .then(async ({ notifyPatientRequestEvent, notifyProviderRequestEvent }) => {
+          const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+          await notifyPatientRequestEvent({
+            supabaseAdmin,
+            request: { id: data.requestId, user_id: existing.user_id, medicine_id: medicineId },
+            template: "patient_provider_assigned",
+            extraParams: {
+              PORTAL_URL: portalBase ? `${portalBase}/consultations` : "",
+            },
+          });
           await notifyProviderRequestEvent({
             supabaseAdmin,
             providerId: data.providerId!,
             requestId: data.requestId,
             medicineId,
-            template: "provider_assigned",
+            template:
+              status === "pending_review" ? "provider_ready_for_review" : "provider_assigned",
             actorUserId: context.userId,
           });
-          if (status === "pending_review") {
-            await notifyProviderRequestEvent({
-              supabaseAdmin,
-              providerId: data.providerId!,
-              requestId: data.requestId,
-              medicineId,
-              template: "provider_ready_for_review",
-              actorUserId: context.userId,
-            });
-          }
         })
         .catch((e) => console.error("[assignRequestProvider] email failed:", e));
     }

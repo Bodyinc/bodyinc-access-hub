@@ -34,6 +34,11 @@ export const wipePlatformData = createServerFn({ method: "POST" })
       deleted[entry.group] = (deleted[entry.group] ?? 0) + (count ?? 0);
     }
 
+    if (groups.includes("orders")) {
+      const { deleteMedicineChangeHistory } = await import("@/lib/audit.functions");
+      await deleteMedicineChangeHistory(supabaseAdmin, { all: true });
+    }
+
     await supabaseAdmin.from("admin_activity_log").insert({
       admin_user_id: context.userId,
       action: "danger.wipe",

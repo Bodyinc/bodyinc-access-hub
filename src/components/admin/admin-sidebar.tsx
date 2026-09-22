@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import { countOpenRequests } from "@/lib/requests.functions";
+import { countUnsolvedFeedback, unsolvedFeedbackCountQueryKey } from "@/lib/feedback.functions";
 import {
   Sidebar,
   SidebarContent,
@@ -55,13 +56,21 @@ export function AdminSidebar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const countOpen = useServerFn(countOpenRequests);
+  const countUnsolved = useServerFn(countUnsolvedFeedback);
   const openCountQ = useQuery({
     queryKey: openRequestCountQueryKey,
     queryFn: () => countOpen({}),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
+  const unsolvedFeedbackQ = useQuery({
+    queryKey: unsolvedFeedbackCountQueryKey,
+    queryFn: () => countUnsolved({}),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
   const openCount = openCountQ.data ?? 0;
+  const unsolvedFeedbackCount = unsolvedFeedbackQ.data ?? 0;
 
   useEffect(() => {
     const urls = [...items.map((item) => item.url), "/admin/settings"];
@@ -135,8 +144,13 @@ export function AdminSidebar() {
               {items.map((item) => {
                 const active = isActive(item.url, item.exact);
                 const isRequests = item.url === "/admin/requests";
-                const badge =
-                  isRequests && openCount > 0 ? (openCount > 99 ? "99+" : String(openCount)) : null;
+                const isFeedback = item.url === "/admin/feedback";
+                const rawCount = isRequests
+                  ? openCount
+                  : isFeedback
+                    ? unsolvedFeedbackCount
+                    : 0;
+                const badge = rawCount > 0 ? (rawCount > 99 ? "99+" : String(rawCount)) : null;
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
