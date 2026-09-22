@@ -1,6 +1,7 @@
 import { readSession, removeSession, writeSession } from "@/lib/safe-storage";
 
 const PENDING_KEY = "bi_pending_password_reset";
+const OTP_LOGIN_KEY = "bi_otp_login";
 
 export function markPasswordRecoveryPending() {
   writeSession(PENDING_KEY, "1");
@@ -12,6 +13,19 @@ export function clearPasswordRecoveryPending() {
 
 export function isPasswordRecoveryPending() {
   return readSession(PENDING_KEY) === "1";
+}
+
+/** OTP sign-in uses a magic-link token (recovery under the hood). Skip reset redirects. */
+export function markOtpLogin() {
+  writeSession(OTP_LOGIN_KEY, "1");
+}
+
+export function clearOtpLogin() {
+  removeSession(OTP_LOGIN_KEY);
+}
+
+export function isOtpLogin() {
+  return readSession(OTP_LOGIN_KEY) === "1";
 }
 
 /** True when the current URL carries password-recovery auth params. */
@@ -43,6 +57,7 @@ export function getPasswordRecoveryRedirectUrl(
   href = typeof window !== "undefined" ? window.location.href : "",
 ) {
   if (!href) return null;
+  if (isOtpLogin()) return null;
   const url = new URL(href);
   if (url.pathname === "/reset-password") return null;
   if (isPasswordRecoveryUrl(href)) return buildPasswordRecoveryUrl(href);

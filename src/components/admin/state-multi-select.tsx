@@ -1,19 +1,19 @@
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { US_STATES } from "@/lib/us-states";
+import { cn } from "@/lib/utils";
 
 export function StateMultiSelect({
   selected,
   onToggle,
   onSetSelected,
-  placeholder = "Add state",
+  placeholder = "Add states",
   triggerClassName,
 }: {
   selected: readonly string[];
@@ -22,28 +22,50 @@ export function StateMultiSelect({
   placeholder?: string;
   triggerClassName?: string;
 }) {
-  const remaining = US_STATES.filter((s) => !selected.includes(s));
+  const selectedSet = new Set(selected);
+  const remaining = US_STATES.filter((s) => !selectedSet.has(s));
   const allSelected = remaining.length === 0;
+  const summary =
+    selected.length === 0
+      ? placeholder
+      : selected.length <= 3
+        ? selected.join(", ")
+        : `${selected.length} states selected`;
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-2.5">
-      <Select value="" onValueChange={(v) => v && onToggle(v)}>
-        <SelectTrigger
-          className={
-            triggerClassName ??
-            "h-11 w-full min-w-0 max-w-full rounded-[6px] border border-[#D5DEDD] bg-white text-[14px] font-semibold text-[#3B4759] shadow-none sm:h-[53px]"
-          }
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              triggerClassName ??
+                "flex h-11 w-full min-w-0 max-w-full items-center justify-between rounded-[6px] border border-[#D5DEDD] bg-white px-3 text-left text-[14px] font-semibold text-[#3B4759] shadow-none sm:h-[53px]",
+            )}
+          >
+            <span className={cn("truncate", selected.length === 0 && "text-[#3B4759]/40")}>
+              {summary}
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-[6px] border-[#D5DEDD]"
         >
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent className="max-h-72 rounded-[6px] border-[#D5DEDD]">
-          {remaining.map((s) => (
-            <SelectItem key={s} value={s} className="font-medium text-[#3B4759]">
+          {US_STATES.map((s) => (
+            <DropdownMenuCheckboxItem
+              key={s}
+              checked={selectedSet.has(s)}
+              onSelect={(e) => e.preventDefault()}
+              onCheckedChange={() => onToggle(s)}
+              className="font-medium text-[#3B4759]"
+            >
               {s}
-            </SelectItem>
+            </DropdownMenuCheckboxItem>
           ))}
-        </SelectContent>
-      </Select>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {onSetSelected ? (
         <div className="flex flex-wrap items-center gap-3">
           <button

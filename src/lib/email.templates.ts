@@ -17,10 +17,12 @@ export type EmailTemplateKey =
   | "patient_refund_rejected"
   | "patient_consultation_started"
   | "patient_inquiry_update"
+  | "patient_provider_assigned"
   | "provider_assigned"
   | "provider_ready_for_review"
   | "provider_needs_attention"
-  | "admin_provider_approved";
+  | "admin_provider_approved"
+  | "admin_new_feedback";
 
 export type EmailParams = Record<string, string | number | boolean | null | undefined>;
 
@@ -203,7 +205,7 @@ const builders: Record<EmailTemplateKey, Builder> = {
     const link = cta(str(p, "PORTAL_URL"), "Complete payment");
     return layout({
       preheader: `Additional payment of $${amount} is required for ${med}.`,
-      title: "Additional payment required",
+      title: `Additional payment required — ${med}`,
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
         <p>Your clinician updated your treatment to <strong>${escapeHtml(med)}</strong>. An additional payment of <strong>$${escapeHtml(amount)}</strong> is needed before your prescription can be generated.</p>
         ${link.html}`,
@@ -401,6 +403,20 @@ const builders: Record<EmailTemplateKey, Builder> = {
     });
   },
 
+  patient_provider_assigned: (p) => {
+    const med = str(p, "MEDICINE_NAME", "your medication");
+    const order = orderShort(p);
+    const link = cta(str(p, "PORTAL_URL"), "Open consultations");
+    return layout({
+      preheader: `A practitioner has been assigned to your ${med} request and is ready to consult.`,
+      title: "Practitioner assigned — prescription under review",
+      bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
+        <p>A licensed practitioner has been assigned to your <strong>${escapeHtml(med)}</strong> request${order ? ` (order <strong>#${escapeHtml(order)}</strong>)` : ""} and is ready to consult. Your prescription is now under review.</p>
+        ${link.html}`,
+      bodyText: `Hi ${firstName(p)},\n\nA licensed practitioner has been assigned to your ${med} request${order ? ` (order #${order})` : ""} and is ready to consult. Your prescription is now under review.${link.text}`,
+    });
+  },
+
   provider_assigned: (p) => {
     const med = str(p, "MEDICINE_NAME", "a treatment");
     const order = orderShort(p);
@@ -457,6 +473,25 @@ const builders: Record<EmailTemplateKey, Builder> = {
         <p>You can now send this order to the pharmacy (LifeFile).</p>
         ${link.html}`,
       bodyText: `Hi ${firstName(p)},\n\n${provider} approved order${order ? ` #${order}` : ""} for ${patient} — ${med}.\nYou can now send this order to the pharmacy (LifeFile).${link.text}`,
+    });
+  },
+
+  admin_new_feedback: (p) => {
+    const patient = str(p, "PATIENT_NAME", "A patient");
+    const email = str(p, "PATIENT_EMAIL");
+    const category = str(p, "CATEGORY", "inquiry");
+    const message = str(p, "MESSAGE");
+    const who = email ? `${patient} (${email})` : patient;
+    const link = cta(str(p, "FEEDBACK_URL"), "Open feedback");
+    const messageHtml = message ? noteBox(`<strong>Message:</strong><br/>${escapeHtml(message)}`) : "";
+    return layout({
+      preheader: `${patient} sent new ${category} feedback.`,
+      title: "New patient feedback",
+      bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
+        <p><strong>${escapeHtml(who)}</strong> submitted new ${escapeHtml(category)} feedback.</p>
+        ${messageHtml}
+        ${link.html}`,
+      bodyText: `Hi ${firstName(p)},\n\n${who} submitted new ${category} feedback.${message ? `\n\nMessage:\n${message}` : ""}${link.text}`,
     });
   },
 };

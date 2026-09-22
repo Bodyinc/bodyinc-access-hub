@@ -61,7 +61,6 @@ const EMPTY: ProviderFormValues = {
   years_experience: undefined,
   languages: [],
   consultation_types: [],
-  practice_states: [],
   address_line1: "",
   address_line2: "",
   city: "",
@@ -94,7 +93,6 @@ export function ProviderForm({
   const errors = formState.errors;
 
   const licenseStates = watch("license_states") ?? [];
-  const practiceStates = watch("practice_states") ?? [];
   const languages = watch("languages") ?? [];
   const consultationTypes = watch("consultation_types") ?? [];
   const credentials = watch("credentials");
@@ -260,21 +258,6 @@ export function ProviderForm({
                 })
               }
             />
-          </Field>
-          <Field label="Practice states">
-            <div className={fieldShell}>
-              <StateMultiSelect
-                selected={practiceStates}
-                onToggle={(s) =>
-                  setValue("practice_states", toggleIn(practiceStates as string[], s) as any, {
-                    shouldDirty: true,
-                  })
-                }
-                onSetSelected={(states) =>
-                  setValue("practice_states", states as any, { shouldDirty: true })
-                }
-              />
-            </div>
           </Field>
         </CardContent>
       </Card>

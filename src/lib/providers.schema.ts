@@ -93,7 +93,6 @@ export const providerFormSchema = z.object({
     .optional(),
   languages: z.array(z.string().min(1).max(40)).default([]),
   consultation_types: z.array(z.enum(CONSULTATION_TYPES)).default([]),
-  practice_states: z.array(stateEnum).default([]),
 
   address_line1: optionalStr,
   address_line2: optionalStr,

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 import {
   FEEDBACK_STATUSES,
+  UNSOLVED_FEEDBACK_STATUSES,
   feedbackStatusLabel,
   isStaleAwaitingConfirmation,
   type FeedbackStatus,
@@ -33,12 +34,7 @@ export type PatientFeedbackRow = {
   replies: FeedbackReply[];
 };
 
-const ACTIVE_STATUSES: FeedbackStatus[] = [
-  "open",
-  "in_progress",
-  "needs_info",
-  "awaiting_confirmation",
-];
+const ACTIVE_STATUSES = UNSOLVED_FEEDBACK_STATUSES;
 
 const listInput = z
   .object({
@@ -54,6 +50,9 @@ export const listPatientFeedback = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await autoResolveStaleInquiries(supabaseAdmin);
+    void import("@/lib/email.notifications").then(({ dispatchPendingNewFeedbackEmails }) =>
+      dispatchPendingNewFeedbackEmails(supabaseAdmin),
+    );
 
     let q = supabaseAdmin
       .from("patient_feedback")
@@ -92,6 +91,24 @@ export const listPatientFeedback = createServerFn({ method: "POST" })
       ),
     }));
   });
+
+export const countUnsolvedFeedback = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    void import("@/lib/email.notifications").then(({ dispatchPendingNewFeedbackEmails }) =>
+      dispatchPendingNewFeedbackEmails(supabaseAdmin),
+    );
+    const { count, error } = await supabaseAdmin
+      .from("patient_feedback")
+      .select("id", { count: "exact", head: true })
+      .in("status", UNSOLVED_FEEDBACK_STATUSES);
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  });
+
+export const unsolvedFeedbackCountQueryKey = ["unsolved-feedback-count"] as const;
 
 async function autoResolveStaleInquiries(supabaseAdmin: {
   from: (table: string) => any;
@@ -139,16 +156,6 @@ export const updatePatientFeedback = createServerFn({ method: "POST" })
     if (data.status === "resolved" && row.status !== "resolved") {
       throw new Error(
         "Send a solution first (Solution sent). It is marked resolved when the patient confirms, or after 3 days with no reply.",
-      );
-    }
-    if (
-      (data.status === "awaiting_confirmation" || data.status === "needs_info") &&
-      note.length < 10
-    ) {
-      throw new Error(
-        data.status === "awaiting_confirmation"
-          ? "Write the solution for the patient before sending it."
-          : "Ask the patient what you still need before marking this as needs a reply.",
       );
     }
 

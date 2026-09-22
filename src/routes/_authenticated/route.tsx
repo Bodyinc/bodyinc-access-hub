@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   getPasswordRecoveryRedirectUrl,
   haltForPasswordRecoveryRedirect,
+  isOtpLogin,
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
 import { isBrowser } from "@/lib/is-browser";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/auth" });
     }
 
-    if (isPasswordRecoveryPending() && window.location.pathname !== "/reset-password") {
+    if (isPasswordRecoveryPending() && !isOtpLogin() && window.location.pathname !== "/reset-password") {
       window.location.replace("/reset-password");
       await haltForPasswordRecoveryRedirect();
     }

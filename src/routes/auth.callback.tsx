@@ -41,9 +41,20 @@ function AuthCallbackPage() {
         return;
       }
 
+      const otpType =
+        type === "signup" ||
+        type === "invite" ||
+        type === "magiclink" ||
+        type === "recovery" ||
+        type === "email_change"
+          ? type
+          : isPasswordReset
+            ? "recovery"
+            : "magiclink";
+
       if (tokenHash) {
         const { error } = await supabase.auth.verifyOtp({
-          type: (type as "recovery") || "recovery",
+          type: otpType as "magiclink" | "recovery" | "signup" | "invite" | "email_change",
           token_hash: tokenHash,
         });
         if (cancelled) return;

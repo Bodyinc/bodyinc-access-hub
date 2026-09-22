@@ -35,6 +35,7 @@ import { RefreshButton } from "@/components/admin/refresh-button";
 import {
   listPatientFeedback,
   updatePatientFeedback,
+  unsolvedFeedbackCountQueryKey,
   type PatientFeedbackRow,
 } from "@/lib/feedback.functions";
 import {
@@ -98,6 +99,7 @@ function FeedbackListPage() {
       }),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["admin-feedback"] });
+      qc.invalidateQueries({ queryKey: unsolvedFeedbackCountQueryKey });
       if (result.emailed && !result.email_sent) {
         toast.warning("Saved, but the patient email did not send.");
       } else if (result.email_sent) {
@@ -257,16 +259,6 @@ function FeedbackListPage() {
               {selected.page_path && (
                 <p className="text-[13px] text-[#6A9B9C]">From {selected.page_path}</p>
               )}
-              {selected.intake_session_id && (
-                <Button asChild className={adminBtnSecondary}>
-                  <Link
-                    to="/admin/intake-sessions/$sessionId"
-                    params={{ sessionId: selected.intake_session_id }}
-                  >
-                    Open intake session
-                  </Link>
-                </Button>
-              )}
 
               <div className="rounded-xl border border-[#D5DEDD] bg-[#F8FBFA] p-3">
                 <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-[#6A9B9C]">
@@ -342,11 +334,7 @@ function FeedbackListPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   className={adminBtnPrimary}
-                  disabled={
-                    mut.isPending ||
-                    ((nextStatus === "awaiting_confirmation" || nextStatus === "needs_info") &&
-                      reply.trim().length < 10)
-                  }
+                  disabled={mut.isPending}
                   onClick={() => mut.mutate()}
                 >
                   {mut.isPending ? "Saving…" : "Save and notify patient"}

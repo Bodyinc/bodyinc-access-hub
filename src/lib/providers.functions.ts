@@ -15,6 +15,9 @@ function splitProviderPayload<T extends Record<string, any>>(input: T) {
     if ((PROFILE_KEYS as readonly string[]).includes(k)) profile[k as ProfileKey] = v;
     else provider[k] = v;
   }
+  if (Array.isArray(provider.license_states)) {
+    provider.practice_states = provider.license_states;
+  }
   return { profile, provider };
 }
 
@@ -200,12 +203,16 @@ export const createProvider = createServerFn({ method: "POST" })
       };
     }
 
-    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
+    const sent = await sendThemedRecoveryEmail({
+      supabaseAdmin,
+      email,
       redirectTo: redirect_to,
+      fullName: (profileFields.full_name as string | undefined) ?? null,
     });
-    if (linkErr) {
+    if (!sent.ok) {
       // Provider exists; surface warning but don't roll back
-      return { id: userId, invite_sent: false, warning: linkErr.message, quickblox };
+      return { id: userId, invite_sent: false, warning: sent.message, quickblox };
     }
     return { id: userId, invite_sent: true, quickblox };
   });
@@ -256,15 +263,19 @@ export const resendInvite = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { data: row, error } = await context.supabase
       .from("profiles")
-      .select("email")
+      .select("email, full_name")
       .eq("id", data.id)
       .maybeSingle();
     if (error || !row?.email) throw new Error("Provider not found");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: linkErr } = await supabaseAdmin.auth.resetPasswordForEmail(row.email, {
+    const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
+    const sent = await sendThemedRecoveryEmail({
+      supabaseAdmin,
+      email: row.email,
       redirectTo: data.redirect_to,
+      fullName: (row as { full_name?: string | null }).full_name ?? null,
     });
-    if (linkErr) throw new Error(linkErr.message);
+    if (!sent.ok) throw new Error(sent.message);
     return { ok: true };
   });
 
