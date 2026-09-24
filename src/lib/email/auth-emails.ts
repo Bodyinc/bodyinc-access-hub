@@ -61,6 +61,45 @@ export function providerInviteEmail(params: {
   };
 }
 
+export function signInLinkEmail(params: { signInUrl: string; fullName?: string | null }): {
+  subject: string;
+  html: string;
+} {
+  const first = (params.fullName ?? "").trim().split(/\s+/)[0] || "";
+  const hello = first ? `Hello ${first},` : "Hello,";
+  const body = [
+    `<p>${hello}</p>`,
+    `<p>Use the button below to sign in to your Body Inc practitioner account. This link expires in about <strong>1 hour</strong>.</p>`,
+    emailButton("Sign in", params.signInUrl),
+    `<p style="color:${EMAIL_THEME.navyFaint};font-size:12px;">If you didn't try to sign in, you can ignore this email.</p>`,
+  ].join("");
+
+  return {
+    subject: "Sign in to Body Inc",
+    html: emailLayout("Sign in", body),
+  };
+}
+
+export function passwordChangedEmail(params: { fullName?: string | null; portalUrl?: string }): {
+  subject: string;
+  html: string;
+} {
+  const first = (params.fullName ?? "").trim().split(/\s+/)[0] || "";
+  const hello = first ? `Hello ${first},` : "Hello,";
+  const portal = params.portalUrl || "https://provider.bodyinc.com";
+  const body = [
+    `<p>${hello}</p>`,
+    `<p>The password for your Body Inc practitioner account was just changed.</p>`,
+    `<p>You can sign in at <a href="${portal}">${portal}</a> with this email address and your new password.</p>`,
+    `<p style="color:${EMAIL_THEME.navyFaint};font-size:12px;">If you did not make this change, reset your password from the sign-in page or contact your administrator.</p>`,
+  ].join("");
+
+  return {
+    subject: "Your Body Inc password was changed",
+    html: emailLayout("Password updated", body),
+  };
+}
+
 export function passwordResetEmail(params: { resetUrl: string; fullName?: string | null }): {
   subject: string;
   html: string;

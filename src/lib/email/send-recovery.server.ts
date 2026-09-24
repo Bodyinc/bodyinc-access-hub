@@ -13,6 +13,76 @@ export function portalRecoveryUrl(redirectTo: string, tokenHash: string): string
   return url.toString();
 }
 
+export type GeneratedAuthLink = {
+  userId: string | null;
+  emailOtp: string | null;
+  tokenHash: string | null;
+  error: string | null;
+};
+
+function readGeneratedLink(body: unknown): Omit<GeneratedAuthLink, "error"> {
+  const row = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const properties =
+    row.properties && typeof row.properties === "object"
+      ? (row.properties as Record<string, unknown>)
+      : row;
+  const user =
+    row.user && typeof row.user === "object" ? (row.user as Record<string, unknown>) : null;
+  const otpRaw = properties.email_otp ?? row.email_otp;
+  const otp = otpRaw == null ? "" : String(otpRaw).trim();
+  const hashRaw = properties.hashed_token ?? row.hashed_token;
+  const hash = typeof hashRaw === "string" ? hashRaw.trim() : "";
+  const idRaw = user?.id ?? row.id;
+  const userId = typeof idRaw === "string" ? idRaw.trim() : "";
+  return {
+    userId: userId || null,
+    emailOtp: /^\d{6,8}$/u.test(otp) ? otp : null,
+    tokenHash: hash || null,
+  };
+}
+
+/** Admin generate_link. Keeps the token even when the Send Email hook returns an error. */
+export async function generateAuthLink(params: {
+  type: "recovery" | "magiclink";
+  email: string;
+  redirectTo?: string;
+}): Promise<GeneratedAuthLink> {
+  const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return { userId: null, emailOtp: null, tokenHash: null, error: "Auth is not configured." };
+  }
+
+  const post = async (redirectTo?: string) => {
+    const response = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: params.type,
+        email: params.email,
+        ...(redirectTo ? { options: { redirect_to: redirectTo } } : {}),
+      }),
+    });
+    const json = (await response.json().catch(() => null)) as
+      | (Record<string, unknown> & { msg?: string; error_description?: string; message?: string })
+      | null;
+    const parsed = readGeneratedLink(json);
+    const error = response.ok
+      ? null
+      : json?.msg || json?.error_description || json?.message || `Could not create a link (${response.status}).`;
+    return { ...parsed, error };
+  };
+
+  const first = await post(params.redirectTo);
+  if (first.tokenHash || first.emailOtp || !params.redirectTo) return first;
+  console.error("[auth] generate_link with redirect failed:", first.error);
+  return post(undefined);
+}
+
 export async function sendThemedRecoveryEmail(params: {
   // Service-role client; keep loose so this helper isn't coupled to generated DB types.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,20 +94,15 @@ export async function sendThemedRecoveryEmail(params: {
   kind?: "reset" | "invite";
   portalUrl?: string;
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { data, error } = await params.supabaseAdmin.auth.admin.generateLink({
+  const generated = await generateAuthLink({
     type: "recovery",
     email: params.email,
-    options: { redirectTo: params.redirectTo },
+    redirectTo: params.redirectTo,
   });
-  const rawLink = data?.properties?.action_link?.trim() as string | undefined;
-  if (error || !rawLink) {
-    return { ok: false, message: error?.message ?? "Could not create a reset link." };
-  }
-
-  const userId = (data?.user?.id as string | undefined)?.trim();
-  const tokenHash = (data?.properties?.hashed_token as string | undefined)?.trim();
+  const userId = generated.userId;
+  const tokenHash = generated.tokenHash;
   if (!tokenHash) {
-    return { ok: false, message: "Could not create a reset link." };
+    return { ok: false, message: generated.error ?? "Could not create a reset link." };
   }
   // A patient-portal Send Email hook may also deliver this recovery mail, and that
   // copy follows the patient Site URL. Still send the portal link below.

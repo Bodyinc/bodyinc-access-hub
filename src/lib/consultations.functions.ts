@@ -82,23 +82,28 @@ async function assignedPatientIds(supabaseAdmin: any, providerId: string): Promi
   return [...new Set((data ?? []).map((row: { user_id: string | null }) => row.user_id).filter(Boolean))];
 }
 
-async function visitStatusByAppointmentId(
-  neededIds: string[],
-  extraToken?: string,
-) {
+async function visitStatusByAppointmentId(neededIds: string[], extraTokens: string[] = []) {
   const map = new Map<string, ConsultationVisitStatus>();
   const dateEnd = new Map<string, string | null>();
 
   const fill = (items: QbAppointment[]) => {
     for (const item of items) {
       if (!item._id) continue;
-      map.set(item._id, visitFromAppointment(item));
-      dateEnd.set(item._id, item.date_end ?? null);
+      const next = visitFromAppointment(item);
+      // A close on any QuickBlox login wins. The clinic account often still looks open.
+      if (map.get(item._id) === "ended") continue;
+      map.set(item._id, next);
+      if (next === "ended" || !dateEnd.has(item._id)) {
+        dateEnd.set(item._id, item.date_end ?? null);
+      }
     }
   };
 
-  const lists = [listProviderAppointments(), listAllAppointments()];
-  if (extraToken) lists.push(listProviderAppointments(extraToken));
+  const lists = [
+    listProviderAppointments(),
+    listAllAppointments(),
+    ...extraTokens.map((token) => listProviderAppointments(token)),
+  ];
   const results = await Promise.allSettled(lists);
   for (const result of results) {
     if (result.status !== "fulfilled") {
@@ -113,7 +118,7 @@ async function visitStatusByAppointmentId(
     const chunk = missing.slice(i, i + 8);
     const fetched = await Promise.all(
       chunk.map(async (id) => {
-        const item = await getAppointmentById(id, extraToken);
+        const item = await getAppointmentById(id, extraTokens[0]);
         return item ? [id, item] as const : null;
       }),
     );
@@ -137,9 +142,6 @@ async function persistEndedAt(
     if (!status) return [];
     if (status === "ended" && !row.ended_at) {
       return [{ id: row.id, ended_at: visit.dateEnd.get(row.qb_appointment_id) || now }];
-    }
-    if (status === "open" && row.ended_at) {
-      return [{ id: row.id, ended_at: null as string | null }];
     }
     return [];
   });
@@ -220,21 +222,26 @@ export const listConsultations = createServerFn({ method: "POST" })
     const userIds = [...new Set(consultations.map((row) => row.user_id))];
     const subIds = [...new Set(consultations.map((row) => row.subscription_id))];
 
-    let extraToken: string | undefined;
-    if (role === "provider") {
-      const { data: me, error: meErr } = await supabaseAdmin
-        .from("providers")
-        .select("qb_user_id")
-        .eq("id", context.userId)
-        .maybeSingle();
-      if (!meErr && me?.qb_user_id) {
+    const providerIds = new Set<string>();
+    if (role === "provider") providerIds.add(context.userId);
+    const { data: assigned } = await supabaseAdmin
+      .from("medication_requests")
+      .select("provider_id")
+      .in("user_id", userIds)
+      .not("provider_id", "is", null);
+    for (const row of assigned ?? []) {
+      if (row.provider_id) providerIds.add(row.provider_id);
+    }
+    const extraTokens: string[] = [];
+    await Promise.all(
+      [...providerIds].map(async (providerId) => {
         try {
-          extraToken = (await sessionForBodyIncProvider(supabaseAdmin, context.userId)).token;
+          extraTokens.push((await sessionForBodyIncProvider(supabaseAdmin, providerId)).token);
         } catch (error) {
           console.warn("[consultations] provider QuickBlox session failed:", error);
         }
-      }
-    }
+      }),
+    );
 
     const [{ data: profiles }, { data: subs }, visit] = await Promise.all([
       supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds),
@@ -244,7 +251,7 @@ export const listConsultations = createServerFn({ method: "POST" })
         .in("id", subIds),
       visitStatusByAppointmentId(
         consultations.map((row) => row.qb_appointment_id),
-        extraToken,
+        extraTokens,
       ),
     ]);
 
@@ -290,8 +297,9 @@ export const listConsultations = createServerFn({ method: "POST" })
         plan_label: sub?.package_id ? (pkgMap.get(sub.package_id) ?? null) : null,
         subscription_status: sub?.status ?? null,
         visit_status:
-          visit.status.get(row.qb_appointment_id) ??
-          (row.ended_at ? "ended" : "unknown"),
+          visit.status.get(row.qb_appointment_id) === "ended" || row.ended_at
+            ? "ended"
+            : (visit.status.get(row.qb_appointment_id) ?? "unknown"),
       };
     });
 
@@ -398,20 +406,23 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
       return { ok: false, message: "This order is missing a subscription." };
     }
 
-    const { data: existing } = await supabaseAdmin
+    const { data: existingRows, error: existingError } = await supabaseAdmin
       .from("patient_consultations")
-      .select("id, qb_appointment_id")
+      .select("id, qb_appointment_id, started_at")
       .eq("subscription_id", req.subscription_id)
       .eq("user_id", req.user_id)
-      .maybeSingle();
+      .order("started_at", { ascending: true });
+    if (existingError) return { ok: false, message: existingError.message };
+    const existing = (existingRows ?? []).find((row) => row.qb_appointment_id) ?? null;
+    const storedId = existing?.qb_appointment_id ?? null;
 
     try {
       const session = await reviewerQuickbloxSession(role, context.userId, supabaseAdmin);
 
-      if (existing?.qb_appointment_id) {
+      if (storedId) {
         try {
           await claimAppointmentForSession({
-            appointmentId: existing.qb_appointment_id,
+            appointmentId: storedId,
             qbProviderId: session.userId,
             token: session.token,
           });
@@ -422,7 +433,7 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
           ok: true,
           url: buildProviderAppointmentUrl({
             token: session.token,
-            appointmentId: existing.qb_appointment_id,
+            appointmentId: storedId,
           }),
         };
       }
@@ -471,15 +482,45 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
         description: `${medicineName} consultation`,
       });
 
-      const { error: insertError } = await supabaseAdmin.from("patient_consultations").insert({
-        user_id: req.user_id,
-        subscription_id: req.subscription_id,
-        qb_user_id: client.userId,
-        qb_appointment_id: appointment._id,
-        qb_dialog_id: appointment.dialog_id ?? null,
-      });
+      const consultationWrite = existing?.id
+        ? supabaseAdmin
+            .from("patient_consultations")
+            .update({
+              qb_user_id: client.userId,
+              qb_appointment_id: appointment._id,
+              qb_dialog_id: appointment.dialog_id ?? null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id)
+        : supabaseAdmin.from("patient_consultations").insert({
+            user_id: req.user_id,
+            subscription_id: req.subscription_id,
+            qb_user_id: client.userId,
+            qb_appointment_id: appointment._id,
+            qb_dialog_id: appointment.dialog_id ?? null,
+          });
+      const { error: insertError } = await consultationWrite;
       if (insertError && insertError.code !== "23505") {
         return { ok: false, message: insertError.message };
+      }
+      if (insertError?.code === "23505") {
+        const { data: racedRows } = await supabaseAdmin
+          .from("patient_consultations")
+          .select("qb_appointment_id")
+          .eq("subscription_id", req.subscription_id)
+          .eq("user_id", req.user_id)
+          .order("started_at", { ascending: true })
+          .limit(1);
+        const racedId = racedRows?.[0]?.qb_appointment_id;
+        if (racedId) {
+          return {
+            ok: true,
+            url: buildProviderAppointmentUrl({
+              token: session.token,
+              appointmentId: racedId,
+            }),
+          };
+        }
       }
 
       await supabaseAdmin.from("medication_request_events").insert({

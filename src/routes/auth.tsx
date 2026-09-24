@@ -1,7 +1,7 @@
 import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,19 @@ function AuthPage() {
   const [otpStage, setOtpStage] = useState<"request" | "verify">("request");
   const [otpSubmitting, setOtpSubmitting] = useState(false);
   const [otpEmailError, setOtpEmailError] = useState<string | undefined>();
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const isRecovery =
+      url.searchParams.get("type") === "recovery" ||
+      url.searchParams.has("token_hash") ||
+      url.hash.includes("type=recovery");
+    if (!isRecovery) return;
+    const target = new URL("/reset-password", url.origin);
+    url.searchParams.forEach((value, key) => target.searchParams.set(key, value));
+    target.hash = url.hash;
+    window.location.replace(`${target.pathname}${target.search}${target.hash}`);
+  }, []);
 
   async function handleSession(result: SignInResult, source: "password" | "otp" = "password") {
     if (!result.ok) {
@@ -149,8 +162,12 @@ function AuthPage() {
         toast.error(result.message);
         return;
       }
+      if (result.delivery === "link") {
+        toast.success("Check your email for a sign-in link.");
+        return;
+      }
       setOtpStage("verify");
-      toast.success("If an account exists, an 8-digit code was sent.");
+      toast.success("If an account exists, a sign-in code was sent.");
     } catch (err) {
       console.error(err);
       toast.error("Could not send code. Please try again.");
@@ -162,8 +179,8 @@ function AuthPage() {
   async function onVerifyOtp(e: FormEvent) {
     e.preventDefault();
     setPortalError(null);
-    if (otpCode.length !== 8) {
-      toast.error("Enter the 8-digit code.");
+    if (otpCode.length < 6) {
+      toast.error("Enter the code from the email.");
       return;
     }
     setOtpSubmitting(true);

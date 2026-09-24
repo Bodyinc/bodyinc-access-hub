@@ -218,12 +218,19 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
     await assertProvider(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const me = context.userId;
+    // Approved orders stay on My Requests, but the badge is only work still awaiting a decision.
+    const needsReview = [
+      "payment_completed",
+      "provider_assigned",
+      "pending_review",
+      "awaiting_additional_payment",
+    ];
     const [{ count, error }, queue] = await Promise.all([
       supabaseAdmin
         .from("medication_requests")
         .select("id", { count: "exact", head: true })
         .eq("provider_id", me)
-        .in("status", OPEN_STATUSES),
+        .in("status", needsReview),
       countClaimable(supabaseAdmin, me),
     ]);
     if (error) throw new Error(error.message);
