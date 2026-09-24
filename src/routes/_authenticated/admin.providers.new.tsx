@@ -50,6 +50,9 @@ function NewProviderPage() {
           toast.error(`QuickBlox agent: ${res.quickblox.message}`);
         }
       }
+      if (!res.invite_sent) {
+        toast.error(res.warning || "The setup email was not sent. Resend the invite from the provider list.");
+      }
       navigate({ to: "/admin/providers" });
     },
     onError: (e: Error) => toast.error(toastError(e)),

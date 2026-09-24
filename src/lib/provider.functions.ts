@@ -212,6 +212,24 @@ async function canClaimRequest(
   return !!state && states.includes(String(state).toUpperCase());
 }
 
+export const providerSidebarCounts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const me = context.userId;
+    const [{ count, error }, queue] = await Promise.all([
+      supabaseAdmin
+        .from("medication_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("provider_id", me)
+        .in("status", OPEN_STATUSES),
+      countClaimable(supabaseAdmin, me),
+    ]);
+    if (error) throw new Error(error.message);
+    return { requests: count ?? 0, queue };
+  });
+
 export const listClaimableRequests = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
