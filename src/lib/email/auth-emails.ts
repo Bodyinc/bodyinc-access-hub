@@ -35,6 +35,32 @@ export function verificationCodeEmail(params: {
   };
 }
 
+export function providerInviteEmail(params: {
+  resetUrl: string;
+  fullName?: string | null;
+  portalUrl?: string;
+}): {
+  subject: string;
+  html: string;
+} {
+  const first = (params.fullName ?? "").trim().split(/\s+/)[0] || "";
+  const hello = first ? `Hello ${first},` : "Hello,";
+  const portal = params.portalUrl || "https://provider.bodyinc.com";
+  const body = [
+    `<p>${hello}</p>`,
+    `<p>An administrator added you as a practitioner on Body Inc. Your account is ready, and you do not have a password yet.</p>`,
+    `<p>Click the button below to choose a password. After you save it, you will be signed in to the practitioner portal.</p>`,
+    emailButton("Set your password", params.resetUrl),
+    `<p>The next time you sign in, go to <a href="${portal}">${portal}</a> and use this email address with the password you just chose.</p>`,
+    `<p>This link expires in about <strong>1 hour</strong>. If it expires, ask an administrator to resend your invite, or use Forgot password on the practitioner sign-in page.</p>`,
+  ].join("");
+
+  return {
+    subject: "Set up your Body Inc practitioner account",
+    html: emailLayout("Welcome to Body Inc", body),
+  };
+}
+
 export function passwordResetEmail(params: { resetUrl: string; fullName?: string | null }): {
   subject: string;
   html: string;

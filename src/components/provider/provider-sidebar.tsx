@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { Link, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/lib/use-notifications";
+import { providerSidebarCounts } from "@/lib/provider.functions";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import {
   Sidebar,
@@ -18,13 +20,15 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/provider", exact: true },
-  { title: "My Requests", url: "/provider/requests" },
-  { title: "Unassigned Queue", url: "/provider/queue" },
+  { title: "My Requests", url: "/provider/requests", count: "requests" as const },
+  { title: "Unassigned Queue", url: "/provider/queue", count: "queue" as const },
   { title: "Notifications", url: "/provider/notifications", badge: true },
   { title: "My Patients", url: "/provider/patients" },
   { title: "Consultations", url: "/provider/consultations" },
   { title: "My Profile", url: "/provider/profile" },
 ];
+
+export const providerSidebarCountsQueryKey = ["provider-sidebar-counts"] as const;
 
 export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -32,6 +36,14 @@ export function ProviderSidebar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { unread } = useNotifications();
+  const loadCounts = useServerFn(providerSidebarCounts);
+  const countsQ = useQuery({
+    queryKey: providerSidebarCountsQueryKey,
+    queryFn: () => loadCounts({}),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const counts = countsQ.data ?? { requests: 0, queue: 0 };
 
   useEffect(() => {
     for (const item of items) {
@@ -100,12 +112,14 @@ export function ProviderSidebar() {
             <SidebarMenu className="gap-0.5">
               {items.map((item) => {
                 const active = isActive(item.url, item.exact);
+                const rawCount = item.badge ? unread : item.count ? counts[item.count] : 0;
+                const badge = rawCount > 0 ? (rawCount > 99 ? "99+" : String(rawCount)) : null;
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={active}
-                      tooltip={item.title}
+                      tooltip={badge ? `${item.title} (${badge})` : item.title}
                       className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#3B4759] transition-all ${
                         active
                           ? "bg-[#D5DEDD] !text-[#3B4759]"
@@ -114,10 +128,10 @@ export function ProviderSidebar() {
                     >
                       <Link to={item.url} preload="intent">
                         <span className="truncate">{item.title}</span>
-                        {item.badge && unread > 0 && (
+                        {badge && (
                           <>
                             <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#B8684B] px-1.5 text-[11px] font-semibold text-white group-data-[collapsible=icon]:hidden">
-                              {unread > 9 ? "9+" : unread}
+                              {badge}
                             </span>
                             <span className="hidden h-2 w-2 shrink-0 rounded-full bg-[#B8684B] group-data-[collapsible=icon]:block" />
                           </>

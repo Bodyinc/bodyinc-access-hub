@@ -1,18 +1,16 @@
 /**
  * Password-reset / invite links via generateLink + Brevo (Body Inc theme).
  * Do not use supabase.auth.resetPasswordForEmail — that sends the purple Auth template.
+ *
+ * The email button must open the portal directly. Supabase's action_link verifies on
+ * the project host and then follows Site URL, which is the patient portal.
  */
 
-function withRedirectTo(actionLink: string, redirectTo: string): string {
-  try {
-    const url = new URL(actionLink);
-    if (url.searchParams.has("redirect_to")) {
-      url.searchParams.set("redirect_to", redirectTo);
-    }
-    return url.toString();
-  } catch {
-    return actionLink;
-  }
+export function portalRecoveryUrl(redirectTo: string, tokenHash: string): string {
+  const url = new URL(redirectTo);
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("type", "recovery");
+  return url.toString();
 }
 
 export async function sendThemedRecoveryEmail(params: {
@@ -22,6 +20,9 @@ export async function sendThemedRecoveryEmail(params: {
   email: string;
   redirectTo: string;
   fullName?: string | null;
+  /** Invite is the first email after an admin adds a practitioner. */
+  kind?: "reset" | "invite";
+  portalUrl?: string;
 }): Promise<{ ok: true } | { ok: false; message: string }> {
   const { data, error } = await params.supabaseAdmin.auth.admin.generateLink({
     type: "recovery",
@@ -35,15 +36,18 @@ export async function sendThemedRecoveryEmail(params: {
 
   const userId = (data?.user?.id as string | undefined)?.trim();
   const tokenHash = (data?.properties?.hashed_token as string | undefined)?.trim();
-  // Patient-portal Send Email hook may already have delivered this recovery mail.
-  if (userId && tokenHash) {
+  if (!tokenHash) {
+    return { ok: false, message: "Could not create a reset link." };
+  }
+  // A patient-portal Send Email hook may also deliver this recovery mail, and that
+  // copy follows the patient Site URL. Still send the portal link below.
+  if (userId) {
     const { error: claimErr } = await params.supabaseAdmin.from("email_reminders").insert({
       reminder_type: "auth_recovery",
       target_id: userId,
       period_key: tokenHash,
     });
-    if (claimErr?.code === "23505") return { ok: true };
-    if (claimErr) {
+    if (claimErr && claimErr.code !== "23505") {
       console.error("[auth] recovery claim failed:", claimErr.message);
     }
   }
@@ -58,11 +62,12 @@ export async function sendThemedRecoveryEmail(params: {
     fullName = profile?.full_name ?? null;
   }
 
-  const { passwordResetEmail } = await import("@/lib/email/auth-emails");
-  const { subject, html } = passwordResetEmail({
-    resetUrl: withRedirectTo(rawLink, params.redirectTo),
-    fullName,
-  });
+  const { passwordResetEmail, providerInviteEmail } = await import("@/lib/email/auth-emails");
+  const resetUrl = portalRecoveryUrl(params.redirectTo, tokenHash);
+  const { subject, html } =
+    params.kind === "invite"
+      ? providerInviteEmail({ resetUrl, fullName, portalUrl: params.portalUrl })
+      : passwordResetEmail({ resetUrl, fullName });
   const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
   const sent = await sendTransactionalEmail({
     to: { email: params.email, name: fullName },

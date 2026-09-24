@@ -21,6 +21,15 @@ function splitProviderPayload<T extends Record<string, any>>(input: T) {
   return { profile, provider };
 }
 
+const PROVIDER_PORTAL_URL = "https://provider.bodyinc.com";
+
+/** First-login and invite links must open the practitioner portal, never the admin origin. */
+function providerSetPasswordUrl(): { redirectTo: string; portalUrl: string } {
+  const configured = process.env.PROVIDER_APP_URL || process.env.PROVIDER_PORTAL_URL;
+  const portalUrl = (configured || PROVIDER_PORTAL_URL).trim().replace(/\/$/, "");
+  return { redirectTo: `${portalUrl}/auth/callback?next=/reset-password`, portalUrl };
+}
+
 const listInput = z
   .object({
     search: z.string().trim().max(120).optional(),
@@ -147,7 +156,7 @@ export const createProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { redirect_to, email, ...rest } = data;
+    const { redirect_to: _adminOrigin, email, ...rest } = data;
     const { profile: profileFields, provider: providerFields } = splitProviderPayload(rest);
 
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
@@ -204,11 +213,14 @@ export const createProvider = createServerFn({ method: "POST" })
     }
 
     const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
+    const { redirectTo, portalUrl } = providerSetPasswordUrl();
     const sent = await sendThemedRecoveryEmail({
       supabaseAdmin,
       email,
-      redirectTo: redirect_to,
+      redirectTo,
       fullName: (profileFields.full_name as string | undefined) ?? null,
+      kind: "invite",
+      portalUrl,
     });
     if (!sent.ok) {
       // Provider exists; surface warning but don't roll back
@@ -269,11 +281,14 @@ export const resendInvite = createServerFn({ method: "POST" })
     if (error || !row?.email) throw new Error("Provider not found");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
+    const { redirectTo, portalUrl } = providerSetPasswordUrl();
     const sent = await sendThemedRecoveryEmail({
       supabaseAdmin,
       email: row.email,
-      redirectTo: data.redirect_to,
+      redirectTo,
       fullName: (row as { full_name?: string | null }).full_name ?? null,
+      kind: "invite",
+      portalUrl,
     });
     if (!sent.ok) throw new Error(sent.message);
     return { ok: true };
