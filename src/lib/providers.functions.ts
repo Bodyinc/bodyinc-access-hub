@@ -27,7 +27,7 @@ const PROVIDER_PORTAL_URL = "https://provider.bodyinc.com";
 function providerSetPasswordUrl(): { redirectTo: string; portalUrl: string } {
   const configured = process.env.PROVIDER_APP_URL || process.env.PROVIDER_PORTAL_URL;
   const portalUrl = (configured || PROVIDER_PORTAL_URL).trim().replace(/\/$/, "");
-  return { redirectTo: `${portalUrl}/auth/callback?next=/reset-password`, portalUrl };
+  return { redirectTo: `${portalUrl}/reset-password`, portalUrl };
 }
 
 const listInput = z

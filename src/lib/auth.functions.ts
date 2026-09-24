@@ -76,7 +76,7 @@ const verifyOtpSchema = z.object({
   token: z
     .string()
     .trim()
-    .regex(/^\d{8}$/u, "Enter the 8-digit code"),
+    .regex(/^\d{6,8}$/u, "Enter the code from the email"),
 });
 
 function serverSupabase() {
@@ -105,19 +105,6 @@ export type SignInResult =
       actualRole?: string;
       redirectUrl?: string;
     };
-
-function emailOtpFromGenerateLink(linkData: unknown): string | null {
-  if (!linkData || typeof linkData !== "object") return null;
-  const row = linkData as Record<string, unknown>;
-  const properties =
-    row.properties && typeof row.properties === "object"
-      ? (row.properties as Record<string, unknown>)
-      : null;
-  const raw = properties?.email_otp ?? row.email_otp;
-  const code = typeof raw === "string" ? raw.trim() : "";
-  // Never treat an action/reset URL as the login code.
-  return /^\d{6,8}$/u.test(code) ? code : null;
-}
 
 function buildRoleResult(
   role: string | null,
@@ -213,7 +200,7 @@ export type RequestPasswordResetResult =
     };
 
 export type SendLoginOtpResult =
-  | { ok: true }
+  | { ok: true; delivery: "code" | "link" }
   | { ok: false; error: "send_failed"; message: string };
 
 export const sendLoginOtp = createServerFn({ method: "POST" })
@@ -221,45 +208,11 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SendLoginOtpResult> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const role = await roleForEmail(supabaseAdmin, data.email);
-      // Optional redirect only. OTP login emails the numeric code, not the link —
-      // if this URL is not on the Supabase allow-list, generateLink must still succeed.
-      const originIsLocal = Boolean(data.origin && /localhost|127\.0\.0\.1/i.test(data.origin));
-      const redirectTo =
-        role === "admin" || role === "provider"
-          ? `${originIsLocal && data.origin ? data.origin : portalAppUrl(role, data.origin)}/auth/callback`
-          : undefined;
-
-      const generate = (withRedirect: boolean) =>
-        supabaseAdmin.auth.admin.generateLink({
-          type: "magiclink",
-          email: data.email,
-          ...(withRedirect && redirectTo ? { options: { redirectTo } } : {}),
-        });
-
-      let { data: linkData, error } = await generate(Boolean(redirectTo));
-      if (error && redirectTo) {
-        console.error(
-          "[auth] sendLoginOtp generateLink redirectTo failed, retrying without it:",
-          error.message,
-        );
-        ({ data: linkData, error } = await generate(false));
-      }
-      if (error) {
-        console.error("[auth] sendLoginOtp generateLink failed:", error.message);
-        return {
-          ok: false,
-          error: "send_failed",
-          message: "Could not send a sign-in code. Please try again, or use your password.",
-        };
-      }
-
-      const code = emailOtpFromGenerateLink(linkData);
+      const { generateAuthLink } = await import("@/lib/email/send-recovery.server");
+      const generated = await generateAuthLink({ type: "magiclink", email: data.email });
+      const code = generated.emailOtp;
       if (!code) {
-        console.error("[auth] sendLoginOtp missing numeric email_otp from generateLink", {
-          verification_type: (linkData as { properties?: { verification_type?: string } } | null)
-            ?.properties?.verification_type,
-        });
+        console.error("[auth] sendLoginOtp missing code:", generated.error);
         return {
           ok: false,
           error: "send_failed",
@@ -268,7 +221,7 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
       }
 
       let fullName: string | null = null;
-      const userId = (linkData as { user?: { id?: string } } | null)?.user?.id;
+      const userId = generated.userId;
       if (userId) {
         const { data: profile } = await supabaseAdmin
           .from("profiles")
@@ -286,7 +239,7 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
           target_id: userId,
           period_key: code,
         });
-        if (claimErr?.code === "23505") return { ok: true };
+        if (claimErr?.code === "23505") return { ok: true, delivery: "code" };
         if (claimErr) {
           console.error("[auth] login OTP claim failed:", claimErr.message);
         }
@@ -313,7 +266,7 @@ export const sendLoginOtp = createServerFn({ method: "POST" })
           message: "Could not send a sign-in code. Please try again, or use your password.",
         };
       }
-      return { ok: true };
+      return { ok: true, delivery: "code" };
     } catch (e) {
       console.error("[auth] sendLoginOtp failed:", e);
       return {
@@ -347,7 +300,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       if (role !== "admin" && role !== "provider") return { ok: true };
 
       const base = portalAppUrl(role, data.origin);
-      const redirectTo = `${base}/auth/callback?next=/reset-password`;
+      const redirectTo = `${base}/reset-password`;
       console.log("[auth] password reset redirectTo", { role, base, redirectTo });
 
       const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
@@ -431,6 +384,32 @@ export const verifyLoginOtp = createServerFn({ method: "POST" })
       await supabase.auth.signOut();
     }
     return result;
+  });
+
+export const sendPasswordChangedNotice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const email = profile?.email?.trim();
+    if (!email) return { ok: false as const };
+
+    const { passwordChangedEmail } = await import("@/lib/email/auth-emails");
+    const { subject, html } = passwordChangedEmail({
+      fullName: profile?.full_name ?? null,
+      portalUrl: PORTAL_URLS.provider,
+    });
+    const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+    const sent = await sendTransactionalEmail({
+      to: { email, name: profile?.full_name ?? null },
+      subject,
+      html,
+    });
+    return { ok: sent.ok };
   });
 
 export const getCurrentPortalRole = createServerFn({ method: "GET" })

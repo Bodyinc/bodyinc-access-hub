@@ -1,5 +1,6 @@
 import { toastError } from "@/lib/toast-message";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
+import { sendPasswordChangedNotice } from "@/lib/auth.functions";
 import { cachePortalRole } from "@/lib/portal-role-cache";
 import {
   adminLabel,
@@ -44,6 +46,7 @@ const schema = z
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const router = useRouter();
+  const sendChangedNotice = useServerFn(sendPasswordChangedNotice);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -148,6 +151,9 @@ function ResetPasswordPage() {
       }
       clearPasswordRecoveryPending();
       toast.success("Password updated. Signing you in…");
+      void sendChangedNotice({}).catch((err) => {
+        console.error("[auth] password changed notice failed:", err);
+      });
 
       const {
         data: { user },
