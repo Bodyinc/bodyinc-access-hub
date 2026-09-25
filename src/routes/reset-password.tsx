@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
-import { sendPasswordChangedNotice } from "@/lib/auth.functions";
+import { saveNewPassword } from "@/lib/auth.functions";
 import { cachePortalRole } from "@/lib/portal-role-cache";
 import {
   adminLabel,
@@ -46,12 +46,13 @@ const schema = z
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const router = useRouter();
-  const sendChangedNotice = useServerFn(sendPasswordChangedNotice);
+  const savePassword = useServerFn(saveNewPassword);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
 
   useEffect(() => {
@@ -64,7 +65,6 @@ function ResetPasswordPage() {
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
       const tokenHash = url.searchParams.get("token_hash");
-      const type = url.searchParams.get("type");
       const errorDesc =
         url.searchParams.get("error_description") ||
         url.searchParams.get("error") ||
@@ -82,18 +82,9 @@ function ResetPasswordPage() {
       }
 
       if (tokenHash) {
-        const { error } = await supabase.auth.verifyOtp({
-          type: (type as "recovery") || "recovery",
-          token_hash: tokenHash,
-        });
-        if (!cancelled) {
-          if (error) {
-            setLinkError("This reset link is invalid or has expired. Please request a new one.");
-          } else {
-            setReady(true);
-            window.history.replaceState({}, "", url.pathname);
-          }
-        }
+        // Mail scanners open the link and would consume the one-time token.
+        // Wait for the practitioner to continue before verifying.
+        if (!cancelled) setNeedsConfirm(true);
         return;
       }
 
@@ -129,6 +120,30 @@ function ResetPasswordPage() {
     };
   }, []);
 
+  async function continueFromLink() {
+    const url = new URL(window.location.href);
+    const tokenHash = url.searchParams.get("token_hash");
+    if (!tokenHash) {
+      setLinkError("This reset link is invalid or has expired. Please request a new one.");
+      setNeedsConfirm(false);
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.auth.verifyOtp({
+      type: "recovery",
+      token_hash: tokenHash,
+    });
+    setSubmitting(false);
+    if (error) {
+      setLinkError("This reset link is invalid or has expired. Please request a new one.");
+      setNeedsConfirm(false);
+      return;
+    }
+    setReady(true);
+    setNeedsConfirm(false);
+    window.history.replaceState({}, "", url.pathname);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setErrors({});
@@ -144,16 +159,24 @@ function ResetPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
-      if (error) {
-        toast.error(toastError(error));
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      const email = currentUser?.email;
+      try {
+        await savePassword({ data: { password: parsed.data.password } });
+      } catch (err) {
+        toast.error(toastError(err));
         return;
       }
       clearPasswordRecoveryPending();
       toast.success("Password updated. Signing you in…");
-      void sendChangedNotice({}).catch((err) => {
-        console.error("[auth] password changed notice failed:", err);
-      });
+      if (email) {
+        await supabase.auth.signInWithPassword({
+          email,
+          password: parsed.data.password,
+        });
+      }
 
       const {
         data: { user },
@@ -196,13 +219,24 @@ function ResetPasswordPage() {
           <CardDescription className={`${adminSectionSubtitle} break-words`}>
             {linkError
               ? linkError
-              : ready
-                ? "Choose a new password for your practitioner account."
-                : "Verifying your reset link…"}
+              : needsConfirm
+                ? "This link is ready. Continue to choose your password."
+                : ready
+                  ? "Choose a new password for your practitioner account."
+                  : "Verifying your reset link…"}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-          {linkError ? (
+          {needsConfirm ? (
+            <Button
+              type="button"
+              className={`${adminBtnPrimary} w-full`}
+              disabled={submitting}
+              onClick={() => void continueFromLink()}
+            >
+              {submitting ? "Checking link…" : "Continue"}
+            </Button>
+          ) : linkError ? (
             <div className="space-y-4 text-center">
               <Link
                 to="/forgot-password"

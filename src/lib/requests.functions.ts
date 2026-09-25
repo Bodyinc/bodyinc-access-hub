@@ -35,6 +35,118 @@ async function logEvent(
   });
 }
 
+/** Create the prescription if needed, submit to LifeFile, and mark the order sent. */
+async function fulfillApprovedRequest(
+  supabaseAdmin: any,
+  req: {
+    id: string;
+    status: string;
+    provider_id: string;
+    user_id: string | null;
+    medicine_id: string | null;
+    variant_id: string | null;
+    package_id?: string | null;
+    life_file_order_id?: string | null;
+    life_file_status?: string | null;
+  },
+  actor: { role: "admin" | "provider"; userId: string },
+  directions?: string,
+) {
+  if (req.life_file_order_id && req.life_file_status && req.life_file_status !== "failed") {
+    throw new Error("This order was already submitted to LifeFile.");
+  }
+
+  const { assertLifeFileReady } = await import("@/integrations/lifefile/submit.server");
+  await assertLifeFileReady(supabaseAdmin, req);
+
+  const { data: existingRxRows, error: existingRxError } = await supabaseAdmin
+    .from("prescriptions")
+    .select("id")
+    .eq("request_id", req.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (existingRxError) throw new Error(existingRxError.message);
+  const existingRx = existingRxRows?.[0] ?? null;
+  let createdRxId: string | null = null;
+
+  if (!existingRx) {
+    const { data: med } = req.medicine_id
+      ? await supabaseAdmin.from("medicines").select("name").eq("id", req.medicine_id).maybeSingle()
+      : { data: null };
+    const { data: inserted, error: rxError } = await supabaseAdmin
+      .from("prescriptions")
+      .insert({
+        request_id: req.id,
+        user_id: req.user_id,
+        provider_id: req.provider_id,
+        medicine_id: req.medicine_id,
+        variant_id: req.variant_id,
+        package_id: req.package_id ?? null,
+        medicine_name: (med as { name?: string } | null)?.name ?? "Medication",
+        directions: directions?.trim() || null,
+      })
+      .select("id")
+      .single();
+    if (rxError) throw new Error(rxError.message);
+    createdRxId = inserted?.id ?? null;
+  } else if (directions?.trim()) {
+    await supabaseAdmin
+      .from("prescriptions")
+      .update({ directions: directions.trim() })
+      .eq("id", existingRx.id);
+  }
+
+  const { submitRequestToLifeFile } = await import("@/integrations/lifefile/submit.server");
+  let lf;
+  try {
+    lf = await submitRequestToLifeFile(
+    supabaseAdmin,
+    {
+      id: req.id,
+      status: "prescribed",
+      provider_id: req.provider_id,
+      user_id: req.user_id,
+      medicine_id: req.medicine_id,
+      variant_id: req.variant_id,
+      life_file_order_id: req.life_file_order_id,
+      life_file_status: req.life_file_status,
+    },
+    { allowRetry: true },
+    );
+  } catch (error) {
+    if (createdRxId) {
+      await supabaseAdmin.from("prescriptions").delete().eq("id", createdRxId);
+    }
+    throw error;
+  }
+
+  await supabaseAdmin
+    .from("medication_requests")
+    .update({ status: "sent_to_pharmacy", updated_at: new Date().toISOString() })
+    .eq("id", req.id);
+  await logEvent(
+    supabaseAdmin,
+    req.id,
+    "sent_to_pharmacy",
+    actor.role,
+    actor.userId,
+    `Life File order ID: ${lf.lifeFileOrderId}${lf.pharmacyName ? ` (${lf.pharmacyName})` : ""}`,
+  );
+
+  void import("@/lib/email.notifications")
+    .then(({ notifyPatientRequestEvent }) =>
+      notifyPatientRequestEvent({
+        supabaseAdmin,
+        request: req,
+        template: "patient_sent_to_pharmacy",
+        extraParams: { TRACKING_NUMBER: "" },
+      }),
+    )
+    .catch((e) => console.error("[fulfillApprovedRequest] email failed:", e));
+
+  return { lifeFileOrderId: lf.lifeFileOrderId as string, pharmacyName: lf.pharmacyName as string | null };
+}
+
 // Loads a request and enforces provider scoping: a provider may only touch requests assigned to
 // them; an admin may touch any. Returns the row selected with `cols`.
 async function loadScopedRequest(
@@ -357,33 +469,59 @@ export const approveRequest = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, requires_consultation",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, requires_consultation, life_file_order_id, life_file_status",
     );
-    if (req.status !== "pending_review") {
+    if (!["pending_review", "approved", "prescribed"].includes(req.status)) {
       throw new Error(`Cannot approve a request that is ${req.status}.`);
+    }
+    if (req.life_file_order_id && req.life_file_status && req.life_file_status !== "failed") {
+      throw new Error("This order was already sent to LifeFile.");
     }
     if (!req.provider_id) {
       throw new Error("Assign a provider before approving.");
     }
-    // Clinical approval is provider-only. Admin sends to pharmacy after this.
+    // Clinical approval is provider-only. Pharmacy send follows automatically.
     if (role !== "provider" || req.provider_id !== context.userId) {
       throw new Error(
         "Only the assigned provider can approve this order. Assign a provider and have them approve from the practitioner portal.",
       );
     }
 
-    const { error } = await supabaseAdmin
+    try {
+      await fulfillApprovedRequest(supabaseAdmin, req, {
+        role: "provider",
+        userId: context.userId,
+      });
+    } catch (pharmacyErr) {
+      const pharmacyError =
+        pharmacyErr instanceof Error ? pharmacyErr.message : "Could not send to pharmacy.";
+      console.error("[approveRequest] pharmacy send failed:", pharmacyErr);
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({
+          life_file_status: "failed",
+          life_file_error: pharmacyError.slice(0, 1000),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", req.id);
+      return {
+        ok: false,
+        email_sent: false,
+        admin_emails_sent: false,
+        status: req.status,
+        pharmacy_error: pharmacyError,
+      };
+    }
+
+    await supabaseAdmin
       .from("medication_requests")
       .update({
-        status: "approved",
         decision_by: context.userId,
         decision_at: new Date().toISOString(),
         decision_note: data.note?.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", req.id);
-    if (error) throw new Error(error.message);
-
     await logEvent(
       supabaseAdmin,
       req.id,
@@ -393,32 +531,24 @@ export const approveRequest = createServerFn({ method: "POST" })
       data.note?.trim() || null,
     );
 
-    // Don't block the provider UI on Brevo (patient + all admins).
     void import("@/lib/email.notifications")
-      .then(async ({ notifyPatientRequestEvent, notifyAdminsProviderApproved }) => {
-        await Promise.all([
-          notifyPatientRequestEvent({
-            supabaseAdmin,
-            request: req,
-            template: "patient_approved",
-            extraParams: { DECISION_NOTE: data.note?.trim() || "" },
-          }),
-          notifyAdminsProviderApproved({
-            supabaseAdmin,
-            requestId: req.id,
-            medicineId: req.medicine_id,
-            providerId: req.provider_id,
-            patientUserId: req.user_id,
-          }),
-        ]);
-      })
+      .then(({ notifyAdminsProviderApproved }) =>
+        notifyAdminsProviderApproved({
+          supabaseAdmin,
+          requestId: req.id,
+          medicineId: req.medicine_id,
+          providerId: req.provider_id,
+          patientUserId: req.user_id,
+        }),
+      )
       .catch((e) => console.error("[approveRequest] email failed:", e));
 
     return {
       ok: true,
       email_sent: true,
       admin_emails_sent: true,
-      status: "approved",
+      status: "sent_to_pharmacy",
+      pharmacy_error: null,
     };
   });
 
@@ -925,7 +1055,8 @@ export const sendRequestToPharmacy = createServerFn({ method: "POST" })
       "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
     );
 
-    if (!["approved", "prescribed"].includes(req.status)) {
+    const providerSendFailed = req.status === "pending_review" && req.life_file_status === "failed";
+    if (!["approved", "prescribed"].includes(req.status) && !providerSendFailed) {
       throw new Error(
         req.status === "pending_review"
           ? "Wait for the provider to approve this order before sending to pharmacy."
@@ -939,88 +1070,17 @@ export const sendRequestToPharmacy = createServerFn({ method: "POST" })
       throw new Error("This order was already submitted to LifeFile.");
     }
 
-    const { data: existingRx } = await supabaseAdmin
-      .from("prescriptions")
-      .select("id")
-      .eq("request_id", req.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!existingRx) {
-      const { data: med } = req.medicine_id
-        ? await supabaseAdmin.from("medicines").select("name").eq("id", req.medicine_id).maybeSingle()
-        : { data: null };
-
-      const { error: rxError } = await supabaseAdmin.from("prescriptions").insert({
-        request_id: req.id,
-        user_id: req.user_id,
-        provider_id: req.provider_id,
-        medicine_id: req.medicine_id,
-        variant_id: req.variant_id,
-        package_id: req.package_id,
-        medicine_name: (med as { name?: string } | null)?.name ?? "Medication",
-        directions: data.directions?.trim() || null,
-      });
-      if (rxError) throw new Error(rxError.message);
-
-      await supabaseAdmin
-        .from("medication_requests")
-        .update({ status: "prescribed", updated_at: new Date().toISOString() })
-        .eq("id", req.id);
-      await logEvent(supabaseAdmin, req.id, "prescribed", "admin", context.userId);
-    } else if (data.directions?.trim()) {
-      await supabaseAdmin
-        .from("prescriptions")
-        .update({ directions: data.directions.trim() })
-        .eq("id", existingRx.id);
-    }
-
-    const { submitRequestToLifeFile } = await import("@/integrations/lifefile/submit.server");
-    const lf = await submitRequestToLifeFile(
+    const sent = await fulfillApprovedRequest(
       supabaseAdmin,
-      {
-        id: req.id,
-        status: "prescribed",
-        provider_id: req.provider_id,
-        user_id: req.user_id,
-        medicine_id: req.medicine_id,
-        variant_id: req.variant_id,
-        life_file_order_id: req.life_file_order_id,
-        life_file_status: req.life_file_status,
-      },
-      { allowRetry: true },
+      req,
+      { role: "admin", userId: context.userId },
+      data.directions,
     );
-
-    await supabaseAdmin
-      .from("medication_requests")
-      .update({ status: "sent_to_pharmacy", updated_at: new Date().toISOString() })
-      .eq("id", req.id);
-    await logEvent(
-      supabaseAdmin,
-      req.id,
-      "sent_to_pharmacy",
-      "admin",
-      context.userId,
-      `Life File order ID: ${lf.lifeFileOrderId}${lf.pharmacyName ? ` (${lf.pharmacyName})` : ""}`,
-    );
-
-    // Return to the admin UI as soon as LifeFile succeeds; email in background.
-    void import("@/lib/email.notifications")
-      .then(({ notifyPatientRequestEvent }) =>
-        notifyPatientRequestEvent({
-          supabaseAdmin,
-          request: req,
-          template: "patient_sent_to_pharmacy",
-          extraParams: { TRACKING_NUMBER: "" },
-        }),
-      )
-      .catch((e) => console.error("[sendRequestToPharmacy] email failed:", e));
 
     return {
       ok: true,
-      lifeFileOrderId: lf.lifeFileOrderId,
-      lifeFilePharmacyName: lf.pharmacyName,
+      lifeFileOrderId: sent.lifeFileOrderId,
+      lifeFilePharmacyName: sent.pharmacyName,
       email_sent: true,
       status: "sent_to_pharmacy",
     };

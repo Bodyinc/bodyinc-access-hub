@@ -29,6 +29,31 @@ type RequestRow = {
  * Resolve pharmacy + product + provider credentials, call LifeFile, and persist
  * submission fields on the medication request. Does not change request status.
  */
+/** Checks pharmacy setup and provider NPI without writing anything. */
+export async function assertLifeFileReady(
+  supabaseAdmin: SupabaseClient,
+  req: { user_id: string | null; provider_id: string | null; medicine_id: string | null; variant_id: string | null },
+): Promise<void> {
+  if (!req.user_id) throw new Error("This request has no patient account.");
+  if (!req.provider_id) throw new Error("This request has no assigned provider.");
+
+  const [{ data: patient }, { data: provider }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("id").eq("id", req.user_id).maybeSingle(),
+    supabaseAdmin.from("providers").select("id, npi").eq("id", req.provider_id).maybeSingle(),
+  ]);
+  if (!patient) throw new Error("Patient profile not found.");
+  if (!provider) throw new Error("Provider record not found.");
+
+  const routing = await resolveLifeFileRouting(supabaseAdmin, {
+    medicineId: req.medicine_id,
+    variantId: req.variant_id,
+    providerId: req.provider_id,
+  });
+  if (!(routing.credentialNpi || provider.npi)) {
+    throw new Error("Provider NPI is required for Life File.");
+  }
+}
+
 export async function submitRequestToLifeFile(
   supabaseAdmin: SupabaseClient,
   req: RequestRow,
@@ -69,13 +94,13 @@ export async function submitRequestToLifeFile(
       .select("id, medicine_name, directions, medicine_id, variant_id, created_at")
       .eq("request_id", req.id)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .limit(1),
   ]);
 
   if (!patient) throw new Error("Patient profile not found.");
   if (!provider) throw new Error("Provider record not found.");
-  if (!prescription) {
+  const prescriptionRow = Array.isArray(prescription) ? prescription[0] : prescription;
+  if (!prescriptionRow) {
     throw new Error("Prescription not found. Generate the prescription first.");
   }
 
@@ -86,8 +111,8 @@ export async function submitRequestToLifeFile(
     .maybeSingle();
   if (!providerProfile) throw new Error("Provider profile not found.");
 
-  const medicineId = prescription.medicine_id ?? req.medicine_id;
-  const variantId = prescription.variant_id ?? req.variant_id;
+  const medicineId = prescriptionRow.medicine_id ?? req.medicine_id;
+  const variantId = prescriptionRow.variant_id ?? req.variant_id;
 
   const routing = await resolveLifeFileRouting(supabaseAdmin, {
     medicineId,
@@ -104,7 +129,7 @@ export async function submitRequestToLifeFile(
       : Promise.resolve({ data: null }),
   ]);
 
-  const medicineName = liveMedicine?.name || prescription.medicine_name;
+  const medicineName = liveMedicine?.name || prescriptionRow.medicine_name;
   const variantName = liveVariant?.name ?? null;
   const medicineLabel = variantName ? `${medicineName} (${variantName})` : medicineName;
 
@@ -141,7 +166,7 @@ export async function submitRequestToLifeFile(
       },
       prescription: {
         medicineName: medicineLabel,
-        directions: prescription.directions,
+        directions: prescriptionRow.directions,
         lfProductID: routing.lfProductId,
       },
     });

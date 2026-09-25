@@ -386,17 +386,25 @@ export const verifyLoginOtp = createServerFn({ method: "POST" })
     return result;
   });
 
-export const sendPasswordChangedNotice = createServerFn({ method: "POST" })
+export const saveNewPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) =>
+    z.object({ password: z.string().min(8).max(128) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      password: data.password,
+    });
+    if (error) throw new Error(error.message);
+
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("email, full_name")
       .eq("id", context.userId)
       .maybeSingle();
     const email = profile?.email?.trim();
-    if (!email) return { ok: false as const };
+    if (!email) return { ok: true as const, email_sent: false as const };
 
     const { passwordChangedEmail } = await import("@/lib/email/auth-emails");
     const { subject, html } = passwordChangedEmail({
@@ -409,7 +417,7 @@ export const sendPasswordChangedNotice = createServerFn({ method: "POST" })
       subject,
       html,
     });
-    return { ok: sent.ok };
+    return { ok: true as const, email_sent: sent.ok };
   });
 
 export const getCurrentPortalRole = createServerFn({ method: "GET" })
