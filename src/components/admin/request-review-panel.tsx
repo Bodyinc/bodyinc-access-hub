@@ -169,7 +169,12 @@ export function RequestReviewPanel({
         },
       }),
     onSuccess: (res) => {
-      toastActionWithEmail("Order approved. Admin will send it to the pharmacy.", res?.email_sent);
+      if (res?.pharmacy_error) {
+        toast.error(res.pharmacy_error);
+        refresh();
+        return;
+      }
+      toastActionWithEmail("Order approved and sent to LifeFile.", res?.email_sent);
       setApproveOpen(false);
       setApproveNote("");
       refresh();
@@ -292,7 +297,6 @@ export function RequestReviewPanel({
   } = q.data as any;
 
   const status: string = request.status;
-  const canApprove = status === "pending_review" && clinicalOnly;
   const needsProviderAssignment = status === "pending_review" && canManage && !provider;
   const waitingOnProvider = status === "pending_review" && canManage && !!provider;
   const canReject = status === "pending_review" || status === "awaiting_additional_payment";
@@ -309,12 +313,19 @@ export function RequestReviewPanel({
       ?.replace("Life File order ID: ", "");
   const lifeFileStatus = (request as { life_file_status?: string | null }).life_file_status ?? null;
   const lifeFileError = (request as { life_file_error?: string | null }).life_file_error ?? null;
+  const sentToLifeFile =
+    ["sent_to_pharmacy", "dispatched", "delivered"].includes(status) ||
+    (Boolean(lifeFileOrderId) && lifeFileStatus !== "failed");
+  const canApprove =
+    clinicalOnly &&
+    !sentToLifeFile &&
+    ["pending_review", "approved", "prescribed"].includes(status);
   const canRetryLifeFile = lifeFileStatus === "failed" && canManage;
   const canSendToPharmacy =
     canManage &&
-    ["approved", "prescribed"].includes(status) &&
-    lifeFileStatus !== "submitted" &&
-    lifeFileStatus !== "accepted";
+    !sentToLifeFile &&
+    (["approved", "prescribed"].includes(status) ||
+      (status === "pending_review" && lifeFileStatus === "failed"));
   const nextStep =
     canManage && !(lifeFileStatus === "failed" && status === "prescribed")
       ? nextFulfillmentStep(status)
@@ -485,15 +496,17 @@ export function RequestReviewPanel({
             ) : null}
             {needsProviderAssignment ? (
               <p className="w-full text-[13px] font-medium text-[#3B4759]/80">
-                Please assign a provider. After they approve, you can send this order to the
-                pharmacy.
+                Please assign a provider. When they approve, the order is sent to the pharmacy.
               </p>
             ) : null}
             {waitingOnProvider ? (
               <p className="w-full text-[13px] font-medium text-[#3B4759]/80">
-                Waiting for the assigned provider to approve. After they approve, you can send this
-                order to the pharmacy.
+                Waiting for the assigned provider to approve. Approval sends the order to the
+                pharmacy. You can still send it from here if that does not go through.
               </p>
+            ) : null}
+            {!sentToLifeFile && lifeFileError ? (
+              <p className="w-full text-[13px] font-medium text-[#B8684B]">{lifeFileError}</p>
             ) : null}
             {canApprove ? (
               <Button
@@ -512,7 +525,7 @@ export function RequestReviewPanel({
                 disabled={sendPharmacyMut.isPending}
                 className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
               >
-                <Truck className="mr-1 h-4 w-4" /> Approve &amp; send to pharmacy
+                <Truck className="mr-1 h-4 w-4" /> Send to pharmacy
               </Button>
             ) : null}
             {canChange ? (
@@ -769,8 +782,8 @@ export function RequestReviewPanel({
           <DialogHeader>
             <DialogTitle>Approve order</DialogTitle>
             <DialogDescription>
-              Clinically approve this order for {medicine?.name ?? "this medication"}. Admin will be
-              notified and can send it to the pharmacy (LifeFile).
+              Clinically approve this order for {medicine?.name ?? "this medication"}. It is sent
+              to the pharmacy when you approve. Admin can send it again only if that send fails.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -797,9 +810,9 @@ export function RequestReviewPanel({
       <Dialog open={sendPharmacyOpen} onOpenChange={setSendPharmacyOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Approve &amp; send to pharmacy</DialogTitle>
+            <DialogTitle>Send to pharmacy</DialogTitle>
             <DialogDescription>
-              This will send {medicine?.name ?? "this medication"} to the pharmacy.
+              Submit this order for {medicine?.name ?? "this medication"} to the pharmacy.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">

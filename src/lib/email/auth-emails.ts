@@ -90,7 +90,8 @@ export function passwordChangedEmail(params: { fullName?: string | null; portalU
   const body = [
     `<p>${hello}</p>`,
     `<p>The password for your Body Inc practitioner account was just changed.</p>`,
-    `<p>You can sign in at <a href="${portal}">${portal}</a> with this email address and your new password.</p>`,
+    `<p>You can sign in with this email address and your new password.</p>`,
+    emailButton("Sign in", portal),
     `<p style="color:${EMAIL_THEME.navyFaint};font-size:12px;">If you did not make this change, reset your password from the sign-in page or contact your administrator.</p>`,
   ].join("");
 
