@@ -1,6 +1,6 @@
 import { EMAIL_THEME, emailButton, emailLayout, emailSoftPanel } from "./layout";
 
-export type VerificationEmailPurpose = "login" | "change_email";
+export type VerificationEmailPurpose = "login" | "change_email" | "reset";
 
 export function verificationCodeEmail(params: {
   code: string;
@@ -14,9 +14,12 @@ export function verificationCodeEmail(params: {
   const hello = first ? `Hello ${first},` : "Hello,";
   const spaced = params.code.trim().split("").join(" ");
   const isChange = params.purpose === "change_email";
+  const isReset = params.purpose === "reset";
   const instruction = isChange
     ? "Enter the verification code below to confirm this email address for your Body Inc account."
-    : "Enter the verification code below to securely log in. This code helps us confirm your identity and protect your account.";
+    : isReset
+      ? "Enter this code on the practitioner portal to choose a new password. Do not click a link in any other email."
+      : "Enter the verification code below to securely log in. This code helps us confirm your identity and protect your account.";
 
   const body = [
     `<p>${hello}</p>`,
@@ -30,8 +33,15 @@ export function verificationCodeEmail(params: {
   ].join("");
 
   return {
-    subject: isChange ? "Confirm your Body Inc email" : "Your Body Inc verification code",
-    html: emailLayout(isChange ? "Confirm your email" : "Verification Code", body),
+    subject: isChange
+      ? "Confirm your Body Inc email"
+      : isReset
+        ? "Your Body Inc password reset code"
+        : "Your Body Inc verification code",
+    html: emailLayout(
+      isChange ? "Confirm your email" : isReset ? "Reset your password" : "Verification Code",
+      body,
+    ),
   };
 }
 

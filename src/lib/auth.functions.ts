@@ -299,22 +299,44 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       // Unknown: do not reveal whether the account exists.
       if (role !== "admin" && role !== "provider") return { ok: true };
 
-      const base = portalAppUrl(role, data.origin);
-      const redirectTo = `${base}/reset-password`;
-      console.log("[auth] password reset redirectTo", { role, base, redirectTo });
-
-      const { sendThemedRecoveryEmail } = await import("@/lib/email/send-recovery.server");
-      const sent = await sendThemedRecoveryEmail({
-        supabaseAdmin,
-        email: data.email,
-        redirectTo,
-      });
-      if (!sent.ok) {
-        console.error("[auth] requestPasswordReset email failed:", sent.message);
+      // Email a code. Do not pass a redirect URL — Supabase treats that as a magic link,
+      // and its Site URL (the patient portal) rejects or burns the practitioner link.
+      const { generateAuthLink } = await import("@/lib/email/send-recovery.server");
+      const generated = await generateAuthLink({ type: "recovery", email: data.email });
+      const code = generated.emailOtp;
+      if (!code) {
+        console.error("[auth] requestPasswordReset missing code:", generated.error);
         return {
           ok: false,
           error: "send_failed",
-          message: "Could not send a reset link. Please try again.",
+          message: "Could not send a reset code. Please try again.",
+        };
+      }
+
+      let fullName: string | null = null;
+      if (generated.userId) {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("full_name")
+          .eq("id", generated.userId)
+          .maybeSingle();
+        fullName = (profile as { full_name?: string | null } | null)?.full_name ?? null;
+      }
+
+      const { verificationCodeEmail } = await import("@/lib/email/auth-emails");
+      const { subject, html } = verificationCodeEmail({ code, fullName, purpose: "reset" });
+      const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+      const sent = await sendTransactionalEmail({
+        to: { email: data.email, name: fullName },
+        subject,
+        html,
+      });
+      if (!sent.ok) {
+        console.error("[auth] requestPasswordReset email failed:", sent.skipped ? sent.reason : sent.error);
+        return {
+          ok: false,
+          error: "send_failed",
+          message: "Could not send a reset code. Please try again.",
         };
       }
       return { ok: true };
@@ -326,6 +348,57 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
         message: "Could not send a reset link. Please try again.",
       };
     }
+  });
+
+export const verifyPasswordResetOtp = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => verifyOtpSchema.parse(input))
+  .handler(async ({ data }): Promise<SignInResult> => {
+    const supabase = serverSupabase();
+    let verifyData: {
+      session: { access_token: string; refresh_token: string } | null;
+      user: { id: string } | null;
+    } | null = null;
+    let verifyError: { message?: string } | null = null;
+    for (const type of ["recovery", "email"] as const) {
+      const result = await supabase.auth.verifyOtp({
+        email: data.email,
+        token: data.token,
+        type,
+      });
+      if (result.data?.session && result.data.user) {
+        verifyData = result.data;
+        verifyError = null;
+        break;
+      }
+      verifyError = result.error;
+    }
+
+    if (verifyError || !verifyData?.session || !verifyData.user) {
+      return {
+        ok: false,
+        error: "invalid_code",
+        message: "Invalid or expired code. Please request a new one.",
+      };
+    }
+
+    const { data: role, error: roleError } = await supabase.rpc("get_user_portal", {
+      _user_id: verifyData.user.id,
+    });
+    if (roleError) {
+      await supabase.auth.signOut();
+      return {
+        ok: false,
+        error: "no_access",
+        message: "Could not verify your account access. Please try again.",
+      };
+    }
+
+    const result = buildRoleResult(role as string | null, {
+      access_token: verifyData.session.access_token,
+      refresh_token: verifyData.session.refresh_token,
+    });
+    if (!result.ok) await supabase.auth.signOut();
+    return result;
   });
 
 export const verifyLoginOtp = createServerFn({ method: "POST" })
@@ -384,6 +457,16 @@ export const verifyLoginOtp = createServerFn({ method: "POST" })
       await supabase.auth.signOut();
     }
     return result;
+  });
+
+export const openRecoverySession = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ reset_code: z.string().trim().min(32).max(128) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { exchangeRecoveryCode } = await import("@/lib/email/send-recovery.server");
+    return exchangeRecoveryCode(supabaseAdmin, data.reset_code);
   });
 
 export const saveNewPassword = createServerFn({ method: "POST" })
