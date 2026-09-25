@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { clearPasswordRecoveryPending } from "@/lib/password-recovery";
-import { saveNewPassword } from "@/lib/auth.functions";
+import { clearPasswordRecoveryPending, markPasswordRecoveryPending } from "@/lib/password-recovery";
+import { openRecoverySession, saveNewPassword } from "@/lib/auth.functions";
 import { cachePortalRole } from "@/lib/portal-role-cache";
 import {
   adminLabel,
@@ -47,6 +47,7 @@ function ResetPasswordPage() {
   const navigate = useNavigate();
   const router = useRouter();
   const savePassword = useServerFn(saveNewPassword);
+  const openRecovery = useServerFn(openRecoverySession);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -81,9 +82,10 @@ function ResetPasswordPage() {
         return;
       }
 
-      if (tokenHash) {
-        // Mail scanners open the link and would consume the one-time token.
-        // Wait for the practitioner to continue before verifying.
+      const resetCode = url.searchParams.get("reset_code");
+      if (resetCode || tokenHash) {
+        // Mail scanners open the link. Wait for the practitioner before creating a session.
+        markPasswordRecoveryPending();
         if (!cancelled) setNeedsConfirm(true);
         return;
       }
@@ -122,26 +124,48 @@ function ResetPasswordPage() {
 
   async function continueFromLink() {
     const url = new URL(window.location.href);
+    const resetCode = url.searchParams.get("reset_code");
     const tokenHash = url.searchParams.get("token_hash");
-    if (!tokenHash) {
-      setLinkError("This reset link is invalid or has expired. Please request a new one.");
-      setNeedsConfirm(false);
-      return;
-    }
     setSubmitting(true);
-    const { error } = await supabase.auth.verifyOtp({
-      type: "recovery",
-      token_hash: tokenHash,
-    });
-    setSubmitting(false);
-    if (error) {
-      setLinkError("This reset link is invalid or has expired. Please request a new one.");
+    try {
+      if (resetCode) {
+        const opened = await openRecovery({ data: { reset_code: resetCode } });
+        if (!opened.ok) {
+          setLinkError(opened.message);
+          setNeedsConfirm(false);
+          return;
+        }
+        const { error } = await supabase.auth.setSession({
+          access_token: opened.access_token,
+          refresh_token: opened.refresh_token,
+        });
+        if (error) {
+          setLinkError("This reset link is invalid or has expired. Please request a new one.");
+          setNeedsConfirm(false);
+          return;
+        }
+      } else if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash,
+        });
+        if (error) {
+          setLinkError("This reset link is invalid or has expired. Please request a new one.");
+          setNeedsConfirm(false);
+          return;
+        }
+      } else {
+        setLinkError("This reset link is invalid or has expired. Please request a new one.");
+        setNeedsConfirm(false);
+        return;
+      }
+      markPasswordRecoveryPending();
+      setReady(true);
       setNeedsConfirm(false);
-      return;
+      window.history.replaceState({}, "", url.pathname);
+    } finally {
+      setSubmitting(false);
     }
-    setReady(true);
-    setNeedsConfirm(false);
-    window.history.replaceState({}, "", url.pathname);
   }
 
   async function onSubmit(e: FormEvent) {
