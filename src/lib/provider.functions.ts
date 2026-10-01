@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertProvider } from "@/lib/provider-guard";
 import { ageFromDob, bmiFrom } from "@/lib/format";
+import { PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -138,7 +139,11 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
     .filter((r) => !!r.state_code && states.includes(String(r.state_code).toUpperCase()));
 }
 
-async function countClaimable(supabaseAdmin: any, me: string): Promise<number> {
+async function countClaimable(
+  supabaseAdmin: any,
+  me: string,
+  statuses: readonly string[] = OPEN_STATUSES,
+): Promise<number> {
   const states = await providerStates(supabaseAdmin, me);
   if (states.length === 0) return 0;
 
@@ -146,7 +151,7 @@ async function countClaimable(supabaseAdmin: any, me: string): Promise<number> {
     .from("medication_requests")
     .select("id, user_id, session_id")
     .is("provider_id", null)
-    .in("status", OPEN_STATUSES)
+    .in("status", [...statuses])
     .order("created_at", { ascending: false })
     .limit(300);
 
@@ -218,20 +223,15 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
     await assertProvider(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const me = context.userId;
-    // Approved orders stay on My Requests, but the badge is only work still awaiting a decision.
-    const needsReview = [
-      "payment_completed",
-      "provider_assigned",
-      "pending_review",
-      "awaiting_additional_payment",
-    ];
+    // Badges count work that still needs a decision. Approved, prescribed, shipped,
+    // and "waiting on the patient" orders stay on the lists but drop off the badge.
     const [{ count, error }, queue] = await Promise.all([
       supabaseAdmin
         .from("medication_requests")
         .select("id", { count: "exact", head: true })
         .eq("provider_id", me)
-        .in("status", needsReview),
-      countClaimable(supabaseAdmin, me),
+        .in("status", [...PENDING_REQUEST_STATUSES]),
+      countClaimable(supabaseAdmin, me, PENDING_REQUEST_STATUSES),
     ]);
     if (error) throw new Error(error.message);
     return { requests: count ?? 0, queue };

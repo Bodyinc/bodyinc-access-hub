@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertReviewer, assertAdmin } from "@/lib/admin-guard";
-import { clinicalEventNote } from "@/lib/request-status";
+import { clinicalEventNote, PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -330,7 +330,7 @@ export const countOpenRequests = createServerFn({ method: "POST" })
     const { count, error } = await supabaseAdmin
       .from("medication_requests")
       .select("id", { count: "exact", head: true })
-      .in("status", OPEN_STATUSES);
+      .in("status", [...PENDING_REQUEST_STATUSES]);
     if (error) throw new Error(error.message);
     return count ?? 0;
   });

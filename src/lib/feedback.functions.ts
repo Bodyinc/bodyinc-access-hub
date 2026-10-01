@@ -4,6 +4,7 @@ import { z } from "zod";
 import { assertAdmin } from "@/lib/admin-guard";
 import {
   FEEDBACK_STATUSES,
+  PENDING_FEEDBACK_STATUSES,
   UNSOLVED_FEEDBACK_STATUSES,
   feedbackStatusLabel,
   isStaleAwaitingConfirmation,
@@ -103,7 +104,7 @@ export const countUnsolvedFeedback = createServerFn({ method: "POST" })
     const { count, error } = await supabaseAdmin
       .from("patient_feedback")
       .select("id", { count: "exact", head: true })
-      .in("status", UNSOLVED_FEEDBACK_STATUSES);
+      .in("status", PENDING_FEEDBACK_STATUSES);
     if (error) throw new Error(error.message);
     return count ?? 0;
   });

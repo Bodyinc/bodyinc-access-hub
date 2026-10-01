@@ -7,6 +7,10 @@ import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import { countOpenRequests } from "@/lib/requests.functions";
 import { countUnsolvedFeedback, unsolvedFeedbackCountQueryKey } from "@/lib/feedback.functions";
 import {
+  countPendingConsultations,
+  pendingConsultationCountQueryKey,
+} from "@/lib/consultations.functions";
+import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -57,6 +61,7 @@ export function AdminSidebar() {
   const queryClient = useQueryClient();
   const countOpen = useServerFn(countOpenRequests);
   const countUnsolved = useServerFn(countUnsolvedFeedback);
+  const countPendingConsults = useServerFn(countPendingConsultations);
   const openCountQ = useQuery({
     queryKey: openRequestCountQueryKey,
     queryFn: () => countOpen({}),
@@ -69,8 +74,15 @@ export function AdminSidebar() {
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
+  const pendingConsultationsQ = useQuery({
+    queryKey: pendingConsultationCountQueryKey,
+    queryFn: () => countPendingConsults({}),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
   const openCount = openCountQ.data ?? 0;
   const unsolvedFeedbackCount = unsolvedFeedbackQ.data ?? 0;
+  const pendingConsultationCount = pendingConsultationsQ.data ?? 0;
 
   useEffect(() => {
     const urls = [...items.map((item) => item.url), "/admin/settings"];
@@ -145,11 +157,14 @@ export function AdminSidebar() {
                 const active = isActive(item.url, item.exact);
                 const isRequests = item.url === "/admin/requests";
                 const isFeedback = item.url === "/admin/feedback";
+                const isConsultations = item.url === "/admin/consultations";
                 const rawCount = isRequests
                   ? openCount
                   : isFeedback
                     ? unsolvedFeedbackCount
-                    : 0;
+                    : isConsultations
+                      ? pendingConsultationCount
+                      : 0;
                 const badge = rawCount > 0 ? (rawCount > 99 ? "99+" : String(rawCount)) : null;
                 return (
                   <SidebarMenuItem key={item.url}>
