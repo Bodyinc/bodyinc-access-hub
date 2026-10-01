@@ -26,13 +26,16 @@ export const ADMIN_SETTABLE_STATUSES: FeedbackStatus[] = [
   "closed",
 ];
 
-/** Open work — shown on the admin sidebar badge as unsolved. */
+/** Still needs an admin response. The Feedback list "Needs attention" filter uses this. */
 export const UNSOLVED_FEEDBACK_STATUSES: FeedbackStatus[] = [
   "open",
   "in_progress",
   "needs_info",
   "awaiting_confirmation",
 ];
+
+/** New inquiries with no admin action yet. The admin sidebar badge uses this. */
+export const PENDING_FEEDBACK_STATUSES: FeedbackStatus[] = ["open"];
 
 export const FEEDBACK_AUTO_RESOLVE_DAYS = 3;
 

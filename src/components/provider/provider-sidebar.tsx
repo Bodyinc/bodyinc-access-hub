@@ -5,6 +5,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/lib/use-notifications";
 import { providerSidebarCounts } from "@/lib/provider.functions";
+import {
+  countPendingConsultations,
+  pendingConsultationCountQueryKey,
+} from "@/lib/consultations.functions";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import {
   Sidebar,
@@ -24,11 +28,19 @@ const items = [
   { title: "Unassigned Queue", url: "/provider/queue", count: "queue" as const },
   { title: "Notifications", url: "/provider/notifications", badge: true },
   { title: "My Patients", url: "/provider/patients" },
-  { title: "Consultations", url: "/provider/consultations" },
+  { title: "Consultations", url: "/provider/consultations", count: "consultations" as const },
   { title: "My Profile", url: "/provider/profile" },
 ];
 
 export const providerSidebarCountsQueryKey = ["provider-sidebar-counts"] as const;
+
+const navItemBase =
+  "flex h-8 w-full items-center rounded-[8px] px-3 text-[14px] font-medium !text-[#152A51] transition-all";
+
+const navActive =
+  "!bg-[#F2F7F6] data-[active=true]:!bg-[#F2F7F6] hover:!bg-[#F2F7F6] data-[active=true]:hover:!bg-[#F2F7F6]";
+
+const navIdle = "bg-transparent hover:!bg-[#F2F7F6]/70";
 
 export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -37,13 +49,23 @@ export function ProviderSidebar() {
   const queryClient = useQueryClient();
   const { unread } = useNotifications();
   const loadCounts = useServerFn(providerSidebarCounts);
+  const countPendingConsults = useServerFn(countPendingConsultations);
   const countsQ = useQuery({
     queryKey: providerSidebarCountsQueryKey,
     queryFn: () => loadCounts({}),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
-  const counts = countsQ.data ?? { requests: 0, queue: 0 };
+  const pendingConsultationsQ = useQuery({
+    queryKey: pendingConsultationCountQueryKey,
+    queryFn: () => countPendingConsults({}),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const counts = {
+    ...(countsQ.data ?? { requests: 0, queue: 0 }),
+    consultations: pendingConsultationsQ.data ?? 0,
+  };
 
   useEffect(() => {
     for (const item of items) {
@@ -65,11 +87,11 @@ export function ProviderSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      variant="floating"
-      className="font-['DM_Sans'] border-0 bg-transparent shadow-none [&_[data-sidebar=sidebar]]:border [&_[data-sidebar=sidebar]]:border-[#D5DEDD] [&_[data-sidebar=sidebar]]:bg-[#E8EEED] [&_[data-sidebar=sidebar]]:shadow-sm"
+      variant="sidebar"
+      className="font-['DM_Sans'] border-[#E8EEED] bg-white shadow-none [&_[data-sidebar=sidebar]]:bg-white"
     >
       <div className="absolute -right-2.5 top-6 z-50 hidden md:block">
-        <SidebarTrigger className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-[#5B8788] p-5 text-white shadow-md transition-all hover:bg-[#5B8788]">
+        <SidebarTrigger className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-[#152A51] p-5 text-white shadow-md transition-all hover:bg-[#152A51]/90">
           <svg
             width="16"
             height="16"
@@ -92,16 +114,16 @@ export function ProviderSidebar() {
         </SidebarTrigger>
       </div>
 
-      <SidebarHeader className="flex-shrink-0 select-none bg-transparent px-4 pb-1 pt-5">
-        <div className="flex flex-col items-start group-data-[collapsible=icon]:hidden">
+      <SidebarHeader className="flex-shrink-0 select-none bg-transparent px-0 pb-1 pt-5">
+        <div className="flex flex-col items-start px-4 group-data-[collapsible=icon]:hidden">
           <img
             src="/logo.svg"
             alt="Body Inc"
             className="h-auto max-h-[60px] w-full max-w-[160px] object-contain sm:max-w-[190px]"
           />
-          <div className="mt-3 h-px w-full bg-[#D5DEDD]" />
         </div>
-        <div className="hidden h-8 w-8 items-center justify-center rounded-md bg-[#6A9B9C] text-sm font-black text-white group-data-[collapsible=icon]:flex">
+        <div className="mt-3 h-px w-full bg-[#E8EEED] group-data-[collapsible=icon]:hidden" />
+        <div className="mx-auto hidden h-8 w-8 items-center justify-center rounded-md bg-[#152A51] text-sm font-black text-white group-data-[collapsible=icon]:flex">
           B
         </div>
       </SidebarHeader>
@@ -120,11 +142,7 @@ export function ProviderSidebar() {
                       asChild
                       isActive={active}
                       tooltip={badge ? `${item.title} (${badge})` : item.title}
-                      className={`flex h-8 w-full items-center rounded-[6px] px-3 text-[14px] font-medium text-[#3B4759] transition-all ${
-                        active
-                          ? "bg-[#D5DEDD] !text-[#3B4759]"
-                          : "bg-transparent hover:bg-[#D5DEDD]/80 !text-[#3B4759]"
-                      }`}
+                      className={`${navItemBase} ${active ? navActive : navIdle} ${badge ? "pr-9" : ""}`}
                     >
                       <Link to={item.url} preload="intent">
                         <span className="truncate">{item.title}</span>
@@ -146,15 +164,12 @@ export function ProviderSidebar() {
         </SidebarGroup>
 
         <SidebarGroup className="mt-auto flex-shrink-0 p-0 group-data-[collapsible=icon]:hidden">
-          <div className="my-2 px-3">
-            <div className="h-px w-full bg-[#D5DEDD]" />
-          </div>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogout}
-                  className="flex h-8 w-full cursor-pointer items-center rounded-[6px] px-3 text-[14px] font-medium text-[#3B4759] transition-all hover:bg-[#D5DEDD]/50 !text-[#3B4759]"
+                  className={`${navItemBase} cursor-pointer ${navIdle}`}
                 >
                   <span>Logout</span>
                 </SidebarMenuButton>

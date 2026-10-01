@@ -1,6 +1,17 @@
 // Shared labels + ordering for medication-order (request) statuses, used by the admin/provider
 // review panel and the request list. The patient tracking timeline (patient portal) mirrors this.
 
+/**
+ * Orders that still need a review decision. Sidebar badges use this set.
+ * Later statuses (extra payment requested, approved, prescribed, shipped) are
+ * actions already taken and stay off the badge.
+ */
+export const PENDING_REQUEST_STATUSES = [
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+] as const;
+
 export const REQUEST_STATUS_LABELS: Record<string, string> = {
   payment_completed: "Payment received",
   provider_assigned: "Practitioner assigned",

@@ -168,6 +168,68 @@ async function reviewerQuickbloxSession(
   return getOwnerProviderAuth();
 }
 
+export const pendingConsultationCountQueryKey = ["pending-consultation-count"] as const;
+
+/** Open visits only. Closed consultations stay on the list and off the sidebar badge. */
+export const countPendingConsultations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const role = await assertReviewer(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const loadRows = async (includeEndedAt: boolean) => {
+      let q = supabaseAdmin
+        .from("patient_consultations")
+        .select(
+          includeEndedAt ? "id, user_id, qb_appointment_id, ended_at" : "id, user_id, qb_appointment_id",
+        )
+        .limit(300);
+      if (role === "provider") {
+        const ids = await assignedPatientIds(supabaseAdmin, context.userId);
+        if (ids.length === 0) return { data: [], error: null };
+        q = q.in("user_id", ids);
+      }
+      return q;
+    };
+
+    let { data: rows, error } = await loadRows(true);
+    if (error && missingEndedAtColumn(error)) {
+      ({ data: rows, error } = await loadRows(false));
+    }
+    if (error) {
+      if (missingTable(error)) return 0;
+      throw new Error(error.message);
+    }
+
+    const consultations = (rows ?? []).map((row) => ({
+      qb_appointment_id: String((row as { qb_appointment_id?: string }).qb_appointment_id ?? ""),
+      ended_at:
+        "ended_at" in (row as object)
+          ? ((row as { ended_at?: string | null }).ended_at ?? null)
+          : null,
+    }));
+    if (consultations.length === 0) return 0;
+
+    const extraTokens: string[] = [];
+    if (role === "provider") {
+      try {
+        extraTokens.push((await sessionForBodyIncProvider(supabaseAdmin, context.userId)).token);
+      } catch (sessionError) {
+        console.warn("[consultations] provider session for count failed:", sessionError);
+      }
+    }
+
+    const visit = await visitStatusByAppointmentId(
+      consultations.map((row) => row.qb_appointment_id),
+      extraTokens,
+    );
+
+    return consultations.filter((row) => {
+      if (row.ended_at) return false;
+      return visit.status.get(row.qb_appointment_id) !== "ended";
+    }).length;
+  });
+
 export const listConsultations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => listInput.parse(input ?? {}))
