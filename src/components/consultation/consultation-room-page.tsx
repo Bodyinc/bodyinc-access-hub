@@ -1506,19 +1506,6 @@ export function ConsultationRoomPage({
             <span>{chatConnected ? "Connected to QuickBlox" : connectionStatus}</span>
           </div>
 
-          {/* Header Finish Appointment Action */}
-          {!isConsultationEnded && (
-            <Button
-              size="sm"
-              onClick={() => setFinishConfirmOpen(true)}
-              className="h-9 gap-1.5 px-3 text-xs font-semibold bg-[#152A51] text-white hover:bg-[#1C3665] shadow-xs"
-            >
-              <Check className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Finish Appointment</span>
-              <span className="sm:hidden">Finish</span>
-            </Button>
-          )}
-
           {/* External QuickBlox Web App Link */}
           {roomData.consultation.externalUrl && (
             <Button
@@ -1529,7 +1516,7 @@ export function ConsultationRoomPage({
             >
               <a href={roomData.consultation.externalUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="hidden md:inline">Open Web App</span>
+                <span className="hidden md:inline"></span>
               </a>
             </Button>
           )}
