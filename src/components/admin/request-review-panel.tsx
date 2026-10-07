@@ -1,11 +1,22 @@
 import { sentenceCase } from "@/lib/text-normalize";
 import { toastError, toastActionWithEmail } from "@/lib/toast-message";
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Check, FileText, Repeat, Truck, Video, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ExternalLink,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Repeat,
+  Truck,
+  Video,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -46,11 +57,23 @@ import {
   clinicalStatusLabel,
   clinicalEventNote,
 } from "@/lib/request-status";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { adminSectionTitle, adminSectionSubtitle, adminCard } from "@/lib/admin-ui";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { RequestNotes } from "@/components/admin/request-notes";
-import { closePendingTab, openPendingTab, sendTabToUrl } from "@/components/consultations-table";
-import { startRequestConsultation } from "@/lib/consultations.functions";
+import {
+  startRequestConsultation,
+  finishConsultationAppointment,
+} from "@/lib/consultations.functions";
 import { formatCents, formatDateTimeFull, formatRecordId } from "@/lib/format";
 
 export function RequestReviewPanel({
@@ -69,6 +92,7 @@ export function RequestReviewPanel({
   canClaim?: boolean;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const get = useServerFn(getRequest);
   const approve = useServerFn(approveRequest);
   const reject = useServerFn(rejectRequest);
@@ -80,6 +104,7 @@ export function RequestReviewPanel({
   const listProv = useServerFn(listProviders);
   const claim = useServerFn(claimRequest);
   const startConsult = useServerFn(startRequestConsultation);
+  const finishConsult = useServerFn(finishConsultationAppointment);
 
   const q = useQuery({
     queryKey: ["request", requestId],
@@ -98,12 +123,28 @@ export function RequestReviewPanel({
   const [rxOpen, setRxOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [sendPharmacyOpen, setSendPharmacyOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
+  const [activeConsultation, setActiveConsultation] = useState<{
+    embedUrl: string;
+    externalUrl: string;
+  } | null>(null);
+  const [iframeLoading, setIframeLoading] = useState(true);
+  const consultCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeConsultation) {
+      consultCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeConsultation]);
+
   const [directions, setDirections] = useState("");
   const [approveNote, setApproveNote] = useState("");
   const [trackOpen, setTrackOpen] = useState(false);
   const [tracking, setTracking] = useState("");
   const [assignId, setAssignId] = useState("");
-  const patientState = (q.data?.patient?.state_code ?? "").trim().toUpperCase();
+  const patientState = (((q.data as any)?.patient?.state_code as string | undefined) ?? "")
+    .trim()
+    .toUpperCase();
   const matchingProviders = ((providersQ.data as any[]) ?? []).filter((p) => {
     const states = ((p.license_states ?? []) as string[]).map((s) => String(s).toUpperCase());
     return patientState ? states.includes(patientState) : false;
@@ -137,21 +178,35 @@ export function RequestReviewPanel({
   });
 
   const consultMut = useMutation({
-    mutationFn: async ({ tab }: { tab: Window | null }) =>
-      startConsult({ data: { requestId } }),
-    onSuccess: (res, vars) => {
+    mutationFn: async () => startConsult({ data: { requestId } }),
+    onSuccess: (res) => {
       if (!res.ok) {
-        closePendingTab(vars.tab);
         toast.error(res.message);
         return;
       }
-      sendTabToUrl(vars.tab, res.url);
+      refresh();
+      navigate({
+        to: clinicalOnly
+          ? "/provider/requests/$requestId/consultation"
+          : "/admin/requests/$requestId/consultation",
+        params: { requestId },
+      });
+    },
+    onError: (e: Error) => toast.error(toastError(e)),
+  });
+
+  const finishConsultMut = useMutation({
+    mutationFn: () => finishConsult({ data: { requestId } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
+      toast.success("Consultation concluded successfully.");
+      setFinishOpen(false);
       refresh();
     },
-    onError: (e: Error, vars) => {
-      closePendingTab(vars.tab);
-      toast.error(toastError(e));
-    },
+    onError: (e: Error) => toast.error(toastError(e)),
   });
 
   function refresh() {
@@ -291,20 +346,27 @@ export function RequestReviewPanel({
     medicine,
     package: pkg,
     provider,
+    consultation,
     events,
     prescriptions,
     additional_payments,
   } = q.data as any;
 
   const status: string = request.status;
+  const isUnassigned = !provider;
   const needsProviderAssignment = status === "pending_review" && canManage && !provider;
   const waitingOnProvider = status === "pending_review" && canManage && !!provider;
-  const canReject = status === "pending_review" || status === "awaiting_additional_payment";
-  const canChange = ["pending_review", "approved", "awaiting_additional_payment"].includes(status);
+  const canReject =
+    (status === "pending_review" || status === "awaiting_additional_payment") &&
+    (!clinicalOnly || !isUnassigned);
+  const canChange =
+    ["pending_review", "approved", "awaiting_additional_payment"].includes(status) &&
+    (!clinicalOnly || !isUnassigned);
   const canGenerate = status === "approved" && canManage;
   const canStartConsult =
     Boolean(request.user_id) &&
-    !["rejected", "delivered", "canceled", "cancelled"].includes(status);
+    !["rejected", "delivered", "canceled", "cancelled"].includes(status) &&
+    (!clinicalOnly || !isUnassigned);
   const lifeFileOrderId =
     (request as { life_file_order_id?: string | null }).life_file_order_id ||
     (events as { note?: string | null }[])
@@ -318,6 +380,7 @@ export function RequestReviewPanel({
     (Boolean(lifeFileOrderId) && lifeFileStatus !== "failed");
   const canApprove =
     clinicalOnly &&
+    !isUnassigned &&
     !sentToLifeFile &&
     ["pending_review", "approved", "prescribed"].includes(status);
   const canRetryLifeFile = lifeFileStatus === "failed" && canManage;
@@ -387,6 +450,38 @@ export function RequestReviewPanel({
             <Row
               label="Needs approval"
               value={request.requires_consultation ? "Yes" : "No (auto)"}
+            />
+            <Row
+              label="Consultation"
+              value={
+                consultation ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-normal shadow-none ${
+                        consultation.is_ended
+                          ? "bg-slate-100 text-slate-700 border border-slate-200"
+                          : "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                      }`}
+                    >
+                      {consultation.is_ended ? "Completed" : "In Progress"}
+                    </Badge>
+                    {consultation.ended_at ? (
+                      <span className="text-[12px] text-[#3B4759]/70">
+                        {formatDateTimeFull(consultation.ended_at)}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : request.requires_consultation ? (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-300 bg-amber-50 text-[11px] font-semibold text-amber-800 shadow-none"
+                  >
+                    Required (Not started)
+                  </Badge>
+                ) : (
+                  "Not required"
+                )
+              }
             />
             {request.tracking_number ? (
               <Row label="Tracking #" value={request.tracking_number} />
@@ -584,20 +679,63 @@ export function RequestReviewPanel({
                 <X className="mr-1 h-4 w-4" /> {clinicalOnly ? "Reject" : "Reject & refund"}
               </Button>
             ) : null}
-            {canStartConsult ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={consultMut.isPending}
-                onClick={() => {
-                  const tab = openPendingTab();
-                  consultMut.mutate({ tab });
-                }}
-                className="h-10 border-[#D5DEDD] px-4 text-[13px] font-semibold text-[#3B4759]"
-              >
-                <Video className="mr-1 h-4 w-4" />{" "}
-                {consultMut.isPending ? "Opening…" : "Start consultation"}
-              </Button>
+            {canStartConsult || activeConsultation || consultation ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {consultation && !consultation.is_ended ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setFinishOpen(true)}
+                    disabled={finishConsultMut.isPending}
+                    className="h-10 border-[#152A51] bg-white px-4 text-[13px] font-semibold text-[#152A51] hover:bg-[#F3F6F6]"
+                  >
+                    <Check className="mr-1.5 h-4 w-4 text-emerald-600" />
+                    Finish consultation
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={consultMut.isPending}
+                  onClick={() => consultMut.mutate()}
+                  className={`h-10 px-4 text-[13px] font-semibold shadow-none ${
+                    consultation?.is_ended
+                      ? "border border-[#D5DEDD] bg-white text-[#3B4759] hover:bg-[#F3F6F6]"
+                      : "bg-[#6A9B9C] text-white hover:bg-[#5B8788]"
+                  }`}
+                >
+                  {consultMut.isPending ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin text-current" />
+                      Connecting…
+                    </>
+                  ) : (
+                    <>
+                      <Video className="mr-1.5 h-4 w-4" />
+                      {activeConsultation
+                        ? "Open consultation room"
+                        : consultation?.is_ended
+                          ? "View consultation room"
+                          : consultation
+                            ? "Join live consultation"
+                            : "Start consultation"}
+                    </>
+                  )}
+                </Button>
+                {activeConsultation ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setActiveConsultation(null)}
+                    className="h-10 px-2.5 text-[12px] font-medium text-[#8F4A33] hover:bg-[#F6E4DA]"
+                    title="Close inline consultation"
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" /> Close
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
             {canManage && request.session_id ? (
               <Button
@@ -625,6 +763,103 @@ export function RequestReviewPanel({
           ) : null}
         </CardContent>
       </Card>
+
+      {/* Embedded Live Video Consultation Window */}
+      {activeConsultation ? (
+        <Card
+          ref={consultCardRef}
+          className={`${adminCard} overflow-hidden scroll-mt-6 border-[#6A9B9C]/40 shadow-sm ring-1 ring-[#6A9B9C]/20`}
+        >
+          <CardHeader className="flex flex-col gap-3 border-b border-[#D5DEDD] bg-[#F7F9F9] p-3.5 sm:px-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14px] font-semibold text-[#152A51]">
+                      Live Video Consultation {patient?.name ? `· ${patient.name}` : ""}
+                    </span>
+                    <Badge className="border-emerald-200 bg-emerald-100 text-[11px] font-semibold text-emerald-800 shadow-none hover:bg-emerald-100">
+                      Connected
+                    </Badge>
+                  </div>
+                  <p className="hidden text-[12px] text-[#3B4759]/70 sm:block">
+                    Live video room connected. Review order details above and clinical notes below.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={activeConsultation.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#D5DEDD] bg-white px-2.5 text-[12px] font-medium text-[#3B4759] hover:bg-[#F3F6F6]"
+                  title="Open consultation in full new tab"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Open in New Tab</span>
+                </a>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIframeLoading(true);
+                    const current = activeConsultation.embedUrl.split("&_t=")[0];
+                    setActiveConsultation({
+                      ...activeConsultation,
+                      embedUrl: `${current}&_t=${Date.now()}`,
+                    });
+                  }}
+                  className="h-8 w-8 rounded-lg p-0 text-[#3B4759] hover:bg-[#F3F6F6]"
+                  title="Reload consultation"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${iframeLoading ? "animate-spin" : ""}`} />
+                  <span className="sr-only">Reload</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveConsultation(null)}
+                  className="h-8 gap-1.5 border-[#E7CFC3] bg-white px-2.5 text-[12px] font-medium text-[#8F4A33] hover:bg-[#F6E4DA]"
+                  title="Close consultation view"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>Close call</span>
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <div className="relative flex min-h-[540px] h-[65vh] max-h-[750px] w-full flex-col overflow-hidden bg-white">
+              {iframeLoading ? (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 backdrop-blur-xs">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#152A51]" />
+                  <p className="mt-3 text-[14px] font-medium text-[#152A51]">
+                    Loading QuickBlox consultation room…
+                  </p>
+                </div>
+              ) : null}
+              <iframe
+                src={activeConsultation.embedUrl}
+                title="Video Consultation"
+                className="h-full w-full flex-1 border-0"
+                allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen;"
+                allowFullScreen
+                onLoad={() => setIframeLoading(false)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!clinicalOnly && additional_payments.length > 0 ? (
         <Card className={adminCard}>
@@ -896,6 +1131,30 @@ export function RequestReviewPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Finish consultation confirmation */}
+      <AlertDialog open={finishOpen} onOpenChange={setFinishOpen}>
+        <AlertDialogContent className="max-w-md font-['DM_Sans',sans-serif]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#152A51]">Finish consultation?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-[#3B4759]/80">
+              This will mark the live consultation appointment as completed for both practitioner and patient.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={finishConsultMut.isPending} className="border-[#D5DEDD]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => finishConsultMut.mutate()}
+              disabled={finishConsultMut.isPending}
+              className="bg-[#152A51] text-white hover:bg-[#1C3665]"
+            >
+              {finishConsultMut.isPending ? "Finishing…" : "Finish consultation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

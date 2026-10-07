@@ -71,6 +71,7 @@ let transporter: any = null;
 let transporterAuth: string | null = null;
 
 async function getTransporter(login: string, key: string) {
+  // @ts-ignore
   const nodemailer = (await import("nodemailer")).default;
   const auth = `${login}:${key}`;
   if (!transporter || transporterAuth !== auth) {

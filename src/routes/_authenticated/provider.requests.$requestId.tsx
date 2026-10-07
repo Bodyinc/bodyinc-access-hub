@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { RequestReviewPanel } from "@/components/admin/request-review-panel";
 
 export const Route = createFileRoute("/_authenticated/provider/requests/$requestId")({
@@ -14,6 +14,12 @@ export const Route = createFileRoute("/_authenticated/provider/requests/$request
 
 function ProviderRequestDetail() {
   const { requestId } = Route.useParams();
+  const location = useLocation();
+
+  if (location.pathname.endsWith("/consultation")) {
+    return <Outlet />;
+  }
+
   return (
     <RequestReviewPanel requestId={requestId} backTo="/provider/requests" clinicalOnly canClaim />
   );

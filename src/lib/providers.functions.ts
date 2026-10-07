@@ -60,7 +60,7 @@ export const listProviders = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
-    const ids = (rows ?? []).map((r: { id: string }) => r.id).filter(Boolean);
+    const ids = (rows ?? []).map((r: any) => r.id).filter(Boolean) as string[];
     let licenseRows: { id: string; license_states: string[] | null; qb_user_id?: number | null }[] =
       [];
     if (ids.length > 0) {
