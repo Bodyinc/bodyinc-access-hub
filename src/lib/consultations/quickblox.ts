@@ -297,6 +297,63 @@ export async function addProviderToDialogOccupants(params: {
   }
 }
 
+export async function ensureDialogOccupants(params: {
+  dialogId: string;
+  occupantsIds: number[];
+}): Promise<boolean> {
+  if (!params.dialogId || !params.occupantsIds.length) return false;
+  try {
+    const owner = await getOwnerProviderAuth();
+    const res = await fetch(`https://api.quickblox.com/chat/Dialog/${params.dialogId}.json`, {
+      method: "PUT",
+      headers: {
+        "QB-Token": owner.token,
+        "Content-Type": "application/json",
+        "QuickBlox-REST-API-Version": "0.1.1",
+      },
+      body: JSON.stringify({
+        push_all: {
+          occupants_ids: params.occupantsIds,
+        },
+      }),
+    });
+    if (res.ok) return true;
+    const text = await res.text();
+    if (/already present/i.test(text)) return true;
+    return false;
+  } catch (error) {
+    console.warn("[consultations] ensureDialogOccupants exception:", error);
+    return false;
+  }
+}
+
+export async function sendChatMessageToDialog(params: {
+  dialogId: string;
+  message: string;
+}): Promise<boolean> {
+  if (!params.dialogId || !params.message) return false;
+  try {
+    const owner = await getOwnerProviderAuth();
+    const res = await fetch("https://api.quickblox.com/chat/Message.json", {
+      method: "POST",
+      headers: {
+        "QB-Token": owner.token,
+        "Content-Type": "application/json",
+        "QuickBlox-REST-API-Version": "0.1.1",
+      },
+      body: JSON.stringify({
+        chat_dialog_id: params.dialogId,
+        message: params.message,
+        send_to_chat: 1,
+      }),
+    });
+    return res.ok;
+  } catch (error) {
+    console.warn("[consultations] sendChatMessageToDialog exception:", error);
+    return false;
+  }
+}
+
 export async function reassignAppointmentToProvider(params: {
   appointmentId: string;
   qbProviderId: number;

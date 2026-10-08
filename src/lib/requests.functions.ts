@@ -1245,18 +1245,40 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       .eq("id", data.requestId);
     if (error) throw new Error(error.message);
     if (data.providerId) {
+      const { data: provProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name")
+        .eq("id", data.providerId)
+        .maybeSingle();
+      const doctorName = (provProfile as any)?.full_name?.trim() || "doctor";
+      const assignmentNote =
+        role === "admin"
+          ? `admin added ${doctorName} into the chat`
+          : `Provider reassigned to ${doctorName}`;
+
       await logEvent(
         supabaseAdmin,
         data.requestId,
         "provider_assigned",
         role === "admin" ? "admin" : "provider",
         context.userId,
-        role === "admin" ? "Provider assigned by admin" : "Provider reassigned by clinician",
+        assignmentNote,
       );
+
+      try {
+        await supabaseAdmin.from("medication_request_notes").insert({
+          request_id: data.requestId,
+          author_id: context.userId,
+          author_role: role === "admin" ? "admin" : "provider",
+          body: assignmentNote,
+        });
+      } catch (noteErr) {
+        console.warn("[assignRequestProvider] write note error:", noteErr);
+      }
 
       // Auto-sync QuickBlox: ensure practitioner agent exists and directly assign consultation appointment
       try {
-        const { isQuickbloxConfigured } = await import("@/lib/consultations/config");
+        const { isQuickbloxConfigured, getQuickbloxConfig } = await import("@/lib/consultations/config");
         if (isQuickbloxConfigured()) {
           const { provisionBodyIncProviderAgent, sessionForBodyIncProvider } = await import(
             "@/lib/consultations/provider-agent"
@@ -1265,7 +1287,8 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
             reassignAppointmentToProvider,
             ensurePatientQuickbloxClient,
             createPatientAppointment,
-            listProviderAppointments,
+            ensureDialogOccupants,
+            sendChatMessageToDialog,
           } = await import("@/lib/consultations/quickblox");
 
           const agent = await provisionBodyIncProviderAgent(supabaseAdmin, data.providerId);
@@ -1285,10 +1308,13 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
           if (conds.length > 0) {
             const { data: cRows } = await supabaseAdmin
               .from("patient_consultations")
-              .select("id, qb_appointment_id, qb_user_id, qb_dialog_id, ended_at")
+              .select("id, qb_appointment_id, qb_user_id, qb_dialog_id, started_at")
               .or(conds.join(","));
             consultations = cRows ?? [];
           }
+
+          const qbConfig = getQuickbloxConfig();
+          const adminQbId = qbConfig.providerId ?? 142814409;
 
           if (consultations.length > 0) {
             for (const c of consultations) {
@@ -1300,11 +1326,18 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
                     currentProviderToken: prevToken,
                     dialogId: c.qb_dialog_id ?? null,
                   });
+                  const activeDialogId = res?.dialogId || c.qb_dialog_id;
                   if (res?.dialogId && !c.qb_dialog_id) {
                     await supabaseAdmin
                       .from("patient_consultations")
                       .update({ qb_dialog_id: res.dialogId })
                       .eq("id", c.id);
+                  }
+                  if (activeDialogId) {
+                    const occupants = [agent.qbUserId, adminQbId];
+                    if (c.qb_user_id) occupants.push(c.qb_user_id);
+                    await ensureDialogOccupants({ dialogId: activeDialogId, occupantsIds: occupants });
+                    await sendChatMessageToDialog({ dialogId: activeDialogId, message: assignmentNote });
                   }
                 } catch (rErr) {
                   console.warn("[assignRequestProvider] reassign error:", rErr);
@@ -1351,6 +1384,17 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
                 qb_appointment_id: newAppt._id,
                 qb_dialog_id: newAppt.dialog_id ?? null,
               });
+
+              if (newAppt.dialog_id) {
+                await ensureDialogOccupants({
+                  dialogId: newAppt.dialog_id,
+                  occupantsIds: [agent.qbUserId, adminQbId, client.userId],
+                });
+                await sendChatMessageToDialog({
+                  dialogId: newAppt.dialog_id,
+                  message: assignmentNote,
+                });
+              }
             }
           }
         }

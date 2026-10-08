@@ -706,6 +706,21 @@ export type LiveQueueItem = {
   priority: number;
   requestId: string | null;
   isActiveCurrent: boolean;
+  providerId?: string | null;
+  providerName?: string | null;
+  isAssigned?: boolean;
+};
+
+export type PatientConsultationHistoryItem = {
+  id: string;
+  appointmentId: string;
+  requestId?: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  medicineName?: string | null;
+  providerName?: string | null;
+  status: "completed" | "in_progress";
+  durationMinutes?: number | null;
 };
 
 export type ConsultationRoomData = {
@@ -745,6 +760,13 @@ export type ConsultationRoomData = {
     reason: string | null;
     evaluated_at: string | null;
   }>;
+  jotformAnswers?: Array<{
+    label: string;
+    value: string;
+  }>;
+  jotformSubmittedAt?: string | null;
+  patientConsultationHistory?: PatientConsultationHistoryItem[];
+  totalPatientConsultations?: number;
   events?: Array<{
     id: string;
     status: string;
@@ -831,7 +853,7 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
     if (req.subscription_id || req.user_id) {
       let q = supabaseAdmin
         .from("patient_consultations")
-        .select("id, qb_appointment_id, qb_user_id, qb_dialog_id, started_at, ended_at")
+        .select("id, qb_appointment_id, qb_user_id, qb_dialog_id, started_at, created_at")
         .order("started_at", { ascending: false });
       if (req.subscription_id) {
         q = q.eq("subscription_id", req.subscription_id);
@@ -847,22 +869,20 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
 
     // Resolve assigned provider's QuickBlox agent and session
     let targetProviderQbId = reviewerSession.userId;
-    let assignedProvSession: QuickbloxProviderSession | null = null;
     if (req.provider_id) {
       try {
-        const { provisionBodyIncProviderAgent, sessionForBodyIncProvider } = await import(
+        const { provisionBodyIncProviderAgent } = await import(
           "@/lib/consultations/provider-agent"
         );
         const provAgent = await provisionBodyIncProviderAgent(supabaseAdmin, req.provider_id);
         targetProviderQbId = provAgent.qbUserId;
-        assignedProvSession = await sessionForBodyIncProvider(supabaseAdmin, req.provider_id);
       } catch (provErr) {
         console.warn("[consultations] provision assigned provider failed:", provErr);
       }
     }
 
-    // Effective session: if provider is logged in, use their session; if admin, use assigned provider session if available
-    const session = role === "provider" ? reviewerSession : (assignedProvSession || reviewerSession);
+    // Effective session: ALWAYS use the authentic logged-in reviewer's session (Admin is Admin, Doctor is Doctor)
+    const session = reviewerSession;
 
     // Load Patient Profile and Intake Session
     const [{ data: profile }, { data: orderSession }, { data: medRow }, { data: pkgRow }, { data: provRow }] =
@@ -1149,8 +1169,8 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
     const heightCm = orderSession?.height_cm ?? null;
     const weightKg = orderSession?.weight_kg ?? null;
 
-    // Load History: medication request events and past consultations
-    const [{ data: eventsRows }, { data: pastRows }] = await Promise.all([
+    // Load History: medication request events and all past consultations for this patient across the application
+    const [{ data: eventsRows }, { data: pastRows }, { data: allPatientRequests }] = await Promise.all([
       supabaseAdmin
         .from("medication_request_events")
         .select("id, status, actor_role, note, created_at")
@@ -1159,11 +1179,76 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       req.user_id
         ? supabaseAdmin
             .from("patient_consultations")
-            .select("id, qb_appointment_id, started_at, ended_at")
+            .select("id, subscription_id, qb_appointment_id, qb_dialog_id, qb_user_id, started_at, created_at")
             .eq("user_id", req.user_id)
             .order("started_at", { ascending: false })
         : Promise.resolve({ data: [] }),
+      req.user_id
+        ? (supabaseAdmin as any)
+            .from("medication_requests")
+            .select("id, subscription_id, medicine_id, provider_id, status, created_at, medicines(name)")
+            .eq("user_id", req.user_id)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
     ]);
+
+    const allPatientReqs = (allPatientRequests as any[]) ?? [];
+    const patientProvIds = Array.from(new Set(allPatientReqs.map((r: any) => r.provider_id).filter(Boolean)));
+    const { data: patientProvProfiles } = patientProvIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", patientProvIds)
+      : { data: [] };
+    const patientProvMap = new Map((patientProvProfiles ?? []).map((p: any) => [p.id, p.full_name]));
+
+    // Build comprehensive patient consultation history across the application
+    const patientConsultationHistory: PatientConsultationHistoryItem[] = (pastRows ?? []).map((c: any) => {
+      const rMatch = c.subscription_id
+        ? allPatientReqs.find((r: any) => r.subscription_id === c.subscription_id)
+        : allPatientReqs.find((r: any) => r.id === req.id);
+      const isEnded = Boolean(c.ended_at);
+      const durationMinutes =
+        c.started_at && c.ended_at
+          ? Math.max(1, Math.round((new Date(c.ended_at).getTime() - new Date(c.started_at).getTime()) / 60000))
+          : null;
+      const provName =
+        (rMatch?.provider_id ? patientProvMap.get(rMatch.provider_id) : null) ||
+        (c.id === consultationRecordId ? (provRow?.full_name ?? null) : null);
+
+      return {
+        id: c.id,
+        appointmentId: c.qb_appointment_id,
+        requestId: rMatch?.id || (c.id === consultationRecordId ? req.id : null),
+        startedAt: c.started_at,
+        endedAt: c.ended_at,
+        medicineName: rMatch?.medicines?.name || (c.id === consultationRecordId ? (medRow?.name ?? null) : null),
+        providerName: provName,
+        status: isEnded ? "completed" : "in_progress",
+        durationMinutes,
+      };
+    });
+
+    // Fetch JotForm Intake filled data (patient intake form responses)
+    let jotformAnswers: Array<{ label: string; value: string }> = [];
+    let jotformSubmittedAt: string | null = null;
+    try {
+      const { checkJotformSubmission, fetchJotformSubmissionAnswers } = await import(
+        "@/lib/consultations/jotform"
+      );
+      const jotCheck = await checkJotformSubmission({
+        qbUserId: patientQbUserId,
+        email: patientSource?.email,
+        fullName,
+        dob,
+        phone: patientSource?.phone,
+        subscriptionId: req.subscription_id,
+        appointmentId,
+      });
+      if (jotCheck.submitted && jotCheck.submissionId) {
+        jotformSubmittedAt = jotCheck.submittedAt;
+        jotformAnswers = await fetchJotformSubmissionAnswers(jotCheck.submissionId);
+      }
+    } catch (jfErr) {
+      console.warn("[consultations] jotform answers error:", jfErr);
+    }
 
     // Check whether visit is ended in DB, QuickBlox, or events history
     const completedEvent = (eventsRows ?? []).find((e: any) =>
@@ -1205,7 +1290,7 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
 
     let qConsultsQuery = supabaseAdmin
       .from("patient_consultations")
-      .select("id, qb_appointment_id, qb_dialog_id, qb_user_id, user_id, subscription_id, started_at, ended_at")
+      .select("id, qb_appointment_id, qb_dialog_id, qb_user_id, user_id, subscription_id, started_at, created_at")
       .order("started_at", { ascending: false })
       .limit(300);
 
@@ -1234,7 +1319,7 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
         })
       : providerAppts;
 
-    // Merge: ensure all relevant appointments from Supabase (for admin: all clinic; for provider: all assigned) are in the queue
+    // Merge: ensure all relevant appointments from Supabase are in the queue
     const queueApptsMap = new Map<string, QbAppointment>();
     for (const a of scopedProviderAppts) {
       if (a._id) queueApptsMap.set(a._id, a);
@@ -1246,7 +1331,7 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
           client_id: c.qb_user_id,
           dialog_id: c.qb_dialog_id,
           created_at: c.started_at ? Math.floor(new Date(c.started_at).getTime() / 1000) : undefined,
-          date_end: c.ended_at ?? null,
+          date_end: null,
         });
       }
     }
@@ -1256,12 +1341,12 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
     const qUserIds = [...new Set((qConsults ?? []).map((c: any) => c.user_id).filter(Boolean))];
     const qSubIds = [...new Set((qConsults ?? []).map((c: any) => c.subscription_id).filter(Boolean))];
 
-    const [{ data: qProfiles }, { data: qRequests }] = await Promise.all([
+    const [{ data: qProfiles }, { data: qRequests }, { data: qIntakes }] = await Promise.all([
       qUserIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", qUserIds)
         : Promise.resolve({ data: [] }),
       qUserIds.length || qSubIds.length
-        ? supabaseAdmin
+        ? (supabaseAdmin as any)
             .from("medication_requests")
             .select("id, user_id, subscription_id, medicine_id, provider_id, medicines(name)")
             .or(
@@ -1274,9 +1359,23 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
             )
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [] }),
+      qUserIds.length
+        ? supabaseAdmin
+            .from("intake_sessions")
+            .select("claimed_by_user_id, full_name, email")
+            .in("claimed_by_user_id", qUserIds)
+        : Promise.resolve({ data: [] }),
     ]);
 
+    const qReqList = (qRequests as any[]) ?? [];
+    const qProvIds = Array.from(new Set(qReqList.map((r: any) => r.provider_id).filter(Boolean)));
+    const { data: qProvProfiles } = qProvIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", qProvIds)
+      : { data: [] };
+    const qProvNameMap = new Map((qProvProfiles ?? []).map((p: any) => [p.id, p.full_name]));
+
     const qProfileMap = new Map((qProfiles ?? []).map((p: any) => [p.id, p]));
+    const qIntakeMap = new Map((qIntakes ?? []).map((i: any) => [i.claimed_by_user_id, i]));
     const consultByAppt = new Map<string, any>();
     const consultByDialog = new Map<string, any>();
     const consultByClient = new Map<number, any>();
@@ -1284,6 +1383,58 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       if (c.qb_appointment_id) consultByAppt.set(c.qb_appointment_id, c);
       if (c.qb_dialog_id) consultByDialog.set(c.qb_dialog_id, c);
       if (c.qb_user_id) consultByClient.set(c.qb_user_id, c);
+    }
+
+    // Resolve any client names from QuickBlox users directly if unmapped or missing full_name
+    const missingClientIds = allQueueAppts
+      .map((a) => {
+        const cMatch =
+          consultByAppt.get(a._id) ||
+          (a.dialog_id ? consultByDialog.get(a.dialog_id) : null) ||
+          consultByClient.get(a.client_id ?? 0);
+        const uid = cMatch?.user_id;
+        const prof = uid ? qProfileMap.get(uid) : null;
+        const intakeProf = uid ? qIntakeMap.get(uid) : null;
+        const hasDbName = Boolean(prof?.full_name?.trim() || intakeProf?.full_name?.trim());
+        if (!hasDbName && a.client_id) return a.client_id;
+        return a.client_id ?? null;
+      })
+      .filter((cid): cid is number => Boolean(cid));
+
+    const qbClientNameMap = new Map<number, string>();
+    const qbClientEmailMap = new Map<number, string>();
+    if (missingClientIds.length > 0 && reviewerSession.token) {
+      try {
+        const uniqueClientIds = Array.from(new Set(missingClientIds));
+        await Promise.allSettled(
+          uniqueClientIds.map(async (cid) => {
+            try {
+              const res = await fetch(`https://api-bodyinc.quickblox.com/users/${cid}`, {
+                headers: { Authorization: `Bearer ${reviewerSession.token}` },
+              });
+              if (res.ok) {
+                const uJson: any = await res.json();
+                const resolvedName =
+                  uJson?.full_name?.trim() ||
+                  uJson?.user?.full_name?.trim() ||
+                  uJson?.data?.full_name?.trim() ||
+                  uJson?.login?.trim() ||
+                  uJson?.user?.login?.trim();
+                if (resolvedName) {
+                  qbClientNameMap.set(cid, resolvedName);
+                }
+                const resolvedEmail =
+                  uJson?.email?.trim() ||
+                  uJson?.user?.email?.trim() ||
+                  uJson?.data?.email?.trim();
+                if (resolvedEmail) {
+                  qbClientEmailMap.set(cid, resolvedEmail);
+                }
+              }
+            } catch {}
+          }),
+        );
+      } catch {}
     }
 
     const liveQueue: LiveQueueItem[] = allQueueAppts.map((a) => {
@@ -1294,29 +1445,44 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
         consultByClient.get(a.client_id ?? 0);
       const uid = cMatch?.user_id;
       const prof = uid ? qProfileMap.get(uid) : null;
+      const intakeProf = uid ? qIntakeMap.get(uid) : null;
 
       const reqMatch = cMatch?.subscription_id
-        ? (qRequests ?? []).find((r: any) => r.subscription_id === cMatch.subscription_id)
-        : (qRequests ?? []).find((r: any) => r.user_id === uid);
+        ? qReqList.find((r: any) => r.subscription_id === cMatch.subscription_id)
+        : qReqList.find((r: any) => r.user_id === uid);
 
-      const patientQueueName = prof?.full_name || (isCurrent ? fullName : `Patient #${a.client_id}`);
+      const patientQueueName =
+        (a.client_id ? qbClientNameMap.get(a.client_id) : null) ||
+        prof?.full_name?.trim() ||
+        intakeProf?.full_name?.trim() ||
+        (isCurrent ? fullName : `Patient #${a.client_id}`);
       const medQueueName = reqMatch?.medicines?.name || (isCurrent ? (medRow?.name ?? null) : null);
+      const provAssignedId = isCurrent ? req.provider_id : reqMatch?.provider_id;
+      const provAssignedName = isCurrent
+        ? provRow?.full_name
+        : (reqMatch?.provider_id ? qProvNameMap.get(reqMatch.provider_id) : null);
 
       return {
         appointmentId: a._id,
         clientId: a.client_id ?? 0,
         dialogId: a.dialog_id ?? null,
         patientName: patientQueueName,
-        patientEmail: role === "admin" ? (prof?.email ?? null) : null,
+        patientEmail:
+          role === "admin"
+            ? (prof?.email ?? intakeProf?.email ?? (a.client_id ? qbClientEmailMap.get(a.client_id) : null) ?? null)
+            : null,
         medicineName: medQueueName,
         description: a.description || (medQueueName ? `${medQueueName} consultation` : "Consultation"),
         createdAt: a.created_at ? a.created_at * 1000 : Date.now(),
         updatedAt: a.updated_at ? a.updated_at * 1000 : Date.now(),
         dateEnd: a.date_end ?? null,
-        isEnded: Boolean(a.date_end || cMatch?.ended_at),
+        isEnded: Boolean(a.date_end),
         priority: a.priority ?? 0,
         requestId: isCurrent ? req.id : (reqMatch?.id ?? null),
         isActiveCurrent: isCurrent,
+        providerId: provAssignedId ?? null,
+        providerName: provAssignedName ?? null,
+        isAssigned: Boolean(provAssignedId),
       };
     });
 
@@ -1350,9 +1516,15 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
     if (adminQbUserId) {
       userDirectory[adminQbUserId] = { name: "Admin", role: "admin" };
     }
-    if (session.userId) {
+    if (targetProviderQbId && targetProviderQbId !== adminQbUserId) {
+      userDirectory[targetProviderQbId] = {
+        name: provRow?.full_name || "Doctor",
+        role: "provider",
+      };
+    }
+    if (session.userId && !userDirectory[session.userId]) {
       userDirectory[session.userId] = {
-        name: role === "admin" ? "Admin" : (provRow?.full_name || "Provider"),
+        name: role === "admin" ? "Admin" : (provRow?.full_name || "Doctor"),
         role: role === "admin" ? "admin" : "provider",
       };
     }
@@ -1394,6 +1566,10 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
         goals,
         answers,
         eligibility,
+        jotformAnswers,
+        jotformSubmittedAt,
+        patientConsultationHistory,
+        totalPatientConsultations: patientConsultationHistory.length,
         events: (eventsRows ?? []).map((e: any) => ({
           id: e.id,
           status: e.status,

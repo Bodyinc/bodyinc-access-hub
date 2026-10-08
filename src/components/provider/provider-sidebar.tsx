@@ -10,6 +10,7 @@ import {
   pendingConsultationCountQueryKey,
 } from "@/lib/consultations.functions";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
+import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 import {
   Sidebar,
   SidebarContent,
@@ -77,6 +78,7 @@ export function ProviderSidebar() {
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
   async function handleLogout() {
+    logoutQuickbloxSdk();
     await queryClient.cancelQueries();
     queryClient.clear();
     clearCachedPortalRoles();

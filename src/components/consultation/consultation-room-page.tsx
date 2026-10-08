@@ -335,7 +335,7 @@ export function ConsultationRoomPage({
   });
 
   // Local UI State
-  const [activeMainTab, setActiveMainTab] = useState<"chat" | "call" | "notes" | "history" | "qb-web">("chat");
+  const [activeMainTab, setActiveMainTab] = useState<"chat" | "call">("chat");
   const [changeMedOpen, setChangeMedOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [approveNote, setApproveNote] = useState("");
@@ -345,12 +345,12 @@ export function ConsultationRoomPage({
   const [directions, setDirections] = useState("");
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
   const [finishConclusion, setFinishConclusion] = useState("");
-  const [sidebarTab, setSidebarTab] = useState<"vitals" | "intake" | "eligibility">("vitals");
+  const [sidebarTab, setSidebarTab] = useState<"profile" | "intake" | "notes" | "history">("profile");
 
   // Live Queue panel & search state
   const [showQueuePane, setShowQueuePane] = useState(true);
   const [queueSearch, setQueueSearch] = useState("");
-  const [queueTab, setQueueTab] = useState<"open" | "all">("open");
+  const [queueTab, setQueueTab] = useState<"waiting" | "live" | "all">(clinicalOnly ? "live" : "waiting");
 
   // Selected queue conversation (allows talking with another patient from the Live Queue)
   const [selectedQueueItem, setSelectedQueueItem] = useState<LiveQueueItem | null>(null);
@@ -494,7 +494,7 @@ export function ConsultationRoomPage({
       if (dir) {
         return {
           isSelf: isMe,
-          senderName: isMe ? "You" : dir.name,
+          senderName: dir.name,
           senderRole: dir.role,
         };
       }
@@ -505,7 +505,7 @@ export function ConsultationRoomPage({
       ) {
         return {
           isSelf: isMe,
-          senderName: isMe ? "You" : "Admin",
+          senderName: "Admin",
           senderRole: "admin" as const,
         };
       }
@@ -515,7 +515,7 @@ export function ConsultationRoomPage({
       if (senderId === activePatientId) {
         return {
           isSelf: isMe,
-          senderName: isMe ? "You" : activePatientName,
+          senderName: activePatientName,
           senderRole: "patient" as const,
         };
       }
@@ -524,7 +524,7 @@ export function ConsultationRoomPage({
       if (queueMatch) {
         return {
           isSelf: isMe,
-          senderName: isMe ? "You" : queueMatch.patientName,
+          senderName: queueMatch.patientName,
           senderRole: "patient" as const,
         };
       }
@@ -532,7 +532,7 @@ export function ConsultationRoomPage({
       if (isMe) {
         return {
           isSelf: true,
-          senderName: "You",
+          senderName: clinicalOnly ? (roomData?.provider?.full_name || "Doctor") : "Admin",
           senderRole: clinicalOnly ? ("provider" as const) : ("admin" as const),
         };
       }
@@ -578,6 +578,8 @@ export function ConsultationRoomPage({
         } else {
           body = `${senderInfo.senderName} has joined the chat`;
         }
+      } else if (/admin added/i.test(body)) {
+        isSystem = true;
       }
 
       const attachments = (rawItem.attachments as any[]) || [];
@@ -948,7 +950,7 @@ export function ConsultationRoomPage({
       const newMsg: ChatMessageItem = {
         id: sentId || `msg_${Date.now()}`,
         senderId: roomData.quickblox.providerSession.userId,
-        senderName: "You",
+        senderName: clinicalOnly ? (roomData.provider?.full_name || "Doctor") : "Admin",
         senderRole: clinicalOnly ? "provider" : "admin",
         body: text,
         dateSent: Date.now(),
@@ -1171,10 +1173,48 @@ export function ConsultationRoomPage({
       }
       toast.success("Provider assigned & QuickBlox consultation connected.");
 
-      // Notify via QuickBlox chat system message if active
+      // Target doctor profile
+      const targetProv = ((providersQ.data as any[]) ?? []).find((p: any) => p.id === providerId);
+      const doctorName = targetProv?.full_name?.trim() || "doctor";
+      const assignmentChatAnnouncement = `admin added ${doctorName} into the chat`;
+
+      // 1. Immediately inject the system pill into chatMessages for instant UI visibility
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `assignment_${Date.now()}`,
+          senderId: roomData?.quickblox.providerSession.userId ?? 142814409,
+          senderName: "System",
+          senderRole: "system",
+          body: assignmentChatAnnouncement,
+          dateSent: Date.now(),
+          isSelf: false,
+          isSystem: true,
+        },
+      ]);
+
+      // 2. Broadcast via QuickBlox groupchat if active dialog is present
       const QB = window.QB;
+      const targetDialogId = selectedQueueItem?.dialogId || roomData?.consultation.dialogId;
+      const targetRecipient = activeDialogJid || targetDialogId;
+      if (QB?.chat && targetRecipient) {
+        try {
+          QB.chat.send(targetRecipient, {
+            type: activeDialogJid ? "groupchat" : "chat",
+            body: assignmentChatAnnouncement,
+            extension: {
+              save_to_history: 1,
+              dialog_id: targetDialogId,
+              notification_type: "ADMIN_ADDED_DOCTOR",
+            },
+          });
+        } catch (chatSendErr) {
+          console.warn("[QuickBlox] broadcast assignment announcement failed:", chatSendErr);
+        }
+      }
+
+      // 3. Notify via QuickBlox chat system message
       if (QB?.chat) {
-        const targetProv = ((providersQ.data as any[]) ?? []).find((p: any) => p.id === providerId);
         if (targetProv?.qb_user_id) {
           const provJid = QB.chat.helpers?.getUserJid
             ? QB.chat.helpers.getUserJid(targetProv.qb_user_id)
@@ -1385,11 +1425,29 @@ export function ConsultationRoomPage({
 
   // Live Queue calculations
   const liveQueueList = roomData.liveQueue ?? [];
-  const openQueueCount = liveQueueList.filter((item) => !item.isEnded).length;
+  const waitingRoomCount = liveQueueList.filter((item) => !item.isEnded && !item.isAssigned && !item.providerId).length;
+  const liveQueueCount = liveQueueList.filter((item) => !item.isEnded).length;
   const allQueueCount = liveQueueList.length;
 
   const filteredQueue = liveQueueList.filter((item) => {
-    if (queueTab === "open" && item.isEnded) return false;
+    if (clinicalOnly) {
+      // Doctor side: shows all active consultations assigned to this doctor
+      if (item.isEnded && queueTab !== "all") return false;
+      const isAssignedToDoctor =
+        item.isActiveCurrent ||
+        (roomData.provider?.id && item.providerId === roomData.provider.id);
+      if (!isAssignedToDoctor) return false;
+    } else {
+      // Admin side:
+      // Waiting room: only consultations not added/assigned to doctor, and not ended
+      if (queueTab === "waiting" && (item.isEnded || item.isAssigned || Boolean(item.providerId))) {
+        return false;
+      }
+      // Live queue: all consultations that are not completed
+      if (queueTab === "live" && item.isEnded) {
+        return false;
+      }
+    }
     if (queueSearch.trim()) {
       const q = queueSearch.toLowerCase();
       const match =
@@ -1435,19 +1493,9 @@ export function ConsultationRoomPage({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-[#152A51]">{patient.name}</span>
-                {roomData.medicine && (
-                  <Badge variant="outline" className="border-[#6A9B9C]/40 bg-[#6A9B9C]/10 text-[11px] text-[#2C5E5F]">
-                    {roomData.medicine.name}
-                  </Badge>
-                )}
-                {isConsultationEnded ? (
+                {isConsultationEnded && (
                   <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 text-[11px]">
                     Consultation Ended
-                  </Badge>
-                ) : (
-                  <Badge className="bg-emerald-500/15 text-emerald-800 hover:bg-emerald-500/15 text-[11px] border border-emerald-300">
-                    <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Live Visit
                   </Badge>
                 )}
               </div>
@@ -1459,68 +1507,7 @@ export function ConsultationRoomPage({
         </div>
 
         {/* Header Right Actions */}
-        <div className="flex items-center gap-2">
-          {/* Top Bar Assigned Clinician Selector */}
-          <div className="flex items-center gap-1.5 rounded-lg border border-[#D5DEDD] bg-[#F9FBFA] px-2.5 py-1 text-xs">
-            <Stethoscope className="h-3.5 w-3.5 text-[#6A9B9C] shrink-0" />
-            <span className="hidden xl:inline text-[#3B4759]/70 text-[11px] font-medium">Clinician:</span>
-            <Select
-              value={roomData.provider?.id || "unassigned"}
-              onValueChange={(val) => {
-                assignMut.mutate(val === "unassigned" ? null : val);
-              }}
-              disabled={assignMut.isPending}
-            >
-              <SelectTrigger className="h-7 min-w-[140px] sm:min-w-[170px] border-none bg-transparent p-0 text-xs font-semibold text-[#152A51] focus:ring-0 focus:ring-offset-0">
-                <SelectValue placeholder="Assign clinician">
-                  {assignMut.isPending ? (
-                    <span className="flex items-center gap-1 text-[#6A9B9C]">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Assigning…
-                    </span>
-                  ) : (
-                    roomData.provider?.full_name || "Unassigned"
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="unassigned" className="text-xs text-amber-700">
-                  Unassigned
-                </SelectItem>
-                {((providersQ.data as any[]) ?? []).map((prov) => (
-                  <SelectItem key={prov.id} value={prov.id} className="text-xs">
-                    {prov.full_name || prov.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Quick Connection Badge */}
-          <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-[#D5DEDD] bg-[#F9FBFA] px-3 py-1 text-[11px] text-[#3B4759]">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                chatConnected ? "bg-emerald-500" : "bg-amber-400 animate-ping"
-              }`}
-            />
-            <span>{chatConnected ? "Connected to QuickBlox" : connectionStatus}</span>
-          </div>
-
-          {/* External QuickBlox Web App Link */}
-          {roomData.consultation.externalUrl && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="h-9 border-[#D5DEDD] px-2.5 text-xs text-[#3B4759] hover:bg-[#F3F6F6]"
-            >
-              <a href={roomData.consultation.externalUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="hidden md:inline"></span>
-              </a>
-            </Button>
-          )}
-        </div>
+        <div className="flex items-center gap-2" />
       </header>
 
       {/* FINISHED CONSULTATION BANNER */}
@@ -1629,22 +1616,6 @@ export function ConsultationRoomPage({
               )}
             </div>
 
-            {/* Quick Metrics Bar */}
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg border border-[#D5DEDD] bg-white p-2">
-                <span className="text-[11px] text-[#3B4759]/60">Height / Weight</span>
-                <p className="font-semibold text-[#152A51]">
-                  {patient.height_cm ? `${patient.height_cm} cm` : "—"} / {patient.weight_kg ? `${patient.weight_kg} kg` : "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-[#D5DEDD] bg-white p-2">
-                <span className="text-[11px] text-[#3B4759]/60">Treatment</span>
-                <p className="font-semibold text-[#152A51] truncate">
-                  {roomData.medicine?.name || "Treatment"}
-                </p>
-              </div>
-            </div>
-
             {/* Dynamic action buttons matching request review permissions */}
             {(() => {
               const requestStatus = roomData.request.status;
@@ -1735,46 +1706,58 @@ export function ConsultationRoomPage({
             })()}
           </div>
 
-          {/* Sidebar Tab Selector */}
+          {/* Sidebar Tab Selector: 4 Sections (Patient Profile, Intake, About & Notes, History) */}
           <div className="flex border-b border-[#D5DEDD] bg-white">
             <button
               type="button"
-              onClick={() => setSidebarTab("vitals")}
-              className={`flex-1 py-2 text-xs font-semibold text-center border-b-2 transition ${
-                sidebarTab === "vitals"
+              onClick={() => setSidebarTab("profile")}
+              className={`flex-1 py-2 text-[11px] font-semibold text-center border-b-2 transition ${
+                sidebarTab === "profile"
                   ? "border-[#152A51] text-[#152A51]"
                   : "border-transparent text-[#3B4759]/60 hover:text-[#152A51]"
               }`}
             >
-              Patient Profile
+              Profile
             </button>
             <button
               type="button"
               onClick={() => setSidebarTab("intake")}
-              className={`flex-1 py-2 text-xs font-semibold text-center border-b-2 transition ${
+              className={`flex-1 py-2 text-[11px] font-semibold text-center border-b-2 transition ${
                 sidebarTab === "intake"
                   ? "border-[#152A51] text-[#152A51]"
                   : "border-transparent text-[#3B4759]/60 hover:text-[#152A51]"
               }`}
             >
-              Intake ({roomData.answers.length})
+              Intake
             </button>
             <button
               type="button"
-              onClick={() => setSidebarTab("eligibility")}
-              className={`flex-1 py-2 text-xs font-semibold text-center border-b-2 transition ${
-                sidebarTab === "eligibility"
+              onClick={() => setSidebarTab("notes")}
+              className={`flex-1 py-2 text-[11px] font-semibold text-center border-b-2 transition ${
+                sidebarTab === "notes"
                   ? "border-[#152A51] text-[#152A51]"
                   : "border-transparent text-[#3B4759]/60 hover:text-[#152A51]"
               }`}
             >
-              Eligibility ({roomData.eligibility.length})
+              About & Notes
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("history")}
+              className={`flex-1 py-2 text-[11px] font-semibold text-center border-b-2 transition ${
+                sidebarTab === "history"
+                  ? "border-[#152A51] text-[#152A51]"
+                  : "border-transparent text-[#3B4759]/60 hover:text-[#152A51]"
+              }`}
+            >
+              History
             </button>
           </div>
 
           {/* Sidebar Content Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {sidebarTab === "vitals" && (
+            {/* SECTION 1: PATIENT PROFILE */}
+            {sidebarTab === "profile" && (
               <div className="space-y-3">
                 <Card className="border-[#D5DEDD] shadow-none">
                   <CardHeader className="p-3 pb-1">
@@ -1827,63 +1810,223 @@ export function ConsultationRoomPage({
               </div>
             )}
 
+            {/* SECTION 2: INTAKE RESPONSES (JotForm responses) */}
             {sidebarTab === "intake" && (
-              <div className="space-y-2.5">
-                {roomData.answers.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-[#D5DEDD] p-4 text-center text-xs text-[#3B4759]/70">
-                    No intake responses recorded for this session.
+              <div className="space-y-3">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span className="text-xs font-bold text-emerald-900">
+                      Medical Intake Form Completed
+                    </span>
                   </div>
-                ) : (
-                  roomData.answers.map((ans) => (
-                    <div
-                      key={ans.id}
-                      className={`rounded-lg border p-3 text-xs shadow-2xs ${
-                        ans.isDisqualifying
-                          ? "border-red-200 bg-red-50/70"
-                          : "border-[#D5DEDD] bg-white"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="font-medium text-[#3B4759]/80 leading-snug">{ans.prompt}</span>
-                        {ans.isDisqualifying && (
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">
-                            Flag
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 font-semibold text-[#152A51]">{ans.answer}</p>
+                  <p className="mt-1 text-[11px] text-emerald-800 leading-snug">
+                    Responses filled by patient via confidential medical intake form
+                    {roomData.jotformSubmittedAt ? ` (${roomData.jotformSubmittedAt})` : ""}.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {(!roomData.jotformAnswers || roomData.jotformAnswers.length === 0) ? (
+                    <div className="rounded-lg border border-dashed border-[#D5DEDD] p-5 text-center text-xs text-[#3B4759]/70">
+                      No JotForm intake responses found for this patient yet.
                     </div>
-                  ))
+                  ) : (
+                    roomData.jotformAnswers.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-xl border border-[#D5DEDD] bg-white p-3 text-xs shadow-2xs"
+                      >
+                        <span className="font-medium text-[#3B4759]/75 leading-relaxed">{item.label}</span>
+                        <p className="mt-1 font-bold text-[#152A51] text-[13px]">{item.value}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 3: ABOUT & CLINICAL NOTES */}
+            {sidebarTab === "notes" && (
+              <div className="space-y-4">
+                {/* Clinician Consultation Note (shared with Request Review Page) */}
+                <RequestNotes requestId={requestId} />
+
+                {/* Treatment Details */}
+                <Card className="border-[#D5DEDD] shadow-none">
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-xs font-bold text-[#152A51]">
+                      Treatment & Prescription
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-1 space-y-2 text-xs divide-y divide-[#E8EEED]">
+                    <div className="pt-1 flex justify-between">
+                      <span className="text-[#3B4759]/70">Treatment</span>
+                      <span className="font-bold text-[#152A51]">{roomData.medicine?.name || "—"}</span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">Plan</span>
+                      <span className="font-semibold text-[#152A51]">{roomData.package?.name || "Monthly Plan"}</span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">Protocol</span>
+                      <span className="font-medium text-[#152A51]">Standard clinical protocol</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Patient Demographics & Vitals (no phone/email) */}
+                <Card className="border-[#D5DEDD] shadow-none">
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-xs font-bold text-[#152A51]">
+                      Demographics & Vitals
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-1 space-y-2 text-xs divide-y divide-[#E8EEED]">
+                    <div className="pt-1 flex justify-between">
+                      <span className="text-[#3B4759]/70">Full Name</span>
+                      <span className="font-bold text-[#152A51]">{patient.name}</span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">DOB & Age</span>
+                      <span className="font-semibold text-[#152A51]">
+                        {patient.dob || "—"} ({patient.age ?? "—"} yrs)
+                      </span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">Biological Sex</span>
+                      <span className="font-semibold text-[#152A51]">{patient.sex?.toUpperCase() || "—"}</span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">Height & Weight</span>
+                      <span className="font-semibold text-[#152A51]">
+                        {patient.height_cm ? `${patient.height_cm} cm` : "—"} / {patient.weight_kg ? `${patient.weight_kg} kg` : "—"}
+                      </span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">BMI</span>
+                      <span className="font-bold text-[#152A51]">
+                        {patient.bmi ? patient.bmi.toFixed(1) : "—"}
+                        {patient.bmi ? (
+                          <span className="ml-1 text-[10px] font-normal text-[#3B4759]/70">
+                            ({patient.bmi >= 30 ? "Obese" : patient.bmi >= 25 ? "Overweight" : "Normal"})
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+                    <div className="pt-2 flex justify-between">
+                      <span className="text-[#3B4759]/70">State / Region</span>
+                      <span className="font-semibold text-[#152A51]">{patient.state_code || "—"}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Additional Questionnaire Responses if available */}
+                {roomData.answers && roomData.answers.length > 0 && (
+                  <Card className="border-[#D5DEDD] shadow-none">
+                    <CardHeader className="p-3 pb-1">
+                      <CardTitle className="text-xs font-bold text-[#152A51]">
+                        Additional Questionnaire ({roomData.answers.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-1 space-y-2 text-xs">
+                      {roomData.answers.map((ans) => (
+                        <div key={ans.id} className="p-2.5 rounded-lg border border-[#D5DEDD] bg-white">
+                          <p className="font-medium text-[#3B4759]/80">{ans.prompt}</p>
+                          <p className="mt-1 font-bold text-[#152A51]">{ans.answer}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             )}
 
-            {sidebarTab === "eligibility" && (
-              <div className="space-y-2.5">
-                {roomData.eligibility.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-[#D5DEDD] p-4 text-center text-xs text-[#3B4759]/70">
-                    No automated eligibility evaluations recorded.
+            {/* SECTION 4: PATIENT CONSULTATION HISTORY */}
+            {sidebarTab === "history" && (
+              <div className="space-y-3">
+                {/* Overall Patient Consultation Stats */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-center">
+                    <span className="text-[10px] text-[#3B4759]/70 block">Total</span>
+                    <span className="text-lg font-bold text-[#152A51]">
+                      {roomData.totalPatientConsultations ?? roomData.patientConsultationHistory?.length ?? 0}
+                    </span>
                   </div>
-                ) : (
-                  roomData.eligibility.map((el, i) => (
-                    <div key={i} className="rounded-lg border border-[#D5DEDD] bg-white p-3 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#152A51]">{el.medicine_name}</span>
-                        <Badge
-                          variant="outline"
-                          className={
-                            el.result === "eligible"
-                              ? "border-emerald-300 bg-emerald-50 text-emerald-800 text-[10px]"
-                              : "border-red-300 bg-red-50 text-red-800 text-[10px]"
-                          }
-                        >
-                          {sentenceCase(el.result)}
-                        </Badge>
-                      </div>
-                      {el.reason && <p className="mt-1 text-[#3B4759]/80 text-[11px]">{el.reason}</p>}
+                  <div className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-center">
+                    <span className="text-[10px] text-emerald-700 block">Completed</span>
+                    <span className="text-lg font-bold text-emerald-700">
+                      {roomData.patientConsultationHistory?.filter((c) => c.status === "completed" || Boolean(c.endedAt)).length ?? 0}
+                    </span>
+                  </div>
+                  <div className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-center">
+                    <span className="text-[10px] text-amber-600 block">Active</span>
+                    <span className="text-lg font-bold text-amber-600">
+                      {roomData.patientConsultationHistory?.filter((c) => c.status === "in_progress" && !c.endedAt).length ?? 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Consultation Records for this Patient */}
+                <div className="space-y-2">
+                  {(!roomData.patientConsultationHistory || roomData.patientConsultationHistory.length === 0) ? (
+                    <div className="rounded-lg border border-dashed border-[#D5DEDD] p-5 text-center text-xs text-[#3B4759]/70">
+                      No previous consultations found for this patient.
                     </div>
-                  ))
-                )}
+                  ) : (
+                    roomData.patientConsultationHistory.map((item, idx) => {
+                      const isCurrentRoom = item.appointmentId === roomData.consultation.appointmentId;
+                      const isDone = item.status === "completed" || Boolean(item.endedAt);
+                      return (
+                        <div
+                          key={item.id || idx}
+                          className={`rounded-xl border p-3 text-xs transition ${
+                            isCurrentRoom
+                              ? "bg-blue-50/50 border-[#152A51]"
+                              : "border-[#D5DEDD] bg-white hover:bg-[#F9FBFA]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-bold text-[#152A51] truncate">
+                              {item.medicineName || "Consultation"}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`text-[9px] px-1 py-0 font-semibold shrink-0 ${
+                                isDone
+                                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                                  : "border-amber-300 bg-amber-50 text-amber-800"
+                              }`}
+                            >
+                              {isDone ? "Completed" : "In Progress"}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-0.5 text-[11px] text-[#3B4759]/75">
+                            <div className="flex justify-between">
+                              <span>Appointment:</span>
+                              <span className="font-mono text-[#152A51]">#{item.appointmentId.slice(-8)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Clinician:</span>
+                              <span className="font-medium text-[#152A51]">{item.providerName || "Unassigned"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Started:</span>
+                              <span>{formatDateTimeFull(item.startedAt)}</span>
+                            </div>
+                            {item.endedAt && (
+                              <div className="flex justify-between text-[10px] text-[#3B4759]/60">
+                                <span>Concluded:</span>
+                                <span>{formatDateTimeFull(item.endedAt)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1942,41 +2085,6 @@ export function ConsultationRoomPage({
                 )}
               </Button>
 
-              <Button
-                variant={activeMainTab === "notes" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setActiveMainTab("notes")}
-                className={`h-8 gap-1.5 px-3 text-xs font-semibold ${
-                  activeMainTab === "notes" ? "bg-[#152A51] text-white hover:bg-[#152A51]" : "text-[#3B4759] hover:bg-[#F3F6F6]"
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                <span>About & Notes</span>
-              </Button>
-
-              <Button
-                variant={activeMainTab === "history" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setActiveMainTab("history")}
-                className={`h-8 gap-1.5 px-3 text-xs font-semibold ${
-                  activeMainTab === "history" ? "bg-[#152A51] text-white hover:bg-[#152A51]" : "text-[#3B4759] hover:bg-[#F3F6F6]"
-                }`}
-              >
-                <HistoryIcon className="h-3.5 w-3.5" />
-                <span>History</span>
-              </Button>
-
-              <Button
-                variant={activeMainTab === "qb-web" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setActiveMainTab("qb-web")}
-                className={`h-8 gap-1.5 px-3 text-xs font-semibold ${
-                  activeMainTab === "qb-web" ? "bg-[#152A51] text-white hover:bg-[#152A51]" : "text-[#3B4759] hover:bg-[#F3F6F6]"
-                }`}
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                <span>QuickBlox Web</span>
-              </Button>
             </div>
           </div>
 
@@ -1991,9 +2099,11 @@ export function ConsultationRoomPage({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Users className="h-4 w-4 text-[#152A51]" />
-                        <h3 className="text-xs font-bold text-[#152A51]">Live Queue</h3>
+                        <h3 className="text-xs font-bold text-[#152A51]">
+                          {clinicalOnly ? "Live Queue" : "Consultation Queue"}
+                        </h3>
                         <Badge variant="outline" className="text-[10px] bg-[#6A9B9C]/10 border-[#6A9B9C]/30 text-[#2C5E5F]">
-                          {openQueueCount} Waiting
+                          {clinicalOnly ? `${filteredQueue.length} Active` : `${waitingRoomCount} Waiting`}
                         </Badge>
                       </div>
                       <Button
@@ -2007,31 +2117,38 @@ export function ConsultationRoomPage({
                       </Button>
                     </div>
 
-                    {/* Filter Tabs & Search */}
-                    <div className="flex items-center gap-1 bg-[#E8EEED]/60 p-0.5 rounded-lg text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setQueueTab("open")}
-                        className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition ${
-                          queueTab === "open"
-                            ? "bg-white text-[#152A51] shadow-2xs"
-                            : "text-[#3B4759]/70 hover:text-[#152A51]"
-                        }`}
-                      >
-                        Live ({openQueueCount})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setQueueTab("all")}
-                        className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition ${
-                          queueTab === "all"
-                            ? "bg-white text-[#152A51] shadow-2xs"
-                            : "text-[#3B4759]/70 hover:text-[#152A51]"
-                        }`}
-                      >
-                        All ({allQueueCount})
-                      </button>
-                    </div>
+                    {/* Filter Tabs (Admin: 2 tabs [Waiting Room & Live Queue]; Doctor: single view of assigned) */}
+                    {!clinicalOnly ? (
+                      <div className="flex items-center gap-1 bg-[#E8EEED]/60 p-0.5 rounded-lg text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setQueueTab("waiting")}
+                          className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition ${
+                            queueTab === "waiting"
+                              ? "bg-white text-[#152A51] shadow-2xs"
+                              : "text-[#3B4759]/70 hover:text-[#152A51]"
+                          }`}
+                        >
+                          Waiting Room ({waitingRoomCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQueueTab("live")}
+                          className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition ${
+                            queueTab === "live"
+                              ? "bg-white text-[#152A51] shadow-2xs"
+                              : "text-[#3B4759]/70 hover:text-[#152A51]"
+                          }`}
+                        >
+                          Live Queue ({liveQueueCount})
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between px-1 text-[11px] text-[#3B4759]/70 font-medium">
+                        <span>Assigned to you:</span>
+                        <span className="font-bold text-[#152A51]">{filteredQueue.length} consultations</span>
+                      </div>
+                    )}
 
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#3B4759]/40" />
@@ -2234,7 +2351,7 @@ export function ConsultationRoomPage({
                             <div className={`flex flex-col ${msg.isSelf ? "items-end" : "items-start"}`}>
                               <div className="flex items-baseline gap-1.5 text-[10px] text-[#3B4759]/60 mb-0.5">
                                 <span className="font-bold text-[#152A51]">
-                                  {msg.isSelf ? "You" : msg.senderName}
+                                  {msg.isSelf ? `${msg.senderName} (You)` : msg.senderName}
                                 </span>
                                 {!msg.isSelf && msg.senderRole === "admin" && (
                                   <Badge
@@ -2509,200 +2626,6 @@ export function ConsultationRoomPage({
               )}
             </div>
           )}
-
-          {/* TAB 3: ABOUT & CLINICAL NOTES */}
-          {activeMainTab === "notes" && (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#F9FBFA]">
-              {/* Clinician Consultation Note (shared with Request Review Page) */}
-              <RequestNotes requestId={requestId} />
-
-              {/* Comprehensive Intake Questionnaire Answers */}
-              <Card className="border-[#D5DEDD] shadow-xs">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-bold text-[#152A51]">
-                    Intake Questionnaire Responses ({roomData.answers.length})
-                  </CardTitle>
-                  <CardDescription className="text-xs text-[#3B4759]/70">
-                    Full responses submitted by the patient during medical intake.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-2 space-y-2">
-                  {roomData.answers.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-[#D5DEDD] p-6 text-center text-xs text-[#3B4759]/60">
-                      No questionnaire responses found for this session.
-                    </div>
-                  ) : (
-                    roomData.answers.map((ans) => (
-                      <div
-                        key={ans.id}
-                        className={`rounded-xl border p-3.5 text-xs ${
-                          ans.isDisqualifying
-                            ? "border-red-200 bg-red-50/60"
-                            : "border-[#D5DEDD] bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="font-medium text-[#3B4759]/90 leading-relaxed">
-                            {ans.prompt}
-                          </span>
-                          {ans.isDisqualifying && (
-                            <Badge variant="destructive" className="text-[10px] shrink-0">
-                              Risk Flag
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-1.5 font-bold text-[#152A51] text-[13px]">{ans.answer}</p>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Patient Demographics & Metrics */}
-              <Card className="border-[#D5DEDD] shadow-xs">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-bold text-[#152A51]">
-                    Patient Demographics & Vitals
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-2">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">Full Name</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">{patient.name}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">DOB & Age</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">
-                        {patient.dob || "—"} ({patient.age ?? "—"} yrs)
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">Biological Sex</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">{patient.sex?.toUpperCase() || "—"}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">Height & Weight</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">
-                        {patient.height_cm ? `${patient.height_cm} cm` : "—"} / {patient.weight_kg ? `${patient.weight_kg} kg` : "—"}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">Calculated BMI</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">{patient.bmi ? patient.bmi.toFixed(1) : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">State / Region</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">{patient.state_code || "—"}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">Contact Phone</span>
-                      <p className="font-bold text-[#152A51] mt-0.5">{patient.phone || "—"}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#D5DEDD] bg-white p-3">
-                      <span className="text-[11px] text-[#3B4759]/60">Email</span>
-                      <p className="font-bold text-[#152A51] mt-0.5 truncate">{patient.email || "Confidential"}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* TAB 4: HISTORY & TIMELINE */}
-          {activeMainTab === "history" && (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#F9FBFA]">
-              {/* Event Timeline */}
-              <Card className="border-[#D5DEDD] shadow-xs">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-bold text-[#152A51]">
-                    Medication Request Timeline
-                  </CardTitle>
-                  <CardDescription className="text-xs text-[#3B4759]/70">
-                    Chronological audit log of reviews, state transitions, and notes.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-2">
-                  {(!roomData.events || roomData.events.length === 0) ? (
-                    <div className="rounded-lg border border-dashed border-[#D5DEDD] p-6 text-center text-xs text-[#3B4759]/60">
-                      No events logged for this request yet.
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {roomData.events.map((ev) => (
-                        <div key={ev.id} className="flex gap-3 text-xs">
-                          <div className="flex flex-col items-center">
-                            <span className="h-2 w-2 rounded-full bg-[#6A9B9C] mt-1.5" />
-                            <div className="flex-1 w-[1px] bg-[#D5DEDD] my-1" />
-                          </div>
-                          <div className="flex-1 rounded-xl border border-[#D5DEDD] bg-white p-3 shadow-2xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-[#152A51]">{sentenceCase(ev.status)}</span>
-                              <span className="text-[11px] text-[#3B4759]/60">
-                                {formatDateTimeFull(ev.created_at)}
-                              </span>
-                            </div>
-                            {ev.note && (
-                              <p className="mt-1 text-[#3B4759]/90 font-medium whitespace-pre-wrap">
-                                {ev.note}
-                              </p>
-                            )}
-                            {ev.actor_role && (
-                              <span className="mt-1 inline-block text-[10px] text-[#6A9B9C] font-semibold">
-                                Actor: {sentenceCase(ev.actor_role)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Past Consultations */}
-              {roomData.pastConsultations && roomData.pastConsultations.length > 0 && (
-                <Card className="border-[#D5DEDD] shadow-xs">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm font-bold text-[#152A51]">
-                      Previous Consultations ({roomData.pastConsultations.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2 space-y-2">
-                    {roomData.pastConsultations.map((c) => (
-                      <div key={c.id} className="flex items-center justify-between rounded-lg border border-[#D5DEDD] bg-white p-3 text-xs">
-                        <div>
-                          <span className="font-semibold text-[#152A51]">Appointment {c.appointmentId}</span>
-                          <p className="text-[11px] text-[#3B4759]/60">Started: {formatDateTimeFull(c.startedAt)}</p>
-                        </div>
-                        <Badge variant="outline" className={c.endedAt ? "border-emerald-300 text-emerald-800" : "border-amber-300 text-amber-800"}>
-                          {c.endedAt ? "Completed" : "In Progress"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {/* TAB 5: QUICKBLOX WEB IFRAME FALLBACK */}
-          {activeMainTab === "qb-web" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white">
-              {roomData.consultation.embedUrl ? (
-                <iframe
-                  src={roomData.consultation.embedUrl}
-                  title="QuickBlox Web App"
-                  className="w-full h-full border-0"
-                  allow="camera; microphone; display-capture; autoplay"
-                />
-              ) : (
-                <div className="flex flex-1 items-center justify-center p-8 text-center text-xs text-[#3B4759]/70">
-                  Embed URL not available for this appointment.
-                </div>
-              )}
-            </div>
-          )}
         </main>
       </div>
 
@@ -2714,10 +2637,12 @@ export function ConsultationRoomPage({
           requestId={roomData.request.id}
           currentMedicineId={roomData.request.medicine_id ?? undefined}
           currentPackageId={roomData.request.package_id ?? undefined}
+          currentVariantId={roomData.request.variant_id ?? undefined}
+          hideFinancial={false}
           current={{
             medicineName: roomData.medicine?.name ?? null,
             planName: roomData.package?.name ?? null,
-            price: roomData.package?.price ?? null,
+            price: roomData.package?.price != null ? Number(roomData.package.price) : null,
           }}
           onChanged={() => {
             refetch();

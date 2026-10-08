@@ -681,19 +681,6 @@ export function RequestReviewPanel({
             ) : null}
             {canStartConsult || activeConsultation || consultation ? (
               <div className="flex flex-wrap items-center gap-2">
-                {consultation && !consultation.is_ended ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setFinishOpen(true)}
-                    disabled={finishConsultMut.isPending}
-                    className="h-10 border-[#152A51] bg-white px-4 text-[13px] font-semibold text-[#152A51] hover:bg-[#F3F6F6]"
-                  >
-                    <Check className="mr-1.5 h-4 w-4 text-emerald-600" />
-                    Finish consultation
-                  </Button>
-                ) : null}
                 <Button
                   type="button"
                   size="sm"
@@ -965,14 +952,14 @@ export function RequestReviewPanel({
         open={changeOpen}
         onOpenChange={setChangeOpen}
         onChanged={refresh}
-        hideFinancial={clinicalOnly}
+        hideFinancial={false}
         currentMedicineId={medicine?.id ?? request.medicine_id ?? null}
         currentVariantId={request.variant_id ?? null}
         currentPackageId={pkg?.id ?? request.package_id ?? null}
         current={{
           medicineName: medicine?.name ?? null,
           planName: pkg?.name ?? null,
-          price: clinicalOnly ? null : pkg?.price != null ? Number(pkg.price) : null,
+          price: pkg?.price != null ? Number(pkg.price) : null,
         }}
       />
 
