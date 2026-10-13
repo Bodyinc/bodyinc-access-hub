@@ -20,6 +20,7 @@ import { StateMultiSelect } from "@/components/admin/state-multi-select";
 import { AvatarUpload } from "@/components/admin/avatar-upload";
 import {
   providerFormSchema,
+  createProviderFormSchema,
   US_STATES,
   CREDENTIALS,
   CONSULTATION_TYPES,
@@ -85,7 +86,7 @@ export function ProviderForm({
   onCancel,
 }: ProviderFormProps) {
   const form = useForm<ProviderFormValues>({
-    resolver: zodResolver(providerFormSchema) as any,
+    resolver: zodResolver(mode === "create" ? createProviderFormSchema : providerFormSchema) as any,
     defaultValues: { ...EMPTY, ...defaultValues },
   });
 
@@ -172,7 +173,7 @@ export function ProviderForm({
               className={inputFull}
             />
           </Field>
-          <Field label="NPI" error={errors.npi?.message}>
+          <Field label="NPI" error={errors.npi?.message} required={mode === "create"}>
             <Input {...register("npi")} placeholder="e.g. 1234567890" className={inputFull} />
           </Field>
           <Field label="DEA" error={errors.dea?.message}>

@@ -37,6 +37,7 @@ export type ConsultationRow = {
   plan_label: string | null;
   subscription_status: string | null;
   visit_status: ConsultationVisitStatus;
+  request_id: string | null;
 };
 
 export type ListConsultationsResult = {
@@ -349,25 +350,55 @@ export const listConsultations = createServerFn({ method: "POST" })
       ),
     ];
 
-    const [{ data: meds }, { data: pkgs }] = await Promise.all([
+    const [{ data: meds }, { data: pkgs }, { data: reqRows }] = await Promise.all([
       medIds.length
         ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
         : Promise.resolve({ data: [] as any[] }),
       pkgIds.length
         ? supabaseAdmin.from("packages").select("id, name").in("id", pkgIds)
         : Promise.resolve({ data: [] as any[] }),
+      userIds.length || subIds.length
+        ? (supabaseAdmin as any)
+            .from("medication_requests")
+            .select("id, user_id, subscription_id")
+            .or(
+              [
+                userIds.length ? `user_id.in.(${userIds.join(",")})` : null,
+                subIds.length ? `subscription_id.in.(${subIds.join(",")})` : null,
+              ]
+                .filter(Boolean)
+                .join(","),
+            )
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as any[] }),
     ]);
     const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name as string]));
     const pkgMap = new Map((pkgs ?? []).map((p: any) => [p.id, p.name as string]));
+
+    const reqBySubId = new Map<string, string>();
+    const reqByUserId = new Map<string, string>();
+    for (const r of (reqRows ?? []) as any[]) {
+      if (r.subscription_id && !reqBySubId.has(r.subscription_id)) {
+        reqBySubId.set(r.subscription_id, r.id);
+      }
+      if (r.user_id && !reqByUserId.has(r.user_id)) {
+        reqByUserId.set(r.user_id, r.id);
+      }
+    }
 
     const search = data.search?.trim().toLowerCase();
     const mapped: ConsultationRow[] = consultations.map((row) => {
       const profile = profileMap.get(row.user_id);
       const sub = subMap.get(row.subscription_id);
+      const reqId =
+        (row.subscription_id ? reqBySubId.get(row.subscription_id) : null) ??
+        (row.user_id ? reqByUserId.get(row.user_id) : null) ??
+        null;
       return {
         id: row.id,
         user_id: row.user_id,
         subscription_id: row.subscription_id,
+        request_id: reqId,
         qb_appointment_id: row.qb_appointment_id,
         started_at: row.started_at,
         patient_name: profile?.full_name ?? null,
@@ -1166,8 +1197,40 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       });
     }
 
-    const heightCm = orderSession?.height_cm ?? null;
-    const weightKg = orderSession?.weight_kg ?? null;
+    let heightCm = orderSession?.height_cm ?? null;
+    let weightKg = orderSession?.weight_kg ?? null;
+
+    if (!heightCm || !weightKg) {
+      if (req.user_id) {
+        const { data: userSess } = await supabaseAdmin
+          .from("intake_sessions")
+          .select("height_cm, weight_kg")
+          .eq("claimed_by_user_id", req.user_id)
+          .not("height_cm", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (userSess?.height_cm) {
+          heightCm = heightCm ?? userSess.height_cm;
+          weightKg = weightKg ?? userSess.weight_kg;
+        }
+      }
+      const patEmail = profile?.email ?? orderSession?.email;
+      if ((!heightCm || !weightKg) && patEmail) {
+        const { data: emailSess } = await supabaseAdmin
+          .from("intake_sessions")
+          .select("height_cm, weight_kg")
+          .eq("email", patEmail)
+          .not("height_cm", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (emailSess?.height_cm) {
+          heightCm = heightCm ?? emailSess.height_cm;
+          weightKg = weightKg ?? emailSess.weight_kg;
+        }
+      }
+    }
 
     // Load History: medication request events and all past consultations for this patient across the application
     const [{ data: eventsRows }, { data: pastRows }, { data: allPatientRequests }] = await Promise.all([

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { providerFormSchema } from "./providers.schema";
+import { providerFormSchema, createProviderFormSchema } from "./providers.schema";
 import { assertAdmin } from "@/lib/admin-guard";
 
 const PROFILE_KEYS = ["full_name", "phone", "avatar_url"] as const;
@@ -146,7 +146,7 @@ export const getProvider = createServerFn({ method: "POST" })
     return { ...(provider as any), ...((profile as any) ?? {}) };
   });
 
-const createInput = providerFormSchema.extend({
+const createInput = createProviderFormSchema.extend({
   redirect_to: z.string().url(),
 });
 

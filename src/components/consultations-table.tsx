@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -85,6 +86,7 @@ export function ConsultationsTable({
   showPatient?: boolean;
   onOpenPatient?: (userId: string) => void;
 }) {
+  const navigate = useNavigate();
   const [activeConsultation, setActiveConsultation] = useState<{
     embedUrl: string;
     externalUrl: string;
@@ -282,6 +284,13 @@ export function ConsultationsTable({
                   showPatient={showPatient}
                   opening={openMut.isPending && openMut.variables?.consultationId === row.id}
                   onOpen={() => {
+                    if (row.request_id) {
+                      navigate({
+                        to: "/admin/requests/$requestId/consultation",
+                        params: { requestId: row.request_id },
+                      });
+                      return;
+                    }
                     openMut.mutate({ consultationId: row.id });
                   }}
                   onOpenPatient={onOpenPatient}

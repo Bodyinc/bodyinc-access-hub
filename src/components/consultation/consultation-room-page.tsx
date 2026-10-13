@@ -2638,11 +2638,15 @@ export function ConsultationRoomPage({
           currentMedicineId={roomData.request.medicine_id ?? undefined}
           currentPackageId={roomData.request.package_id ?? undefined}
           currentVariantId={roomData.request.variant_id ?? undefined}
-          hideFinancial={false}
+          hideFinancial={clinicalOnly}
           current={{
             medicineName: roomData.medicine?.name ?? null,
             planName: roomData.package?.name ?? null,
-            price: roomData.package?.price != null ? Number(roomData.package.price) : null,
+            price: clinicalOnly
+              ? null
+              : roomData.package?.price != null
+                ? Number(roomData.package.price)
+                : null,
           }}
           onChanged={() => {
             refetch();

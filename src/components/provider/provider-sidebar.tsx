@@ -29,7 +29,6 @@ const items = [
   { title: "Unassigned Queue", url: "/provider/queue", count: "queue" as const },
   { title: "Notifications", url: "/provider/notifications", badge: true },
   { title: "My Patients", url: "/provider/patients" },
-  { title: "Consultations", url: "/provider/consultations", count: "consultations" as const },
   { title: "My Profile", url: "/provider/profile" },
 ];
 

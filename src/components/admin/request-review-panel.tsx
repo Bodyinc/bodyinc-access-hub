@@ -952,14 +952,14 @@ export function RequestReviewPanel({
         open={changeOpen}
         onOpenChange={setChangeOpen}
         onChanged={refresh}
-        hideFinancial={false}
+        hideFinancial={clinicalOnly}
         currentMedicineId={medicine?.id ?? request.medicine_id ?? null}
         currentVariantId={request.variant_id ?? null}
         currentPackageId={pkg?.id ?? request.package_id ?? null}
         current={{
           medicineName: medicine?.name ?? null,
           planName: pkg?.name ?? null,
-          price: pkg?.price != null ? Number(pkg.price) : null,
+          price: clinicalOnly ? null : pkg?.price != null ? Number(pkg.price) : null,
         }}
       />
 

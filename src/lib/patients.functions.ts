@@ -542,6 +542,8 @@ export const getPatientClinical = createServerFn({ method: "POST" })
     return {
       has_data: Boolean(session || sub),
       bmi,
+      height_cm: session?.height_cm ?? null,
+      weight_kg: session?.weight_kg ?? null,
       goal,
       eligibility,
       state_code: session?.state_code ?? null,

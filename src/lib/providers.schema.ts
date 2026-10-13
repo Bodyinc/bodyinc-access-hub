@@ -111,5 +111,13 @@ export const providerFormSchema = z.object({
   is_active: z.boolean().default(true),
 });
 
+export const createProviderFormSchema = providerFormSchema.extend({
+  npi: z
+    .string({ required_error: "NPI is required" })
+    .trim()
+    .min(1, "NPI is required")
+    .refine((v) => /^\d{10}$/.test(v), "NPI must be 10 digits"),
+});
+
 export type ProviderFormValues = z.input<typeof providerFormSchema>;
 export type ProviderFormParsed = z.output<typeof providerFormSchema>;
