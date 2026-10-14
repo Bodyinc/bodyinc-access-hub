@@ -1300,15 +1300,14 @@ export function ConsultationRoomPage({
         toast.error(res.message);
         return;
       }
-      toast.success("Consultation completed. You can still chat with the patient.");
+      toast.success("Consultation completed. Patient portal status updated.");
       endCall();
       setFinishConfirmOpen(false);
       setFinishConclusion("");
       refetch();
       qc.invalidateQueries({ queryKey: ["request", requestId] });
       qc.invalidateQueries({ queryKey: ["pending-consultation-count"] });
-      // Stay on the consultation room page so the doctor can continue chatting with the patient
-      setActiveMainTab("chat");
+      navigate({ to: backTo });
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });

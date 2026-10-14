@@ -680,27 +680,23 @@ export function RequestReviewPanel({
             ) : null}
             {consultation?.is_ended ? (
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-[13px] font-semibold text-emerald-800 shadow-none">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>Consultation completed</span>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    navigate({
-                      to: clinicalOnly
-                        ? "/provider/requests/$requestId/consultation"
-                        : "/admin/requests/$requestId/consultation",
-                      params: { requestId },
-                    })
-                  }
-                  className="h-10 border-[#D5DEDD] bg-white px-3.5 text-[13px] font-semibold text-[#152A51] hover:bg-[#F3F6F6]"
-                >
-                  <MessageSquare className="mr-1.5 h-4 w-4 text-[#152A51]" />
-                  Chat with patient
-                </Button>
+                {!clinicalOnly && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      navigate({
+                        to: "/admin/requests/$requestId/consultation",
+                        params: { requestId },
+                      })
+                    }
+                    className="h-10 border-[#D5DEDD] bg-white px-3.5 text-[13px] font-semibold text-[#152A51] hover:bg-[#F3F6F6]"
+                  >
+                    <MessageSquare className="mr-1.5 h-4 w-4 text-[#152A51]" />
+                    Chat with patient
+                  </Button>
+                )}
               </div>
             ) : consultation ? (
               <div className="flex flex-wrap items-center gap-2">
