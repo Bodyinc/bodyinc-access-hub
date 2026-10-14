@@ -1300,13 +1300,15 @@ export function ConsultationRoomPage({
         toast.error(res.message);
         return;
       }
-      toast.success("Consultation completed. Patient portal status updated.");
+      toast.success("Consultation completed. You can still chat with the patient.");
       endCall();
       setFinishConfirmOpen(false);
       setFinishConclusion("");
       refetch();
       qc.invalidateQueries({ queryKey: ["request", requestId] });
       qc.invalidateQueries({ queryKey: ["pending-consultation-count"] });
+      // Stay on the consultation room page so the doctor can continue chatting with the patient
+      setActiveMainTab("chat");
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -2540,11 +2542,11 @@ export function ConsultationRoomPage({
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setActiveMainTab("notes")}
+                        onClick={() => setActiveMainTab("chat")}
                         className="h-10 rounded-xl border-white/20 bg-white/10 text-xs font-semibold text-white hover:bg-white/20"
                       >
-                        <FileText className="h-3.5 w-3.5 mr-1.5" />
-                        <span>View Consultation Notes & Order Review</span>
+                        <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                        <span>Return to Patient Chat</span>
                       </Button>
                     </div>
                   </div>

@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Check,
+  CheckCircle2,
   ExternalLink,
   FileText,
   Loader2,
+  MessageSquare,
   RefreshCw,
   Repeat,
   Truck,
@@ -247,9 +249,7 @@ export function RequestReviewPanel({
       }),
     onSuccess: (res) => {
       toastActionWithEmail(
-        res?.lifeFileOrderId
-          ? `Sent to LifeFile: ${res.lifeFileOrderId}`
-          : "Sent to pharmacy.",
+        res?.lifeFileOrderId ? `Sent to LifeFile: ${res.lifeFileOrderId}` : "Sent to pharmacy.",
         res?.email_sent,
       );
       setSendPharmacyOpen(false);
@@ -364,9 +364,9 @@ export function RequestReviewPanel({
     (!clinicalOnly || !isUnassigned);
   const canGenerate = status === "approved" && canManage;
   const canStartConsult =
+    canManage &&
     Boolean(request.user_id) &&
-    !["rejected", "delivered", "canceled", "cancelled"].includes(status) &&
-    (!clinicalOnly || !isUnassigned);
+    !["rejected", "delivered", "canceled", "cancelled"].includes(status);
   const lifeFileOrderId =
     (request as { life_file_order_id?: string | null }).life_file_order_id ||
     (events as { note?: string | null }[])
@@ -399,8 +399,7 @@ export function RequestReviewPanel({
   const fulfillmentStep = canManage ? nextStep : null;
   // When admin can send to pharmacy from approved/prescribed, hide the old "Mark sent" step.
   const showFulfillmentStep =
-    fulfillmentStep &&
-    !(canSendToPharmacy && fulfillmentStep.status === "sent_to_pharmacy");
+    fulfillmentStep && !(canSendToPharmacy && fulfillmentStep.status === "sent_to_pharmacy");
 
   return (
     <div className="admin-page-shell space-y-5 sm:space-y-6 font-['DM_Sans',sans-serif]">
@@ -679,18 +678,38 @@ export function RequestReviewPanel({
                 <X className="mr-1 h-4 w-4" /> {clinicalOnly ? "Reject" : "Reject & refund"}
               </Button>
             ) : null}
-            {canStartConsult || activeConsultation || consultation ? (
+            {consultation?.is_ended ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-[13px] font-semibold text-emerald-800 shadow-none">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Consultation completed</span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    navigate({
+                      to: clinicalOnly
+                        ? "/provider/requests/$requestId/consultation"
+                        : "/admin/requests/$requestId/consultation",
+                      params: { requestId },
+                    })
+                  }
+                  className="h-10 border-[#D5DEDD] bg-white px-3.5 text-[13px] font-semibold text-[#152A51] hover:bg-[#F3F6F6]"
+                >
+                  <MessageSquare className="mr-1.5 h-4 w-4 text-[#152A51]" />
+                  Chat with patient
+                </Button>
+              </div>
+            ) : consultation ? (
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   size="sm"
                   disabled={consultMut.isPending}
                   onClick={() => consultMut.mutate()}
-                  className={`h-10 px-4 text-[13px] font-semibold shadow-none ${
-                    consultation?.is_ended
-                      ? "border border-[#D5DEDD] bg-white text-[#3B4759] hover:bg-[#F3F6F6]"
-                      : "bg-[#6A9B9C] text-white hover:bg-[#5B8788]"
-                  }`}
+                  className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788] shadow-none"
                 >
                   {consultMut.isPending ? (
                     <>
@@ -700,13 +719,41 @@ export function RequestReviewPanel({
                   ) : (
                     <>
                       <Video className="mr-1.5 h-4 w-4" />
-                      {activeConsultation
-                        ? "Open consultation room"
-                        : consultation?.is_ended
-                          ? "View consultation room"
-                          : consultation
-                            ? "Join live consultation"
-                            : "Start consultation"}
+                      {activeConsultation ? "Open consultation room" : "Join live consultation"}
+                    </>
+                  )}
+                </Button>
+                {activeConsultation ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setActiveConsultation(null)}
+                    className="h-10 px-2.5 text-[12px] font-medium text-[#8F4A33] hover:bg-[#F6E4DA]"
+                    title="Close inline consultation"
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" /> Close
+                  </Button>
+                ) : null}
+              </div>
+            ) : canManage && canStartConsult ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={consultMut.isPending}
+                  onClick={() => consultMut.mutate()}
+                  className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788] shadow-none"
+                >
+                  {consultMut.isPending ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin text-current" />
+                      Connecting…
+                    </>
+                  ) : (
+                    <>
+                      <Video className="mr-1.5 h-4 w-4" />
+                      {activeConsultation ? "Open consultation room" : "Start consultation"}
                     </>
                   )}
                 </Button>
@@ -1004,8 +1051,8 @@ export function RequestReviewPanel({
           <DialogHeader>
             <DialogTitle>Approve order</DialogTitle>
             <DialogDescription>
-              Clinically approve this order for {medicine?.name ?? "this medication"}. It is sent
-              to the pharmacy when you approve. Admin can send it again only if that send fails.
+              Clinically approve this order for {medicine?.name ?? "this medication"}. It is sent to
+              the pharmacy when you approve. Admin can send it again only if that send fails.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -1125,7 +1172,8 @@ export function RequestReviewPanel({
           <AlertDialogHeader>
             <AlertDialogTitle className="text-[#152A51]">Finish consultation?</AlertDialogTitle>
             <AlertDialogDescription className="text-[13px] text-[#3B4759]/80">
-              This will mark the live consultation appointment as completed for both practitioner and patient.
+              This will mark the live consultation appointment as completed for both practitioner
+              and patient.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
