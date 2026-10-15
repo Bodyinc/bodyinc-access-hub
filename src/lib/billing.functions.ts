@@ -137,7 +137,7 @@ export const listRefundablePayments = createServerFn({ method: "POST" })
       .select(
         "id, user_id, amount_cents, currency, status, created_at, stripe_invoice_id, stripe_payment_intent_id, raw_event, plan_id",
       )
-      .in("status", ["succeeded", "paid"])
+      .in("status", ["succeeded", "paid"] as any)
       .order("created_at", { ascending: false })
       .limit(300);
     if (error) throw new Error(error.message);

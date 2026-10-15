@@ -10,6 +10,7 @@ import {
   pendingConsultationCountQueryKey,
 } from "@/lib/consultations.functions";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
+import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 import {
   Sidebar,
   SidebarContent,
@@ -28,7 +29,6 @@ const items = [
   { title: "Unassigned Queue", url: "/provider/queue", count: "queue" as const },
   { title: "Notifications", url: "/provider/notifications", badge: true },
   { title: "My Patients", url: "/provider/patients" },
-  { title: "Consultations", url: "/provider/consultations", count: "consultations" as const },
   { title: "My Profile", url: "/provider/profile" },
 ];
 
@@ -77,6 +77,7 @@ export function ProviderSidebar() {
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
   async function handleLogout() {
+    logoutQuickbloxSdk();
     await queryClient.cancelQueries();
     queryClient.clear();
     clearCachedPortalRoles();

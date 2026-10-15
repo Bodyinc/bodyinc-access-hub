@@ -18,6 +18,7 @@ import {
   isPasswordRecoveryPending,
 } from "@/lib/password-recovery";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
+import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 import { supabase } from "@/integrations/supabase/client";
 
 const LazyToaster = lazy(() =>
@@ -176,6 +177,7 @@ function RootComponent() {
       if (event === "SIGNED_OUT") {
         clearPasswordRecoveryPending();
         clearCachedPortalRoles();
+        logoutQuickbloxSdk();
       }
       router.invalidate();
     });

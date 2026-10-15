@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { providerFormSchema } from "./providers.schema";
+import { providerFormSchema, createProviderFormSchema } from "./providers.schema";
 import { assertAdmin } from "@/lib/admin-guard";
 
 const PROFILE_KEYS = ["full_name", "phone", "avatar_url"] as const;
@@ -60,7 +60,7 @@ export const listProviders = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
-    const ids = (rows ?? []).map((r: { id: string }) => r.id).filter(Boolean);
+    const ids = (rows ?? []).map((r: any) => r.id).filter(Boolean) as string[];
     let licenseRows: { id: string; license_states: string[] | null; qb_user_id?: number | null }[] =
       [];
     if (ids.length > 0) {
@@ -146,7 +146,7 @@ export const getProvider = createServerFn({ method: "POST" })
     return { ...(provider as any), ...((profile as any) ?? {}) };
   });
 
-const createInput = providerFormSchema.extend({
+const createInput = createProviderFormSchema.extend({
   redirect_to: z.string().url(),
 });
 

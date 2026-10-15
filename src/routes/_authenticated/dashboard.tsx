@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -15,6 +16,7 @@ function DashboardPage() {
   const queryClient = useQueryClient();
 
   async function signOut() {
+    logoutQuickbloxSdk();
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();

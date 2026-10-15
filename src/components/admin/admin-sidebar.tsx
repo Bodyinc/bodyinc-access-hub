@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
+import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 import { countOpenRequests } from "@/lib/requests.functions";
 import { countUnsolvedFeedback, unsolvedFeedbackCountQueryKey } from "@/lib/feedback.functions";
 import {
@@ -95,6 +96,7 @@ export function AdminSidebar() {
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
   async function handleLogout() {
+    logoutQuickbloxSdk();
     await queryClient.cancelQueries();
     queryClient.clear();
     clearCachedPortalRoles();

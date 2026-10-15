@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { RequestReviewPanel } from "@/components/admin/request-review-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/requests/$requestId")({
@@ -14,5 +14,11 @@ export const Route = createFileRoute("/_authenticated/admin/requests/$requestId"
 
 function AdminRequestDetail() {
   const { requestId } = Route.useParams();
+  const location = useLocation();
+
+  if (location.pathname.endsWith("/consultation")) {
+    return <Outlet />;
+  }
+
   return <RequestReviewPanel requestId={requestId} backTo="/admin/requests" canManage />;
 }

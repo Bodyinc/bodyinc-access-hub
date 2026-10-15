@@ -15,6 +15,16 @@ export const WIPE_GROUPS = [
     help: "Anonymous intake sessions with their answers, eligibility results and selections.",
   },
   {
+    key: "patient",
+    label: "Patients",
+    help: "Patient profiles, accounts, consultations and history.",
+  },
+  {
+    key: "feedback",
+    label: "Patient feedback",
+    help: "Patient feedback submissions and replies.",
+  },
+  {
     key: "catalog",
     label: "Medicines catalog",
     help: "Medicines, variants, packages and their category assignments.",
@@ -43,6 +53,8 @@ const REQUIRES: Record<WipeGroupKey, WipeGroupKey[]> = {
   orders: [],
   billing: ["orders"],
   intake: ["orders", "billing"],
+  patient: ["orders", "billing", "intake", "feedback"],
+  feedback: [],
   catalog: ["orders", "billing", "intake", "rules"],
   categories: ["intake", "questionnaires", "catalog", "orders", "billing", "rules"],
   questionnaires: ["intake"],
@@ -62,6 +74,8 @@ export function expandGroups(keys: WipeGroupKey[]): WipeGroupKey[] {
 
 // Children first. `col` is any always-present column so we can match every row.
 export const TABLES: Array<{ group: WipeGroupKey; table: string; col: string }> = [
+  { group: "feedback", table: "patient_feedback_replies", col: "id" },
+  { group: "feedback", table: "patient_feedback", col: "id" },
   { group: "orders", table: "additional_payments", col: "id" },
   { group: "orders", table: "medication_request_events", col: "id" },
   { group: "orders", table: "prescriptions", col: "id" },
@@ -80,6 +94,7 @@ export const TABLES: Array<{ group: WipeGroupKey; table: string; col: string }> 
   { group: "intake", table: "intake_session_medicines", col: "session_id" },
   { group: "intake", table: "intake_session_categories", col: "session_id" },
   { group: "intake", table: "intake_sessions", col: "id" },
+  { group: "patient", table: "patient_consultations", col: "id" },
   { group: "questionnaires", table: "questionnaire_question_options", col: "id" },
   { group: "questionnaires", table: "questionnaire_questions", col: "id" },
   { group: "questionnaires", table: "questionnaire_categories", col: "questionnaire_id" },

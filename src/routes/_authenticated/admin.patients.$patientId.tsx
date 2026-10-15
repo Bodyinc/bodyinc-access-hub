@@ -52,7 +52,7 @@ import {
   adminBtnSecondary,
 } from "@/lib/admin-ui";
 import { US_STATES } from "@/lib/us-states";
-import { formatDateTime, formatRecordId } from "@/lib/format";
+import { formatDateTime, formatRecordId, formatDate, ageFromDob } from "@/lib/format";
 import { listConsultations } from "@/lib/consultations.functions";
 import { ConsultationsTable } from "@/components/consultations-table";
 
@@ -197,9 +197,14 @@ function PatientDetailPage() {
               </div>
             )}
             <div className="min-w-0 space-y-1">
-              <CardTitle className={adminSectionTitle}>
-                {d.full_name || "Unnamed patient"}
-              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className={adminSectionTitle}>
+                  {d.full_name || "Unnamed patient"}
+                </CardTitle>
+                <span className="font-mono text-xs font-semibold text-[#3B4759]/80 bg-[#F2F7F6] px-2 py-0.5 rounded border border-[#D5DEDD]">
+                  Patient ID: {patientId}
+                </span>
+              </div>
               <CardDescription className={adminSectionSubtitle}>{d.email}</CardDescription>
             </div>
           </div>
@@ -258,7 +263,12 @@ function PatientDetailPage() {
         </div>
 
         <TabsContent value="profile" className="mt-0 space-y-4">
-          <ClinicalSummaryCard data={clinical.data} loading={clinical.isLoading} />
+          <ClinicalSummaryCard
+            data={clinical.data}
+            loading={clinical.isLoading}
+            patientId={patientId}
+            dob={d.dob}
+          />
           <ProfileTab
             defaultValues={{
               full_name: d.full_name ?? "",
@@ -629,9 +639,16 @@ function ProfileTab({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dob" className={adminLabel}>
-                Date of birth
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="dob" className={adminLabel}>
+                  Date of birth
+                </Label>
+                {ageFromDob(dob) != null ? (
+                  <span className="text-xs font-semibold text-[#6A9B9C]">
+                    Age: {ageFromDob(dob)} yrs
+                  </span>
+                ) : null}
+              </div>
               <Input
                 id="dob"
                 type="date"
@@ -677,7 +694,17 @@ function Metric({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean }) {
+function ClinicalSummaryCard({
+  data,
+  loading,
+  patientId,
+  dob,
+}: {
+  data: any;
+  loading: boolean;
+  patientId?: string;
+  dob?: string | null;
+}) {
   const planLabel = data?.plan
     ? [
         data.plan.name,
@@ -720,7 +747,26 @@ function ClinicalSummaryCard({ data, loading }: { data: any; loading: boolean })
           <div className="text-[14px] font-medium text-[#3B4759]/60">No clinical data on file.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {patientId && (
+              <Metric
+                label="Patient ID"
+                value={<span className="font-mono text-xs select-all">{patientId}</span>}
+              />
+            )}
+            <Metric label="Date of birth" value={dob ? formatDate(dob) : "—"} />
+            <Metric
+              label="Age"
+              value={ageFromDob(dob) != null ? `${ageFromDob(dob)} yrs` : "—"}
+            />
             <Metric label="BMI" value={data.bmi != null ? String(data.bmi) : "—"} />
+            <Metric
+              label="Height & Weight"
+              value={
+                data.height_cm || data.weight_kg
+                  ? `${data.height_cm ? `${data.height_cm} cm` : "—"} / ${data.weight_kg ? `${data.weight_kg} kg` : "—"}`
+                  : "—"
+              }
+            />
             <Metric label="Goal" value={data.goal || "—"} />
             <Metric label="Eligibility" value={eligibilityBadge} />
             <Metric label="Current medicine" value={data.medicine_name || "—"} />

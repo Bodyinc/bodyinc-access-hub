@@ -1,3 +1,5 @@
+/* eslint-disable no-empty */
+/* eslint-disable prefer-const */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -100,18 +102,18 @@ async function fulfillApprovedRequest(
   let lf;
   try {
     lf = await submitRequestToLifeFile(
-    supabaseAdmin,
-    {
-      id: req.id,
-      status: "prescribed",
-      provider_id: req.provider_id,
-      user_id: req.user_id,
-      medicine_id: req.medicine_id,
-      variant_id: req.variant_id,
-      life_file_order_id: req.life_file_order_id,
-      life_file_status: req.life_file_status,
-    },
-    { allowRetry: true },
+      supabaseAdmin,
+      {
+        id: req.id,
+        status: "prescribed",
+        provider_id: req.provider_id,
+        user_id: req.user_id,
+        medicine_id: req.medicine_id,
+        variant_id: req.variant_id,
+        life_file_order_id: req.life_file_order_id,
+        life_file_status: req.life_file_status,
+      },
+      { allowRetry: true },
     );
   } catch (error) {
     if (createdRxId) {
@@ -144,26 +146,47 @@ async function fulfillApprovedRequest(
     )
     .catch((e) => console.error("[fulfillApprovedRequest] email failed:", e));
 
-  return { lifeFileOrderId: lf.lifeFileOrderId as string, pharmacyName: lf.pharmacyName as string | null };
+  return {
+    lifeFileOrderId: lf.lifeFileOrderId as string,
+    pharmacyName: lf.pharmacyName as string | null,
+  };
 }
 
 // Loads a request and enforces provider scoping: a provider may only touch requests assigned to
-// them; an admin may touch any. Returns the row selected with `cols`.
+// them; an admin may touch any. If `opts?.allowUnassigned` is true, an unassigned request (provider_id = null)
+// may also be accessed by a provider (e.g. for reviewing and claiming in the provider queue).
 async function loadScopedRequest(
   supabaseAdmin: any,
   requestId: string,
   role: "admin" | "provider",
   userId: string,
   cols: string,
+  opts?: { allowUnassigned?: boolean },
 ): Promise<any> {
+  const selectCols =
+    cols === "*" ||
+    cols
+      .split(",")
+      .map((s) => s.trim())
+      .includes("provider_id")
+      ? cols
+      : `${cols}, provider_id`;
+
   const { data: req, error } = await supabaseAdmin
     .from("medication_requests")
-    .select(cols)
+    .select(selectCols)
     .eq("id", requestId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!req) throw new Error("Request not found.");
-  if (role === "provider" && req.provider_id !== userId) throw new Error("Forbidden");
+
+  if (role === "provider") {
+    const isAssignedToMe = req.provider_id === userId;
+    const isUnassignedAllowed = Boolean(opts?.allowUnassigned && !req.provider_id);
+    if (!isAssignedToMe && !isUnassignedAllowed) {
+      throw new Error("Forbidden");
+    }
+  }
   return req;
 }
 
@@ -253,27 +276,29 @@ export const listRequests = createServerFn({ method: "POST" })
       new Set(list.map((r: any) => r.life_file_pharmacy_id).filter(Boolean)),
     );
 
-    const [{ data: profiles }, { data: sessions }, { data: meds }, { data: provs }, { data: pharmacies }] =
-      await Promise.all([
-        userIds.length
-          ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
-          : Promise.resolve({ data: [] as any[] }),
-        sessionIds.length
-          ? supabaseAdmin
-              .from("intake_sessions")
-              .select("id, full_name, email")
-              .in("id", sessionIds)
-          : Promise.resolve({ data: [] as any[] }),
-        medIds.length
-          ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
-          : Promise.resolve({ data: [] as any[] }),
-        provIds.length
-          ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", provIds)
-          : Promise.resolve({ data: [] as any[] }),
-        pharmacyIds.length
-          ? supabaseAdmin.from("life_file_pharmacies").select("id, name").in("id", pharmacyIds)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
+    const [
+      { data: profiles },
+      { data: sessions },
+      { data: meds },
+      { data: provs },
+      { data: pharmacies },
+    ] = await Promise.all([
+      userIds.length
+        ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+      sessionIds.length
+        ? supabaseAdmin.from("intake_sessions").select("id, full_name, email").in("id", sessionIds)
+        : Promise.resolve({ data: [] as any[] }),
+      medIds.length
+        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        : Promise.resolve({ data: [] as any[] }),
+      provIds.length
+        ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", provIds)
+        : Promise.resolve({ data: [] as any[] }),
+      pharmacyIds.length
+        ? supabaseAdmin.from("life_file_pharmacies").select("id, name").in("id", pharmacyIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
 
     const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
     const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s]));
@@ -342,61 +367,94 @@ export const getRequest = createServerFn({ method: "POST" })
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const req = await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "*");
+    const req = await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "*", {
+      allowUnassigned: true,
+    });
 
-    const [profileRes, sessionRes, medRes, pkgRes, provRes, eventsRes, rxRes, addPayRes] =
-      await Promise.all([
-        req.user_id
-          ? supabaseAdmin
-              .from("profiles")
-              .select("id, full_name, email, state_code")
-              .eq("id", req.user_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        req.session_id
-          ? supabaseAdmin
-              .from("intake_sessions")
-              .select("id, full_name, email, state_code")
-              .eq("id", req.session_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        req.medicine_id
-          ? supabaseAdmin
-              .from("medicines")
-              .select("id, name")
-              .eq("id", req.medicine_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        req.package_id
-          ? supabaseAdmin
-              .from("packages")
-              .select("id, name, price, duration_months")
-              .eq("id", req.package_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        req.provider_id
-          ? supabaseAdmin
-              .from("profiles")
-              .select("id, full_name, email")
-              .eq("id", req.provider_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        supabaseAdmin
-          .from("medication_request_events")
-          .select("id, status, note, actor_role, created_at")
-          .eq("request_id", req.id)
-          .order("created_at", { ascending: true }),
-        supabaseAdmin
-          .from("prescriptions")
-          .select("id, medicine_name, directions, status, document_url, created_at")
-          .eq("request_id", req.id)
-          .order("created_at", { ascending: false }),
-        supabaseAdmin
-          .from("additional_payments")
-          .select("id, amount_cents, currency, reason, status, created_at, paid_at")
-          .eq("request_id", req.id)
-          .order("created_at", { ascending: false }),
-      ]);
+    const [
+      profileRes,
+      sessionRes,
+      medRes,
+      pkgRes,
+      provRes,
+      eventsRes,
+      rxRes,
+      addPayRes,
+      consultRes,
+    ] = await Promise.all([
+      req.user_id
+        ? supabaseAdmin
+            .from("profiles")
+            .select("id, full_name, email, state_code")
+            .eq("id", req.user_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      req.session_id
+        ? supabaseAdmin
+            .from("intake_sessions")
+            .select("id, full_name, email, state_code")
+            .eq("id", req.session_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      req.medicine_id
+        ? supabaseAdmin.from("medicines").select("id, name").eq("id", req.medicine_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      req.package_id
+        ? supabaseAdmin
+            .from("packages")
+            .select("id, name, price, duration_months")
+            .eq("id", req.package_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      req.provider_id
+        ? supabaseAdmin
+            .from("profiles")
+            .select("id, full_name, email")
+            .eq("id", req.provider_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabaseAdmin
+        .from("medication_request_events")
+        .select("id, status, note, actor_role, created_at")
+        .eq("request_id", req.id)
+        .order("created_at", { ascending: true }),
+      supabaseAdmin
+        .from("prescriptions")
+        .select("id, medicine_name, directions, status, document_url, created_at")
+        .eq("request_id", req.id)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("additional_payments")
+        .select("id, amount_cents, currency, reason, status, created_at, paid_at")
+        .eq("request_id", req.id)
+        .order("created_at", { ascending: false }),
+      req.subscription_id || req.user_id
+        ? supabaseAdmin
+            .from("patient_consultations")
+            .select("id, qb_appointment_id, qb_dialog_id, started_at, qb_user_id")
+            .or(
+              req.subscription_id
+                ? `subscription_id.eq.${req.subscription_id}`
+                : `user_id.eq.${req.user_id}`,
+            )
+            .order("started_at", { ascending: false })
+            .limit(1)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const consultRow = ((consultRes as any)?.data as any[])?.[0] ?? null;
+    const completedEvent = ((eventsRes.data ?? []) as any[]).find(
+      (ev) => typeof ev.note === "string" && /consultation (completed|ended)/i.test(ev.note),
+    );
+    const consultationPayload = consultRow
+      ? {
+          id: consultRow.id,
+          qb_appointment_id: consultRow.qb_appointment_id,
+          started_at: consultRow.started_at,
+          ended_at: completedEvent ? completedEvent.created_at : null,
+          is_ended: Boolean(completedEvent),
+        }
+      : null;
 
     const patient = (profileRes.data as any) ?? (sessionRes.data as any) ?? null;
     const patientPayload = patient
@@ -416,20 +474,36 @@ export const getRequest = createServerFn({ method: "POST" })
         stripe_refund_id: _refundId,
         ...safeRequest
       } = req as Record<string, unknown>;
-      const pkg = pkgRes.data as { id?: string; name?: string; duration_months?: number } | null;
       return {
         request: safeRequest,
         patient: patientPayload
           ? {
               name: patientPayload.name,
+              email: null,
               state_code: patientPayload.state_code,
               is_guest: patientPayload.is_guest,
             }
           : null,
         medicine: medRes.data ?? null,
-        package: pkg ? { id: pkg.id, name: pkg.name, duration_months: pkg.duration_months } : null,
+        package: pkgRes.data
+          ? {
+              id: pkgRes.data.id,
+              name: pkgRes.data.name,
+              price: 0,
+              duration_months: pkgRes.data.duration_months,
+            }
+          : null,
         provider: provRes.data ?? null,
-        events: ((eventsRes.data ?? []) as { note?: string | null }[]).map((ev) => ({
+        consultation: consultationPayload,
+        events: (
+          (eventsRes.data ?? []) as {
+            id: string;
+            status: string;
+            note: string | null;
+            actor_role: string;
+            created_at: string;
+          }[]
+        ).map((ev) => ({
           ...ev,
           note: clinicalEventNote(ev.note),
         })),
@@ -444,6 +518,7 @@ export const getRequest = createServerFn({ method: "POST" })
       medicine: medRes.data ?? null,
       package: pkgRes.data ?? null,
       provider: provRes.data ?? null,
+      consultation: consultationPayload,
       events: eventsRes.data ?? [],
       prescriptions: rxRes.data ?? [],
       additional_payments: addPayRes.data ?? [],
@@ -1096,16 +1171,22 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: existing } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, medicine_id, status, provider_id, user_id, session_id")
+      .select("id, medicine_id, status, provider_id, user_id, session_id, subscription_id")
       .eq("id", data.requestId)
       .maybeSingle();
 
     if (!existing) throw new Error("Request not found.");
+
+    if (role === "provider" && existing.provider_id && existing.provider_id !== context.userId) {
+      throw new Error(
+        "Forbidden: You cannot reassign a consultation that is assigned to another provider.",
+      );
+    }
 
     // Same provider again — no DB write, no duplicate email.
     if (data.providerId && existing.provider_id === data.providerId) {
@@ -1161,7 +1242,11 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       }
     }
 
-    const patch: Record<string, unknown> = {
+    const patch: {
+      provider_id: string | null;
+      updated_at: string;
+      status?: "pending_review";
+    } = {
       provider_id: data.providerId,
       updated_at: new Date().toISOString(),
     };
@@ -1178,14 +1263,184 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       .eq("id", data.requestId);
     if (error) throw new Error(error.message);
     if (data.providerId) {
+      const { data: provProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name")
+        .eq("id", data.providerId)
+        .maybeSingle();
+      const doctorName = (provProfile as any)?.full_name?.trim() || "doctor";
+      const assignmentNote =
+        role === "admin"
+          ? `admin added ${doctorName} into the chat`
+          : `Provider reassigned to ${doctorName}`;
+
       await logEvent(
         supabaseAdmin,
         data.requestId,
         "provider_assigned",
-        "admin",
+        role === "admin" ? "admin" : "provider",
         context.userId,
-        "Provider assigned by admin",
+        assignmentNote,
       );
+
+      try {
+        await supabaseAdmin.from("medication_request_notes").insert({
+          request_id: data.requestId,
+          author_id: context.userId,
+          author_role: role === "admin" ? "admin" : "provider",
+          body: assignmentNote,
+        });
+      } catch (noteErr) {
+        console.warn("[assignRequestProvider] write note error:", noteErr);
+      }
+
+      // Auto-sync QuickBlox: ensure practitioner agent exists and directly assign consultation appointment
+      try {
+        const { isQuickbloxConfigured, getQuickbloxConfig } =
+          await import("@/lib/consultations/config");
+        if (isQuickbloxConfigured()) {
+          const { provisionBodyIncProviderAgent, sessionForBodyIncProvider } =
+            await import("@/lib/consultations/provider-agent");
+          const {
+            reassignAppointmentToProvider,
+            ensurePatientQuickbloxClient,
+            createPatientAppointment,
+            ensureDialogOccupants,
+            sendChatMessageToDialog,
+          } = await import("@/lib/consultations/quickblox");
+
+          const agent = await provisionBodyIncProviderAgent(supabaseAdmin, data.providerId);
+          let prevToken: string | undefined;
+          if (existing.provider_id) {
+            try {
+              const prevSession = await sessionForBodyIncProvider(
+                supabaseAdmin,
+                existing.provider_id,
+              );
+              prevToken = prevSession.token;
+            } catch {}
+          }
+
+          const conds: string[] = [];
+          if (existing.subscription_id)
+            conds.push(`subscription_id.eq.${existing.subscription_id}`);
+          if (existing.user_id) conds.push(`user_id.eq.${existing.user_id}`);
+
+          let consultations: any[] = [];
+          if (conds.length > 0) {
+            const { data: cRows } = await supabaseAdmin
+              .from("patient_consultations")
+              .select("id, qb_appointment_id, qb_user_id, qb_dialog_id, started_at")
+              .or(conds.join(","));
+            consultations = cRows ?? [];
+          }
+
+          const qbConfig = getQuickbloxConfig();
+          const adminQbId = qbConfig.providerId ?? 142814409;
+
+          if (consultations.length > 0) {
+            for (const c of consultations) {
+              if (c.qb_appointment_id) {
+                try {
+                  const res = await reassignAppointmentToProvider({
+                    appointmentId: c.qb_appointment_id,
+                    qbProviderId: agent.qbUserId,
+                    currentProviderToken: prevToken,
+                    dialogId: c.qb_dialog_id ?? null,
+                  });
+                  const activeDialogId = res?.dialogId || c.qb_dialog_id;
+                  if (res?.dialogId && !c.qb_dialog_id) {
+                    await supabaseAdmin
+                      .from("patient_consultations")
+                      .update({ qb_dialog_id: res.dialogId })
+                      .eq("id", c.id);
+                  }
+                  if (activeDialogId) {
+                    const occupants = [agent.qbUserId, adminQbId];
+                    if (c.qb_user_id) occupants.push(c.qb_user_id);
+                    await ensureDialogOccupants({
+                      dialogId: activeDialogId,
+                      occupantsIds: occupants,
+                    });
+                    await sendChatMessageToDialog({
+                      dialogId: activeDialogId,
+                      message: assignmentNote,
+                    });
+                  }
+                } catch (rErr) {
+                  console.warn("[assignRequestProvider] reassign error:", rErr);
+                }
+              }
+            }
+          } else if (existing.user_id && existing.subscription_id) {
+            // No appointment in Supabase yet — provision it directly assigned to this doctor
+            const [{ data: prof }, { data: intake }, { data: med }] = await Promise.all([
+              supabaseAdmin
+                .from("profiles")
+                .select("full_name, dob, sex")
+                .eq("id", existing.user_id)
+                .maybeSingle(),
+              existing.session_id
+                ? supabaseAdmin
+                    .from("intake_sessions")
+                    .select("full_name, dob, sex")
+                    .eq("id", existing.session_id)
+                    .maybeSingle()
+                : Promise.resolve({ data: null }),
+              existing.medicine_id
+                ? supabaseAdmin
+                    .from("medicines")
+                    .select("name")
+                    .eq("id", existing.medicine_id)
+                    .maybeSingle()
+                : Promise.resolve({ data: null }),
+            ]);
+
+            const dobRaw = prof?.dob ?? intake?.dob ?? null;
+            const dob = dobRaw ? String(dobRaw).slice(0, 10) : null;
+            if (dob) {
+              const fullName = prof?.full_name?.trim() || intake?.full_name?.trim() || "Patient";
+              const medicineName = med?.name?.trim() || "treatment";
+              const client = await ensurePatientQuickbloxClient({
+                userId: existing.user_id,
+                subscriptionId: existing.subscription_id,
+                fullName,
+                dob,
+                sex: prof?.sex ?? intake?.sex ?? null,
+              });
+
+              const agentSession = await sessionForBodyIncProvider(supabaseAdmin, data.providerId);
+              const newAppt = await createPatientAppointment({
+                clientId: client.userId,
+                providerId: agent.qbUserId,
+                providerToken: agentSession.token,
+                description: `${medicineName} consultation`,
+              });
+
+              await supabaseAdmin.from("patient_consultations").insert({
+                user_id: existing.user_id,
+                subscription_id: existing.subscription_id,
+                qb_user_id: client.userId,
+                qb_appointment_id: newAppt._id,
+                qb_dialog_id: newAppt.dialog_id ?? null,
+              });
+
+              if (newAppt.dialog_id) {
+                await ensureDialogOccupants({
+                  dialogId: newAppt.dialog_id,
+                  occupantsIds: [agent.qbUserId, adminQbId, client.userId],
+                });
+                await sendChatMessageToDialog({
+                  dialogId: newAppt.dialog_id,
+                  message: assignmentNote,
+                });
+              }
+            }
+          }
+        }
+      } catch (qbSyncErr) {
+        console.warn("[assignRequestProvider] QuickBlox sync error:", qbSyncErr);
+      }
 
       // Don't block the admin UI on Brevo — send emails in the background.
       const medicineId = existing.medicine_id ?? null;
@@ -1423,7 +1678,16 @@ export const listRequestNotes = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "id, provider_id");
+    await loadScopedRequest(
+      supabaseAdmin,
+      data.requestId,
+      role,
+      context.userId,
+      "id, provider_id",
+      {
+        allowUnassigned: true,
+      },
+    );
 
     const { data: rows, error } = await supabaseAdmin
       .from("medication_request_notes")
@@ -1460,7 +1724,16 @@ export const addRequestNote = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "id, provider_id");
+    await loadScopedRequest(
+      supabaseAdmin,
+      data.requestId,
+      role,
+      context.userId,
+      "id, provider_id",
+      {
+        allowUnassigned: true,
+      },
+    );
 
     const { error } = await supabaseAdmin.from("medication_request_notes").insert({
       request_id: data.requestId,

@@ -67,7 +67,7 @@ export function DangerZoneTab() {
       <div className="space-y-1">
         <h3 className="text-[16px] font-bold text-destructive">Delete platform data</h3>
         <p className="text-xs text-muted-foreground">
-          Permanently removes the selected data from the database. Patient accounts, admin users and
+          Permanently removes the selected data from the database. Admin users and
           platform settings are never touched, and nothing is changed in Stripe.
         </p>
       </div>
