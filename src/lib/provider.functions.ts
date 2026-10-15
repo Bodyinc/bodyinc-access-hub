@@ -239,7 +239,7 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
 
 export const listClaimableRequests = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ search: z.string().trim().max(200).optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
@@ -262,7 +262,7 @@ export const listClaimableRequests = createServerFn({ method: "POST" })
 // order still having no provider.
 export const claimRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertProvider(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -330,7 +330,7 @@ export const claimRequest = createServerFn({ method: "POST" })
 
 export const listMyPatients = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ search: z.string().trim().max(200).optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
@@ -416,7 +416,7 @@ export const listMyPatients = createServerFn({ method: "POST" })
 
 export const getMyPatient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ key: z.string().trim().min(3).max(80) }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -653,7 +653,7 @@ const profileInput = z.object({
 // number and active status stay admin-controlled and are never read from this input.
 export const updateMyProviderProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => profileInput.parse(input))
+  .validator((input: unknown) => profileInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertProvider(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

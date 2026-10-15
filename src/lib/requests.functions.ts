@@ -215,7 +215,7 @@ const listInput = z
 
 export const listRequests = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input ?? {}))
+  .validator((input: unknown) => listInput.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -362,7 +362,7 @@ export const countOpenRequests = createServerFn({ method: "POST" })
 
 export const getRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -527,7 +527,7 @@ export const getRequest = createServerFn({ method: "POST" })
 
 export const approveRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -629,7 +629,7 @@ export const approveRequest = createServerFn({ method: "POST" })
 
 export const rejectRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ requestId: z.string().uuid(), note: z.string().trim().max(500).optional() })
       .parse(input),
@@ -744,7 +744,7 @@ export const rejectRequest = createServerFn({ method: "POST" })
 
 export const changeRequestMedicine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -1019,7 +1019,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
 
 export const generatePrescription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -1110,7 +1110,7 @@ export const generatePrescription = createServerFn({ method: "POST" })
 /** Admin: create Rx if needed + submit to LifeFile after provider approval. */
 export const sendRequestToPharmacy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -1165,7 +1165,7 @@ export const sendRequestToPharmacy = createServerFn({ method: "POST" })
 // order is created unassigned and the admin routes it to the right provider.
 export const assignRequestProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ requestId: z.string().uuid(), providerId: z.string().uuid().nullable() })
       .parse(input),
@@ -1473,7 +1473,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
 
 export const getPrescription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ prescriptionId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ prescriptionId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -1508,7 +1508,7 @@ const FULFILLMENT_STATUSES = ["sent_to_pharmacy", "dispatched", "delivered", "ca
 
 export const advanceRequestStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -1615,7 +1615,7 @@ export const advanceRequestStatus = createServerFn({ method: "POST" })
 /** Admin/provider retry after a failed LifeFile submission (PDF §12). */
 export const retryLifeFileSubmission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -1674,7 +1674,7 @@ export const retryLifeFileSubmission = createServerFn({ method: "POST" })
 
 export const listRequestNotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -1716,7 +1716,7 @@ export const listRequestNotes = createServerFn({ method: "POST" })
 
 export const addRequestNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ requestId: z.string().uuid(), body: z.string().trim().min(1).max(4000) })
       .parse(input),

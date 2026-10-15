@@ -73,7 +73,7 @@ export const listOffers = createServerFn({ method: "POST" })
 
 export const createOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => offerInput.parse(input))
+  .validator((input: unknown) => offerInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -88,7 +88,7 @@ export const createOffer = createServerFn({ method: "POST" })
 
 export const updateOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => offerUpdateInput.parse(input))
+  .validator((input: unknown) => offerUpdateInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -100,7 +100,7 @@ export const updateOffer = createServerFn({ method: "POST" })
 
 export const setOfferActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -116,7 +116,7 @@ export const setOfferActive = createServerFn({ method: "POST" })
 
 export const deleteOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

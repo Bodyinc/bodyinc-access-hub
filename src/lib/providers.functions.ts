@@ -39,7 +39,7 @@ const listInput = z
 
 export const listProviders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input ?? {}))
+  .validator((input: unknown) => listInput.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     let query = context.supabase
@@ -112,7 +112,7 @@ export const listProviders = createServerFn({ method: "POST" })
 // provider covers the patient's state). Only one provider can be the default at a time.
 export const setDefaultProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -127,7 +127,7 @@ export const setDefaultProvider = createServerFn({ method: "POST" })
 
 export const getProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { data: provider, error } = await context.supabase
@@ -152,7 +152,7 @@ const createInput = createProviderFormSchema.extend({
 
 export const createProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => createInput.parse(input))
+  .validator((input: unknown) => createInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -235,7 +235,7 @@ const updateInput = providerFormSchema.partial().extend({
 
 export const updateProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => updateInput.parse(input))
+  .validator((input: unknown) => updateInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { id, email, ...rest } = data;
@@ -268,7 +268,7 @@ export const updateProvider = createServerFn({ method: "POST" })
 
 export const resendInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: z.string().uuid(), redirect_to: z.string().url() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -296,7 +296,7 @@ export const resendInvite = createServerFn({ method: "POST" })
 
 export const enableQuickbloxAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -306,7 +306,7 @@ export const enableQuickbloxAgent = createServerFn({ method: "POST" })
 
 export const setProviderActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -326,7 +326,7 @@ export const setProviderActive = createServerFn({ method: "POST" })
 
 export const deleteProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

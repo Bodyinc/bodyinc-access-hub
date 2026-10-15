@@ -14,7 +14,7 @@ const idInput = z.object({ userId: z.string().uuid() });
 
 export const listPatients = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input ?? {}))
+  .validator((input: unknown) => listInput.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -101,7 +101,7 @@ export const listPatients = createServerFn({ method: "POST" })
 
 export const getPatient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => idInput.parse(input))
+  .validator((input: unknown) => idInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -163,7 +163,7 @@ const profileUpdate = z.object({
 
 export const updatePatientProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => profileUpdate.parse(input))
+  .validator((input: unknown) => profileUpdate.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { userId, ...rest } = data;
@@ -221,7 +221,7 @@ export const updatePatientProfile = createServerFn({ method: "POST" })
 
 export const setPatientActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ userId: z.string().uuid(), is_active: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -236,7 +236,7 @@ export const setPatientActive = createServerFn({ method: "POST" })
 
 export const deletePatient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => idInput.parse(input))
+  .validator((input: unknown) => idInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -311,7 +311,7 @@ export const deletePatient = createServerFn({ method: "POST" })
 
 export const sendPatientPasswordReset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ userId: z.string().uuid(), redirect_to: z.string().url() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -344,7 +344,7 @@ export const sendPatientPasswordReset = createServerFn({ method: "POST" })
 
 export const getPatientRelated = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => idInput.parse(input))
+  .validator((input: unknown) => idInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -433,7 +433,7 @@ export const getPatientRelated = createServerFn({ method: "POST" })
 
 export const getPatientClinical = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => idInput.parse(input))
+  .validator((input: unknown) => idInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

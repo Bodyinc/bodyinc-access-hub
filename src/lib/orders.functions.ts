@@ -18,7 +18,7 @@ const listInput = z
 
 export const listOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input ?? {}))
+  .validator((input: unknown) => listInput.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -127,7 +127,7 @@ export const listOrders = createServerFn({ method: "POST" })
 
 export const getOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -240,7 +240,7 @@ const CHANGEABLE_STATUSES = ["active", "trialing", "past_due"];
 // recurring prices on a subscription to share an interval).
 export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ orderId: z.string().uuid(), packageId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {

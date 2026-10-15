@@ -33,7 +33,7 @@ export const listLifeFilePharmacies = createServerFn({ method: "POST" })
 
 export const createLifeFilePharmacy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => pharmacySchema.parse(input))
+  .validator((input: unknown) => pharmacySchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -55,7 +55,7 @@ export const createLifeFilePharmacy = createServerFn({ method: "POST" })
 
 export const updateLifeFilePharmacy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     pharmacySchema.extend({ id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -80,7 +80,7 @@ export const updateLifeFilePharmacy = createServerFn({ method: "POST" })
 
 export const deleteLifeFilePharmacy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -124,7 +124,7 @@ const credentialSchema = z.object({
 
 export const listProviderLifeFileCredentials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ providerId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ providerId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { data: rows, error } = await context.supabase
@@ -148,7 +148,7 @@ export const listProviderLifeFileCredentials = createServerFn({ method: "POST" }
 
 export const upsertProviderLifeFileCredential = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     credentialSchema
       .extend({
         id: z.string().uuid().optional(),
@@ -225,7 +225,7 @@ export const upsertProviderLifeFileCredential = createServerFn({ method: "POST" 
 
 export const deleteProviderLifeFileCredential = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -56,7 +56,7 @@ export const getSettings = createServerFn({ method: "GET" })
 
 export const updateSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => settingsSchema.partial().parse(input))
+  .validator((input: unknown) => settingsSchema.partial().parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

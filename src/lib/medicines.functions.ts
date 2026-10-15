@@ -51,7 +51,7 @@ async function measureDeletionImpact(
 // rather than the delete failing (or silently orphaning a subscription) after they click.
 export const getMedicineDeletionImpact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => deleteInput.parse(input))
+  .validator((input: unknown) => deleteInput.parse(input))
   .handler(async ({ data, context }): Promise<MedicineDeletionImpact> => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -64,7 +64,7 @@ export const getMedicineDeletionImpact = createServerFn({ method: "POST" })
 // clause, so Postgres would reject those anyway; catching it here gives a usable message.
 export const deleteMedicineSafely = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => deleteInput.parse(input))
+  .validator((input: unknown) => deleteInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -119,7 +119,7 @@ export const deleteMedicineSafely = createServerFn({ method: "POST" })
 // Creates or updates the Stripe Product that a medicine maps to, storing its id.
 export const syncMedicineToStripe = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => syncInput.parse(input))
+  .validator((input: unknown) => syncInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

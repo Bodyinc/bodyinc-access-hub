@@ -251,7 +251,7 @@ export const countPendingConsultations = createServerFn({ method: "POST" })
 
 export const listConsultations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input ?? {}))
+  .validator((input: unknown) => listInput.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<ListConsultationsResult> => {
     const role = await assertReviewer(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -437,7 +437,7 @@ export const listConsultations = createServerFn({ method: "POST" })
 
 export const openConsultation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => openInput.parse(input))
+  .validator((input: unknown) => openInput.parse(input))
   .handler(async ({ data, context }): Promise<OpenConsultationResult> => {
     const role = await assertReviewer(context);
     if (!isQuickbloxConfigured()) {
@@ -492,7 +492,7 @@ export const openConsultation = createServerFn({ method: "POST" })
 
 export const startRequestConsultation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => startFromRequestInput.parse(input))
+  .validator((input: unknown) => startFromRequestInput.parse(input))
   .handler(async ({ data, context }): Promise<OpenConsultationResult> => {
     const role = await assertReviewer(context);
     if (!isQuickbloxConfigured()) {
@@ -860,7 +860,7 @@ export type ConsultationRoomData = {
 
 export const getConsultationRoomDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
   .handler(
     async ({
       data,
@@ -1761,7 +1761,7 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
 
 export const saveConsultationClinicalNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -1806,7 +1806,7 @@ export const saveConsultationClinicalNote = createServerFn({ method: "POST" })
 
 export const finishConsultationAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),

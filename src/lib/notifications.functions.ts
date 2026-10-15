@@ -38,7 +38,7 @@ export const listMyNotifications = createServerFn({ method: "POST" })
 
 export const markNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: z.string().uuid().optional(), all: z.boolean().optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
