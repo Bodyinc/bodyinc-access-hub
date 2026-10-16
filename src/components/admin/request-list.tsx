@@ -23,7 +23,12 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listRequests } from "@/lib/requests.functions";
 import { RefreshButton } from "@/components/admin/refresh-button";
-import { requestStatusLabel, requestStatusTone, REQUEST_STATUS_BADGE, clinicalStatusLabel } from "@/lib/request-status";
+import {
+  requestStatusLabel,
+  requestStatusTone,
+  REQUEST_STATUS_BADGE,
+  clinicalStatusLabel,
+} from "@/lib/request-status";
 import { adminPageTitle, adminPageSubtitle, adminInput, adminSelect } from "@/lib/admin-ui";
 import { formatDateTime, normalizeIdSearch, formatRecordId } from "@/lib/format";
 
@@ -116,7 +121,7 @@ export function RequestList({
             <TableHeader className="bg-[#F8FBFA]">
               <TableRow className="border-b border-[#D5DEDD] hover:bg-transparent">
                 <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
-                  Order
+                  Order ID
                 </TableHead>
                 <TableHead className="h-11 text-[13px] font-semibold text-[#3B4759]">
                   Patient
@@ -185,7 +190,9 @@ export function RequestList({
                     <TableCell className="text-[14px] font-medium text-[#3B4759]">
                       <div>{r.customer_name ?? (r.is_guest ? "Guest" : "—")}</div>
                       {clinicalOnly ? null : (
-                        <div className="text-[12px] text-[#3B4759]/60">{r.customer_email ?? ""}</div>
+                        <div className="text-[12px] text-[#3B4759]/60">
+                          {r.customer_email ?? ""}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell className="text-[14px] font-medium text-[#3B4759]">
@@ -210,7 +217,9 @@ export function RequestList({
                           REQUEST_STATUS_BADGE[requestStatusTone(r.status)]
                         }`}
                       >
-                        {clinicalOnly ? clinicalStatusLabel(r.status) : requestStatusLabel(r.status)}
+                        {clinicalOnly
+                          ? clinicalStatusLabel(r.status)
+                          : requestStatusLabel(r.status)}
                       </Badge>
                     </TableCell>
                     {!clinicalOnly ? (
@@ -224,7 +233,8 @@ export function RequestList({
                               </div>
                             ) : null}
                           </div>
-                        ) : r.life_file_status === "submitted" || r.life_file_status === "accepted" ? (
+                        ) : r.life_file_status === "submitted" ||
+                          r.life_file_status === "accepted" ? (
                           <div>
                             <span className="text-[#6A9B9C]">
                               {r.life_file_status === "accepted" ? "Accepted" : "Submitted"}

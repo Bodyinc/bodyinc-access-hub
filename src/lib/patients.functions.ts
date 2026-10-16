@@ -46,10 +46,14 @@ export const listPatients = createServerFn({ method: "POST" })
       return map;
     })();
 
-    const idTerm = data.search ? data.search.trim().replace(/^#/, "").replace(/^BI-/i, "") : "";
+    // Accept #BI-XXXX / BI-XXXX / XXXX (and longer compact UUID pastes) the same way requests do.
+    const { normalizeIdSearch } = await import("@/lib/format");
+    const idTerm = data.search ? normalizeIdSearch(data.search).replace(/-/g, "") : "";
     const idMatchedIds =
-      idTerm && /^[0-9a-fA-F-]{2,}$/.test(idTerm)
-        ? userIds.filter((id: string) => id.toLowerCase().startsWith(idTerm.toLowerCase()))
+      idTerm && /^[0-9a-fA-F]{2,}$/i.test(idTerm)
+        ? userIds.filter((id: string) =>
+            id.replace(/-/g, "").toLowerCase().startsWith(idTerm.toLowerCase()),
+          )
         : [];
 
     let q = supabaseAdmin

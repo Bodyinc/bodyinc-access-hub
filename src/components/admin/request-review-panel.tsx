@@ -414,12 +414,18 @@ export function RequestReviewPanel({
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 p-4 sm:p-6">
           <div className="min-w-0 space-y-1.5">
             <CardTitle className={`${adminSectionTitle} font-mono text-[15px] sm:text-[17px]`}>
-              {formatRecordId(request.id)}
+              Order ID {formatRecordId(request.id)}
             </CardTitle>
             <CardDescription className={adminSectionSubtitle}>
               {request.kind === "followup" ? "Renewal order" : "Initial order"} ·{" "}
               {formatDateTimeFull(request.created_at)}
             </CardDescription>
+            <p
+              className="font-mono text-[11px] text-[#3B4759]/55 select-all"
+              title="Full request UUID for ops / deep links"
+            >
+              Request UUID: {request.id}
+            </p>
           </div>
           <Badge
             className={`rounded-lg border border-transparent px-2.5 py-0.5 text-[12px] font-semibold normal-case tracking-normal shadow-none ${

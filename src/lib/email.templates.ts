@@ -3,6 +3,9 @@
  * Rendered locally, then delivered via Brevo (no Brevo dashboard templates required).
  */
 
+import { formatBiId } from "@/lib/format";
+import { emailLogoHtml } from "./email/layout";
+
 export type EmailTemplateKey =
   | "patient_order_confirmed"
   | "patient_approved"
@@ -50,12 +53,11 @@ function firstName(params: EmailParams): string {
   return str(params, "FIRSTNAME") || str(params, "FULLNAME").split(/\s+/)[0] || "there";
 }
 
+/** Patient Portal–compatible order label from medication_requests.id (`#BI-XXXX`). */
 function orderShort(params: EmailParams): string {
   const id = str(params, "ORDER_ID");
-  return id ? id.slice(0, 8).toUpperCase() : "";
+  return id ? formatBiId(id) : "";
 }
-
-import { emailLogoHtml } from "./email/layout";
 
 /** Admin UI tokens (`src/lib/admin-ui.ts`) — keep email chrome in lockstep with the portal. */
 const THEME = {
@@ -102,7 +104,8 @@ function layout(opts: {
   bodyText: string;
 }): RenderedEmail {
   const brand = "Body Inc";
-  const font = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const font =
+    "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const heading = opts.hideTitle
     ? ""
     : `<tr>
@@ -168,9 +171,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `Your order for ${med} is confirmed.`,
       title: "Order confirmed",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>We've received your payment and created your order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong>.</p>
+        <p>We've received your payment and created your order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong>.</p>
         <p>A clinician will review your request shortly.</p>${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nWe've received your payment and created your order${order ? ` #${order}` : ""} for ${med}.\nA clinician will review your request shortly.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nWe've received your payment and created your order${order ? ` ${order}` : ""} for ${med}.\nA clinician will review your request shortly.${link.text}`,
     });
   },
 
@@ -416,9 +419,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `A practitioner has been assigned to your ${med} request and is ready to consult.`,
       title: "Practitioner assigned — prescription under review",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>A licensed practitioner has been assigned to your <strong>${escapeHtml(med)}</strong> request${order ? ` (order <strong>#${escapeHtml(order)}</strong>)` : ""} and is ready to consult. Your prescription is now under review.</p>
+        <p>A licensed practitioner has been assigned to your <strong>${escapeHtml(med)}</strong> request${order ? ` (order <strong>${escapeHtml(order)}</strong>)` : ""} and is ready to consult. Your prescription is now under review.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nA licensed practitioner has been assigned to your ${med} request${order ? ` (order #${order})` : ""} and is ready to consult. Your prescription is now under review.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nA licensed practitioner has been assigned to your ${med} request${order ? ` (order ${order})` : ""} and is ready to consult. Your prescription is now under review.${link.text}`,
     });
   },
 
@@ -430,9 +433,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `New order assigned for ${med}.`,
       title: "New order assigned",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>An order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> has been assigned to you.</p>
+        <p>An order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> has been assigned to you.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nAn order${order ? ` #${order}` : ""} for ${med} has been assigned to you.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nAn order${order ? ` ${order}` : ""} for ${med} has been assigned to you.${link.text}`,
     });
   },
 
@@ -444,9 +447,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `Order for ${med} is ready for clinical review.`,
       title: "Ready for clinical review",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> is ready for your review.</p>
+        <p>Order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> is ready for your review.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` #${order}` : ""} for ${med} is ready for your review.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` ${order}` : ""} for ${med} is ready for your review.${link.text}`,
     });
   },
 
@@ -458,9 +461,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `Order for ${med} needs the patient's confirmation.`,
       title: "Order needs attention",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> needs the patient to confirm a plan change.</p>
+        <p>Order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> needs the patient to confirm a plan change.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` #${order}` : ""} for ${med} needs the patient to confirm a plan change.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` ${order}` : ""} for ${med} needs the patient to confirm a plan change.${link.text}`,
     });
   },
 
@@ -474,10 +477,10 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `${provider} approved ${med} — ready to send to pharmacy.`,
       title: "Provider approved an order",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p><strong>${escapeHtml(provider)}</strong> approved order${order ? ` <strong>#${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(patient)}</strong> — <strong>${escapeHtml(med)}</strong>.</p>
+        <p><strong>${escapeHtml(provider)}</strong> approved order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(patient)}</strong> — <strong>${escapeHtml(med)}</strong>.</p>
         <p>You can now send this order to the pharmacy (LifeFile).</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\n${provider} approved order${order ? ` #${order}` : ""} for ${patient} — ${med}.\nYou can now send this order to the pharmacy (LifeFile).${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\n${provider} approved order${order ? ` ${order}` : ""} for ${patient} — ${med}.\nYou can now send this order to the pharmacy (LifeFile).${link.text}`,
     });
   },
 
@@ -488,7 +491,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
     const message = str(p, "MESSAGE");
     const who = email ? `${patient} (${email})` : patient;
     const link = cta(str(p, "FEEDBACK_URL"), "Open feedback");
-    const messageHtml = message ? noteBox(`<strong>Message:</strong><br/>${escapeHtml(message)}`) : "";
+    const messageHtml = message
+      ? noteBox(`<strong>Message:</strong><br/>${escapeHtml(message)}`)
+      : "";
     return layout({
       preheader: `${patient} sent new ${category} feedback.`,
       title: "New patient feedback",

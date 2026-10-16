@@ -201,8 +201,11 @@ function PatientDetailPage() {
                 <CardTitle className={adminSectionTitle}>
                   {d.full_name || "Unnamed patient"}
                 </CardTitle>
-                <span className="font-mono text-xs font-semibold text-[#3B4759]/80 bg-[#F2F7F6] px-2 py-0.5 rounded border border-[#D5DEDD]">
-                  Patient ID: {patientId}
+                <span
+                  className="font-mono text-xs font-semibold text-[#3B4759]/80 bg-[#F2F7F6] px-2 py-0.5 rounded border border-[#D5DEDD]"
+                  title={patientId}
+                >
+                  Patient ID: {formatRecordId(patientId)}
                 </span>
               </div>
               <CardDescription className={adminSectionSubtitle}>{d.email}</CardDescription>
@@ -750,14 +753,20 @@ function ClinicalSummaryCard({
             {patientId && (
               <Metric
                 label="Patient ID"
-                value={<span className="font-mono text-xs select-all">{patientId}</span>}
+                value={
+                  <span className="space-y-0.5" title={patientId}>
+                    <span className="block font-mono text-sm font-semibold">
+                      {formatRecordId(patientId)}
+                    </span>
+                    <span className="block font-mono text-[11px] text-[#3B4759]/55 select-all">
+                      {patientId}
+                    </span>
+                  </span>
+                }
               />
             )}
             <Metric label="Date of birth" value={dob ? formatDate(dob) : "—"} />
-            <Metric
-              label="Age"
-              value={ageFromDob(dob) != null ? `${ageFromDob(dob)} yrs` : "—"}
-            />
+            <Metric label="Age" value={ageFromDob(dob) != null ? `${ageFromDob(dob)} yrs` : "—"} />
             <Metric label="BMI" value={data.bmi != null ? String(data.bmi) : "—"} />
             <Metric
               label="Height & Weight"

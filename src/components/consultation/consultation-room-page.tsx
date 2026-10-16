@@ -150,7 +150,9 @@ interface QuickBloxClient {
     config?: Record<string, unknown>,
   ) => void;
   createSession: (
-    creds: { email?: string; id?: number; login?: string; password?: string } | ((err: unknown, res: { token: string }) => void),
+    creds:
+      | { email?: string; id?: number; login?: string; password?: string }
+      | ((err: unknown, res: { token: string }) => void),
     callback?: (err: unknown, res: { token: string; user_id?: number }) => void,
   ) => void;
   startSessionWithToken: (
@@ -192,7 +194,12 @@ interface QuickBloxClient {
       msg: {
         type: string;
         body: string;
-        extension: { save_to_history?: number; dialog_id?: string | null; attachments?: ChatAttachmentItem[]; [key: string]: unknown };
+        extension: {
+          save_to_history?: number;
+          dialog_id?: string | null;
+          attachments?: ChatAttachmentItem[];
+          [key: string]: unknown;
+        };
         markable?: number;
       },
     ) => string;
@@ -322,7 +329,12 @@ export function ConsultationRoomPage({
   const assignProv = useServerFn(assignRequestProvider);
 
   // Queries
-  const { data: resData, isLoading, error, refetch } = useQuery({
+  const {
+    data: resData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["consultation-room-details", requestId],
     queryFn: () => getDetails({ data: { requestId } }),
   });
@@ -345,12 +357,16 @@ export function ConsultationRoomPage({
   const [directions, setDirections] = useState("");
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
   const [finishConclusion, setFinishConclusion] = useState("");
-  const [sidebarTab, setSidebarTab] = useState<"profile" | "intake" | "notes" | "history">("profile");
+  const [sidebarTab, setSidebarTab] = useState<"profile" | "intake" | "notes" | "history">(
+    "profile",
+  );
 
   // Live Queue panel & search state
   const [showQueuePane, setShowQueuePane] = useState(true);
   const [queueSearch, setQueueSearch] = useState("");
-  const [queueTab, setQueueTab] = useState<"waiting" | "live" | "all">(clinicalOnly ? "live" : "waiting");
+  const [queueTab, setQueueTab] = useState<"waiting" | "live" | "all">(
+    clinicalOnly ? "live" : "waiting",
+  );
 
   // Selected queue conversation (allows talking with another patient from the Live Queue)
   const [selectedQueueItem, setSelectedQueueItem] = useState<LiveQueueItem | null>(null);
@@ -511,7 +527,8 @@ export function ConsultationRoomPage({
       }
 
       const activePatientId = selectedQueueItem?.clientId || roomData?.quickblox.patientQbUserId;
-      const activePatientName = selectedQueueItem?.patientName || roomData?.patient.name || "Patient";
+      const activePatientName =
+        selectedQueueItem?.patientName || roomData?.patient.name || "Patient";
       if (senderId === activePatientId) {
         return {
           isSelf: isMe,
@@ -532,7 +549,7 @@ export function ConsultationRoomPage({
       if (isMe) {
         return {
           isSelf: true,
-          senderName: clinicalOnly ? (roomData?.provider?.full_name || "Doctor") : "Admin",
+          senderName: clinicalOnly ? roomData?.provider?.full_name || "Doctor" : "Admin",
           senderRole: clinicalOnly ? ("provider" as const) : ("admin" as const),
         };
       }
@@ -560,9 +577,7 @@ export function ConsultationRoomPage({
     (rawItem: any): ChatMessageItem => {
       const senderInfo = resolveSender(rawItem.sender_id);
       const isJoin =
-        rawItem.type === "joined" ||
-        rawItem.notification_type === 1 ||
-        rawItem.type === "system";
+        rawItem.type === "joined" || rawItem.notification_type === 1 || rawItem.type === "system";
 
       let body = rawItem.message || "";
       let isSystem = false;
@@ -589,7 +604,9 @@ export function ConsultationRoomPage({
         senderId: rawItem.sender_id,
         senderName: senderInfo.senderName,
         senderRole: isSystem ? "system" : senderInfo.senderRole,
-        body: body || (attachments[0]?.name ? `📎 ${attachments[0].name}` : isSystem ? "" : "Attachment"),
+        body:
+          body ||
+          (attachments[0]?.name ? `📎 ${attachments[0].name}` : isSystem ? "" : "Attachment"),
         dateSent: rawItem.date_sent ? rawItem.date_sent * 1000 : Date.now(),
         isSelf: senderInfo.isSelf,
         isSystem,
@@ -693,8 +710,7 @@ export function ConsultationRoomPage({
         // Step 2: Connect to QuickBlox Chat Server (XMPP)
         if (QB.chat) {
           const providerUid = roomData.quickblox.providerSession.userId;
-          const providerPass =
-            roomData.quickblox.providerSession.password || token;
+          const providerPass = roomData.quickblox.providerSession.password || token;
 
           QB.chat.connect({ userId: providerUid, password: providerPass }, (chatErr) => {
             if (chatErr) {
@@ -739,7 +755,11 @@ export function ConsultationRoomPage({
             type: (msg as any).type || (msg.extension as any)?.notification_type,
           });
 
-          if (!parsed.isSystem && !parsed.body && (!parsed.attachments || parsed.attachments.length === 0)) {
+          if (
+            !parsed.isSystem &&
+            !parsed.body &&
+            (!parsed.attachments || parsed.attachments.length === 0)
+          ) {
             return;
           }
 
@@ -782,9 +802,7 @@ export function ConsultationRoomPage({
             { chat_dialog_id: targetDialogId, sort_desc: "date_sent", limit: 50 },
             (mErr, mRes) => {
               if (!mErr && mRes?.items?.length) {
-                const historical: ChatMessageItem[] = mRes.items
-                  .map(parseRawMessage)
-                  .reverse();
+                const historical: ChatMessageItem[] = mRes.items.map(parseRawMessage).reverse();
                 setChatMessages(historical);
               }
             },
@@ -860,7 +878,8 @@ export function ConsultationRoomPage({
 
         try {
           session.call({
-            appointment_id: selectedQueueItem?.appointmentId || roomData?.consultation.appointmentId,
+            appointment_id:
+              selectedQueueItem?.appointmentId || roomData?.consultation.appointmentId,
             doctor_name: roomData?.provider?.full_name || "Doctor",
           });
         } catch (callErr) {
@@ -878,7 +897,9 @@ export function ConsultationRoomPage({
         setActiveMainTab("call");
         playRingtone();
         const callTargetName = selectedQueueItem?.patientName || patient.name;
-        toast.info(isVideo ? `Calling ${callTargetName} (Video)…` : `Calling ${callTargetName} (Audio)…`);
+        toast.info(
+          isVideo ? `Calling ${callTargetName} (Video)…` : `Calling ${callTargetName} (Audio)…`,
+        );
       });
     } catch (err) {
       console.error("[QuickBlox] Start call error:", err);
@@ -950,7 +971,7 @@ export function ConsultationRoomPage({
       const newMsg: ChatMessageItem = {
         id: sentId || `msg_${Date.now()}`,
         senderId: roomData.quickblox.providerSession.userId,
-        senderName: clinicalOnly ? (roomData.provider?.full_name || "Doctor") : "Admin",
+        senderName: clinicalOnly ? roomData.provider?.full_name || "Doctor" : "Admin",
         senderRole: clinicalOnly ? "provider" : "admin",
         body: text,
         dateSent: Date.now(),
@@ -1132,9 +1153,7 @@ export function ConsultationRoomPage({
           { chat_dialog_id: item.dialogId, sort_desc: "date_sent", limit: 50 },
           (mErr, mRes) => {
             if (!mErr && mRes?.items?.length) {
-              const historical: ChatMessageItem[] = mRes.items
-                .map(parseRawMessage)
-                .reverse();
+              const historical: ChatMessageItem[] = mRes.items.map(parseRawMessage).reverse();
               setChatMessages(historical);
             }
           },
@@ -1164,8 +1183,7 @@ export function ConsultationRoomPage({
 
   // Provider Assignment Mutation
   const assignMut = useMutation({
-    mutationFn: (providerId: string | null) =>
-      assignProv({ data: { requestId, providerId } }),
+    mutationFn: (providerId: string | null) => assignProv({ data: { requestId, providerId } }),
     onSuccess: (res, providerId) => {
       if (res.alreadyAssigned) {
         toast.info(`Already assigned to ${res.providerName}`);
@@ -1372,9 +1390,7 @@ export function ConsultationRoomPage({
       }),
     onSuccess: (res) => {
       toastActionWithEmail(
-        res?.lifeFileOrderId
-          ? `Sent to LifeFile: ${res.lifeFileOrderId}`
-          : "Sent to pharmacy.",
+        res?.lifeFileOrderId ? `Sent to LifeFile: ${res.lifeFileOrderId}` : "Sent to pharmacy.",
         res?.email_sent,
       );
       setSendPharmacyOpen(false);
@@ -1405,7 +1421,9 @@ export function ConsultationRoomPage({
           <CardHeader>
             <CardTitle className="text-red-700">Unable to load consultation</CardTitle>
             <CardDescription>
-              {error instanceof Error ? error.message : "Consultation room data could not be retrieved."}
+              {error instanceof Error
+                ? error.message
+                : "Consultation room data could not be retrieved."}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-end gap-2">
@@ -1422,11 +1440,15 @@ export function ConsultationRoomPage({
   }
 
   const patient = roomData.patient;
-  const isConsultationEnded = Boolean(roomData.consultation.isEnded || roomData.consultation.endedAt);
+  const isConsultationEnded = Boolean(
+    roomData.consultation.isEnded || roomData.consultation.endedAt,
+  );
 
   // Live Queue calculations
   const liveQueueList = roomData.liveQueue ?? [];
-  const waitingRoomCount = liveQueueList.filter((item) => !item.isEnded && !item.isAssigned && !item.providerId).length;
+  const waitingRoomCount = liveQueueList.filter(
+    (item) => !item.isEnded && !item.isAssigned && !item.providerId,
+  ).length;
   const liveQueueCount = liveQueueList.filter((item) => !item.isEnded).length;
   const allQueueCount = liveQueueList.length;
 
@@ -1435,8 +1457,7 @@ export function ConsultationRoomPage({
       // Doctor side: shows all active consultations assigned to this doctor
       if (item.isEnded && queueTab !== "all") return false;
       const isAssignedToDoctor =
-        item.isActiveCurrent ||
-        (roomData.provider?.id && item.providerId === roomData.provider.id);
+        item.isActiveCurrent || (roomData.provider?.id && item.providerId === roomData.provider.id);
       if (!isAssignedToDoctor) return false;
     } else {
       // Admin side:
@@ -1501,7 +1522,7 @@ export function ConsultationRoomPage({
                 )}
               </div>
               <div className="text-[11px] text-[#3B4759]/70 font-medium">
-                Order {formatRecordId(roomData.request.id)}
+                Order ID {formatRecordId(roomData.request.id)}
               </div>
             </div>
           </div>
@@ -1518,7 +1539,10 @@ export function ConsultationRoomPage({
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <span>
               This consultation appointment is finished
-              {roomData.consultation.endedAt ? ` (${formatDateTimeFull(roomData.consultation.endedAt)})` : ""}.
+              {roomData.consultation.endedAt
+                ? ` (${formatDateTimeFull(roomData.consultation.endedAt)})`
+                : ""}
+              .
             </span>
           </div>
           <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200 text-[10px] shadow-none">
@@ -1550,7 +1574,11 @@ export function ConsultationRoomPage({
               onClick={toggleMute}
               className={`h-8 px-2.5 text-xs ${isMuted ? "border-red-300 bg-red-100 text-red-700" : "bg-white text-emerald-900"}`}
             >
-              {isMuted ? <MicOff className="h-3.5 w-3.5 mr-1" /> : <Mic className="h-3.5 w-3.5 mr-1" />}
+              {isMuted ? (
+                <MicOff className="h-3.5 w-3.5 mr-1" />
+              ) : (
+                <Mic className="h-3.5 w-3.5 mr-1" />
+              )}
               <span>{isMuted ? "Unmute" : "Mute"}</span>
             </Button>
 
@@ -1561,7 +1589,11 @@ export function ConsultationRoomPage({
                 onClick={toggleVideo}
                 className={`h-8 px-2.5 text-xs ${isVideoMuted ? "border-amber-300 bg-amber-100 text-amber-800" : "bg-white text-emerald-900"}`}
               >
-                {isVideoMuted ? <VideoOff className="h-3.5 w-3.5 mr-1" /> : <Video className="h-3.5 w-3.5 mr-1" />}
+                {isVideoMuted ? (
+                  <VideoOff className="h-3.5 w-3.5 mr-1" />
+                ) : (
+                  <Video className="h-3.5 w-3.5 mr-1" />
+                )}
                 <span>{isVideoMuted ? "Enable Cam" : "Stop Cam"}</span>
               </Button>
             )}
@@ -1597,21 +1629,32 @@ export function ConsultationRoomPage({
               <div>
                 <h2 className="text-base font-bold text-[#152A51]">{patient.name}</h2>
                 <p className="text-xs text-[#3B4759]/80 mt-0.5">
-                  DOB: {patient.dob || "—"}{" "}
-                  {patient.age ? `(${patient.age} yrs)` : ""} · {patient.sex ? patient.sex.toUpperCase() : "—"}
+                  DOB: {patient.dob || "—"} {patient.age ? `(${patient.age} yrs)` : ""} ·{" "}
+                  {patient.sex ? patient.sex.toUpperCase() : "—"}
                 </p>
                 <p className="text-xs text-[#3B4759]/70 mt-0.5">
-                  State: <span className="font-semibold text-[#152A51]">{patient.state_code || "—"}</span>
+                  State:{" "}
+                  <span className="font-semibold text-[#152A51]">{patient.state_code || "—"}</span>
                   {patient.phone ? ` · Tel: ${patient.phone}` : ""}
                 </p>
               </div>
 
               {patient.bmi && (
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#3B4759]/60">BMI</span>
-                  <div className="text-sm font-extrabold text-[#152A51]">{patient.bmi.toFixed(1)}</div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#3B4759]/60">
+                    BMI
+                  </span>
+                  <div className="text-sm font-extrabold text-[#152A51]">
+                    {patient.bmi.toFixed(1)}
+                  </div>
                   <span className="text-[10px] text-emerald-700 font-semibold">
-                    {patient.bmi < 18.5 ? "Underweight" : patient.bmi < 25 ? "Normal" : patient.bmi < 30 ? "Overweight" : "Obese"}
+                    {patient.bmi < 18.5
+                      ? "Underweight"
+                      : patient.bmi < 25
+                        ? "Normal"
+                        : patient.bmi < 30
+                          ? "Overweight"
+                          : "Obese"}
                   </span>
                 </div>
               )}
@@ -1621,24 +1664,27 @@ export function ConsultationRoomPage({
             {(() => {
               const requestStatus = roomData.request.status;
               const isUnassigned = !roomData.provider;
-              const waitingOnProvider = requestStatus === "pending_review" && canManage && !isUnassigned;
+              const waitingOnProvider =
+                requestStatus === "pending_review" && canManage && !isUnassigned;
               const canReject =
-                (requestStatus === "pending_review" || requestStatus === "awaiting_additional_payment") &&
+                (requestStatus === "pending_review" ||
+                  requestStatus === "awaiting_additional_payment") &&
                 (!clinicalOnly || !isUnassigned);
               const canChange =
-                ["pending_review", "approved", "awaiting_additional_payment"].includes(requestStatus) &&
+                ["pending_review", "approved", "awaiting_additional_payment"].includes(
+                  requestStatus,
+                ) &&
                 (!clinicalOnly || !isUnassigned);
-              const sentToLifeFile =
-                ["sent_to_pharmacy", "dispatched", "delivered"].includes(requestStatus);
+              const sentToLifeFile = ["sent_to_pharmacy", "dispatched", "delivered"].includes(
+                requestStatus,
+              );
               const canApprove =
                 clinicalOnly &&
                 !isUnassigned &&
                 !sentToLifeFile &&
                 ["pending_review", "approved", "prescribed"].includes(requestStatus);
               const canSendToPharmacy =
-                canManage &&
-                !sentToLifeFile &&
-                ["approved", "prescribed"].includes(requestStatus);
+                canManage && !sentToLifeFile && ["approved", "prescribed"].includes(requestStatus);
 
               return (
                 <div className="mt-3 space-y-2">
@@ -1698,7 +1744,9 @@ export function ConsultationRoomPage({
                         className="flex-1 min-w-[65px] h-8 text-[11px] font-semibold bg-[#8F4A33] text-white hover:bg-[#7A3E2B] px-1"
                       >
                         <X className="h-3 w-3 mr-1" />
-                        <span className="truncate">{clinicalOnly ? "Reject" : "Reject & refund"}</span>
+                        <span className="truncate">
+                          {clinicalOnly ? "Reject" : "Reject & refund"}
+                        </span>
                       </Button>
                     ) : null}
                   </div>
@@ -1762,26 +1810,36 @@ export function ConsultationRoomPage({
               <div className="space-y-3">
                 <Card className="border-[#D5DEDD] shadow-none">
                   <CardHeader className="p-3 pb-1">
-                    <CardTitle className="text-xs font-bold text-[#152A51]">Order Overview</CardTitle>
+                    <CardTitle className="text-xs font-bold text-[#152A51]">
+                      Order Overview
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 pt-1 space-y-2 text-xs divide-y divide-[#E8EEED]">
                     <div className="pt-1 flex justify-between">
                       <span className="text-[#3B4759]/70">Medication</span>
-                      <span className="font-semibold text-[#152A51]">{roomData.medicine?.name || "—"}</span>
+                      <span className="font-semibold text-[#152A51]">
+                        {roomData.medicine?.name || "—"}
+                      </span>
                     </div>
                     {roomData.package && (
                       <div className="pt-2 flex justify-between">
                         <span className="text-[#3B4759]/70">Plan</span>
-                        <span className="font-semibold text-[#152A51]">{roomData.package.name}</span>
+                        <span className="font-semibold text-[#152A51]">
+                          {roomData.package.name}
+                        </span>
                       </div>
                     )}
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">Created</span>
-                      <span className="font-medium text-[#3B4759]">{formatDateTimeFull(roomData.request.created_at)}</span>
+                      <span className="font-medium text-[#3B4759]">
+                        {formatDateTimeFull(roomData.request.created_at)}
+                      </span>
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">QuickBlox Client ID</span>
-                      <span className="font-mono text-[11px] text-[#152A51]">{roomData.quickblox.patientQbUserId || "—"}</span>
+                      <span className="font-mono text-[11px] text-[#152A51]">
+                        {roomData.quickblox.patientQbUserId || "—"}
+                      </span>
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">Appointment ID</span>
@@ -1795,12 +1853,18 @@ export function ConsultationRoomPage({
                 {roomData.goals.length > 0 && (
                   <Card className="border-[#D5DEDD] shadow-none">
                     <CardHeader className="p-3 pb-1">
-                      <CardTitle className="text-xs font-bold text-[#152A51]">Health Goals</CardTitle>
+                      <CardTitle className="text-xs font-bold text-[#152A51]">
+                        Health Goals
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 pt-1">
                       <div className="flex flex-wrap gap-1.5">
                         {roomData.goals.map((g, i) => (
-                          <Badge key={i} variant="outline" className="text-[11px] bg-[#F9FBFA] border-[#D5DEDD] text-[#3B4759]">
+                          <Badge
+                            key={i}
+                            variant="outline"
+                            className="text-[11px] bg-[#F9FBFA] border-[#D5DEDD] text-[#3B4759]"
+                          >
                             {g}
                           </Badge>
                         ))}
@@ -1828,7 +1892,7 @@ export function ConsultationRoomPage({
                 </div>
 
                 <div className="space-y-2">
-                  {(!roomData.jotformAnswers || roomData.jotformAnswers.length === 0) ? (
+                  {!roomData.jotformAnswers || roomData.jotformAnswers.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-[#D5DEDD] p-5 text-center text-xs text-[#3B4759]/70">
                       No JotForm intake responses found for this patient yet.
                     </div>
@@ -1838,7 +1902,9 @@ export function ConsultationRoomPage({
                         key={idx}
                         className="rounded-xl border border-[#D5DEDD] bg-white p-3 text-xs shadow-2xs"
                       >
-                        <span className="font-medium text-[#3B4759]/75 leading-relaxed">{item.label}</span>
+                        <span className="font-medium text-[#3B4759]/75 leading-relaxed">
+                          {item.label}
+                        </span>
                         <p className="mt-1 font-bold text-[#152A51] text-[13px]">{item.value}</p>
                       </div>
                     ))
@@ -1863,11 +1929,15 @@ export function ConsultationRoomPage({
                   <CardContent className="p-3 pt-1 space-y-2 text-xs divide-y divide-[#E8EEED]">
                     <div className="pt-1 flex justify-between">
                       <span className="text-[#3B4759]/70">Treatment</span>
-                      <span className="font-bold text-[#152A51]">{roomData.medicine?.name || "—"}</span>
+                      <span className="font-bold text-[#152A51]">
+                        {roomData.medicine?.name || "—"}
+                      </span>
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">Plan</span>
-                      <span className="font-semibold text-[#152A51]">{roomData.package?.name || "Monthly Plan"}</span>
+                      <span className="font-semibold text-[#152A51]">
+                        {roomData.package?.name || "Monthly Plan"}
+                      </span>
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">Protocol</span>
@@ -1896,12 +1966,15 @@ export function ConsultationRoomPage({
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">Biological Sex</span>
-                      <span className="font-semibold text-[#152A51]">{patient.sex?.toUpperCase() || "—"}</span>
+                      <span className="font-semibold text-[#152A51]">
+                        {patient.sex?.toUpperCase() || "—"}
+                      </span>
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">Height & Weight</span>
                       <span className="font-semibold text-[#152A51]">
-                        {patient.height_cm ? `${patient.height_cm} cm` : "—"} / {patient.weight_kg ? `${patient.weight_kg} kg` : "—"}
+                        {patient.height_cm ? `${patient.height_cm} cm` : "—"} /{" "}
+                        {patient.weight_kg ? `${patient.weight_kg} kg` : "—"}
                       </span>
                     </div>
                     <div className="pt-2 flex justify-between">
@@ -1910,14 +1983,22 @@ export function ConsultationRoomPage({
                         {patient.bmi ? patient.bmi.toFixed(1) : "—"}
                         {patient.bmi ? (
                           <span className="ml-1 text-[10px] font-normal text-[#3B4759]/70">
-                            ({patient.bmi >= 30 ? "Obese" : patient.bmi >= 25 ? "Overweight" : "Normal"})
+                            (
+                            {patient.bmi >= 30
+                              ? "Obese"
+                              : patient.bmi >= 25
+                                ? "Overweight"
+                                : "Normal"}
+                            )
                           </span>
                         ) : null}
                       </span>
                     </div>
                     <div className="pt-2 flex justify-between">
                       <span className="text-[#3B4759]/70">State / Region</span>
-                      <span className="font-semibold text-[#152A51]">{patient.state_code || "—"}</span>
+                      <span className="font-semibold text-[#152A51]">
+                        {patient.state_code || "—"}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -1932,7 +2013,10 @@ export function ConsultationRoomPage({
                     </CardHeader>
                     <CardContent className="p-3 pt-1 space-y-2 text-xs">
                       {roomData.answers.map((ans) => (
-                        <div key={ans.id} className="p-2.5 rounded-lg border border-[#D5DEDD] bg-white">
+                        <div
+                          key={ans.id}
+                          className="p-2.5 rounded-lg border border-[#D5DEDD] bg-white"
+                        >
                           <p className="font-medium text-[#3B4759]/80">{ans.prompt}</p>
                           <p className="mt-1 font-bold text-[#152A51]">{ans.answer}</p>
                         </div>
@@ -1951,32 +2035,40 @@ export function ConsultationRoomPage({
                   <div className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-center">
                     <span className="text-[10px] text-[#3B4759]/70 block">Total</span>
                     <span className="text-lg font-bold text-[#152A51]">
-                      {roomData.totalPatientConsultations ?? roomData.patientConsultationHistory?.length ?? 0}
+                      {roomData.totalPatientConsultations ??
+                        roomData.patientConsultationHistory?.length ??
+                        0}
                     </span>
                   </div>
                   <div className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-center">
                     <span className="text-[10px] text-emerald-700 block">Completed</span>
                     <span className="text-lg font-bold text-emerald-700">
-                      {roomData.patientConsultationHistory?.filter((c) => c.status === "completed" || Boolean(c.endedAt)).length ?? 0}
+                      {roomData.patientConsultationHistory?.filter(
+                        (c) => c.status === "completed" || Boolean(c.endedAt),
+                      ).length ?? 0}
                     </span>
                   </div>
                   <div className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-center">
                     <span className="text-[10px] text-amber-600 block">Active</span>
                     <span className="text-lg font-bold text-amber-600">
-                      {roomData.patientConsultationHistory?.filter((c) => c.status === "in_progress" && !c.endedAt).length ?? 0}
+                      {roomData.patientConsultationHistory?.filter(
+                        (c) => c.status === "in_progress" && !c.endedAt,
+                      ).length ?? 0}
                     </span>
                   </div>
                 </div>
 
                 {/* Consultation Records for this Patient */}
                 <div className="space-y-2">
-                  {(!roomData.patientConsultationHistory || roomData.patientConsultationHistory.length === 0) ? (
+                  {!roomData.patientConsultationHistory ||
+                  roomData.patientConsultationHistory.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-[#D5DEDD] p-5 text-center text-xs text-[#3B4759]/70">
                       No previous consultations found for this patient.
                     </div>
                   ) : (
                     roomData.patientConsultationHistory.map((item, idx) => {
-                      const isCurrentRoom = item.appointmentId === roomData.consultation.appointmentId;
+                      const isCurrentRoom =
+                        item.appointmentId === roomData.consultation.appointmentId;
                       const isDone = item.status === "completed" || Boolean(item.endedAt);
                       return (
                         <div
@@ -2006,11 +2098,15 @@ export function ConsultationRoomPage({
                           <div className="space-y-0.5 text-[11px] text-[#3B4759]/75">
                             <div className="flex justify-between">
                               <span>Appointment:</span>
-                              <span className="font-mono text-[#152A51]">#{item.appointmentId.slice(-8)}</span>
+                              <span className="font-mono text-[#152A51]">
+                                #{item.appointmentId.slice(-8)}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Clinician:</span>
-                              <span className="font-medium text-[#152A51]">{item.providerName || "Unassigned"}</span>
+                              <span className="font-medium text-[#152A51]">
+                                {item.providerName || "Unassigned"}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Started:</span>
@@ -2057,15 +2153,21 @@ export function ConsultationRoomPage({
                 size="sm"
                 onClick={() => setActiveMainTab("chat")}
                 className={`h-8 gap-1.5 px-3 text-xs font-semibold ${
-                  activeMainTab === "chat" ? "bg-[#152A51] text-white hover:bg-[#152A51]" : "text-[#3B4759] hover:bg-[#F3F6F6]"
+                  activeMainTab === "chat"
+                    ? "bg-[#152A51] text-white hover:bg-[#152A51]"
+                    : "text-[#3B4759] hover:bg-[#F3F6F6]"
                 }`}
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 <span>Chat</span>
                 {chatMessages.length > 0 && (
-                  <span className={`ml-1 rounded-full px-1.5 py-0 text-[10px] ${
-                    activeMainTab === "chat" ? "bg-white/20 text-white" : "bg-[#D5DEDD] text-[#3B4759]"
-                  }`}>
+                  <span
+                    className={`ml-1 rounded-full px-1.5 py-0 text-[10px] ${
+                      activeMainTab === "chat"
+                        ? "bg-white/20 text-white"
+                        : "bg-[#D5DEDD] text-[#3B4759]"
+                    }`}
+                  >
                     {chatMessages.length}
                   </span>
                 )}
@@ -2076,7 +2178,9 @@ export function ConsultationRoomPage({
                 size="sm"
                 onClick={() => setActiveMainTab("call")}
                 className={`h-8 gap-1.5 px-3 text-xs font-semibold ${
-                  activeMainTab === "call" ? "bg-[#152A51] text-white hover:bg-[#152A51]" : "text-[#3B4759] hover:bg-[#F3F6F6]"
+                  activeMainTab === "call"
+                    ? "bg-[#152A51] text-white hover:bg-[#152A51]"
+                    : "text-[#3B4759] hover:bg-[#F3F6F6]"
                 }`}
               >
                 <Video className="h-3.5 w-3.5" />
@@ -2085,7 +2189,6 @@ export function ConsultationRoomPage({
                   <span className="ml-1 inline-block h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                 )}
               </Button>
-
             </div>
           </div>
 
@@ -2103,8 +2206,13 @@ export function ConsultationRoomPage({
                         <h3 className="text-xs font-bold text-[#152A51]">
                           {clinicalOnly ? "Live Queue" : "Consultation Queue"}
                         </h3>
-                        <Badge variant="outline" className="text-[10px] bg-[#6A9B9C]/10 border-[#6A9B9C]/30 text-[#2C5E5F]">
-                          {clinicalOnly ? `${filteredQueue.length} Active` : `${waitingRoomCount} Waiting`}
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-[#6A9B9C]/10 border-[#6A9B9C]/30 text-[#2C5E5F]"
+                        >
+                          {clinicalOnly
+                            ? `${filteredQueue.length} Active`
+                            : `${waitingRoomCount} Waiting`}
                         </Badge>
                       </div>
                       <Button
@@ -2147,7 +2255,9 @@ export function ConsultationRoomPage({
                     ) : (
                       <div className="flex items-center justify-between px-1 text-[11px] text-[#3B4759]/70 font-medium">
                         <span>Assigned to you:</span>
-                        <span className="font-bold text-[#152A51]">{filteredQueue.length} consultations</span>
+                        <span className="font-bold text-[#152A51]">
+                          {filteredQueue.length} consultations
+                        </span>
                       </div>
                     )}
 
@@ -2203,15 +2313,28 @@ export function ConsultationRoomPage({
                                 {item.medicineName || item.description}
                               </p>
                               <div className="flex items-center gap-2 mt-1 text-[10px] text-[#3B4759]/60">
-                                <span>{new Date(item.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
+                                <span>
+                                  {new Date(item.createdAt).toLocaleDateString([], {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </span>
                                 <span>·</span>
-                                <span>{new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                <span>
+                                  {new Date(item.createdAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
                               </div>
                             </div>
 
                             <div className="shrink-0 flex flex-col items-end gap-1">
                               {item.isEnded ? (
-                                <Badge variant="outline" className="text-[9px] text-slate-500 border-slate-300">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] text-slate-500 border-slate-300"
+                                >
                                   Done
                                 </Badge>
                               ) : (
@@ -2244,48 +2367,56 @@ export function ConsultationRoomPage({
                       title={showQueuePane ? "Hide Live Queue" : "Show Live Queue"}
                     >
                       <ListFilter className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">{showQueuePane ? "Hide Queue" : "Show Queue"}</span>
+                      <span className="hidden sm:inline">
+                        {showQueuePane ? "Hide Queue" : "Show Queue"}
+                      </span>
                     </Button>
                     <div className="h-3.5 w-[1px] bg-[#D5DEDD]" />
                     <span className="font-semibold text-[#152A51]">
-                      {selectedQueueItem ? selectedQueueItem.patientName : "Consultation Conversation"}
+                      {selectedQueueItem
+                        ? selectedQueueItem.patientName
+                        : "Consultation Conversation"}
                     </span>
                     {selectedQueueItem?.medicineName && (
-                      <Badge variant="outline" className="border-[#6A9B9C]/40 bg-[#6A9B9C]/10 text-[10px] text-[#2C5E5F]">
+                      <Badge
+                        variant="outline"
+                        className="border-[#6A9B9C]/40 bg-[#6A9B9C]/10 text-[10px] text-[#2C5E5F]"
+                      >
                         {selectedQueueItem.medicineName}
                       </Badge>
                     )}
-                    {selectedQueueItem && selectedQueueItem.appointmentId !== roomData.consultation.appointmentId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedQueueItem(null);
-                          selectedQueueItemRef.current = null;
-                          if (roomData.consultation.dialogId) {
-                            handleSelectQueueItem({
-                              appointmentId: roomData.consultation.appointmentId || "",
-                              clientId: roomData.quickblox.patientQbUserId || 0,
-                              dialogId: roomData.consultation.dialogId,
-                              patientName: patient.name,
-                              patientEmail: patient.email || null,
-                              medicineName: roomData.medicine?.name || null,
-                              description: "Consultation",
-                              createdAt: Date.now(),
-                              updatedAt: Date.now(),
-                              dateEnd: roomData.consultation.endedAt || null,
-                              isEnded: Boolean(roomData.consultation.endedAt),
-                              priority: 0,
-                              requestId: roomData.request.id,
-                              isActiveCurrent: true,
-                            });
-                          }
-                        }}
-                        className="h-6 px-1.5 text-[10px] text-[#6A9B9C] hover:text-[#152A51] underline"
-                      >
-                        (Return to {patient.name})
-                      </Button>
-                    )}
+                    {selectedQueueItem &&
+                      selectedQueueItem.appointmentId !== roomData.consultation.appointmentId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedQueueItem(null);
+                            selectedQueueItemRef.current = null;
+                            if (roomData.consultation.dialogId) {
+                              handleSelectQueueItem({
+                                appointmentId: roomData.consultation.appointmentId || "",
+                                clientId: roomData.quickblox.patientQbUserId || 0,
+                                dialogId: roomData.consultation.dialogId,
+                                patientName: patient.name,
+                                patientEmail: patient.email || null,
+                                medicineName: roomData.medicine?.name || null,
+                                description: "Consultation",
+                                createdAt: Date.now(),
+                                updatedAt: Date.now(),
+                                dateEnd: roomData.consultation.endedAt || null,
+                                isEnded: Boolean(roomData.consultation.endedAt),
+                                priority: 0,
+                                requestId: roomData.request.id,
+                                isActiveCurrent: true,
+                              });
+                            }
+                          }}
+                          className="h-6 px-1.5 text-[10px] text-[#6A9B9C] hover:text-[#152A51] underline"
+                        >
+                          (Return to {patient.name})
+                        </Button>
+                      )}
                     <span className="text-[#3B4759]/60">·</span>
                     <span className="text-[#3B4759]/70 text-[11px]">
                       {chatConnected ? "Encrypted Live Chat" : "Connecting to chat server…"}
@@ -2305,11 +2436,16 @@ export function ConsultationRoomPage({
                     <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-[#6A9B9C]/15 text-[#6A9B9C]">
                       <Sparkles className="h-4 w-4 text-[#2C5E5F]" />
                     </div>
-                    <h3 className="mt-1.5 font-bold text-[#152A51]">Direct Clinician Consultation</h3>
+                    <h3 className="mt-1.5 font-bold text-[#152A51]">
+                      Direct Clinician Consultation
+                    </h3>
                     <p className="mt-0.5 text-[11px] text-[#3B4759]/80">
                       Live messaging with {selectedQueueItem?.patientName || patient.name}
-                      {(selectedQueueItem?.medicineName || roomData.medicine?.name) ? ` for ${selectedQueueItem?.medicineName || roomData.medicine?.name}` : ""}.
-                      All messages and attachments synchronize in real time with the patient portal.
+                      {selectedQueueItem?.medicineName || roomData.medicine?.name
+                        ? ` for ${selectedQueueItem?.medicineName || roomData.medicine?.name}`
+                        : ""}
+                      . All messages and attachments synchronize in real time with the patient
+                      portal.
                     </p>
                   </div>
 
@@ -2349,7 +2485,9 @@ export function ConsultationRoomPage({
                             </div>
                           ) : (
                             /* Regular Chat Message Bubble */
-                            <div className={`flex flex-col ${msg.isSelf ? "items-end" : "items-start"}`}>
+                            <div
+                              className={`flex flex-col ${msg.isSelf ? "items-end" : "items-start"}`}
+                            >
                               <div className="flex items-baseline gap-1.5 text-[10px] text-[#3B4759]/60 mb-0.5">
                                 <span className="font-bold text-[#152A51]">
                                   {msg.isSelf ? `${msg.senderName} (You)` : msg.senderName}
@@ -2417,7 +2555,9 @@ export function ConsultationRoomPage({
                                               }`}
                                             >
                                               <Download className="h-3.5 w-3.5 shrink-0" />
-                                              <span className="truncate">{att.name || "Download file"}</span>
+                                              <span className="truncate">
+                                                {att.name || "Download file"}
+                                              </span>
                                             </a>
                                           )}
                                         </div>
@@ -2535,7 +2675,8 @@ export function ConsultationRoomPage({
                     </div>
                     <h2 className="mt-4 text-lg font-bold text-white">Consultation Finished</h2>
                     <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                      This consultation appointment has concluded. Video and audio calling are closed for completed sessions.
+                      This consultation appointment has concluded. Video and audio calling are
+                      closed for completed sessions.
                     </p>
                     <div className="mt-6 flex justify-center">
                       <Button
@@ -2557,8 +2698,8 @@ export function ConsultationRoomPage({
                     </div>
                     <h2 className="mt-4 text-lg font-bold text-white">Start Live Consultation</h2>
                     <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                      Connect via secure HD video or audio call directly with {patient.name}.
-                      The call will ring in the patient’s portal.
+                      Connect via secure HD video or audio call directly with {patient.name}. The
+                      call will ring in the patient’s portal.
                     </p>
 
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -2595,7 +2736,9 @@ export function ConsultationRoomPage({
                     size="icon"
                     onClick={toggleMute}
                     className={`h-12 w-12 rounded-full ${
-                      isMuted ? "bg-red-600 hover:bg-red-700 text-white" : "bg-white/15 hover:bg-white/25 text-white"
+                      isMuted
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-white/15 hover:bg-white/25 text-white"
                     }`}
                     title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
                   >
@@ -2607,11 +2750,17 @@ export function ConsultationRoomPage({
                       size="icon"
                       onClick={toggleVideo}
                       className={`h-12 w-12 rounded-full ${
-                        isVideoMuted ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-white/15 hover:bg-white/25 text-white"
+                        isVideoMuted
+                          ? "bg-amber-600 hover:bg-amber-700 text-white"
+                          : "bg-white/15 hover:bg-white/25 text-white"
                       }`}
                       title={isVideoMuted ? "Enable Camera" : "Disable Camera"}
                     >
-                      {isVideoMuted ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                      {isVideoMuted ? (
+                        <VideoOff className="h-5 w-5" />
+                      ) : (
+                        <Video className="h-5 w-5" />
+                      )}
                     </Button>
                   )}
 
@@ -2670,7 +2819,9 @@ export function ConsultationRoomPage({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1 py-2">
-            <label className="text-[13px] font-medium text-[#3B4759]">Approval Note (optional)</label>
+            <label className="text-[13px] font-medium text-[#3B4759]">
+              Approval Note (optional)
+            </label>
             <Textarea
               value={approveNote}
               onChange={(e) => setApproveNote(e.target.value)}
@@ -2706,7 +2857,9 @@ export function ConsultationRoomPage({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1 py-2">
-            <label className="text-[13px] font-medium text-[#3B4759]">Rejection Reason (optional)</label>
+            <label className="text-[13px] font-medium text-[#3B4759]">
+              Rejection Reason (optional)
+            </label>
             <Textarea
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
@@ -2773,16 +2926,14 @@ export function ConsultationRoomPage({
               Summary for {patient.name}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-[#3B4759]/80">
-              Conclude this consultation on QuickBlox and sync with the patient portal.
-              A conclusion summary will be recorded in the patient chart and notified in chat.
+              Conclude this consultation on QuickBlox and sync with the patient portal. A conclusion
+              summary will be recorded in the patient chart and notified in chat.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="py-2 space-y-3">
             <div>
-              <label className="text-xs font-semibold text-[#152A51] block mb-1">
-                Language
-              </label>
+              <label className="text-xs font-semibold text-[#152A51] block mb-1">Language</label>
               <div className="text-xs px-3 py-1.5 rounded border border-[#D5DEDD] bg-[#F9FBFA] text-[#152A51] font-medium inline-block">
                 English (en)
               </div>
@@ -2834,7 +2985,11 @@ export function ConsultationRoomPage({
               disabled={finishMut.isPending}
               className="bg-[#152A51] text-white hover:bg-[#1C3665]"
             >
-              {finishMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Check className="h-4 w-4 mr-1.5 text-emerald-400" />}
+              {finishMut.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : (
+                <Check className="h-4 w-4 mr-1.5 text-emerald-400" />
+              )}
               Finish Appointment
             </AlertDialogAction>
           </AlertDialogFooter>
