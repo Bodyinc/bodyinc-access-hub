@@ -215,9 +215,9 @@ const builders: Record<EmailTemplateKey, Builder> = {
       preheader: `Additional payment of $${amount} is required for ${med}.`,
       title: `Additional payment required — ${med}`,
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Your clinician updated your treatment to <strong>${escapeHtml(med)}</strong>. An additional payment of <strong>$${escapeHtml(amount)}</strong> is needed before your prescription can be generated.</p>
+        <p>Your clinician updated your treatment to <strong>${escapeHtml(med)}</strong>. An additional payment of <strong>$${escapeHtml(amount)}</strong> is needed. As soon as this payment succeeds, your updated order is sent to the pharmacy automatically.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nYour clinician updated your treatment to ${med}. An additional payment of $${amount} is needed before your prescription can be generated.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nYour clinician updated your treatment to ${med}. An additional payment of $${amount} is needed. As soon as this payment succeeds, your updated order is sent to the pharmacy automatically.${link.text}`,
     });
   },
 

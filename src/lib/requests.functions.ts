@@ -38,12 +38,12 @@ async function logEvent(
 }
 
 /** Create the prescription if needed, submit to LifeFile, and mark the order sent. */
-async function fulfillApprovedRequest(
+export async function fulfillApprovedRequest(
   supabaseAdmin: any,
   req: {
     id: string;
     status: string;
-    provider_id: string;
+    provider_id: string | null;
     user_id: string | null;
     medicine_id: string | null;
     variant_id: string | null;
@@ -51,7 +51,7 @@ async function fulfillApprovedRequest(
     life_file_order_id?: string | null;
     life_file_status?: string | null;
   },
-  actor: { role: "admin" | "provider"; userId: string },
+  actor: { role: "admin" | "provider" | "system"; userId: string | null },
   directions?: string,
 ) {
   if (req.life_file_order_id && req.life_file_status && req.life_file_status !== "failed") {
@@ -918,21 +918,85 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       });
     }
 
+    await supabaseAdmin
+      .from("prescriptions")
+      .update({
+        medicine_id: newPkg.medicine_id,
+        variant_id: newPkg.variant_id,
+        package_id: newPkg.id,
+        medicine_name: medName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("request_id", req.id)
+      .neq("status", "voided");
+
     if (deltaCents > 0) {
-      // More expensive: collect the current-cycle difference before the prescription is generated.
-      await supabaseAdmin.from("additional_payments").insert({
-        request_id: req.id,
-        user_id: req.user_id,
-        amount_cents: deltaCents,
-        currency: "usd",
-        reason: `Price difference for changing to ${medLabel}`,
-        from_package_id: req.package_id,
-        to_package_id: newPkg.id,
-        status: "pending",
-      });
+      // More expensive: collect the difference, then pharmacy dispatch runs on payment success.
+      const now = new Date().toISOString();
+      await supabaseAdmin
+        .from("additional_payments")
+        .update({ status: "cancelled", updated_at: now })
+        .eq("request_id", req.id)
+        .eq("status", "pending");
+
+      const { data: payRow, error: payErr } = await supabaseAdmin
+        .from("additional_payments")
+        .insert({
+          request_id: req.id,
+          user_id: req.user_id,
+          amount_cents: deltaCents,
+          currency: "usd",
+          reason: `Price difference for changing to ${medLabel}`,
+          from_package_id: req.package_id,
+          to_package_id: newPkg.id,
+          status: "pending",
+        })
+        .select("id")
+        .single();
+      if (payErr || !payRow) throw new Error(payErr?.message ?? "Could not record the additional payment.");
+
+      let customerEmail: string | null = null;
+      let customerId = (sub?.stripe_customer_id as string | null) ?? null;
+      if (req.user_id) {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("email, stripe_customer_id")
+          .eq("id", req.user_id)
+          .maybeSingle();
+        customerEmail = (profile as { email?: string | null } | null)?.email ?? null;
+        customerId =
+          customerId ||
+          ((profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id ?? null);
+      }
+
+      const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+      let payUrl = portalBase ? `${portalBase}/orders/${req.id}/pay` : "";
+      try {
+        const { createAdditionalPaymentCheckout } = await import(
+          "@/lib/additional-payment-dispatch.server"
+        );
+        const checkout = await createAdditionalPaymentCheckout({
+          paymentId: payRow.id,
+          requestId: req.id,
+          amountCents: deltaCents,
+          medicineLabel: medLabel,
+          customerId,
+          customerEmail,
+        });
+        if (checkout) {
+          payUrl = checkout.url;
+          await supabaseAdmin
+            .from("additional_payments")
+            .update({ stripe_checkout_session_id: checkout.id, updated_at: now })
+            .eq("id", payRow.id);
+        }
+      } catch (checkoutErr) {
+        console.error("[requests] additional payment checkout failed:", checkoutErr);
+      }
+
       await supabaseAdmin
         .from("medication_requests")
-        .update({ status: "awaiting_additional_payment", updated_at: new Date().toISOString() })
+        .update({ status: "awaiting_additional_payment", updated_at: now })
         .eq("id", req.id);
       await logEvent(
         supabaseAdmin,
@@ -945,7 +1009,6 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
 
       const { notifyPatientRequestEvent, notifyProviderRequestEvent } =
         await import("@/lib/email.notifications");
-      const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
       const email_sent = await notifyPatientRequestEvent({
         supabaseAdmin,
         request: { ...req, medicine_id: newPkg.medicine_id },
@@ -954,7 +1017,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
           MEDICINE_NAME: medLabel,
           AMOUNT_DUE: (deltaCents / 100).toFixed(2),
           AMOUNT_DUE_CENTS: deltaCents,
-          PORTAL_URL: portalBase ? `${portalBase}/orders/${req.id}/pay` : "",
+          PORTAL_URL: payUrl,
         },
       });
       await notifyProviderRequestEvent({

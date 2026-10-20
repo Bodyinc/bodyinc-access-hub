@@ -191,8 +191,8 @@ export function RequestChangeMedicineDialog({
       toastActionWithEmail(
         res?.status === "awaiting_additional_payment"
           ? hideFinancial
-            ? "Order updated. The patient needs to confirm the new plan before prescribing."
-            : "Order updated. Additional payment is required for the difference."
+            ? "Order updated. The patient needs to confirm the new plan. Pharmacy dispatch runs automatically after they confirm."
+            : "Order updated. The patient was asked to pay the difference. Pharmacy dispatch runs automatically after payment."
           : "Order updated and approved.",
         res?.email_sent,
       );
@@ -211,8 +211,8 @@ export function RequestChangeMedicineDialog({
           <DialogTitle>Change medicine</DialogTitle>
           <DialogDescription>
             {hideFinancial
-              ? "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. The patient may need to confirm before the prescription can be generated."
-              : "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. If it costs more, the patient is sent a payment request for the difference before the prescription is generated; if it costs less, the difference is credited to their next cycle."}
+              ? "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. The patient may need to confirm. After they confirm, the updated order is sent to the pharmacy automatically."
+              : "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. If it costs more, the patient is sent a payment request for the difference, and the updated order is sent to the pharmacy automatically once they pay. If it costs less, the difference is credited to their next cycle."}
           </DialogDescription>
         </DialogHeader>
 
@@ -396,8 +396,8 @@ export function RequestChangeMedicineDialog({
 
         {selectedPkg && !isUnchanged && hideFinancial ? (
           <p className="text-xs text-muted-foreground">
-            If this plan differs from the current one, the patient may need to confirm before the
-            prescription can be generated.
+            If this plan differs from the current one, the patient may need to confirm. After they
+            confirm, the updated order is sent to the pharmacy automatically.
           </p>
         ) : null}
 
@@ -434,7 +434,7 @@ export function RequestChangeMedicineDialog({
             </div>
             <p className="text-xs text-muted-foreground pt-1">
               {diff > 0
-                ? "The patient will be asked to pay this difference before the prescription is generated."
+                ? "The patient will be asked to pay this difference. When that payment succeeds, the updated order is sent to the pharmacy automatically."
                 : diff < 0
                   ? "This credit settles on the patient's next billing cycle."
                   : "No price change."}
