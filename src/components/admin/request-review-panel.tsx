@@ -793,8 +793,8 @@ export function RequestReviewPanel({
           {status === "awaiting_additional_payment" ? (
             <p className="rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
               {clinicalOnly
-                ? "Waiting for the patient to confirm the new plan. The prescription can be generated after they confirm."
-                : "Waiting for the patient to pay the price difference. The prescription can be generated once payment succeeds."}
+                ? "Waiting for the patient to confirm the new plan. The updated order is sent to the pharmacy automatically once they confirm."
+                : "Waiting for the patient to pay the price difference. The updated order is sent to the pharmacy automatically once payment succeeds."}
             </p>
           ) : null}
         </CardContent>

@@ -1965,5 +1965,15 @@ export const finishConsultationAppointment = createServerFn({ method: "POST" })
       });
     }
 
+    // If the patient already paid a medicine-change difference, send the updated order now.
+    try {
+      const { dispatchPaidAdditionalPaymentForRequest } = await import(
+        "@/lib/additional-payment-dispatch.server"
+      );
+      await dispatchPaidAdditionalPaymentForRequest(supabaseAdmin, data.requestId);
+    } catch (error) {
+      console.error("[finishConsultationAppointment] pharmacy dispatch failed:", error);
+    }
+
     return { ok: true, message: "Consultation appointment completed successfully." };
   });
