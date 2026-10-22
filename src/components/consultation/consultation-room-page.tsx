@@ -141,6 +141,43 @@ type ChatMessageItem = {
   attachments?: ChatAttachmentItem[];
 };
 
+/** True when value looks like a QuickBlox MUC room JID (not a dialog UUID). */
+function isMucJid(value: string | null | undefined): boolean {
+  const v = String(value ?? "").trim();
+  return Boolean(v) && v.includes("@") && /muc\.|@muc\./i.test(v);
+}
+
+/** Merge chat rows by id; prefer non-empty body/attachments when duplicates collide. */
+function mergeChatMessageLists(
+  existing: ChatMessageItem[],
+  incoming: ChatMessageItem[],
+): ChatMessageItem[] {
+  const byId = new Map<string, ChatMessageItem>();
+  for (const m of existing) byId.set(m.id, m);
+  for (const m of incoming) {
+    const prev = byId.get(m.id);
+    if (!prev) {
+      byId.set(m.id, m);
+      continue;
+    }
+    const preferIncomingBody = Boolean(m.body?.trim()) && !prev.body?.trim();
+    const preferIncomingAttachments =
+      Boolean(m.attachments?.length) && !prev.attachments?.length;
+    byId.set(m.id, {
+      ...prev,
+      ...m,
+      body: preferIncomingBody ? m.body : prev.body?.trim() ? prev.body : m.body,
+      attachments: preferIncomingAttachments
+        ? m.attachments
+        : prev.attachments?.length
+          ? prev.attachments
+          : m.attachments,
+      isSystem: prev.isSystem || m.isSystem,
+    });
+  }
+  return Array.from(byId.values()).sort((a, b) => a.dateSent - b.dateSent);
+}
+
 interface QuickBloxClient {
   init: (
     appId: number,
@@ -579,7 +616,12 @@ export function ConsultationRoomPage({
       const isJoin =
         rawItem.type === "joined" || rawItem.notification_type === 1 || rawItem.type === "system";
 
-      let body = rawItem.message || "";
+      const extension = (rawItem.extension ?? {}) as Record<string, unknown>;
+      let body =
+        (typeof rawItem.message === "string" && rawItem.message) ||
+        (typeof rawItem.body === "string" && rawItem.body) ||
+        (typeof extension.notification_text === "string" && extension.notification_text) ||
+        "";
       let isSystem = false;
 
       if (isJoin) {
@@ -597,7 +639,8 @@ export function ConsultationRoomPage({
         isSystem = true;
       }
 
-      const attachments = (rawItem.attachments as any[]) || [];
+      const attachments =
+        (rawItem.attachments as any[]) || (extension.attachments as any[]) || [];
 
       return {
         id: rawItem._id || String(Date.now() + Math.random()),
@@ -616,6 +659,40 @@ export function ConsultationRoomPage({
     },
     [resolveSender],
   );
+
+  /** MUC JID for the active consultation dialog — never a dialog UUID. */
+  const resolveGroupChatTarget = useCallback((): {
+    dialogId: string | null;
+    mucJid: string | null;
+  } => {
+    const dialogId =
+      selectedQueueItem?.dialogId || roomData?.consultation.dialogId || null;
+    if (activeDialogJid && isMucJid(activeDialogJid)) {
+      return { dialogId, mucJid: activeDialogJid };
+    }
+    const consultationDialogId = roomData?.consultation.dialogId ?? null;
+    const consultationJid = roomData?.consultation.dialogJid ?? null;
+    if (
+      dialogId &&
+      consultationDialogId &&
+      dialogId === consultationDialogId &&
+      isMucJid(consultationJid)
+    ) {
+      return { dialogId, mucJid: consultationJid };
+    }
+    return { dialogId, mucJid: null };
+  }, [activeDialogJid, roomData, selectedQueueItem]);
+
+  // Seed MUC JID from server payload so the first send does not wait on dialog.list
+  useEffect(() => {
+    const jid = roomData?.consultation.dialogJid;
+    if (!jid || !isMucJid(jid)) return;
+    const currentDialogId =
+      selectedQueueItem?.dialogId || roomData.consultation.dialogId;
+    if (currentDialogId && currentDialogId === roomData.consultation.dialogId) {
+      setActiveDialogJid((prev) => (prev && isMucJid(prev) ? prev : jid));
+    }
+  }, [roomData?.consultation.dialogId, roomData?.consultation.dialogJid, selectedQueueItem?.dialogId]);
 
   // Load QuickBlox SDK script if not already present
   useEffect(() => {
@@ -735,10 +812,8 @@ export function ConsultationRoomPage({
       const setupDialogAndListeners = () => {
         if (!QB.chat) return;
 
-        // Step 3: Listen for incoming messages
+        // Step 3: Listen for incoming messages (including self echoes — dedupe/merge by id)
         QB.chat.onMessageListener = (userId, msg) => {
-          if (userId === roomData.quickblox.providerSession.userId) return;
-
           const msgDialogId = (msg.extension as any)?.dialog_id;
           const activeDialogId =
             selectedQueueItemRef.current?.dialogId || roomData.consultation.dialogId;
@@ -750,9 +825,12 @@ export function ConsultationRoomPage({
             _id: msg._id || msg.id,
             sender_id: userId,
             message: msg.body,
+            body: msg.body,
             date_sent: msg.date_sent,
             attachments: (msg.extension as any)?.attachments,
+            extension: msg.extension,
             type: (msg as any).type || (msg.extension as any)?.notification_type,
+            notification_type: (msg.extension as any)?.notification_type,
           });
 
           if (
@@ -763,10 +841,7 @@ export function ConsultationRoomPage({
             return;
           }
 
-          setChatMessages((prev) => {
-            if (prev.some((m) => m.id === parsed.id)) return prev;
-            return [...prev, parsed];
-          });
+          setChatMessages((prev) => mergeChatMessageLists(prev, [parsed]));
         };
 
         // Step 4: Listen for patient typing indicator
@@ -797,13 +872,13 @@ export function ConsultationRoomPage({
             }
           });
 
-          // Fetch message history
+          // Fetch message history (merge — do not wipe optimistic non-empty bodies)
           QB.chat.message.list(
             { chat_dialog_id: targetDialogId, sort_desc: "date_sent", limit: 50 },
             (mErr, mRes) => {
               if (!mErr && mRes?.items?.length) {
                 const historical: ChatMessageItem[] = mRes.items.map(parseRawMessage).reverse();
-                setChatMessages(historical);
+                setChatMessages((prev) => mergeChatMessageLists(prev, historical));
               }
             },
           );
@@ -943,21 +1018,14 @@ export function ConsultationRoomPage({
     const QB = window.QB;
     if (!QB?.chat) return;
 
-    const targetDialogId = selectedQueueItem?.dialogId || roomData.consultation.dialogId;
-    const targetRecipient =
-      activeDialogJid ||
-      targetDialogId ||
-      selectedQueueItem?.clientId ||
-      roomData.quickblox.patientQbUserId;
-
-    if (!targetRecipient) {
-      toast.error("No active chat recipient or dialog found.");
+    const { dialogId: targetDialogId, mucJid } = resolveGroupChatTarget();
+    if (!mucJid || !targetDialogId) {
+      toast.error("Chat is still connecting… please wait a moment and try again.");
       return;
     }
 
-    const isGroup = Boolean(activeDialogJid);
     const msgPayload = {
-      type: isGroup ? "groupchat" : "chat",
+      type: "groupchat" as const,
       body: text,
       extension: {
         save_to_history: 1,
@@ -967,7 +1035,7 @@ export function ConsultationRoomPage({
     };
 
     try {
-      const sentId = QB.chat.send(targetRecipient, msgPayload);
+      const sentId = QB.chat.send(mucJid, msgPayload);
       const newMsg: ChatMessageItem = {
         id: sentId || `msg_${Date.now()}`,
         senderId: roomData.quickblox.providerSession.userId,
@@ -978,11 +1046,11 @@ export function ConsultationRoomPage({
         isSelf: true,
       };
 
-      setChatMessages((prev) => [...prev, newMsg]);
+      setChatMessages((prev) => mergeChatMessageLists(prev, [newMsg]));
       setChatInput("");
 
-      if (targetRecipient && typeof QB.chat.sendIsStopTypingStatus === "function") {
-        QB.chat.sendIsStopTypingStatus(targetRecipient);
+      if (typeof QB.chat.sendIsStopTypingStatus === "function") {
+        QB.chat.sendIsStopTypingStatus(mucJid);
       }
       chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (err) {
@@ -1003,22 +1071,14 @@ export function ConsultationRoomPage({
       return;
     }
 
-    const targetDialogId = selectedQueueItem?.dialogId || roomData.consultation.dialogId;
-    const targetRecipient =
-      activeDialogJid ||
-      targetDialogId ||
-      selectedQueueItem?.clientId ||
-      roomData.quickblox.patientQbUserId;
-
-    if (!targetRecipient) {
-      toast.error("No active chat recipient found.");
+    const { dialogId: targetDialogId, mucJid } = resolveGroupChatTarget();
+    if (!mucJid || !targetDialogId) {
+      toast.error("Chat is still connecting… please wait a moment and try again.");
       return;
     }
 
     setUploadingFile(true);
     setUploadProgress(`Uploading ${file.name}…`);
-
-    const isGroup = Boolean(activeDialogJid);
 
     if (QB.content && typeof QB.content.createAndUpload === "function") {
       QB.content.createAndUpload(
@@ -1047,7 +1107,7 @@ export function ConsultationRoomPage({
           };
 
           const msgPayload = {
-            type: isGroup ? "groupchat" : "chat",
+            type: "groupchat" as const,
             body: `📎 ${file.name}`,
             extension: {
               save_to_history: 1,
@@ -1058,7 +1118,7 @@ export function ConsultationRoomPage({
           };
 
           try {
-            const sentId = QB.chat.send(targetRecipient, msgPayload);
+            const sentId = QB.chat.send(mucJid, msgPayload);
             const newMsg: ChatMessageItem = {
               id: sentId || `msg_${Date.now()}`,
               senderId: roomData.quickblox.providerSession.userId,
@@ -1069,7 +1129,7 @@ export function ConsultationRoomPage({
               isSelf: true,
               attachments: [attachmentItem],
             };
-            setChatMessages((prev) => [...prev, newMsg]);
+            setChatMessages((prev) => mergeChatMessageLists(prev, [newMsg]));
             toast.success("Attachment sent.");
           } catch (sendErr) {
             console.error("[QuickBlox] Send attachment error:", sendErr);
@@ -1089,15 +1149,9 @@ export function ConsultationRoomPage({
     setChatInput(e.target.value);
     const QB = window.QB;
     if (!QB?.chat || !roomData) return;
-    const targetRecipient =
-      activeDialogJid ||
-      selectedQueueItem?.dialogId ||
-      roomData.consultation.dialogId ||
-      selectedQueueItem?.clientId ||
-      roomData.quickblox.patientQbUserId;
-
-    if (targetRecipient && typeof QB.chat.sendIsTypingStatus === "function") {
-      QB.chat.sendIsTypingStatus(targetRecipient);
+    const { mucJid } = resolveGroupChatTarget();
+    if (mucJid && typeof QB.chat.sendIsTypingStatus === "function") {
+      QB.chat.sendIsTypingStatus(mucJid);
     }
   };
 
@@ -1154,7 +1208,7 @@ export function ConsultationRoomPage({
           (mErr, mRes) => {
             if (!mErr && mRes?.items?.length) {
               const historical: ChatMessageItem[] = mRes.items.map(parseRawMessage).reverse();
-              setChatMessages(historical);
+              setChatMessages((prev) => mergeChatMessageLists(prev, historical));
             }
           },
         );
@@ -1211,14 +1265,13 @@ export function ConsultationRoomPage({
         },
       ]);
 
-      // 2. Broadcast via QuickBlox groupchat if active dialog is present
+      // 2. Broadcast via QuickBlox groupchat when MUC JID is ready
       const QB = window.QB;
-      const targetDialogId = selectedQueueItem?.dialogId || roomData?.consultation.dialogId;
-      const targetRecipient = activeDialogJid || targetDialogId;
-      if (QB?.chat && targetRecipient) {
+      const { dialogId: targetDialogId, mucJid } = resolveGroupChatTarget();
+      if (QB?.chat && mucJid && targetDialogId) {
         try {
-          QB.chat.send(targetRecipient, {
-            type: activeDialogJid ? "groupchat" : "chat",
+          QB.chat.send(mucJid, {
+            type: "groupchat",
             body: assignmentChatAnnouncement,
             extension: {
               save_to_history: 1,
@@ -1274,13 +1327,12 @@ export function ConsultationRoomPage({
       const conclusionText = variables?.conclusion?.trim() || "Consultation completed";
       const QB = window.QB;
 
-      // Send chat message to consultation dialog
-      const targetDialogId = selectedQueueItem?.dialogId || roomData?.consultation.dialogId;
-      const targetRecipient = activeDialogJid || targetDialogId;
-      if (QB?.chat && targetRecipient) {
+      // Send chat message to consultation dialog (MUC groupchat only)
+      const { dialogId: targetDialogId, mucJid } = resolveGroupChatTarget();
+      if (QB?.chat && mucJid && targetDialogId) {
         try {
-          QB.chat.send(targetRecipient, {
-            type: activeDialogJid ? "groupchat" : "chat",
+          QB.chat.send(mucJid, {
+            type: "groupchat",
             body: `📋 Consultation completed by clinician.\nSummary: ${conclusionText}`,
             extension: {
               save_to_history: 1,

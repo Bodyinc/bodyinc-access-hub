@@ -9,85 +9,84 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as AppointmentSplatRouteImport } from './routes/appointment.$'
-import { Route as AuthenticatedProviderRouteImport } from './routes/_authenticated/provider'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedProviderIndexRouteImport } from './routes/_authenticated/provider.index'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedProviderRouteImport } from './routes/_authenticated/provider'
+import { Route as AppointmentSplatRouteImport } from './routes/appointment.$'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
-import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
-import { Route as ApiInternalAdditionalPaymentPaidRouteImport } from './routes/api.internal.additional-payment-paid'
-import { Route as ApiConsultationsEmbedRouteImport } from './routes/api.consultations.embed'
-import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
-import { Route as AuthenticatedProviderQueueRouteImport } from './routes/_authenticated/provider.queue'
-import { Route as AuthenticatedProviderProfileRouteImport } from './routes/_authenticated/provider.profile'
-import { Route as AuthenticatedProviderNotificationsRouteImport } from './routes/_authenticated/provider.notifications'
-import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin.requests'
-import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_authenticated/admin.questionnaires'
-import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
-import { Route as AuthenticatedAdminPatientsRouteImport } from './routes/_authenticated/admin.patients'
-import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
-import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authenticated/admin.medicines'
-import { Route as AuthenticatedAdminMedicineChangesRouteImport } from './routes/_authenticated/admin.medicine-changes'
-import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/_authenticated/admin.medication-rules'
-import { Route as AuthenticatedAdminLifefilePharmaciesRouteImport } from './routes/_authenticated/admin.lifefile-pharmacies'
-import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_authenticated/admin.intake-sessions'
-import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
-import { Route as AuthenticatedProviderRequestsIndexRouteImport } from './routes/_authenticated/provider.requests.index'
-import { Route as AuthenticatedProviderPatientsIndexRouteImport } from './routes/_authenticated/provider.patients.index'
-import { Route as AuthenticatedProviderConsultationsIndexRouteImport } from './routes/_authenticated/provider.consultations.index'
-import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
-import { Route as AuthenticatedAdminRequestsIndexRouteImport } from './routes/_authenticated/admin.requests.index'
-import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
-import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
-import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
-import { Route as AuthenticatedAdminPromosIndexRouteImport } from './routes/_authenticated/admin.promos.index'
-import { Route as AuthenticatedAdminPatientsIndexRouteImport } from './routes/_authenticated/admin.patients.index'
-import { Route as AuthenticatedAdminOrdersIndexRouteImport } from './routes/_authenticated/admin.orders.index'
-import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_authenticated/admin.medicines.index'
-import { Route as AuthenticatedAdminMedicineChangesIndexRouteImport } from './routes/_authenticated/admin.medicine-changes.index'
-import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
-import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
-import { Route as AuthenticatedAdminFeedbackIndexRouteImport } from './routes/_authenticated/admin.feedback.index'
-import { Route as AuthenticatedAdminConsultationsIndexRouteImport } from './routes/_authenticated/admin.consultations.index'
-import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
+import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
+import { Route as AuthenticatedAdminIntakeSessionsRouteImport } from './routes/_authenticated/admin.intake-sessions'
+import { Route as AuthenticatedAdminLifefilePharmaciesRouteImport } from './routes/_authenticated/admin.lifefile-pharmacies'
+import { Route as AuthenticatedAdminMedicationRulesRouteImport } from './routes/_authenticated/admin.medication-rules'
+import { Route as AuthenticatedAdminMedicineChangesRouteImport } from './routes/_authenticated/admin.medicine-changes'
+import { Route as AuthenticatedAdminMedicinesRouteImport } from './routes/_authenticated/admin.medicines'
+import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
+import { Route as AuthenticatedAdminPatientsRouteImport } from './routes/_authenticated/admin.patients'
+import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
+import { Route as AuthenticatedAdminQuestionnairesRouteImport } from './routes/_authenticated/admin.questionnaires'
+import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin.requests'
+import { Route as AuthenticatedProviderIndexRouteImport } from './routes/_authenticated/provider.index'
+import { Route as AuthenticatedProviderNotificationsRouteImport } from './routes/_authenticated/provider.notifications'
+import { Route as AuthenticatedProviderProfileRouteImport } from './routes/_authenticated/provider.profile'
+import { Route as AuthenticatedProviderQueueRouteImport } from './routes/_authenticated/provider.queue'
+import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
+import { Route as ApiConsultationsEmbedRouteImport } from './routes/api.consultations.embed'
+import { Route as ApiInternalAdditionalPaymentPaidRouteImport } from './routes/api.internal.additional-payment-paid'
+import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
-import { Route as AuthenticatedProviderRequestsRequestIdRouteImport } from './routes/_authenticated/provider.requests.$requestId'
-import { Route as AuthenticatedProviderPatientsPatientKeyRouteImport } from './routes/_authenticated/provider.patients.$patientKey'
-import { Route as AuthenticatedAdminRequestsRequestIdRouteImport } from './routes/_authenticated/admin.requests.$requestId'
-import { Route as AuthenticatedAdminQuestionnairesNewRouteImport } from './routes/_authenticated/admin.questionnaires.new'
-import { Route as AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport } from './routes/_authenticated/admin.questionnaires.$questionnaireId'
-import { Route as AuthenticatedAdminProvidersNewRouteImport } from './routes/_authenticated/admin.providers.new'
-import { Route as AuthenticatedAdminProvidersProviderIdRouteImport } from './routes/_authenticated/admin.providers.$providerId'
-import { Route as AuthenticatedAdminPromosNewRouteImport } from './routes/_authenticated/admin.promos.new'
-import { Route as AuthenticatedAdminPromosPromoIdRouteImport } from './routes/_authenticated/admin.promos.$promoId'
-import { Route as AuthenticatedAdminPatientsPatientIdRouteImport } from './routes/_authenticated/admin.patients.$patientId'
-import { Route as AuthenticatedAdminOrdersOrderIdRouteImport } from './routes/_authenticated/admin.orders.$orderId'
-import { Route as AuthenticatedAdminMedicinesNewRouteImport } from './routes/_authenticated/admin.medicines.new'
-import { Route as AuthenticatedAdminMedicinesMedicineIdRouteImport } from './routes/_authenticated/admin.medicines.$medicineId'
-import { Route as AuthenticatedAdminIntakeSessionsSessionIdRouteImport } from './routes/_authenticated/admin.intake-sessions.$sessionId'
-import { Route as AuthenticatedAdminCategoriesNewRouteImport } from './routes/_authenticated/admin.categories.new'
-import { Route as AuthenticatedAdminCategoriesCategoryIdRouteImport } from './routes/_authenticated/admin.categories.$categoryId'
 import { Route as AuthenticatedAdminBillingRefundHistoryRouteImport } from './routes/_authenticated/admin.billing.refund-history'
-import { Route as AuthenticatedProviderRequestsRequestIdConsultationRouteImport } from './routes/_authenticated/provider.requests.$requestId.consultation'
+import { Route as AuthenticatedAdminCategoriesIndexRouteImport } from './routes/_authenticated/admin.categories.index'
+import { Route as AuthenticatedAdminCategoriesCategoryIdRouteImport } from './routes/_authenticated/admin.categories.$categoryId'
+import { Route as AuthenticatedAdminCategoriesNewRouteImport } from './routes/_authenticated/admin.categories.new'
+import { Route as AuthenticatedAdminConsultationsIndexRouteImport } from './routes/_authenticated/admin.consultations.index'
+import { Route as AuthenticatedAdminFeedbackIndexRouteImport } from './routes/_authenticated/admin.feedback.index'
+import { Route as AuthenticatedAdminIntakeSessionsIndexRouteImport } from './routes/_authenticated/admin.intake-sessions.index'
+import { Route as AuthenticatedAdminIntakeSessionsSessionIdRouteImport } from './routes/_authenticated/admin.intake-sessions.$sessionId'
+import { Route as AuthenticatedAdminMedicationRulesIndexRouteImport } from './routes/_authenticated/admin.medication-rules.index'
+import { Route as AuthenticatedAdminMedicineChangesIndexRouteImport } from './routes/_authenticated/admin.medicine-changes.index'
+import { Route as AuthenticatedAdminMedicinesIndexRouteImport } from './routes/_authenticated/admin.medicines.index'
+import { Route as AuthenticatedAdminMedicinesMedicineIdRouteImport } from './routes/_authenticated/admin.medicines.$medicineId'
+import { Route as AuthenticatedAdminMedicinesNewRouteImport } from './routes/_authenticated/admin.medicines.new'
+import { Route as AuthenticatedAdminOrdersIndexRouteImport } from './routes/_authenticated/admin.orders.index'
+import { Route as AuthenticatedAdminOrdersOrderIdRouteImport } from './routes/_authenticated/admin.orders.$orderId'
+import { Route as AuthenticatedAdminPatientsIndexRouteImport } from './routes/_authenticated/admin.patients.index'
+import { Route as AuthenticatedAdminPatientsPatientIdRouteImport } from './routes/_authenticated/admin.patients.$patientId'
+import { Route as AuthenticatedAdminPromosIndexRouteImport } from './routes/_authenticated/admin.promos.index'
+import { Route as AuthenticatedAdminPromosPromoIdRouteImport } from './routes/_authenticated/admin.promos.$promoId'
+import { Route as AuthenticatedAdminPromosNewRouteImport } from './routes/_authenticated/admin.promos.new'
+import { Route as AuthenticatedAdminProvidersIndexRouteImport } from './routes/_authenticated/admin.providers.index'
+import { Route as AuthenticatedAdminProvidersProviderIdRouteImport } from './routes/_authenticated/admin.providers.$providerId'
+import { Route as AuthenticatedAdminProvidersNewRouteImport } from './routes/_authenticated/admin.providers.new'
+import { Route as AuthenticatedAdminQuestionnairesIndexRouteImport } from './routes/_authenticated/admin.questionnaires.index'
+import { Route as AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport } from './routes/_authenticated/admin.questionnaires.$questionnaireId'
+import { Route as AuthenticatedAdminQuestionnairesNewRouteImport } from './routes/_authenticated/admin.questionnaires.new'
+import { Route as AuthenticatedAdminReferralsIndexRouteImport } from './routes/_authenticated/admin.referrals.index'
+import { Route as AuthenticatedAdminRequestsIndexRouteImport } from './routes/_authenticated/admin.requests.index'
+import { Route as AuthenticatedAdminRequestsRequestIdRouteImport } from './routes/_authenticated/admin.requests.$requestId'
+import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin.settings.index'
+import { Route as AuthenticatedProviderConsultationsIndexRouteImport } from './routes/_authenticated/provider.consultations.index'
+import { Route as AuthenticatedProviderPatientsIndexRouteImport } from './routes/_authenticated/provider.patients.index'
+import { Route as AuthenticatedProviderPatientsPatientKeyRouteImport } from './routes/_authenticated/provider.patients.$patientKey'
+import { Route as AuthenticatedProviderRequestsIndexRouteImport } from './routes/_authenticated/provider.requests.index'
+import { Route as AuthenticatedProviderRequestsRequestIdRouteImport } from './routes/_authenticated/provider.requests.$requestId'
 import { Route as AuthenticatedAdminRequestsRequestIdConsultationRouteImport } from './routes/_authenticated/admin.requests.$requestId.consultation'
+import { Route as AuthenticatedProviderRequestsRequestIdConsultationRouteImport } from './routes/_authenticated/provider.requests.$requestId.consultation'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -95,28 +94,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AppointmentSplatRoute = AppointmentSplatRouteImport.update({
-  id: '/appointment/$',
-  path: '/appointment/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedProviderRoute = AuthenticatedProviderRouteImport.update({
-  id: '/provider',
-  path: '/provider',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -124,125 +114,30 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedProviderRoute = AuthenticatedProviderRouteImport.update({
+  id: '/provider',
+  path: '/provider',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProviderIndexRoute =
-  AuthenticatedProviderIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedProviderRoute,
-  } as any)
+const AppointmentSplatRoute = AppointmentSplatRouteImport.update({
+  id: '/appointment/$',
+  path: '/appointment/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
-  id: '/api/stripe/webhook',
-  path: '/api/stripe/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiInternalNewFeedbackRoute = ApiInternalNewFeedbackRouteImport.update({
-  id: '/api/internal/new-feedback',
-  path: '/api/internal/new-feedback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiInternalAdditionalPaymentPaidRoute =
-  ApiInternalAdditionalPaymentPaidRouteImport.update({
-    id: '/api/internal/additional-payment-paid',
-    path: '/api/internal/additional-payment-paid',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiConsultationsEmbedRoute = ApiConsultationsEmbedRouteImport.update({
-  id: '/api/consultations/embed',
-  path: '/api/consultations/embed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRxPrescriptionIdRoute =
-  AuthenticatedRxPrescriptionIdRouteImport.update({
-    id: '/rx/$prescriptionId',
-    path: '/rx/$prescriptionId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProviderQueueRoute =
-  AuthenticatedProviderQueueRouteImport.update({
-    id: '/queue',
-    path: '/queue',
-    getParentRoute: () => AuthenticatedProviderRoute,
-  } as any)
-const AuthenticatedProviderProfileRoute =
-  AuthenticatedProviderProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedProviderRoute,
-  } as any)
-const AuthenticatedProviderNotificationsRoute =
-  AuthenticatedProviderNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedProviderRoute,
-  } as any)
-const AuthenticatedAdminRequestsRoute =
-  AuthenticatedAdminRequestsRouteImport.update({
-    id: '/requests',
-    path: '/requests',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminQuestionnairesRoute =
-  AuthenticatedAdminQuestionnairesRouteImport.update({
-    id: '/questionnaires',
-    path: '/questionnaires',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminProvidersRoute =
-  AuthenticatedAdminProvidersRouteImport.update({
-    id: '/providers',
-    path: '/providers',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPatientsRoute =
-  AuthenticatedAdminPatientsRouteImport.update({
-    id: '/patients',
-    path: '/patients',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminOrdersRoute =
-  AuthenticatedAdminOrdersRouteImport.update({
-    id: '/orders',
-    path: '/orders',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminMedicinesRoute =
-  AuthenticatedAdminMedicinesRouteImport.update({
-    id: '/medicines',
-    path: '/medicines',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminMedicineChangesRoute =
-  AuthenticatedAdminMedicineChangesRouteImport.update({
-    id: '/medicine-changes',
-    path: '/medicine-changes',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminMedicationRulesRoute =
-  AuthenticatedAdminMedicationRulesRouteImport.update({
-    id: '/medication-rules',
-    path: '/medication-rules',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminLifefilePharmaciesRoute =
-  AuthenticatedAdminLifefilePharmaciesRouteImport.update({
-    id: '/lifefile-pharmacies',
-    path: '/lifefile-pharmacies',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminIntakeSessionsRoute =
-  AuthenticatedAdminIntakeSessionsRouteImport.update({
-    id: '/intake-sessions',
-    path: '/intake-sessions',
+const AuthenticatedAdminBillingRoute =
+  AuthenticatedAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminCategoriesRoute =
@@ -251,214 +146,133 @@ const AuthenticatedAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminBillingRoute =
-  AuthenticatedAdminBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
+const AuthenticatedAdminIntakeSessionsRoute =
+  AuthenticatedAdminIntakeSessionsRouteImport.update({
+    id: '/intake-sessions',
+    path: '/intake-sessions',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedProviderRequestsIndexRoute =
-  AuthenticatedProviderRequestsIndexRouteImport.update({
-    id: '/requests/',
-    path: '/requests/',
+const AuthenticatedAdminLifefilePharmaciesRoute =
+  AuthenticatedAdminLifefilePharmaciesRouteImport.update({
+    id: '/lifefile-pharmacies',
+    path: '/lifefile-pharmacies',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMedicationRulesRoute =
+  AuthenticatedAdminMedicationRulesRouteImport.update({
+    id: '/medication-rules',
+    path: '/medication-rules',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMedicineChangesRoute =
+  AuthenticatedAdminMedicineChangesRouteImport.update({
+    id: '/medicine-changes',
+    path: '/medicine-changes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMedicinesRoute =
+  AuthenticatedAdminMedicinesRouteImport.update({
+    id: '/medicines',
+    path: '/medicines',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminOrdersRoute =
+  AuthenticatedAdminOrdersRouteImport.update({
+    id: '/orders',
+    path: '/orders',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPatientsRoute =
+  AuthenticatedAdminPatientsRouteImport.update({
+    id: '/patients',
+    path: '/patients',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminProvidersRoute =
+  AuthenticatedAdminProvidersRouteImport.update({
+    id: '/providers',
+    path: '/providers',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminQuestionnairesRoute =
+  AuthenticatedAdminQuestionnairesRouteImport.update({
+    id: '/questionnaires',
+    path: '/questionnaires',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminRequestsRoute =
+  AuthenticatedAdminRequestsRouteImport.update({
+    id: '/requests',
+    path: '/requests',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedProviderIndexRoute =
+  AuthenticatedProviderIndexRouteImport.update({
+    id: '/',
+    path: '/',
     getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
-const AuthenticatedProviderPatientsIndexRoute =
-  AuthenticatedProviderPatientsIndexRouteImport.update({
-    id: '/patients/',
-    path: '/patients/',
+const AuthenticatedProviderNotificationsRoute =
+  AuthenticatedProviderNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
-const AuthenticatedProviderConsultationsIndexRoute =
-  AuthenticatedProviderConsultationsIndexRouteImport.update({
-    id: '/consultations/',
-    path: '/consultations/',
+const AuthenticatedProviderProfileRoute =
+  AuthenticatedProviderProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
     getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
-const AuthenticatedAdminSettingsIndexRoute =
-  AuthenticatedAdminSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
-    getParentRoute: () => AuthenticatedAdminRoute,
+const AuthenticatedProviderQueueRoute =
+  AuthenticatedProviderQueueRouteImport.update({
+    id: '/queue',
+    path: '/queue',
+    getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
-const AuthenticatedAdminRequestsIndexRoute =
-  AuthenticatedAdminRequestsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminRequestsRoute,
+const AuthenticatedRxPrescriptionIdRoute =
+  AuthenticatedRxPrescriptionIdRouteImport.update({
+    id: '/rx/$prescriptionId',
+    path: '/rx/$prescriptionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminReferralsIndexRoute =
-  AuthenticatedAdminReferralsIndexRouteImport.update({
-    id: '/referrals/',
-    path: '/referrals/',
-    getParentRoute: () => AuthenticatedAdminRoute,
+const ApiConsultationsEmbedRoute = ApiConsultationsEmbedRouteImport.update({
+  id: '/api/consultations/embed',
+  path: '/api/consultations/embed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalAdditionalPaymentPaidRoute =
+  ApiInternalAdditionalPaymentPaidRouteImport.update({
+    id: '/api/internal/additional-payment-paid',
+    path: '/api/internal/additional-payment-paid',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAdminQuestionnairesIndexRoute =
-  AuthenticatedAdminQuestionnairesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminQuestionnairesRoute,
-  } as any)
-const AuthenticatedAdminProvidersIndexRoute =
-  AuthenticatedAdminProvidersIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminProvidersRoute,
-  } as any)
-const AuthenticatedAdminPromosIndexRoute =
-  AuthenticatedAdminPromosIndexRouteImport.update({
-    id: '/promos/',
-    path: '/promos/',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPatientsIndexRoute =
-  AuthenticatedAdminPatientsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminPatientsRoute,
-  } as any)
-const AuthenticatedAdminOrdersIndexRoute =
-  AuthenticatedAdminOrdersIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminOrdersRoute,
-  } as any)
-const AuthenticatedAdminMedicinesIndexRoute =
-  AuthenticatedAdminMedicinesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
-  } as any)
-const AuthenticatedAdminMedicineChangesIndexRoute =
-  AuthenticatedAdminMedicineChangesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminMedicineChangesRoute,
-  } as any)
-const AuthenticatedAdminMedicationRulesIndexRoute =
-  AuthenticatedAdminMedicationRulesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminMedicationRulesRoute,
-  } as any)
-const AuthenticatedAdminIntakeSessionsIndexRoute =
-  AuthenticatedAdminIntakeSessionsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminIntakeSessionsRoute,
-  } as any)
-const AuthenticatedAdminFeedbackIndexRoute =
-  AuthenticatedAdminFeedbackIndexRouteImport.update({
-    id: '/feedback/',
-    path: '/feedback/',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminConsultationsIndexRoute =
-  AuthenticatedAdminConsultationsIndexRouteImport.update({
-    id: '/consultations/',
-    path: '/consultations/',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminCategoriesIndexRoute =
-  AuthenticatedAdminCategoriesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminCategoriesRoute,
-  } as any)
+const ApiInternalNewFeedbackRoute = ApiInternalNewFeedbackRouteImport.update({
+  id: '/api/internal/new-feedback',
+  path: '/api/internal/new-feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminBillingIndexRoute =
   AuthenticatedAdminBillingIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAdminBillingRoute,
   } as any)
-const AuthenticatedProviderRequestsRequestIdRoute =
-  AuthenticatedProviderRequestsRequestIdRouteImport.update({
-    id: '/requests/$requestId',
-    path: '/requests/$requestId',
-    getParentRoute: () => AuthenticatedProviderRoute,
+const AuthenticatedAdminBillingRefundHistoryRoute =
+  AuthenticatedAdminBillingRefundHistoryRouteImport.update({
+    id: '/refund-history',
+    path: '/refund-history',
+    getParentRoute: () => AuthenticatedAdminBillingRoute,
   } as any)
-const AuthenticatedProviderPatientsPatientKeyRoute =
-  AuthenticatedProviderPatientsPatientKeyRouteImport.update({
-    id: '/patients/$patientKey',
-    path: '/patients/$patientKey',
-    getParentRoute: () => AuthenticatedProviderRoute,
-  } as any)
-const AuthenticatedAdminRequestsRequestIdRoute =
-  AuthenticatedAdminRequestsRequestIdRouteImport.update({
-    id: '/$requestId',
-    path: '/$requestId',
-    getParentRoute: () => AuthenticatedAdminRequestsRoute,
-  } as any)
-const AuthenticatedAdminQuestionnairesNewRoute =
-  AuthenticatedAdminQuestionnairesNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AuthenticatedAdminQuestionnairesRoute,
-  } as any)
-const AuthenticatedAdminQuestionnairesQuestionnaireIdRoute =
-  AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport.update({
-    id: '/$questionnaireId',
-    path: '/$questionnaireId',
-    getParentRoute: () => AuthenticatedAdminQuestionnairesRoute,
-  } as any)
-const AuthenticatedAdminProvidersNewRoute =
-  AuthenticatedAdminProvidersNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AuthenticatedAdminProvidersRoute,
-  } as any)
-const AuthenticatedAdminProvidersProviderIdRoute =
-  AuthenticatedAdminProvidersProviderIdRouteImport.update({
-    id: '/$providerId',
-    path: '/$providerId',
-    getParentRoute: () => AuthenticatedAdminProvidersRoute,
-  } as any)
-const AuthenticatedAdminPromosNewRoute =
-  AuthenticatedAdminPromosNewRouteImport.update({
-    id: '/promos/new',
-    path: '/promos/new',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPromosPromoIdRoute =
-  AuthenticatedAdminPromosPromoIdRouteImport.update({
-    id: '/promos/$promoId',
-    path: '/promos/$promoId',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPatientsPatientIdRoute =
-  AuthenticatedAdminPatientsPatientIdRouteImport.update({
-    id: '/$patientId',
-    path: '/$patientId',
-    getParentRoute: () => AuthenticatedAdminPatientsRoute,
-  } as any)
-const AuthenticatedAdminOrdersOrderIdRoute =
-  AuthenticatedAdminOrdersOrderIdRouteImport.update({
-    id: '/$orderId',
-    path: '/$orderId',
-    getParentRoute: () => AuthenticatedAdminOrdersRoute,
-  } as any)
-const AuthenticatedAdminMedicinesNewRoute =
-  AuthenticatedAdminMedicinesNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
-  } as any)
-const AuthenticatedAdminMedicinesMedicineIdRoute =
-  AuthenticatedAdminMedicinesMedicineIdRouteImport.update({
-    id: '/$medicineId',
-    path: '/$medicineId',
-    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
-  } as any)
-const AuthenticatedAdminIntakeSessionsSessionIdRoute =
-  AuthenticatedAdminIntakeSessionsSessionIdRouteImport.update({
-    id: '/$sessionId',
-    path: '/$sessionId',
-    getParentRoute: () => AuthenticatedAdminIntakeSessionsRoute,
-  } as any)
-const AuthenticatedAdminCategoriesNewRoute =
-  AuthenticatedAdminCategoriesNewRouteImport.update({
-    id: '/new',
-    path: '/new',
+const AuthenticatedAdminCategoriesIndexRoute =
+  AuthenticatedAdminCategoriesIndexRouteImport.update({
+    id: '/',
+    path: '/',
     getParentRoute: () => AuthenticatedAdminCategoriesRoute,
   } as any)
 const AuthenticatedAdminCategoriesCategoryIdRoute =
@@ -467,23 +281,209 @@ const AuthenticatedAdminCategoriesCategoryIdRoute =
     path: '/$categoryId',
     getParentRoute: () => AuthenticatedAdminCategoriesRoute,
   } as any)
-const AuthenticatedAdminBillingRefundHistoryRoute =
-  AuthenticatedAdminBillingRefundHistoryRouteImport.update({
-    id: '/refund-history',
-    path: '/refund-history',
-    getParentRoute: () => AuthenticatedAdminBillingRoute,
+const AuthenticatedAdminCategoriesNewRoute =
+  AuthenticatedAdminCategoriesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminCategoriesRoute,
   } as any)
-const AuthenticatedProviderRequestsRequestIdConsultationRoute =
-  AuthenticatedProviderRequestsRequestIdConsultationRouteImport.update({
-    id: '/consultation',
-    path: '/consultation',
-    getParentRoute: () => AuthenticatedProviderRequestsRequestIdRoute,
+const AuthenticatedAdminConsultationsIndexRoute =
+  AuthenticatedAdminConsultationsIndexRouteImport.update({
+    id: '/consultations/',
+    path: '/consultations/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFeedbackIndexRoute =
+  AuthenticatedAdminFeedbackIndexRouteImport.update({
+    id: '/feedback/',
+    path: '/feedback/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminIntakeSessionsIndexRoute =
+  AuthenticatedAdminIntakeSessionsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminIntakeSessionsRoute,
+  } as any)
+const AuthenticatedAdminIntakeSessionsSessionIdRoute =
+  AuthenticatedAdminIntakeSessionsSessionIdRouteImport.update({
+    id: '/$sessionId',
+    path: '/$sessionId',
+    getParentRoute: () => AuthenticatedAdminIntakeSessionsRoute,
+  } as any)
+const AuthenticatedAdminMedicationRulesIndexRoute =
+  AuthenticatedAdminMedicationRulesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminMedicationRulesRoute,
+  } as any)
+const AuthenticatedAdminMedicineChangesIndexRoute =
+  AuthenticatedAdminMedicineChangesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminMedicineChangesRoute,
+  } as any)
+const AuthenticatedAdminMedicinesIndexRoute =
+  AuthenticatedAdminMedicinesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
+  } as any)
+const AuthenticatedAdminMedicinesMedicineIdRoute =
+  AuthenticatedAdminMedicinesMedicineIdRouteImport.update({
+    id: '/$medicineId',
+    path: '/$medicineId',
+    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
+  } as any)
+const AuthenticatedAdminMedicinesNewRoute =
+  AuthenticatedAdminMedicinesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminMedicinesRoute,
+  } as any)
+const AuthenticatedAdminOrdersIndexRoute =
+  AuthenticatedAdminOrdersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminOrdersRoute,
+  } as any)
+const AuthenticatedAdminOrdersOrderIdRoute =
+  AuthenticatedAdminOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => AuthenticatedAdminOrdersRoute,
+  } as any)
+const AuthenticatedAdminPatientsIndexRoute =
+  AuthenticatedAdminPatientsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminPatientsRoute,
+  } as any)
+const AuthenticatedAdminPatientsPatientIdRoute =
+  AuthenticatedAdminPatientsPatientIdRouteImport.update({
+    id: '/$patientId',
+    path: '/$patientId',
+    getParentRoute: () => AuthenticatedAdminPatientsRoute,
+  } as any)
+const AuthenticatedAdminPromosIndexRoute =
+  AuthenticatedAdminPromosIndexRouteImport.update({
+    id: '/promos/',
+    path: '/promos/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPromosPromoIdRoute =
+  AuthenticatedAdminPromosPromoIdRouteImport.update({
+    id: '/promos/$promoId',
+    path: '/promos/$promoId',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPromosNewRoute =
+  AuthenticatedAdminPromosNewRouteImport.update({
+    id: '/promos/new',
+    path: '/promos/new',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminProvidersIndexRoute =
+  AuthenticatedAdminProvidersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminProvidersRoute,
+  } as any)
+const AuthenticatedAdminProvidersProviderIdRoute =
+  AuthenticatedAdminProvidersProviderIdRouteImport.update({
+    id: '/$providerId',
+    path: '/$providerId',
+    getParentRoute: () => AuthenticatedAdminProvidersRoute,
+  } as any)
+const AuthenticatedAdminProvidersNewRoute =
+  AuthenticatedAdminProvidersNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminProvidersRoute,
+  } as any)
+const AuthenticatedAdminQuestionnairesIndexRoute =
+  AuthenticatedAdminQuestionnairesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminQuestionnairesRoute,
+  } as any)
+const AuthenticatedAdminQuestionnairesQuestionnaireIdRoute =
+  AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport.update({
+    id: '/$questionnaireId',
+    path: '/$questionnaireId',
+    getParentRoute: () => AuthenticatedAdminQuestionnairesRoute,
+  } as any)
+const AuthenticatedAdminQuestionnairesNewRoute =
+  AuthenticatedAdminQuestionnairesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminQuestionnairesRoute,
+  } as any)
+const AuthenticatedAdminReferralsIndexRoute =
+  AuthenticatedAdminReferralsIndexRouteImport.update({
+    id: '/referrals/',
+    path: '/referrals/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminRequestsIndexRoute =
+  AuthenticatedAdminRequestsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminRequestsRoute,
+  } as any)
+const AuthenticatedAdminRequestsRequestIdRoute =
+  AuthenticatedAdminRequestsRequestIdRouteImport.update({
+    id: '/$requestId',
+    path: '/$requestId',
+    getParentRoute: () => AuthenticatedAdminRequestsRoute,
+  } as any)
+const AuthenticatedAdminSettingsIndexRoute =
+  AuthenticatedAdminSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedProviderConsultationsIndexRoute =
+  AuthenticatedProviderConsultationsIndexRouteImport.update({
+    id: '/consultations/',
+    path: '/consultations/',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
+const AuthenticatedProviderPatientsIndexRoute =
+  AuthenticatedProviderPatientsIndexRouteImport.update({
+    id: '/patients/',
+    path: '/patients/',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
+const AuthenticatedProviderPatientsPatientKeyRoute =
+  AuthenticatedProviderPatientsPatientKeyRouteImport.update({
+    id: '/patients/$patientKey',
+    path: '/patients/$patientKey',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
+const AuthenticatedProviderRequestsIndexRoute =
+  AuthenticatedProviderRequestsIndexRouteImport.update({
+    id: '/requests/',
+    path: '/requests/',
+    getParentRoute: () => AuthenticatedProviderRoute,
+  } as any)
+const AuthenticatedProviderRequestsRequestIdRoute =
+  AuthenticatedProviderRequestsRequestIdRouteImport.update({
+    id: '/requests/$requestId',
+    path: '/requests/$requestId',
+    getParentRoute: () => AuthenticatedProviderRoute,
   } as any)
 const AuthenticatedAdminRequestsRequestIdConsultationRoute =
   AuthenticatedAdminRequestsRequestIdConsultationRouteImport.update({
     id: '/consultation',
     path: '/consultation',
     getParentRoute: () => AuthenticatedAdminRequestsRequestIdRoute,
+  } as any)
+const AuthenticatedProviderRequestsRequestIdConsultationRoute =
+  AuthenticatedProviderRequestsRequestIdConsultationRouteImport.update({
+    id: '/consultation',
+    path: '/consultation',
+    getParentRoute: () => AuthenticatedProviderRequestsRequestIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -907,25 +907,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -935,32 +921,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/appointment/$': {
-      id: '/appointment/$'
-      path: '/appointment/$'
-      fullPath: '/appointment/$'
-      preLoaderRoute: typeof AppointmentSplatRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/provider': {
-      id: '/_authenticated/provider'
-      path: '/provider'
-      fullPath: '/provider'
-      preLoaderRoute: typeof AuthenticatedProviderRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -970,158 +956,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/provider': {
+      id: '/_authenticated/provider'
+      path: '/provider'
+      fullPath: '/provider'
+      preLoaderRoute: typeof AuthenticatedProviderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/provider/': {
-      id: '/_authenticated/provider/'
-      path: '/'
-      fullPath: '/provider/'
-      preLoaderRoute: typeof AuthenticatedProviderIndexRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
+    '/appointment/$': {
+      id: '/appointment/$'
+      path: '/appointment/$'
+      fullPath: '/appointment/$'
+      preLoaderRoute: typeof AppointmentSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/api/stripe/webhook': {
-      id: '/api/stripe/webhook'
-      path: '/api/stripe/webhook'
-      fullPath: '/api/stripe/webhook'
-      preLoaderRoute: typeof ApiStripeWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/internal/new-feedback': {
-      id: '/api/internal/new-feedback'
-      path: '/api/internal/new-feedback'
-      fullPath: '/api/internal/new-feedback'
-      preLoaderRoute: typeof ApiInternalNewFeedbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/internal/additional-payment-paid': {
-      id: '/api/internal/additional-payment-paid'
-      path: '/api/internal/additional-payment-paid'
-      fullPath: '/api/internal/additional-payment-paid'
-      preLoaderRoute: typeof ApiInternalAdditionalPaymentPaidRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/consultations/embed': {
-      id: '/api/consultations/embed'
-      path: '/api/consultations/embed'
-      fullPath: '/api/consultations/embed'
-      preLoaderRoute: typeof ApiConsultationsEmbedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/rx/$prescriptionId': {
-      id: '/_authenticated/rx/$prescriptionId'
-      path: '/rx/$prescriptionId'
-      fullPath: '/rx/$prescriptionId'
-      preLoaderRoute: typeof AuthenticatedRxPrescriptionIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/provider/queue': {
-      id: '/_authenticated/provider/queue'
-      path: '/queue'
-      fullPath: '/provider/queue'
-      preLoaderRoute: typeof AuthenticatedProviderQueueRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
-    }
-    '/_authenticated/provider/profile': {
-      id: '/_authenticated/provider/profile'
-      path: '/profile'
-      fullPath: '/provider/profile'
-      preLoaderRoute: typeof AuthenticatedProviderProfileRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
-    }
-    '/_authenticated/provider/notifications': {
-      id: '/_authenticated/provider/notifications'
-      path: '/notifications'
-      fullPath: '/provider/notifications'
-      preLoaderRoute: typeof AuthenticatedProviderNotificationsRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
-    }
-    '/_authenticated/admin/requests': {
-      id: '/_authenticated/admin/requests'
-      path: '/requests'
-      fullPath: '/admin/requests'
-      preLoaderRoute: typeof AuthenticatedAdminRequestsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/questionnaires': {
-      id: '/_authenticated/admin/questionnaires'
-      path: '/questionnaires'
-      fullPath: '/admin/questionnaires'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/providers': {
-      id: '/_authenticated/admin/providers'
-      path: '/providers'
-      fullPath: '/admin/providers'
-      preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/patients': {
-      id: '/_authenticated/admin/patients'
-      path: '/patients'
-      fullPath: '/admin/patients'
-      preLoaderRoute: typeof AuthenticatedAdminPatientsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/orders': {
-      id: '/_authenticated/admin/orders'
-      path: '/orders'
-      fullPath: '/admin/orders'
-      preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/medicines': {
-      id: '/_authenticated/admin/medicines'
-      path: '/medicines'
-      fullPath: '/admin/medicines'
-      preLoaderRoute: typeof AuthenticatedAdminMedicinesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/medicine-changes': {
-      id: '/_authenticated/admin/medicine-changes'
-      path: '/medicine-changes'
-      fullPath: '/admin/medicine-changes'
-      preLoaderRoute: typeof AuthenticatedAdminMedicineChangesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/medication-rules': {
-      id: '/_authenticated/admin/medication-rules'
-      path: '/medication-rules'
-      fullPath: '/admin/medication-rules'
-      preLoaderRoute: typeof AuthenticatedAdminMedicationRulesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/lifefile-pharmacies': {
-      id: '/_authenticated/admin/lifefile-pharmacies'
-      path: '/lifefile-pharmacies'
-      fullPath: '/admin/lifefile-pharmacies'
-      preLoaderRoute: typeof AuthenticatedAdminLifefilePharmaciesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/intake-sessions': {
-      id: '/_authenticated/admin/intake-sessions'
-      path: '/intake-sessions'
-      fullPath: '/admin/intake-sessions'
-      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/categories': {
-      id: '/_authenticated/admin/categories'
-      path: '/categories'
-      fullPath: '/admin/categories'
-      preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/billing': {
@@ -1131,131 +991,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/provider/requests/': {
-      id: '/_authenticated/provider/requests/'
-      path: '/requests'
-      fullPath: '/provider/requests/'
-      preLoaderRoute: typeof AuthenticatedProviderRequestsIndexRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
+    '/_authenticated/admin/categories': {
+      id: '/_authenticated/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/provider/patients/': {
-      id: '/_authenticated/provider/patients/'
+    '/_authenticated/admin/intake-sessions': {
+      id: '/_authenticated/admin/intake-sessions'
+      path: '/intake-sessions'
+      fullPath: '/admin/intake-sessions'
+      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/lifefile-pharmacies': {
+      id: '/_authenticated/admin/lifefile-pharmacies'
+      path: '/lifefile-pharmacies'
+      fullPath: '/admin/lifefile-pharmacies'
+      preLoaderRoute: typeof AuthenticatedAdminLifefilePharmaciesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/medication-rules': {
+      id: '/_authenticated/admin/medication-rules'
+      path: '/medication-rules'
+      fullPath: '/admin/medication-rules'
+      preLoaderRoute: typeof AuthenticatedAdminMedicationRulesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/medicine-changes': {
+      id: '/_authenticated/admin/medicine-changes'
+      path: '/medicine-changes'
+      fullPath: '/admin/medicine-changes'
+      preLoaderRoute: typeof AuthenticatedAdminMedicineChangesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/medicines': {
+      id: '/_authenticated/admin/medicines'
+      path: '/medicines'
+      fullPath: '/admin/medicines'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/orders': {
+      id: '/_authenticated/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/patients': {
+      id: '/_authenticated/admin/patients'
       path: '/patients'
-      fullPath: '/provider/patients/'
-      preLoaderRoute: typeof AuthenticatedProviderPatientsIndexRouteImport
+      fullPath: '/admin/patients'
+      preLoaderRoute: typeof AuthenticatedAdminPatientsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/providers': {
+      id: '/_authenticated/admin/providers'
+      path: '/providers'
+      fullPath: '/admin/providers'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/questionnaires': {
+      id: '/_authenticated/admin/questionnaires'
+      path: '/questionnaires'
+      fullPath: '/admin/questionnaires'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/requests': {
+      id: '/_authenticated/admin/requests'
+      path: '/requests'
+      fullPath: '/admin/requests'
+      preLoaderRoute: typeof AuthenticatedAdminRequestsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/provider/': {
+      id: '/_authenticated/provider/'
+      path: '/'
+      fullPath: '/provider/'
+      preLoaderRoute: typeof AuthenticatedProviderIndexRouteImport
       parentRoute: typeof AuthenticatedProviderRoute
     }
-    '/_authenticated/provider/consultations/': {
-      id: '/_authenticated/provider/consultations/'
-      path: '/consultations'
-      fullPath: '/provider/consultations/'
-      preLoaderRoute: typeof AuthenticatedProviderConsultationsIndexRouteImport
+    '/_authenticated/provider/notifications': {
+      id: '/_authenticated/provider/notifications'
+      path: '/notifications'
+      fullPath: '/provider/notifications'
+      preLoaderRoute: typeof AuthenticatedProviderNotificationsRouteImport
       parentRoute: typeof AuthenticatedProviderRoute
     }
-    '/_authenticated/admin/settings/': {
-      id: '/_authenticated/admin/settings/'
-      path: '/settings'
-      fullPath: '/admin/settings/'
-      preLoaderRoute: typeof AuthenticatedAdminSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+    '/_authenticated/provider/profile': {
+      id: '/_authenticated/provider/profile'
+      path: '/profile'
+      fullPath: '/provider/profile'
+      preLoaderRoute: typeof AuthenticatedProviderProfileRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
     }
-    '/_authenticated/admin/requests/': {
-      id: '/_authenticated/admin/requests/'
-      path: '/'
-      fullPath: '/admin/requests/'
-      preLoaderRoute: typeof AuthenticatedAdminRequestsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRequestsRoute
+    '/_authenticated/provider/queue': {
+      id: '/_authenticated/provider/queue'
+      path: '/queue'
+      fullPath: '/provider/queue'
+      preLoaderRoute: typeof AuthenticatedProviderQueueRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
     }
-    '/_authenticated/admin/referrals/': {
-      id: '/_authenticated/admin/referrals/'
-      path: '/referrals'
-      fullPath: '/admin/referrals/'
-      preLoaderRoute: typeof AuthenticatedAdminReferralsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+    '/_authenticated/rx/$prescriptionId': {
+      id: '/_authenticated/rx/$prescriptionId'
+      path: '/rx/$prescriptionId'
+      fullPath: '/rx/$prescriptionId'
+      preLoaderRoute: typeof AuthenticatedRxPrescriptionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/questionnaires/': {
-      id: '/_authenticated/admin/questionnaires/'
-      path: '/'
-      fullPath: '/admin/questionnaires/'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminQuestionnairesRoute
+    '/api/consultations/embed': {
+      id: '/api/consultations/embed'
+      path: '/api/consultations/embed'
+      fullPath: '/api/consultations/embed'
+      preLoaderRoute: typeof ApiConsultationsEmbedRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/providers/': {
-      id: '/_authenticated/admin/providers/'
-      path: '/'
-      fullPath: '/admin/providers/'
-      preLoaderRoute: typeof AuthenticatedAdminProvidersIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminProvidersRoute
+    '/api/internal/additional-payment-paid': {
+      id: '/api/internal/additional-payment-paid'
+      path: '/api/internal/additional-payment-paid'
+      fullPath: '/api/internal/additional-payment-paid'
+      preLoaderRoute: typeof ApiInternalAdditionalPaymentPaidRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/promos/': {
-      id: '/_authenticated/admin/promos/'
-      path: '/promos'
-      fullPath: '/admin/promos/'
-      preLoaderRoute: typeof AuthenticatedAdminPromosIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+    '/api/internal/new-feedback': {
+      id: '/api/internal/new-feedback'
+      path: '/api/internal/new-feedback'
+      fullPath: '/api/internal/new-feedback'
+      preLoaderRoute: typeof ApiInternalNewFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/patients/': {
-      id: '/_authenticated/admin/patients/'
-      path: '/'
-      fullPath: '/admin/patients/'
-      preLoaderRoute: typeof AuthenticatedAdminPatientsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminPatientsRoute
-    }
-    '/_authenticated/admin/orders/': {
-      id: '/_authenticated/admin/orders/'
-      path: '/'
-      fullPath: '/admin/orders/'
-      preLoaderRoute: typeof AuthenticatedAdminOrdersIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminOrdersRoute
-    }
-    '/_authenticated/admin/medicines/': {
-      id: '/_authenticated/admin/medicines/'
-      path: '/'
-      fullPath: '/admin/medicines/'
-      preLoaderRoute: typeof AuthenticatedAdminMedicinesIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminMedicinesRoute
-    }
-    '/_authenticated/admin/medicine-changes/': {
-      id: '/_authenticated/admin/medicine-changes/'
-      path: '/'
-      fullPath: '/admin/medicine-changes/'
-      preLoaderRoute: typeof AuthenticatedAdminMedicineChangesIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminMedicineChangesRoute
-    }
-    '/_authenticated/admin/medication-rules/': {
-      id: '/_authenticated/admin/medication-rules/'
-      path: '/'
-      fullPath: '/admin/medication-rules/'
-      preLoaderRoute: typeof AuthenticatedAdminMedicationRulesIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminMedicationRulesRoute
-    }
-    '/_authenticated/admin/intake-sessions/': {
-      id: '/_authenticated/admin/intake-sessions/'
-      path: '/'
-      fullPath: '/admin/intake-sessions/'
-      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminIntakeSessionsRoute
-    }
-    '/_authenticated/admin/feedback/': {
-      id: '/_authenticated/admin/feedback/'
-      path: '/feedback'
-      fullPath: '/admin/feedback/'
-      preLoaderRoute: typeof AuthenticatedAdminFeedbackIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/consultations/': {
-      id: '/_authenticated/admin/consultations/'
-      path: '/consultations'
-      fullPath: '/admin/consultations/'
-      preLoaderRoute: typeof AuthenticatedAdminConsultationsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/categories/': {
-      id: '/_authenticated/admin/categories/'
-      path: '/'
-      fullPath: '/admin/categories/'
-      preLoaderRoute: typeof AuthenticatedAdminCategoriesIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminCategoriesRoute
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/billing/': {
       id: '/_authenticated/admin/billing/'
@@ -1264,109 +1138,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBillingIndexRouteImport
       parentRoute: typeof AuthenticatedAdminBillingRoute
     }
-    '/_authenticated/provider/requests/$requestId': {
-      id: '/_authenticated/provider/requests/$requestId'
-      path: '/requests/$requestId'
-      fullPath: '/provider/requests/$requestId'
-      preLoaderRoute: typeof AuthenticatedProviderRequestsRequestIdRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
+    '/_authenticated/admin/billing/refund-history': {
+      id: '/_authenticated/admin/billing/refund-history'
+      path: '/refund-history'
+      fullPath: '/admin/billing/refund-history'
+      preLoaderRoute: typeof AuthenticatedAdminBillingRefundHistoryRouteImport
+      parentRoute: typeof AuthenticatedAdminBillingRoute
     }
-    '/_authenticated/provider/patients/$patientKey': {
-      id: '/_authenticated/provider/patients/$patientKey'
-      path: '/patients/$patientKey'
-      fullPath: '/provider/patients/$patientKey'
-      preLoaderRoute: typeof AuthenticatedProviderPatientsPatientKeyRouteImport
-      parentRoute: typeof AuthenticatedProviderRoute
-    }
-    '/_authenticated/admin/requests/$requestId': {
-      id: '/_authenticated/admin/requests/$requestId'
-      path: '/$requestId'
-      fullPath: '/admin/requests/$requestId'
-      preLoaderRoute: typeof AuthenticatedAdminRequestsRequestIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRequestsRoute
-    }
-    '/_authenticated/admin/questionnaires/new': {
-      id: '/_authenticated/admin/questionnaires/new'
-      path: '/new'
-      fullPath: '/admin/questionnaires/new'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesNewRouteImport
-      parentRoute: typeof AuthenticatedAdminQuestionnairesRoute
-    }
-    '/_authenticated/admin/questionnaires/$questionnaireId': {
-      id: '/_authenticated/admin/questionnaires/$questionnaireId'
-      path: '/$questionnaireId'
-      fullPath: '/admin/questionnaires/$questionnaireId'
-      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport
-      parentRoute: typeof AuthenticatedAdminQuestionnairesRoute
-    }
-    '/_authenticated/admin/providers/new': {
-      id: '/_authenticated/admin/providers/new'
-      path: '/new'
-      fullPath: '/admin/providers/new'
-      preLoaderRoute: typeof AuthenticatedAdminProvidersNewRouteImport
-      parentRoute: typeof AuthenticatedAdminProvidersRoute
-    }
-    '/_authenticated/admin/providers/$providerId': {
-      id: '/_authenticated/admin/providers/$providerId'
-      path: '/$providerId'
-      fullPath: '/admin/providers/$providerId'
-      preLoaderRoute: typeof AuthenticatedAdminProvidersProviderIdRouteImport
-      parentRoute: typeof AuthenticatedAdminProvidersRoute
-    }
-    '/_authenticated/admin/promos/new': {
-      id: '/_authenticated/admin/promos/new'
-      path: '/promos/new'
-      fullPath: '/admin/promos/new'
-      preLoaderRoute: typeof AuthenticatedAdminPromosNewRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/promos/$promoId': {
-      id: '/_authenticated/admin/promos/$promoId'
-      path: '/promos/$promoId'
-      fullPath: '/admin/promos/$promoId'
-      preLoaderRoute: typeof AuthenticatedAdminPromosPromoIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/patients/$patientId': {
-      id: '/_authenticated/admin/patients/$patientId'
-      path: '/$patientId'
-      fullPath: '/admin/patients/$patientId'
-      preLoaderRoute: typeof AuthenticatedAdminPatientsPatientIdRouteImport
-      parentRoute: typeof AuthenticatedAdminPatientsRoute
-    }
-    '/_authenticated/admin/orders/$orderId': {
-      id: '/_authenticated/admin/orders/$orderId'
-      path: '/$orderId'
-      fullPath: '/admin/orders/$orderId'
-      preLoaderRoute: typeof AuthenticatedAdminOrdersOrderIdRouteImport
-      parentRoute: typeof AuthenticatedAdminOrdersRoute
-    }
-    '/_authenticated/admin/medicines/new': {
-      id: '/_authenticated/admin/medicines/new'
-      path: '/new'
-      fullPath: '/admin/medicines/new'
-      preLoaderRoute: typeof AuthenticatedAdminMedicinesNewRouteImport
-      parentRoute: typeof AuthenticatedAdminMedicinesRoute
-    }
-    '/_authenticated/admin/medicines/$medicineId': {
-      id: '/_authenticated/admin/medicines/$medicineId'
-      path: '/$medicineId'
-      fullPath: '/admin/medicines/$medicineId'
-      preLoaderRoute: typeof AuthenticatedAdminMedicinesMedicineIdRouteImport
-      parentRoute: typeof AuthenticatedAdminMedicinesRoute
-    }
-    '/_authenticated/admin/intake-sessions/$sessionId': {
-      id: '/_authenticated/admin/intake-sessions/$sessionId'
-      path: '/$sessionId'
-      fullPath: '/admin/intake-sessions/$sessionId'
-      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsSessionIdRouteImport
-      parentRoute: typeof AuthenticatedAdminIntakeSessionsRoute
-    }
-    '/_authenticated/admin/categories/new': {
-      id: '/_authenticated/admin/categories/new'
-      path: '/new'
-      fullPath: '/admin/categories/new'
-      preLoaderRoute: typeof AuthenticatedAdminCategoriesNewRouteImport
+    '/_authenticated/admin/categories/': {
+      id: '/_authenticated/admin/categories/'
+      path: '/'
+      fullPath: '/admin/categories/'
+      preLoaderRoute: typeof AuthenticatedAdminCategoriesIndexRouteImport
       parentRoute: typeof AuthenticatedAdminCategoriesRoute
     }
     '/_authenticated/admin/categories/$categoryId': {
@@ -1376,19 +1159,229 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCategoriesCategoryIdRouteImport
       parentRoute: typeof AuthenticatedAdminCategoriesRoute
     }
-    '/_authenticated/admin/billing/refund-history': {
-      id: '/_authenticated/admin/billing/refund-history'
-      path: '/refund-history'
-      fullPath: '/admin/billing/refund-history'
-      preLoaderRoute: typeof AuthenticatedAdminBillingRefundHistoryRouteImport
-      parentRoute: typeof AuthenticatedAdminBillingRoute
+    '/_authenticated/admin/categories/new': {
+      id: '/_authenticated/admin/categories/new'
+      path: '/new'
+      fullPath: '/admin/categories/new'
+      preLoaderRoute: typeof AuthenticatedAdminCategoriesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminCategoriesRoute
     }
-    '/_authenticated/provider/requests/$requestId/consultation': {
-      id: '/_authenticated/provider/requests/$requestId/consultation'
-      path: '/consultation'
-      fullPath: '/provider/requests/$requestId/consultation'
-      preLoaderRoute: typeof AuthenticatedProviderRequestsRequestIdConsultationRouteImport
-      parentRoute: typeof AuthenticatedProviderRequestsRequestIdRoute
+    '/_authenticated/admin/consultations/': {
+      id: '/_authenticated/admin/consultations/'
+      path: '/consultations'
+      fullPath: '/admin/consultations/'
+      preLoaderRoute: typeof AuthenticatedAdminConsultationsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/feedback/': {
+      id: '/_authenticated/admin/feedback/'
+      path: '/feedback'
+      fullPath: '/admin/feedback/'
+      preLoaderRoute: typeof AuthenticatedAdminFeedbackIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/intake-sessions/': {
+      id: '/_authenticated/admin/intake-sessions/'
+      path: '/'
+      fullPath: '/admin/intake-sessions/'
+      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminIntakeSessionsRoute
+    }
+    '/_authenticated/admin/intake-sessions/$sessionId': {
+      id: '/_authenticated/admin/intake-sessions/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/admin/intake-sessions/$sessionId'
+      preLoaderRoute: typeof AuthenticatedAdminIntakeSessionsSessionIdRouteImport
+      parentRoute: typeof AuthenticatedAdminIntakeSessionsRoute
+    }
+    '/_authenticated/admin/medication-rules/': {
+      id: '/_authenticated/admin/medication-rules/'
+      path: '/'
+      fullPath: '/admin/medication-rules/'
+      preLoaderRoute: typeof AuthenticatedAdminMedicationRulesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicationRulesRoute
+    }
+    '/_authenticated/admin/medicine-changes/': {
+      id: '/_authenticated/admin/medicine-changes/'
+      path: '/'
+      fullPath: '/admin/medicine-changes/'
+      preLoaderRoute: typeof AuthenticatedAdminMedicineChangesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicineChangesRoute
+    }
+    '/_authenticated/admin/medicines/': {
+      id: '/_authenticated/admin/medicines/'
+      path: '/'
+      fullPath: '/admin/medicines/'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicinesRoute
+    }
+    '/_authenticated/admin/medicines/$medicineId': {
+      id: '/_authenticated/admin/medicines/$medicineId'
+      path: '/$medicineId'
+      fullPath: '/admin/medicines/$medicineId'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesMedicineIdRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicinesRoute
+    }
+    '/_authenticated/admin/medicines/new': {
+      id: '/_authenticated/admin/medicines/new'
+      path: '/new'
+      fullPath: '/admin/medicines/new'
+      preLoaderRoute: typeof AuthenticatedAdminMedicinesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminMedicinesRoute
+    }
+    '/_authenticated/admin/orders/': {
+      id: '/_authenticated/admin/orders/'
+      path: '/'
+      fullPath: '/admin/orders/'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminOrdersRoute
+    }
+    '/_authenticated/admin/orders/$orderId': {
+      id: '/_authenticated/admin/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/admin/orders/$orderId'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersOrderIdRouteImport
+      parentRoute: typeof AuthenticatedAdminOrdersRoute
+    }
+    '/_authenticated/admin/patients/': {
+      id: '/_authenticated/admin/patients/'
+      path: '/'
+      fullPath: '/admin/patients/'
+      preLoaderRoute: typeof AuthenticatedAdminPatientsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminPatientsRoute
+    }
+    '/_authenticated/admin/patients/$patientId': {
+      id: '/_authenticated/admin/patients/$patientId'
+      path: '/$patientId'
+      fullPath: '/admin/patients/$patientId'
+      preLoaderRoute: typeof AuthenticatedAdminPatientsPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAdminPatientsRoute
+    }
+    '/_authenticated/admin/promos/': {
+      id: '/_authenticated/admin/promos/'
+      path: '/promos'
+      fullPath: '/admin/promos/'
+      preLoaderRoute: typeof AuthenticatedAdminPromosIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/promos/$promoId': {
+      id: '/_authenticated/admin/promos/$promoId'
+      path: '/promos/$promoId'
+      fullPath: '/admin/promos/$promoId'
+      preLoaderRoute: typeof AuthenticatedAdminPromosPromoIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/promos/new': {
+      id: '/_authenticated/admin/promos/new'
+      path: '/promos/new'
+      fullPath: '/admin/promos/new'
+      preLoaderRoute: typeof AuthenticatedAdminPromosNewRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/providers/': {
+      id: '/_authenticated/admin/providers/'
+      path: '/'
+      fullPath: '/admin/providers/'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminProvidersRoute
+    }
+    '/_authenticated/admin/providers/$providerId': {
+      id: '/_authenticated/admin/providers/$providerId'
+      path: '/$providerId'
+      fullPath: '/admin/providers/$providerId'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersProviderIdRouteImport
+      parentRoute: typeof AuthenticatedAdminProvidersRoute
+    }
+    '/_authenticated/admin/providers/new': {
+      id: '/_authenticated/admin/providers/new'
+      path: '/new'
+      fullPath: '/admin/providers/new'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersNewRouteImport
+      parentRoute: typeof AuthenticatedAdminProvidersRoute
+    }
+    '/_authenticated/admin/questionnaires/': {
+      id: '/_authenticated/admin/questionnaires/'
+      path: '/'
+      fullPath: '/admin/questionnaires/'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminQuestionnairesRoute
+    }
+    '/_authenticated/admin/questionnaires/$questionnaireId': {
+      id: '/_authenticated/admin/questionnaires/$questionnaireId'
+      path: '/$questionnaireId'
+      fullPath: '/admin/questionnaires/$questionnaireId'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesQuestionnaireIdRouteImport
+      parentRoute: typeof AuthenticatedAdminQuestionnairesRoute
+    }
+    '/_authenticated/admin/questionnaires/new': {
+      id: '/_authenticated/admin/questionnaires/new'
+      path: '/new'
+      fullPath: '/admin/questionnaires/new'
+      preLoaderRoute: typeof AuthenticatedAdminQuestionnairesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminQuestionnairesRoute
+    }
+    '/_authenticated/admin/referrals/': {
+      id: '/_authenticated/admin/referrals/'
+      path: '/referrals'
+      fullPath: '/admin/referrals/'
+      preLoaderRoute: typeof AuthenticatedAdminReferralsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/requests/': {
+      id: '/_authenticated/admin/requests/'
+      path: '/'
+      fullPath: '/admin/requests/'
+      preLoaderRoute: typeof AuthenticatedAdminRequestsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRequestsRoute
+    }
+    '/_authenticated/admin/requests/$requestId': {
+      id: '/_authenticated/admin/requests/$requestId'
+      path: '/$requestId'
+      fullPath: '/admin/requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedAdminRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRequestsRoute
+    }
+    '/_authenticated/admin/settings/': {
+      id: '/_authenticated/admin/settings/'
+      path: '/settings'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/provider/consultations/': {
+      id: '/_authenticated/provider/consultations/'
+      path: '/consultations'
+      fullPath: '/provider/consultations/'
+      preLoaderRoute: typeof AuthenticatedProviderConsultationsIndexRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
+    }
+    '/_authenticated/provider/patients/': {
+      id: '/_authenticated/provider/patients/'
+      path: '/patients'
+      fullPath: '/provider/patients/'
+      preLoaderRoute: typeof AuthenticatedProviderPatientsIndexRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
+    }
+    '/_authenticated/provider/patients/$patientKey': {
+      id: '/_authenticated/provider/patients/$patientKey'
+      path: '/patients/$patientKey'
+      fullPath: '/provider/patients/$patientKey'
+      preLoaderRoute: typeof AuthenticatedProviderPatientsPatientKeyRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
+    }
+    '/_authenticated/provider/requests/': {
+      id: '/_authenticated/provider/requests/'
+      path: '/requests'
+      fullPath: '/provider/requests/'
+      preLoaderRoute: typeof AuthenticatedProviderRequestsIndexRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
+    }
+    '/_authenticated/provider/requests/$requestId': {
+      id: '/_authenticated/provider/requests/$requestId'
+      path: '/requests/$requestId'
+      fullPath: '/provider/requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedProviderRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedProviderRoute
     }
     '/_authenticated/admin/requests/$requestId/consultation': {
       id: '/_authenticated/admin/requests/$requestId/consultation'
@@ -1396,6 +1389,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/requests/$requestId/consultation'
       preLoaderRoute: typeof AuthenticatedAdminRequestsRequestIdConsultationRouteImport
       parentRoute: typeof AuthenticatedAdminRequestsRequestIdRoute
+    }
+    '/_authenticated/provider/requests/$requestId/consultation': {
+      id: '/_authenticated/provider/requests/$requestId/consultation'
+      path: '/consultation'
+      fullPath: '/provider/requests/$requestId/consultation'
+      preLoaderRoute: typeof AuthenticatedProviderRequestsRequestIdConsultationRouteImport
+      parentRoute: typeof AuthenticatedProviderRequestsRequestIdRoute
     }
   }
 }
