@@ -210,14 +210,32 @@ const builders: Record<EmailTemplateKey, Builder> = {
   patient_additional_payment: (p) => {
     const med = str(p, "MEDICINE_NAME", "your medication");
     const amount = str(p, "AMOUNT_DUE", "0.00");
-    const link = cta(str(p, "PORTAL_URL"), "Complete payment");
+    const due = Number(amount) > 0;
+    const confirmUrl = str(p, "CONFIRM_URL");
+    const respond = cta(confirmUrl || str(p, "PORTAL_URL"), confirmUrl ? "Review and respond" : "Complete payment");
+    const pay = due && str(p, "PORTAL_URL") && str(p, "PORTAL_URL") !== confirmUrl
+      ? cta(str(p, "PORTAL_URL"), "Complete payment")
+      : { html: "", text: "" };
+    if (confirmUrl) {
+      return layout({
+        preheader: due
+          ? `Confirm the change to ${med}. An additional $${amount} is due.`
+          : `Please confirm or decline the change to ${med}.`,
+        title: `Confirm your plan change — ${med}`,
+        bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
+          <p>Your practitioner updated your treatment to <strong>${escapeHtml(med)}</strong>.${due ? ` An additional payment of <strong>$${escapeHtml(amount)}</strong> confirms this change.` : " Please confirm this change, or decline it if you do not agree."} Nothing is sent to the pharmacy until you confirm and your practitioner finishes the prescription. If you do not respond within 48 hours, the previous plan is restored.</p>
+          ${pay.html}
+          ${respond.html}`,
+        bodyText: `Hi ${firstName(p)},\n\nYour practitioner updated your treatment to ${med}.${due ? ` An additional payment of $${amount} confirms this change.` : " Please confirm this change, or decline it if you do not agree."} Nothing is sent to the pharmacy until you confirm and your practitioner finishes the prescription. If you do not respond within 48 hours, the previous plan is restored.${pay.text}${respond.text}`,
+      });
+    }
     return layout({
       preheader: `Additional payment of $${amount} is required for ${med}.`,
       title: `Additional payment required — ${med}`,
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
         <p>Your clinician updated your treatment to <strong>${escapeHtml(med)}</strong>. An additional payment of <strong>$${escapeHtml(amount)}</strong> is needed. As soon as this payment succeeds, your updated order is sent to the pharmacy automatically.</p>
-        ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nYour clinician updated your treatment to ${med}. An additional payment of $${amount} is needed. As soon as this payment succeeds, your updated order is sent to the pharmacy automatically.${link.text}`,
+        ${respond.html}`,
+      bodyText: `Hi ${firstName(p)},\n\nYour clinician updated your treatment to ${med}. An additional payment of $${amount} is needed. As soon as this payment succeeds, your updated order is sent to the pharmacy automatically.${respond.text}`,
     });
   },
 

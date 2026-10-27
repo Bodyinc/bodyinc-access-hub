@@ -814,6 +814,14 @@ export type ConsultationRoomData = {
     startedAt: string;
     endedAt: string | null;
   }>;
+  pastOrders?: Array<{
+    id: string;
+    medicine_name: string;
+    kind: string | null;
+    status: string;
+    created_at: string;
+    notes: { id: string; body: string; created_at: string }[];
+  }>;
   medicine: {
     id: string;
     name: string;
@@ -1710,6 +1718,13 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
             startedAt: c.started_at,
             endedAt: c.ended_at,
           })),
+          pastOrders: await (
+            await import("@/lib/clinical-intake")
+          ).loadPastOrders(supabaseAdmin, {
+            requestId: req.id,
+            userId: req.user_id,
+            sessionId: req.session_id,
+          }),
           medicine: medRow ? { id: medRow.id, name: medRow.name } : null,
           package: pkgRow
             ? {
