@@ -4,6 +4,7 @@ import { z } from "zod";
 import { assertProvider } from "@/lib/provider-guard";
 import { ageFromDob, bmiFrom } from "@/lib/format";
 import { PENDING_REQUEST_STATUSES } from "@/lib/request-status";
+import { filledSessionIdSet, sessionHasIntake } from "@/lib/clinical-intake";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -12,6 +13,15 @@ type Ctx = { supabase: any; userId: string };
 const PROFILE_CLINICAL_COLS = "id, full_name, dob, sex, state_code";
 const SESSION_CLINICAL_COLS =
   "id, full_name, dob, sex, state_code, height_cm, weight_kg, created_at";
+
+const ACTIVE_CONSULT_STATUSES = [
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
+  "approved",
+  "prescribed",
+];
 
 const OPEN_STATUSES = [
   "payment_completed",
@@ -39,6 +49,8 @@ export const providerDashboard = createServerFn({ method: "POST" })
     await assertProvider(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const me = context.userId;
+    const { expireOverduePlanChanges } = await import("@/lib/plan-change.server");
+    await expireOverduePlanChanges(supabaseAdmin, me);
 
     const { data: rows } = await supabaseAdmin
       .from("medication_requests")
@@ -54,7 +66,7 @@ export const providerDashboard = createServerFn({ method: "POST" })
       pending_review: list.filter((r) => r.status === "pending_review").length,
       awaiting_additional_payment: list.filter((r) => r.status === "awaiting_additional_payment")
         .length,
-      approved: list.filter((r) => r.status === "approved").length,
+      approved: list.filter((r) => r.status === "approved" || r.status === "prescribed").length,
       prescribed_today: list.filter(
         (r) => r.status === "prescribed" && new Date(r.updated_at) >= startOfDay,
       ).length,
@@ -62,6 +74,7 @@ export const providerDashboard = createServerFn({ method: "POST" })
     };
 
     const claimable = await countClaimable(supabaseAdmin, me);
+    const launchpad = await providerLaunchpad(supabaseAdmin, me);
 
     const { data: meProfile } = await supabaseAdmin
       .from("profiles")
@@ -69,7 +82,7 @@ export const providerDashboard = createServerFn({ method: "POST" })
       .eq("id", me)
       .maybeSingle();
 
-    return { ...counts, claimable, full_name: meProfile?.full_name ?? "" };
+    return { ...counts, claimable, full_name: meProfile?.full_name ?? "", ...launchpad };
   });
 
 async function providerStates(supabaseAdmin: any, me: string): Promise<string[]> {
@@ -88,7 +101,9 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
 
   const { data: rows } = await supabaseAdmin
     .from("medication_requests")
-    .select("id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at")
+    .select(
+      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at",
+    )
     .is("provider_id", null)
     .in("status", OPEN_STATUSES)
     .order("created_at", { ascending: false })
@@ -101,19 +116,20 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
   const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }] = await Promise.all([
+  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions] = await Promise.all([
     userIds.length
-      ? supabaseAdmin.from("profiles").select("id, full_name, state_code").in("id", userIds)
+      ? supabaseAdmin.from("profiles").select("id, full_name, state_code, dob").in("id", userIds)
       : Promise.resolve({ data: [] as any[] }),
     sessionIds.length
       ? supabaseAdmin
           .from("intake_sessions")
-          .select("id, full_name, state_code")
+          .select("id, full_name, state_code, dob")
           .in("id", sessionIds)
       : Promise.resolve({ data: [] as any[] }),
     medIds.length
       ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
       : Promise.resolve({ data: [] as any[] }),
+    filledSessionIdSet(supabaseAdmin, sessionIds),
   ]);
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
@@ -125,14 +141,20 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
       const p: any = pMap.get(r.user_id);
       const sess: any = !p ? sMap.get(r.session_id) : null;
       const state = (p?.state_code ?? sess?.state_code ?? null) as string | null;
+      const intakeFilled = Boolean(r.session_id && filledSessions.has(r.session_id));
       return {
         id: r.id,
         patient_name: p?.full_name ?? sess?.full_name ?? "Patient",
+        patient_id: p?.id ?? sess?.id ?? null,
+        dob: p?.dob ?? sess?.dob ?? null,
         state_code: state,
         medicine_name: medMap.get(r.medicine_id) ?? "—",
         kind: r.kind,
         status: r.status,
         requires_consultation: r.requires_consultation,
+        intake_filled: intakeFilled,
+        claim_locked_by: r.claim_locked_by ?? null,
+        claim_locked_at: r.claim_locked_at ?? null,
         created_at: r.created_at,
       };
     })
@@ -276,9 +298,38 @@ export const claimRequest = createServerFn({ method: "POST" })
 
     const { data: current } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status, user_id, medicine_id")
+      .select("id, status, user_id, medicine_id, session_id")
       .eq("id", data.requestId)
       .maybeSingle();
+
+    if (!(await sessionHasIntake(supabaseAdmin, current?.session_id))) {
+      throw new Error("intake form missing");
+    }
+
+    const { data: meProv, error: unavailErr } = await supabaseAdmin
+      .from("providers")
+      .select("is_unavailable")
+      .eq("id", me)
+      .maybeSingle();
+    if (unavailErr && !/is_unavailable/i.test(unavailErr.message)) throw new Error(unavailErr.message);
+    if (meProv?.is_unavailable) {
+      throw new Error("You are marked unavailable. Turn availability back on before claiming an order.");
+    }
+
+    const nowIso = new Date().toISOString();
+    const lockCutoff = new Date(Date.now() - 45_000).toISOString();
+    const { data: locked, error: lockErr } = await supabaseAdmin
+      .from("medication_requests")
+      .update({ claim_locked_by: me, claim_locked_at: nowIso, updated_at: nowIso })
+      .eq("id", data.requestId)
+      .is("provider_id", null)
+      .or(`claim_locked_at.is.null,claim_locked_at.lt."${lockCutoff}",claim_locked_by.eq.${me}`)
+      .select("id")
+      .maybeSingle();
+    if (lockErr) throw new Error(lockErr.message);
+    if (!locked) {
+      throw new Error("This order is locked while another practitioner claims it.");
+    }
 
     const nextStatus =
       current?.status === "payment_completed" || current?.status === "provider_assigned"
@@ -289,15 +340,25 @@ export const claimRequest = createServerFn({ method: "POST" })
       .from("medication_requests")
       .update({
         provider_id: me,
+        claim_locked_by: null,
+        claim_locked_at: null,
         updated_at: new Date().toISOString(),
         ...(nextStatus ? { status: nextStatus } : {}),
       })
       .eq("id", data.requestId)
+      .eq("claim_locked_by", me)
       .is("provider_id", null)
       .select("id")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!updated) throw new Error("Another practitioner just claimed this order.");
+    if (!updated) {
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({ claim_locked_by: null, claim_locked_at: null })
+        .eq("id", data.requestId)
+        .eq("claim_locked_by", me);
+      throw new Error("Another practitioner just claimed this order.");
+    }
 
     await supabaseAdmin.from("medication_request_events").insert({
       request_id: data.requestId,
@@ -387,8 +448,10 @@ export const listMyPatients = createServerFn({ method: "POST" })
       byKey.set(key, {
         key,
         name: src.full_name ?? "Patient",
+        patient_id: src.id,
         is_guest: !p,
         sex: src.sex ?? null,
+        dob: src.dob ?? null,
         age: ageFromDob(src.dob),
         state_code: src.state_code ?? null,
         latest_medicine: medMap.get(r.medicine_id) ?? "—",
@@ -408,7 +471,10 @@ export const listMyPatients = createServerFn({ method: "POST" })
           String(p.state_code ?? "")
             .toLowerCase()
             .includes(s) ||
-          p.key.toLowerCase().includes(s),
+          p.key.toLowerCase().includes(s) ||
+          String(p.dob ?? "")
+            .toLowerCase()
+            .includes(s),
       );
     }
     return result;
@@ -568,9 +634,11 @@ export const getMyPatient = createServerFn({ method: "POST" })
     return {
       key: data.key,
       patient: {
+        id: src.id,
         name: src.full_name ?? "Patient",
         is_guest: kind === "session",
         sex: src.sex ?? null,
+        dob: src.dob ?? null,
         age: ageFromDob(src.dob),
         state_code: src.state_code ?? null,
         height_cm: session?.height_cm ?? null,
@@ -625,6 +693,8 @@ export const getMyProviderProfile = createServerFn({ method: "POST" })
       npi: prov.npi ?? null,
       dea: prov.dea ?? null,
       is_active: prov.is_active,
+      availability_note: prov.availability_note ?? "",
+      is_unavailable: Boolean(prov.is_unavailable),
     };
   });
 
@@ -647,6 +717,8 @@ const profileInput = z.object({
     )
     .max(60)
     .optional(),
+  availability_note: z.string().trim().max(2000).optional(),
+  is_unavailable: z.boolean().optional(),
 });
 
 // A practitioner may edit their presentation fields plus their licensed states. NPI, DEA, licence
@@ -677,6 +749,10 @@ export const updateMyProviderProfile = createServerFn({ method: "POST" })
         years_experience: data.years_experience ?? null,
         languages: data.languages ?? [],
         consultation_types: data.consultation_types ?? [],
+        ...(data.availability_note !== undefined
+          ? { availability_note: data.availability_note || null }
+          : {}),
+        ...(data.is_unavailable !== undefined ? { is_unavailable: data.is_unavailable } : {}),
         ...(data.license_states
           ? {
               license_states: Array.from(new Set(data.license_states.map((s) => s.toUpperCase()))),
@@ -687,5 +763,381 @@ export const updateMyProviderProfile = createServerFn({ method: "POST" })
       })
       .eq("id", me);
     if (provErr) throw new Error(provErr.message);
+    const released = data.is_unavailable ? await releaseUnreviewed(supabaseAdmin, me) : 0;
+    return { ok: true, released };
+  });
+
+type WorkItem = {
+  id: string;
+  patient_name: string;
+  patient_id: string | null;
+  dob: string | null;
+  medicine_name: string;
+  status: string;
+  requires_consultation: boolean;
+  consultation_status: "Not required" | "Required" | "In progress" | "Completed";
+  consultation_mode: "instant" | "scheduled";
+  consultation_scheduled_at: string | null;
+  patient_waiting: boolean;
+  priority: number;
+};
+
+async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkItem[]> {
+  const { data: rows } = await supabaseAdmin
+    .from("medication_requests")
+    .select(
+      "id, status, requires_consultation, user_id, session_id, medicine_id, created_at, consultation_mode, consultation_scheduled_at",
+    )
+    .eq("provider_id", me)
+    .in("status", ACTIVE_CONSULT_STATUSES)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  const list = (rows ?? []) as any[];
+  if (list.length === 0) return [];
+
+  const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
+  const sessionIds = Array.from(
+    new Set(list.filter((r) => !r.user_id).map((r) => r.session_id).filter(Boolean)),
+  );
+  const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
+
+  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }] =
+    await Promise.all([
+      userIds.length
+        ? supabaseAdmin.from("profiles").select("id, full_name, dob").in("id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+      sessionIds.length
+        ? supabaseAdmin.from("intake_sessions").select("id, full_name, dob").in("id", sessionIds)
+        : Promise.resolve({ data: [] as any[] }),
+      medIds.length
+        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        : Promise.resolve({ data: [] as any[] }),
+      userIds.length
+        ? supabaseAdmin
+            .from("patient_consultations")
+            .select("user_id, ended_at, started_at")
+            .in("user_id", userIds)
+            .order("started_at", { ascending: false })
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s]));
+  const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name]));
+  const consultByUser = new Map<string, { ended_at: string | null }>();
+  for (const row of (consults ?? []) as any[]) {
+    const prev = consultByUser.get(row.user_id);
+    if (!prev) consultByUser.set(row.user_id, { ended_at: row.ended_at ?? null });
+    else if (!row.ended_at) consultByUser.set(row.user_id, { ended_at: null });
+  }
+
+  return list.map((r) => {
+    const profile = pMap.get(r.user_id) as any;
+    const session = !profile ? (sMap.get(r.session_id) as any) : null;
+    const consult = r.user_id ? consultByUser.get(r.user_id) : undefined;
+    let consultation_status: WorkItem["consultation_status"] = "Not required";
+    if (r.requires_consultation) {
+      if (!consult) consultation_status = "Required";
+      else if (!consult.ended_at) consultation_status = "In progress";
+      else consultation_status = "Completed";
+    }
+    const patient_waiting = consultation_status === "In progress";
+    const priority = patient_waiting
+      ? 0
+      : r.status === "approved" || r.status === "prescribed"
+        ? 1
+        : 2;
+    return {
+      id: r.id,
+      patient_name: profile?.full_name ?? session?.full_name ?? "Patient",
+      patient_id: profile?.id ?? session?.id ?? null,
+      dob: profile?.dob ?? session?.dob ?? null,
+      medicine_name: String(medMap.get(r.medicine_id) ?? "—"),
+      status: r.status,
+      requires_consultation: Boolean(r.requires_consultation),
+      consultation_status,
+      consultation_mode: r.consultation_mode === "scheduled" ? "scheduled" : "instant",
+      consultation_scheduled_at: r.consultation_scheduled_at ?? null,
+      patient_waiting,
+      priority,
+    };
+  });
+}
+
+async function providerLaunchpad(supabaseAdmin: any, me: string) {
+  const work = await loadAssignedWork(supabaseAdmin, me);
+  const ranked = [...work].sort((a, b) => a.priority - b.priority || a.patient_name.localeCompare(b.patient_name));
+  const next =
+    ranked.find((row) => row.patient_waiting) ??
+    ranked.find(
+      (row) =>
+        (row.requires_consultation || row.consultation_mode === "scheduled") &&
+        row.consultation_status !== "Completed",
+    ) ??
+    null;
+  return {
+    next_consultation: next,
+    priority: ranked.slice(0, 8),
+    consultation_count: work.filter(showsInConsultationWindow).length,
+  };
+}
+
+function showsInConsultationWindow(row: WorkItem) {
+  return (
+    row.consultation_mode === "scheduled" ||
+    row.requires_consultation ||
+    row.consultation_status === "In progress" ||
+    row.consultation_status === "Required"
+  );
+}
+
+/** Assigned patients with a required, in-progress, or scheduled consultation. */
+export const listConsultationWindow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const work = await loadAssignedWork(supabaseAdmin, context.userId);
+    return work.filter(showsInConsultationWindow);
+  });
+
+export const listConsultationHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const me = context.userId;
+    const { data: orders } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, user_id, medicine_id")
+      .eq("provider_id", me)
+      .not("user_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    const list = (orders ?? []) as any[];
+    const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
+    if (userIds.length === 0) return [];
+
+    const { data: consults, error } = await supabaseAdmin
+      .from("patient_consultations")
+      .select("id, user_id, started_at, ended_at")
+      .in("user_id", userIds)
+      .not("ended_at", "is", null)
+      .order("ended_at", { ascending: false })
+      .limit(100);
+    if (error) {
+      if (/ended_at/i.test(error.message)) return [];
+      throw new Error(error.message);
+    }
+    const rows = (consults ?? []) as any[];
+    if (rows.length === 0) return [];
+
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, dob")
+      .in("id", Array.from(new Set(rows.map((r) => r.user_id))));
+    const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    const orderByUser = new Map<string, any>();
+    for (const order of list) {
+      if (!orderByUser.has(order.user_id)) orderByUser.set(order.user_id, order);
+    }
+    const medIds = Array.from(
+      new Set([...orderByUser.values()].map((o: any) => o.medicine_id).filter(Boolean)),
+    );
+    const { data: meds } = medIds.length
+      ? await supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+      : { data: [] as any[] };
+    const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name]));
+
+    return rows.map((row) => {
+      const order = orderByUser.get(row.user_id);
+      const profile = pMap.get(row.user_id) as any;
+      return {
+        id: row.id,
+        request_id: order?.id ?? null,
+        patient_name: profile?.full_name ?? "Patient",
+        patient_id: row.user_id,
+        dob: profile?.dob ?? null,
+        medicine_name: order ? (medMap.get(order.medicine_id) ?? "—") : "—",
+        started_at: row.started_at,
+        ended_at: row.ended_at,
+      };
+    });
+  });
+
+async function releaseUnreviewed(supabaseAdmin: any, me: string) {
+  const now = new Date().toISOString();
+  const base = () =>
+    supabaseAdmin
+      .from("medication_requests")
+      .update({ provider_id: null, updated_at: now })
+      .eq("provider_id", me)
+      .in("status", ["pending_review", "provider_assigned", "payment_completed"])
+      .select("id, status");
+  let { data: rows, error } = await supabaseAdmin
+    .from("medication_requests")
+    .update({
+      provider_id: null,
+      claim_locked_by: null,
+      claim_locked_at: null,
+      updated_at: now,
+    })
+    .eq("provider_id", me)
+    .in("status", ["pending_review", "provider_assigned", "payment_completed"])
+    .select("id, status");
+  if (error && /claim_locked/i.test(error.message)) {
+    const fallback = await base();
+    rows = fallback.data;
+    error = fallback.error;
+  }
+  if (error) throw new Error(error.message);
+  const released = (rows ?? []) as { id: string; status: string }[];
+  if (released.length) {
+    await supabaseAdmin.from("medication_request_events").insert(
+      released.map((row) => ({
+        request_id: row.id,
+        status: row.status,
+        actor_role: "provider",
+        created_by: me,
+        note: "Provider unavailable — returned to the unassigned queue",
+      })),
+    );
+  }
+  return released.length;
+}
+
+/** Return this provider's unreviewed orders to the queue so another practitioner can claim them. */
+export const releaseUnreviewedOrders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const released = await releaseUnreviewed(supabaseAdmin, context.userId);
+    return { released };
+  });
+
+export const remindPlanChange = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: req } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, status, provider_id, user_id, medicine_id")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (!req || req.provider_id !== context.userId) throw new Error("Order not found.");
+    if (req.status !== "awaiting_additional_payment") {
+      throw new Error("This order is not waiting on the patient.");
+    }
+    const { remindPatientOfPlanChange } = await import("@/lib/email.notifications");
+    const email_sent = await remindPatientOfPlanChange({
+      supabaseAdmin,
+      request: req,
+    });
+    await supabaseAdmin.from("medication_request_events").insert({
+      request_id: req.id,
+      status: req.status,
+      actor_role: "provider",
+      created_by: context.userId,
+      note: email_sent
+        ? "Reminder sent to the patient to confirm the plan change."
+        : "Plan-change reminder was already sent today.",
+    });
+    return { ok: true, email_sent };
+  });
+
+const CLOSED = ["sent_to_pharmacy", "dispatched", "delivered", "rejected", "cancelled", "refunded"];
+
+export const escalateRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const me = context.userId;
+    const { data: req } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, status, provider_id")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (!req || req.provider_id !== me) throw new Error("Only the assigned practitioner can escalate this order.");
+    if (CLOSED.includes(req.status)) throw new Error("This order can no longer be escalated.");
+
+    const { error } = await supabaseAdmin
+      .from("medication_requests")
+      .update({
+        provider_id: null,
+        claim_locked_by: null,
+        claim_locked_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", req.id)
+      .eq("provider_id", me);
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("medication_request_events").insert({
+      request_id: req.id,
+      status: req.status,
+      actor_role: "provider",
+      created_by: me,
+      note: "Escalated to another provider",
+    });
+    return { ok: true };
+  });
+
+export const scheduleConsultation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) =>
+    z
+      .object({
+        requestId: z.string().uuid(),
+        mode: z.enum(["instant", "scheduled"]),
+        scheduledAt: z.string().trim().min(8).max(40).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertProvider(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const me = context.userId;
+    const { data: req } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, status, provider_id")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (!req || req.provider_id !== me) throw new Error("Order not found.");
+    if (CLOSED.includes(req.status)) throw new Error("This order can no longer be scheduled.");
+    let scheduledAt: string | null = null;
+    if (data.mode === "scheduled") {
+      const when = data.scheduledAt ? new Date(data.scheduledAt) : null;
+      if (!when || Number.isNaN(when.getTime())) {
+        throw new Error("Choose a date and time for a scheduled consultation.");
+      }
+      scheduledAt = when.toISOString();
+    }
+
+    const { error } = await supabaseAdmin
+      .from("medication_requests")
+      .update({
+        consultation_mode: data.mode,
+        consultation_scheduled_at: scheduledAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", req.id);
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("medication_request_events").insert({
+      request_id: req.id,
+      status: req.status,
+      actor_role: "provider",
+      created_by: me,
+      note:
+        data.mode === "scheduled"
+          ? `Consultation scheduled for ${scheduledAt}.`
+          : "Consultation set to instant.",
+    });
     return { ok: true };
   });

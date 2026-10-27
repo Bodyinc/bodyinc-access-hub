@@ -167,6 +167,54 @@ export async function notifyPatientRequestEvent(opts: {
   return false;
 }
 
+/** One reminder per order per calendar day. Does not reuse the original plan-change email claim. */
+export async function remindPatientOfPlanChange(opts: {
+  supabaseAdmin: any;
+  request: { id: string; user_id?: string | null; medicine_id?: string | null };
+}): Promise<boolean> {
+  const day = new Date().toISOString().slice(0, 10);
+  const targetId = opts.request.id;
+  const periodKey = `plan_change_reminder_${day}`;
+  if (!(await claimPatientOrderEmail(opts.supabaseAdmin, targetId, periodKey))) return false;
+  const { data: row } = await opts.supabaseAdmin
+    .from("medication_requests")
+    .select("plan_change_token, plan_change_delta_cents, medicine_id, user_id")
+    .eq("id", opts.request.id)
+    .maybeSingle();
+  const medicineName = await resolveMedicineName(
+    opts.supabaseAdmin,
+    row?.medicine_id ?? opts.request.medicine_id,
+  );
+  const base = (
+    process.env.PROVIDER_APP_URL ||
+    process.env.APP_URL ||
+    process.env.ADMIN_APP_URL ||
+    ""
+  ).replace(/\/$/, "");
+  const pageUrl = row?.plan_change_token
+    ? base
+      ? `${base}/plan-change/${row.plan_change_token}`
+      : `/plan-change/${row.plan_change_token}`
+    : process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+  const amount = Math.max(Number(row?.plan_change_delta_cents ?? 0), 0);
+  const sent = await notifyUserById({
+    supabaseAdmin: opts.supabaseAdmin,
+    userId: row?.user_id ?? opts.request.user_id,
+    template: "patient_additional_payment",
+    params: {
+      ORDER_ID: opts.request.id,
+      MEDICINE_NAME: medicineName,
+      AMOUNT_DUE: (amount / 100).toFixed(2),
+      PORTAL_URL: pageUrl,
+      CONFIRM_URL: pageUrl,
+      DECLINE_URL: pageUrl,
+    },
+  });
+  if (sent) return true;
+  await releasePatientOrderEmail(opts.supabaseAdmin, targetId, periodKey);
+  return false;
+}
+
 export async function notifyProviderRequestEvent(opts: {
   supabaseAdmin: any;
   providerId: string | null | undefined;

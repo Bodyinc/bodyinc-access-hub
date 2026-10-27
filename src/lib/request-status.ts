@@ -34,6 +34,9 @@ export function requestStatusLabel(status: string): string {
 const CLINICAL_STATUS_LABELS: Record<string, string> = {
   payment_completed: "New order",
   awaiting_additional_payment: "Waiting on patient",
+  consultation_no_show: "Patient no-show",
+  consultation_dropped: "Call dropped",
+  consultation_reschedule: "Reschedule requested",
 };
 
 export function clinicalStatusLabel(status: string): string {

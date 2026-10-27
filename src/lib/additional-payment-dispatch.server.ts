@@ -1,6 +1,6 @@
-// After a provider changes a prescribed medicine to a more expensive plan, the patient
-// pays the difference. A successful payment confirmation sends the updated order to the
-// pharmacy with no admin approval step.
+// After a medicine change to a more expensive plan, the patient pays the difference.
+// A practitioner's change (plan_change_token set) returns to the practitioner's decision
+// after payment. An admin change still sends the updated order to the pharmacy.
 //
 // Confirmation arrives from:
 // - Stripe `checkout.session.completed` (checkout created here, linked in the patient email)
@@ -251,7 +251,7 @@ export async function confirmAdditionalPaymentAndDispatch(
   const { data: req, error: reqErr } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, subscription_id, requires_consultation, life_file_order_id, life_file_status",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, subscription_id, requires_consultation, life_file_order_id, life_file_status, plan_change_token",
     )
     .eq("id", payment.request_id)
     .maybeSingle();
@@ -281,6 +281,13 @@ export async function confirmAdditionalPaymentAndDispatch(
     return { ok: true, dispatched: false, reason: request.status };
   }
 
+  const planChangeToken = (request as { plan_change_token?: string | null }).plan_change_token;
+  if (planChangeToken) {
+    const { confirmPlanChange } = await import("@/lib/plan-change.server");
+    await confirmPlanChange(supabaseAdmin, request.id, "payment");
+    return { ok: true, dispatched: false, reason: "returned_to_decision" };
+  }
+
   const providerId = request.provider_id;
   if (!providerId) {
     if (request.status === "awaiting_additional_payment" || request.status === "pending_review") {
@@ -301,6 +308,10 @@ export async function confirmAdditionalPaymentAndDispatch(
       retry: false,
       reason: "This request has no assigned provider.",
     };
+  }
+
+  if (request.status === "pending_review") {
+    return { ok: true, dispatched: false, reason: "returned_to_decision" };
   }
 
   await syncPrescriptionSnapshot(supabaseAdmin, request);

@@ -81,6 +81,23 @@ export const listProviders = createServerFn({ method: "POST" })
         licenseRows = licenseSelect.data ?? [];
       }
     }
+    let unavailableIds = new Set<string>();
+    if (ids.length > 0) {
+      const avail = await context.supabase
+        .from("providers")
+        .select("id, is_unavailable")
+        .in("id", ids);
+      if (avail.error && !/is_unavailable/i.test(avail.error.message)) {
+        throw new Error(avail.error.message);
+      }
+      if (!avail.error) {
+        unavailableIds = new Set(
+          (avail.data ?? [])
+            .filter((p: { is_unavailable?: boolean }) => p.is_unavailable)
+            .map((p: { id: string }) => p.id),
+        );
+      }
+    }
     const licenseMap = new Map(
       (licenseRows ?? []).map((p: { id: string; license_states: string[] | null }) => [
         p.id,
@@ -104,6 +121,7 @@ export const listProviders = createServerFn({ method: "POST" })
       ...r,
       is_default: r.id === defaultId,
       license_states: licenseMap.get(r.id) ?? [],
+      is_unavailable: unavailableIds.has(r.id),
       qb_user_id: qbMap.get(r.id) ?? null,
     }));
   });

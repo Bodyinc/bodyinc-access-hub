@@ -5,6 +5,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { assertReviewer, assertAdmin } from "@/lib/admin-guard";
 import { clinicalEventNote, PENDING_REQUEST_STATUSES } from "@/lib/request-status";
+import {
+  filledSessionIdSet,
+  loadClinicalIntake,
+  loadPastOrders,
+  sessionHasIntake,
+} from "@/lib/clinical-intake";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -219,6 +225,10 @@ export const listRequests = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (role === "provider") {
+      const { expireOverduePlanChanges } = await import("@/lib/plan-change.server");
+      await expireOverduePlanChanges(supabaseAdmin, context.userId);
+    }
 
     const { normalizeIdSearch, uuidPrefixRange } = await import("@/lib/format");
     const term = data.search ? normalizeIdSearch(data.search) : "";
@@ -235,7 +245,14 @@ export const listRequests = createServerFn({ method: "POST" })
     if (role === "provider") q = q.eq("provider_id", context.userId);
 
     if (data.status && data.status !== "all") {
-      q = data.status === "open" ? q.in("status", OPEN_STATUSES) : q.eq("status", data.status);
+      q =
+        data.status === "open"
+          ? q.in("status", OPEN_STATUSES)
+          : data.status === "ready"
+            ? q.in("status", ["approved", "prescribed"])
+            : data.status === "sent_to_pharmacy"
+              ? q.in("status", ["sent_to_pharmacy", "dispatched", "delivered"])
+              : q.eq("status", data.status);
     }
 
     const { data: rows, error } = await q;
@@ -330,6 +347,43 @@ export const listRequests = createServerFn({ method: "POST" })
       };
     });
 
+    if (role === "provider") {
+      const sessionIds = list.map((r: any) => r.session_id).filter(Boolean);
+      const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
+      const [filledSessions, consultRes] = await Promise.all([
+        filledSessionIdSet(supabaseAdmin, sessionIds),
+        userIds.length
+          ? supabaseAdmin
+              .from("patient_consultations")
+              .select("user_id, ended_at, started_at")
+              .in("user_id", userIds)
+              .order("started_at", { ascending: false })
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const consultByUser = new Map<string, { ended_at: string | null }>();
+      for (const row of ((consultRes as any).data ?? []) as any[]) {
+        const prev = consultByUser.get(row.user_id);
+        if (!prev) consultByUser.set(row.user_id, { ended_at: row.ended_at ?? null });
+        else if (!row.ended_at) consultByUser.set(row.user_id, { ended_at: null });
+      }
+      result = result.map((row: any) => {
+        const source = list.find((r: any) => r.id === row.id);
+        const consult = source?.user_id ? consultByUser.get(source.user_id) : undefined;
+        let consultation_status = "Not required";
+        if (source?.requires_consultation) {
+          if (!consult) consultation_status = "Required";
+          else if (!consult.ended_at) consultation_status = "In progress";
+          else consultation_status = "Completed";
+        }
+        return {
+          ...row,
+          intake_filled: Boolean(source?.session_id && filledSessions.has(source.session_id)),
+          consultation_status,
+          patient_waiting: consultation_status === "In progress",
+        };
+      });
+    }
+
     if (term) {
       const s = term.toLowerCase();
       result = result.filter(
@@ -366,6 +420,10 @@ export const getRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (role === "provider") {
+      const { expireOverduePlanChanges } = await import("@/lib/plan-change.server");
+      await expireOverduePlanChanges(supabaseAdmin, context.userId);
+    }
 
     const req = await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "*", {
       allowUnassigned: true,
@@ -385,14 +443,14 @@ export const getRequest = createServerFn({ method: "POST" })
       req.user_id
         ? supabaseAdmin
             .from("profiles")
-            .select("id, full_name, email, state_code")
+            .select("id, full_name, email, state_code, dob, sex")
             .eq("id", req.user_id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
       req.session_id
         ? supabaseAdmin
             .from("intake_sessions")
-            .select("id, full_name, email, state_code")
+            .select("id, full_name, email, state_code, dob, sex, height_cm, weight_kg")
             .eq("id", req.session_id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
@@ -474,16 +532,30 @@ export const getRequest = createServerFn({ method: "POST" })
         stripe_refund_id: _refundId,
         ...safeRequest
       } = req as Record<string, unknown>;
+      const identity = (profileRes.data as any) ?? (sessionRes.data as any) ?? null;
+      const [intake, past_orders] = await Promise.all([
+        loadClinicalIntake(supabaseAdmin, req.session_id, sessionRes.data as any),
+        loadPastOrders(supabaseAdmin, {
+          requestId: req.id,
+          userId: req.user_id,
+          sessionId: req.session_id,
+        }),
+      ]);
       return {
-        request: safeRequest,
+        request: safeRequest as Record<string, string | number | boolean | null>,
         patient: patientPayload
           ? {
+              id: identity?.id ?? null,
               name: patientPayload.name,
               email: null,
               state_code: patientPayload.state_code,
               is_guest: patientPayload.is_guest,
+              dob: identity?.dob ?? null,
+              sex: identity?.sex ?? null,
             }
           : null,
+        intake,
+        past_orders,
         medicine: medRes.data ?? null,
         package: pkgRes.data
           ? {
@@ -544,10 +616,14 @@ export const approveRequest = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, requires_consultation, life_file_order_id, life_file_status",
+      "id, status, provider_id, user_id, session_id, subscription_id, medicine_id, variant_id, package_id, requires_consultation, life_file_order_id, life_file_status",
     );
-    if (!["pending_review", "approved", "prescribed"].includes(req.status)) {
-      throw new Error(`Cannot approve a request that is ${req.status}.`);
+    if (req.status !== "pending_review") {
+      throw new Error(
+        req.status === "approved"
+          ? "This order is already approved. Generate the prescription next."
+          : `Cannot approve a request that is ${req.status}.`,
+      );
     }
     if (req.life_file_order_id && req.life_file_status && req.life_file_status !== "failed") {
       throw new Error("This order was already sent to LifeFile.");
@@ -555,42 +631,27 @@ export const approveRequest = createServerFn({ method: "POST" })
     if (!req.provider_id) {
       throw new Error("Assign a provider before approving.");
     }
-    // Clinical approval is provider-only. Pharmacy send follows automatically.
+    // Clinical approval is provider-only. Prescription and pharmacy send are the next steps.
     if (role !== "provider" || req.provider_id !== context.userId) {
       throw new Error(
         "Only the assigned provider can approve this order. Assign a provider and have them approve from the practitioner portal.",
       );
     }
-
-    try {
-      await fulfillApprovedRequest(supabaseAdmin, req, {
-        role: "provider",
-        userId: context.userId,
-      });
-    } catch (pharmacyErr) {
-      const pharmacyError =
-        pharmacyErr instanceof Error ? pharmacyErr.message : "Could not send to pharmacy.";
-      console.error("[approveRequest] pharmacy send failed:", pharmacyErr);
-      await supabaseAdmin
-        .from("medication_requests")
-        .update({
-          life_file_status: "failed",
-          life_file_error: pharmacyError.slice(0, 1000),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", req.id);
-      return {
-        ok: false,
-        email_sent: false,
-        admin_emails_sent: false,
-        status: req.status,
-        pharmacy_error: pharmacyError,
-      };
+    if (!(await sessionHasIntake(supabaseAdmin, req.session_id))) {
+      throw new Error("intake form missing");
+    }
+    if (
+      req.requires_consultation &&
+      (req.user_id || req.subscription_id) &&
+      !(await consultationFinished(supabaseAdmin, req))
+    ) {
+      throw new Error("Join and finish the consultation before approving this order.");
     }
 
     await supabaseAdmin
       .from("medication_requests")
       .update({
+        status: "approved",
         decision_by: context.userId,
         decision_at: new Date().toISOString(),
         decision_note: data.note?.trim() || null,
@@ -606,26 +667,54 @@ export const approveRequest = createServerFn({ method: "POST" })
       data.note?.trim() || null,
     );
 
-    void import("@/lib/email.notifications")
-      .then(({ notifyAdminsProviderApproved }) =>
-        notifyAdminsProviderApproved({
-          supabaseAdmin,
-          requestId: req.id,
-          medicineId: req.medicine_id,
-          providerId: req.provider_id,
-          patientUserId: req.user_id,
-        }),
-      )
-      .catch((e) => console.error("[approveRequest] email failed:", e));
+    const { notifyPatientRequestEvent, notifyAdminsProviderApproved } = await import(
+      "@/lib/email.notifications"
+    );
+    const email_sent = await notifyPatientRequestEvent({
+      supabaseAdmin,
+      request: req,
+      template: "patient_approved",
+      extraParams: { DECISION_NOTE: data.note?.trim() || "" },
+    });
+    void notifyAdminsProviderApproved({
+      supabaseAdmin,
+      requestId: req.id,
+      medicineId: req.medicine_id,
+      providerId: req.provider_id,
+      patientUserId: req.user_id,
+    }).catch((e) => console.error("[approveRequest] admin email failed:", e));
 
     return {
       ok: true,
-      email_sent: true,
+      email_sent,
       admin_emails_sent: true,
-      status: "sent_to_pharmacy",
+      status: "approved",
       pharmacy_error: null,
     };
   });
+
+async function consultationFinished(
+  supabaseAdmin: any,
+  req: { id: string; user_id?: string | null; subscription_id?: string | null },
+): Promise<boolean> {
+  let q = supabaseAdmin
+    .from("patient_consultations")
+    .select("id, ended_at")
+    .order("started_at", { ascending: false })
+    .limit(8);
+  if (req.subscription_id) q = q.eq("subscription_id", req.subscription_id);
+  else if (req.user_id) q = q.eq("user_id", req.user_id);
+  else return false;
+  const { data } = await q;
+  if (((data ?? []) as any[]).some((row) => row.ended_at)) return true;
+  const { data: events } = await supabaseAdmin
+    .from("medication_request_events")
+    .select("note")
+    .eq("request_id", req.id);
+  return ((events ?? []) as any[]).some(
+    (ev) => typeof ev.note === "string" && /consultation (completed|ended|concluded)/i.test(ev.note),
+  );
+}
 
 export const rejectRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -649,6 +738,9 @@ export const rejectRequest = createServerFn({ method: "POST" })
     );
     if (!["pending_review", "awaiting_additional_payment"].includes(req.status)) {
       throw new Error(`Cannot reject a request that is ${req.status}.`);
+    }
+    if (role === "provider" && (data.note?.trim().length ?? 0) < 10) {
+      throw new Error("A reason is required to reject this order.");
     }
 
     // Refund the charge for this order.
@@ -767,7 +859,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id, user_id, subscription_id, package_id, medicine_id",
+      "id, status, provider_id, user_id, subscription_id, package_id, medicine_id, variant_id, previous_medicine_id, previous_variant_id, previous_package_id",
     );
     if (!["pending_review", "approved", "awaiting_additional_payment"].includes(req.status)) {
       throw new Error(`Cannot change medicine on a request that is ${req.status}.`);
@@ -816,6 +908,10 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         "This medicine is in a different treatment category. A clinical reason is required.",
       );
     }
+    const clinicalReason = data.note?.trim() || data.crossCategoryReason?.trim() || "";
+    if (role === "provider" && clinicalReason.length < 10) {
+      throw new Error("A clinical reason is required to change this medicine.");
+    }
 
     let currentPrice = 0;
     let curPkg: any = null;
@@ -828,7 +924,31 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       curPkg = cur ?? null;
       currentPrice = Number(cur?.price ?? 0);
     }
-    const deltaCents = Math.round((Number(newPkg.price) - currentPrice) * 100);
+    let deltaCents = Math.round((Number(newPkg.price) - currentPrice) * 100);
+    let restoreMedicineId = currentMedicineId as string | null;
+    let restoreVariantId = ((req as { variant_id?: string | null }).variant_id ?? null) as
+      | string
+      | null;
+    let restorePackageId = (req.package_id ?? null) as string | null;
+    if (
+      role === "provider" &&
+      req.status === "awaiting_additional_payment" &&
+      (req.previous_package_id != null || req.previous_medicine_id != null)
+    ) {
+      restoreMedicineId = req.previous_medicine_id ?? null;
+      restoreVariantId = req.previous_variant_id ?? null;
+      restorePackageId = req.previous_package_id ?? null;
+      if (req.previous_package_id) {
+        const { data: originalPkg } = await supabaseAdmin
+          .from("packages")
+          .select("price")
+          .eq("id", req.previous_package_id)
+          .maybeSingle();
+        if (originalPkg) {
+          deltaCents = Math.round((Number(newPkg.price) - Number(originalPkg.price ?? 0)) * 100);
+        }
+      }
+    }
 
     // Load the subscription (for the go-forward reschedule + the customer for a credit).
     let sub: any = null;
@@ -841,8 +961,9 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       sub = s ?? null;
     }
 
-    // Reschedule the subscription so the new plan bills from the NEXT cycle.
-    if (sub?.stripe_subscription_id) {
+    // Admin changes reschedule the subscription now. A practitioner's change waits
+    // until the patient confirms, so a decline can restore the previous plan.
+    if (role !== "provider" && sub?.stripe_subscription_id) {
       await applyPackageChangeToSubscription({
         stripe,
         supabaseAdmin,
@@ -916,19 +1037,153 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         author_role: role,
         body: `Category change → ${medLabel}. Clinical reason: ${data.crossCategoryReason}`,
       });
+    } else if (data.note?.trim()) {
+      await logEvent(
+        supabaseAdmin,
+        req.id,
+        req.status,
+        role,
+        context.userId,
+        `Medicine changed to ${medLabel}. Reason: ${data.note.trim()}`,
+      );
+      await supabaseAdmin.from("medication_request_notes").insert({
+        request_id: req.id,
+        author_id: context.userId,
+        author_role: role,
+        body: `Medicine change → ${medLabel}. Clinical reason: ${data.note.trim()}`,
+      });
     }
 
-    await supabaseAdmin
-      .from("prescriptions")
-      .update({
-        medicine_id: newPkg.medicine_id,
-        variant_id: newPkg.variant_id,
-        package_id: newPkg.id,
-        medicine_name: medName,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("request_id", req.id)
-      .neq("status", "voided");
+    if (role !== "provider") {
+      await supabaseAdmin
+        .from("prescriptions")
+        .update({
+          medicine_id: newPkg.medicine_id,
+          variant_id: newPkg.variant_id,
+          package_id: newPkg.id,
+          medicine_name: medName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("request_id", req.id)
+        .neq("status", "voided");
+    }
+
+    if (role === "provider") {
+      const { newPlanChangeToken, planChangeDeadline, planChangeUrl } = await import(
+        "@/lib/plan-change.server"
+      );
+      const token = newPlanChangeToken();
+      const deadline = planChangeDeadline();
+      const now = new Date().toISOString();
+      const page = planChangeUrl(token);
+
+      await supabaseAdmin
+        .from("additional_payments")
+        .update({ status: "cancelled", updated_at: now })
+        .eq("request_id", req.id)
+        .eq("status", "pending");
+
+      let payUrl = page;
+      if (deltaCents > 0) {
+        const { data: payRow, error: payErr } = await supabaseAdmin
+          .from("additional_payments")
+          .insert({
+            request_id: req.id,
+            user_id: req.user_id,
+            amount_cents: deltaCents,
+            currency: "usd",
+            reason: `Price difference for changing to ${medLabel}`,
+            from_package_id: restorePackageId,
+            to_package_id: newPkg.id,
+            status: "pending",
+          })
+          .select("id")
+          .single();
+        if (payErr || !payRow) throw new Error(payErr?.message ?? "Could not record the additional payment.");
+
+        let customerEmail: string | null = null;
+        let customerId = (sub?.stripe_customer_id as string | null) ?? null;
+        if (req.user_id) {
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("email, stripe_customer_id")
+            .eq("id", req.user_id)
+            .maybeSingle();
+          customerEmail = (profile as { email?: string | null } | null)?.email ?? null;
+          customerId =
+            customerId ||
+            ((profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id ?? null);
+        }
+        try {
+          const { createAdditionalPaymentCheckout } = await import(
+            "@/lib/additional-payment-dispatch.server"
+          );
+          const checkout = await createAdditionalPaymentCheckout({
+            paymentId: payRow.id,
+            requestId: req.id,
+            amountCents: deltaCents,
+            medicineLabel: medLabel,
+            customerId,
+            customerEmail,
+          });
+          if (checkout) {
+            payUrl = checkout.url;
+            await supabaseAdmin
+              .from("additional_payments")
+              .update({ stripe_checkout_session_id: checkout.id, updated_at: now })
+              .eq("id", payRow.id);
+          }
+        } catch (checkoutErr) {
+          console.error("[requests] additional payment checkout failed:", checkoutErr);
+        }
+      }
+
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({
+          status: "awaiting_additional_payment",
+          previous_medicine_id: restoreMedicineId,
+          previous_variant_id: restoreVariantId,
+          previous_package_id: restorePackageId,
+          plan_change_token: token,
+          plan_change_deadline: deadline,
+          plan_change_delta_cents: deltaCents,
+          updated_at: now,
+        })
+        .eq("id", req.id);
+      await logEvent(
+        supabaseAdmin,
+        req.id,
+        "awaiting_additional_payment",
+        role,
+        context.userId,
+        deltaCents > 0
+          ? `Changed to ${medLabel}; waiting for the patient to confirm and pay $${(deltaCents / 100).toFixed(2)}.`
+          : `Changed to ${medLabel}; waiting for the patient to confirm.`,
+      );
+
+      const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
+      const email_sent = await notifyPatientRequestEvent({
+        supabaseAdmin,
+        request: { ...req, medicine_id: newPkg.medicine_id },
+        template: "patient_additional_payment",
+        extraParams: {
+          MEDICINE_NAME: medLabel,
+          AMOUNT_DUE: deltaCents > 0 ? (deltaCents / 100).toFixed(2) : "0.00",
+          AMOUNT_DUE_CENTS: Math.max(deltaCents, 0),
+          PORTAL_URL: payUrl,
+          CONFIRM_URL: page,
+          DECLINE_URL: page,
+        },
+      });
+
+      return {
+        ok: true,
+        delta_cents: deltaCents,
+        status: "awaiting_additional_payment",
+        email_sent,
+      };
+    }
 
     if (deltaCents > 0) {
       // More expensive: collect the difference, then pharmacy dispatch runs on payment success.
@@ -1182,19 +1437,25 @@ export const sendRequestToPharmacy = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    const role = await assertReviewer(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const req = await loadScopedRequest(
       supabaseAdmin,
       data.requestId,
-      "admin",
+      role,
       context.userId,
       "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
     );
 
-    const providerSendFailed = req.status === "pending_review" && req.life_file_status === "failed";
-    if (!["approved", "prescribed"].includes(req.status) && !providerSendFailed) {
+    const providerSendFailed =
+      role === "admin" && req.status === "pending_review" && req.life_file_status === "failed";
+    if (role === "provider") {
+      if (req.provider_id !== context.userId) throw new Error("Order not found.");
+      if (req.status !== "prescribed") {
+        throw new Error("Generate the prescription before sending this order to the pharmacy.");
+      }
+    } else if (!["approved", "prescribed"].includes(req.status) && !providerSendFailed) {
       throw new Error(
         req.status === "pending_review"
           ? "Wait for the provider to approve this order before sending to pharmacy."
@@ -1211,7 +1472,7 @@ export const sendRequestToPharmacy = createServerFn({ method: "POST" })
     const sent = await fulfillApprovedRequest(
       supabaseAdmin,
       req,
-      { role: "admin", userId: context.userId },
+      { role, userId: context.userId },
       data.directions,
     );
 
@@ -1266,6 +1527,16 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
     }
 
     if (data.providerId) {
+      const { data: targetProv, error: unavailErr } = await supabaseAdmin
+        .from("providers")
+        .select("is_unavailable")
+        .eq("id", data.providerId)
+        .maybeSingle();
+      if (unavailErr && !/is_unavailable/i.test(unavailErr.message)) throw new Error(unavailErr.message);
+      if (targetProv?.is_unavailable) {
+        throw new Error("This practitioner is unavailable. Choose someone else.");
+      }
+
       const [profileRes, sessionRes] = await Promise.all([
         existing.user_id
           ? supabaseAdmin
@@ -1803,6 +2074,58 @@ export const addRequestNote = createServerFn({ method: "POST" })
       author_id: context.userId,
       author_role: role,
       body: data.body,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const CONSULT_OUTCOMES = {
+  no_show: {
+    status: "consultation_no_show",
+    note: "Patient no-show. Reschedule the visit.",
+  },
+  call_dropped: {
+    status: "consultation_dropped",
+    note: "Call dropped. Resume the visit or reschedule.",
+  },
+  reschedule: {
+    status: "consultation_reschedule",
+    note: "Reschedule requested.",
+  },
+} as const;
+
+export const recordConsultationOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) =>
+    z
+      .object({
+        requestId: z.string().uuid(),
+        outcome: z.enum(["no_show", "call_dropped", "reschedule"]),
+        note: z.string().trim().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const role = await assertReviewer(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const req = await loadScopedRequest(
+      supabaseAdmin,
+      data.requestId,
+      role,
+      context.userId,
+      "id, status, provider_id",
+    );
+    if (data.outcome === "reschedule" && (data.note?.trim().length ?? 0) < 3) {
+      throw new Error("Add a short note for the reschedule.");
+    }
+    const preset = CONSULT_OUTCOMES[data.outcome];
+    const note = [preset.note, data.note?.trim()].filter(Boolean).join(" ");
+    const { error } = await supabaseAdmin.from("medication_request_events").insert({
+      request_id: req.id,
+      status: preset.status,
+      actor_role: role,
+      created_by: context.userId,
+      note,
     });
     if (error) throw new Error(error.message);
     return { ok: true };

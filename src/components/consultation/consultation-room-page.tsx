@@ -92,6 +92,12 @@ import {
 import { listProviders } from "@/lib/providers.functions";
 import { RequestChangeMedicineDialog } from "@/components/admin/request-change-medicine-dialog";
 import { formatDateTimeFull, formatRecordId } from "@/lib/format";
+import {
+  clinicalEventNote,
+  clinicalStatusLabel,
+  REQUEST_STATUS_BADGE,
+  requestStatusTone,
+} from "@/lib/request-status";
 import { toastError, toastActionWithEmail } from "@/lib/toast-message";
 import { sentenceCase } from "@/lib/text-normalize";
 
@@ -1475,7 +1481,9 @@ export function ConsultationRoomPage({
             <CardDescription>
               {error instanceof Error
                 ? error.message
-                : "Consultation room data could not be retrieved."}
+                : resData && !resData.ok && resData.message
+                  ? resData.message
+                  : "Consultation room data could not be retrieved."}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-end gap-2">
@@ -1731,10 +1739,7 @@ export function ConsultationRoomPage({
                 requestStatus,
               );
               const canApprove =
-                clinicalOnly &&
-                !isUnassigned &&
-                !sentToLifeFile &&
-                ["pending_review", "approved", "prescribed"].includes(requestStatus);
+                clinicalOnly && !isUnassigned && requestStatus === "pending_review";
               const canSendToPharmacy =
                 canManage && !sentToLifeFile && ["approved", "prescribed"].includes(requestStatus);
 
@@ -1742,7 +1747,7 @@ export function ConsultationRoomPage({
                 <div className="mt-3 space-y-2">
                   {waitingOnProvider ? (
                     <p className="rounded-md bg-[#F3F6F6] p-2 text-[11px] font-medium text-[#3B4759]/80 leading-snug">
-                      Waiting for assigned provider to approve. Approval sends order to pharmacy.
+                      Waiting for the assigned practitioner to approve. After approval they prescribe, then send the order to the pharmacy.
                     </p>
                   ) : null}
 
@@ -2108,6 +2113,66 @@ export function ConsultationRoomPage({
                       ).length ?? 0}
                     </span>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#3B4759]/60">
+                    Status timeline
+                  </p>
+                  {(roomData.events ?? []).length === 0 ? (
+                    <p className="text-xs text-[#3B4759]/70">No status changes yet.</p>
+                  ) : (
+                    (roomData.events ?? []).map((ev) => (
+                      <div key={ev.id} className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-xs">
+                        <div className="font-semibold text-[#152A51]">{clinicalStatusLabel(ev.status)}</div>
+                        <div className="text-[#3B4759]/60">
+                          {ev.actor_role ?? "system"} · {formatDateTimeFull(ev.created_at)}
+                        </div>
+                        {ev.note ? (
+                          <div className="mt-1 text-[#3B4759]/80">{clinicalEventNote(ev.note)}</div>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#3B4759]/60">
+                    Past orders
+                  </p>
+                  {(roomData.pastOrders ?? []).length === 0 ? (
+                    <p className="text-xs text-[#3B4759]/70">No earlier orders.</p>
+                  ) : (
+                    (roomData.pastOrders ?? []).map((order) => (
+                      <div key={order.id} className="rounded-lg border border-[#D5DEDD] bg-white p-2.5 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-[#152A51]">
+                            {formatRecordId(order.id)} · {order.medicine_name}
+                          </span>
+                          <Badge
+                            className={`rounded-md border-transparent px-1.5 py-0 text-[10px] font-semibold shadow-none ${
+                              REQUEST_STATUS_BADGE[requestStatusTone(order.status)]
+                            }`}
+                          >
+                            {clinicalStatusLabel(order.status)}
+                          </Badge>
+                        </div>
+                        <div className="text-[#3B4759]/60">
+                          {order.kind === "followup" ? "Renewal" : "Initial"} ·{" "}
+                          {formatDateTimeFull(order.created_at)}
+                        </div>
+                        {order.notes.length > 0 ? (
+                          <ul className="mt-1 space-y-1">
+                            {order.notes.map((note) => (
+                              <li key={note.id} className="text-[#3B4759]/80">
+                                {note.body}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 {/* Consultation Records for this Patient */}
