@@ -5,6 +5,15 @@ import { assertProvider } from "@/lib/provider-guard";
 import { ageFromDob, bmiFrom } from "@/lib/format";
 import { PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 import { filledSessionIdSet, sessionHasIntake } from "@/lib/clinical-intake";
+import {
+  CLOSED_ORDER_STATUSES,
+  clusterPurchases,
+  collapseOrderRows,
+  countPurchaseGroups,
+  leadOf,
+  loadSiblingRows,
+  userIdsInOpenChat,
+} from "@/lib/order-groups";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -54,7 +63,7 @@ export const providerDashboard = createServerFn({ method: "POST" })
 
     const { data: rows } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status, created_at, updated_at")
+      .select("id, status, created_at, updated_at, user_id, session_id, kind, order_group_id")
       .eq("provider_id", me)
       .limit(1000);
 
@@ -63,14 +72,20 @@ export const providerDashboard = createServerFn({ method: "POST" })
     startOfDay.setHours(0, 0, 0, 0);
 
     const counts = {
-      pending_review: list.filter((r) => r.status === "pending_review").length,
-      awaiting_additional_payment: list.filter((r) => r.status === "awaiting_additional_payment")
-        .length,
-      approved: list.filter((r) => r.status === "approved" || r.status === "prescribed").length,
-      prescribed_today: list.filter(
+      pending_review: countPurchaseGroups(list, (r) => r.status === "pending_review"),
+      awaiting_additional_payment: countPurchaseGroups(
+        list,
+        (r) => r.status === "awaiting_additional_payment",
+      ),
+      approved: countPurchaseGroups(
+        list,
+        (r) => r.status === "approved" || r.status === "prescribed",
+      ),
+      prescribed_today: countPurchaseGroups(
+        list,
         (r) => r.status === "prescribed" && new Date(r.updated_at) >= startOfDay,
-      ).length,
-      open: list.filter((r) => OPEN_STATUSES.includes(r.status)).length,
+      ),
+      open: countPurchaseGroups(list, (r) => OPEN_STATUSES.includes(r.status)),
     };
 
     const claimable = await countClaimable(supabaseAdmin, me);
@@ -95,17 +110,21 @@ async function providerStates(supabaseAdmin: any, me: string): Promise<string[]>
 }
 
 // Unassigned open orders whose patient state is covered by this provider's licences.
-async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
+async function loadClaimable(
+  supabaseAdmin: any,
+  me: string,
+  statuses: readonly string[] = OPEN_STATUSES,
+): Promise<any[]> {
   const states = await providerStates(supabaseAdmin, me);
   if (states.length === 0) return [];
 
   const { data: rows } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at",
+      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at, order_group_id",
     )
     .is("provider_id", null)
-    .in("status", OPEN_STATUSES)
+    .in("status", [...statuses])
     .order("created_at", { ascending: false })
     .limit(300);
 
@@ -116,7 +135,8 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
   const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions] = await Promise.all([
+  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, openChat] =
+    await Promise.all([
     userIds.length
       ? supabaseAdmin.from("profiles").select("id, full_name, state_code, dob").in("id", userIds)
       : Promise.resolve({ data: [] as any[] }),
@@ -130,13 +150,14 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
       ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
       : Promise.resolve({ data: [] as any[] }),
     filledSessionIdSet(supabaseAdmin, sessionIds),
+    userIdsInOpenChat(supabaseAdmin, userIds),
   ]);
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
   const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s]));
   const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name]));
 
-  return list
+  const ready = list
     .map((r) => {
       const p: any = pMap.get(r.user_id);
       const sess: any = !p ? sMap.get(r.session_id) : null;
@@ -144,21 +165,33 @@ async function loadClaimable(supabaseAdmin: any, me: string): Promise<any[]> {
       const intakeFilled = Boolean(r.session_id && filledSessions.has(r.session_id));
       return {
         id: r.id,
+        user_id: r.user_id ?? null,
+        session_id: r.session_id ?? null,
+        order_group_id: r.order_group_id ?? null,
         patient_name: p?.full_name ?? sess?.full_name ?? "Patient",
         patient_id: p?.id ?? sess?.id ?? null,
         dob: p?.dob ?? sess?.dob ?? null,
         state_code: state,
-        medicine_name: medMap.get(r.medicine_id) ?? "—",
+        medicine_name: String(medMap.get(r.medicine_id) ?? "—"),
         kind: r.kind,
         status: r.status,
         requires_consultation: r.requires_consultation,
         intake_filled: intakeFilled,
+        in_chat: Boolean(r.user_id && openChat.has(r.user_id)),
         claim_locked_by: r.claim_locked_by ?? null,
         claim_locked_at: r.claim_locked_at ?? null,
         created_at: r.created_at,
       };
     })
-    .filter((r) => !!r.state_code && states.includes(String(r.state_code).toUpperCase()));
+    .filter(
+      (r) =>
+        r.intake_filled &&
+        r.in_chat &&
+        !!r.state_code &&
+        states.includes(String(r.state_code).toUpperCase()),
+    );
+
+  return collapseOrderRows(ready).map(({ user_id: _user, session_id: _session, ...row }) => row);
 }
 
 async function countClaimable(
@@ -166,39 +199,8 @@ async function countClaimable(
   me: string,
   statuses: readonly string[] = OPEN_STATUSES,
 ): Promise<number> {
-  const states = await providerStates(supabaseAdmin, me);
-  if (states.length === 0) return 0;
-
-  const { data: rows } = await supabaseAdmin
-    .from("medication_requests")
-    .select("id, user_id, session_id")
-    .is("provider_id", null)
-    .in("status", [...statuses])
-    .order("created_at", { ascending: false })
-    .limit(300);
-
-  const list = (rows ?? []) as any[];
-  if (list.length === 0) return 0;
-
-  const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
-  const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
-
-  const [{ data: profiles }, { data: sessions }] = await Promise.all([
-    userIds.length
-      ? supabaseAdmin.from("profiles").select("id, state_code").in("id", userIds)
-      : Promise.resolve({ data: [] as any[] }),
-    sessionIds.length
-      ? supabaseAdmin.from("intake_sessions").select("id, state_code").in("id", sessionIds)
-      : Promise.resolve({ data: [] as any[] }),
-  ]);
-
-  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p.state_code]));
-  const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s.state_code]));
-
-  return list.filter((r) => {
-    const state = (pMap.get(r.user_id) ?? sMap.get(r.session_id) ?? null) as string | null;
-    return !!state && states.includes(String(state).toUpperCase());
-  }).length;
+  const rows = await loadClaimable(supabaseAdmin, me, statuses);
+  return rows.length;
 }
 
 /** True when this unassigned open request is in one of the provider's licensed states. */
@@ -274,7 +276,8 @@ export const listClaimableRequests = createServerFn({ method: "POST" })
         (r) =>
           r.patient_name.toLowerCase().includes(s) ||
           String(r.medicine_name).toLowerCase().includes(s) ||
-          r.id.toLowerCase().includes(s),
+          r.id.toLowerCase().includes(s) ||
+          (r.order_item_ids ?? []).some((id: string) => id.toLowerCase().includes(s)),
       );
     }
     return rows;
@@ -304,6 +307,9 @@ export const claimRequest = createServerFn({ method: "POST" })
 
     if (!(await sessionHasIntake(supabaseAdmin, current?.session_id))) {
       throw new Error("intake form missing");
+    }
+    if (!current?.user_id || !(await userIdsInOpenChat(supabaseAdmin, [current.user_id])).has(current.user_id)) {
+      throw new Error("This patient is not in chat.");
     }
 
     const { data: meProv, error: unavailErr } = await supabaseAdmin
@@ -367,6 +373,49 @@ export const claimRequest = createServerFn({ method: "POST" })
       created_by: me,
       note: "Claimed by practitioner",
     });
+
+    const siblings = (await loadSiblingRows(supabaseAdmin, data.requestId)).filter(
+      (row) =>
+        row.id !== data.requestId &&
+        !row.provider_id &&
+        !CLOSED_ORDER_STATUSES.includes(row.status),
+    );
+    if (siblings.length) {
+      const siblingIds = siblings.map((row) => row.id);
+      const now = new Date().toISOString();
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({
+          provider_id: me,
+          claim_locked_by: null,
+          claim_locked_at: null,
+          updated_at: now,
+        })
+        .in("id", siblingIds)
+        .is("provider_id", null);
+      const early = siblings.filter((row) =>
+        ["payment_completed", "provider_assigned"].includes(row.status),
+      );
+      if (early.length) {
+        await supabaseAdmin
+          .from("medication_requests")
+          .update({ status: "pending_review", updated_at: now })
+          .in(
+            "id",
+            early.map((row) => row.id),
+          )
+          .eq("provider_id", me);
+      }
+      await supabaseAdmin.from("medication_request_events").insert(
+        siblings.map((row) => ({
+          request_id: row.id,
+          status: "provider_assigned",
+          actor_role: "provider",
+          created_by: me,
+          note: "Claimed with the rest of this order",
+        })),
+      );
+    }
 
     void import("@/lib/email.notifications")
       .then(async ({ notifyPatientRequestEvent }) => {
@@ -786,7 +835,7 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
   const { data: rows } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, requires_consultation, user_id, session_id, medicine_id, created_at, consultation_mode, consultation_scheduled_at",
+      "id, status, requires_consultation, user_id, session_id, medicine_id, kind, created_at, consultation_mode, consultation_scheduled_at, order_group_id",
     )
     .eq("provider_id", me)
     .in("status", ACTIVE_CONSULT_STATUSES)
@@ -832,12 +881,14 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
     else if (!row.ended_at) consultByUser.set(row.user_id, { ended_at: null });
   }
 
-  return list.map((r) => {
+  return clusterPurchases(list).map((members) => {
+    const r = leadOf(members);
     const profile = pMap.get(r.user_id) as any;
     const session = !profile ? (sMap.get(r.session_id) as any) : null;
     const consult = r.user_id ? consultByUser.get(r.user_id) : undefined;
+    const requires = members.some((member) => member.requires_consultation);
     let consultation_status: WorkItem["consultation_status"] = "Not required";
-    if (r.requires_consultation) {
+    if (requires) {
       if (!consult) consultation_status = "Required";
       else if (!consult.ended_at) consultation_status = "In progress";
       else consultation_status = "Completed";
@@ -848,17 +899,21 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
       : r.status === "approved" || r.status === "prescribed"
         ? 1
         : 2;
+    const names = [
+      ...new Set(members.map((member) => String(medMap.get(member.medicine_id) ?? "")).filter(Boolean)),
+    ];
+    const scheduled = members.find((member) => member.consultation_mode === "scheduled");
     return {
       id: r.id,
       patient_name: profile?.full_name ?? session?.full_name ?? "Patient",
       patient_id: profile?.id ?? session?.id ?? null,
       dob: profile?.dob ?? session?.dob ?? null,
-      medicine_name: String(medMap.get(r.medicine_id) ?? "—"),
+      medicine_name: names.join(", ") || "—",
       status: r.status,
-      requires_consultation: Boolean(r.requires_consultation),
+      requires_consultation: requires,
       consultation_status,
-      consultation_mode: r.consultation_mode === "scheduled" ? "scheduled" : "instant",
-      consultation_scheduled_at: r.consultation_scheduled_at ?? null,
+      consultation_mode: scheduled ? "scheduled" : "instant",
+      consultation_scheduled_at: scheduled?.consultation_scheduled_at ?? r.consultation_scheduled_at ?? null,
       patient_waiting,
       priority,
     };
@@ -1066,25 +1121,35 @@ export const escalateRequest = createServerFn({ method: "POST" })
     if (!req || req.provider_id !== me) throw new Error("Only the assigned practitioner can escalate this order.");
     if (CLOSED.includes(req.status)) throw new Error("This order can no longer be escalated.");
 
+    const siblings = (await loadSiblingRows(supabaseAdmin, req.id)).filter(
+      (row) => row.provider_id === me && !CLOSED_ORDER_STATUSES.includes(row.status),
+    );
+    const targets = siblings.length ? siblings : [req];
+    const now = new Date().toISOString();
     const { error } = await supabaseAdmin
       .from("medication_requests")
       .update({
         provider_id: null,
         claim_locked_by: null,
         claim_locked_at: null,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
-      .eq("id", req.id)
+      .in(
+        "id",
+        targets.map((row) => row.id),
+      )
       .eq("provider_id", me);
     if (error) throw new Error(error.message);
 
-    await supabaseAdmin.from("medication_request_events").insert({
-      request_id: req.id,
-      status: req.status,
-      actor_role: "provider",
-      created_by: me,
-      note: "Escalated to another provider",
-    });
+    await supabaseAdmin.from("medication_request_events").insert(
+      targets.map((row) => ({
+        request_id: row.id,
+        status: row.status,
+        actor_role: "provider",
+        created_by: me,
+        note: "Escalated to another provider",
+      })),
+    );
     return { ok: true };
   });
 
@@ -1119,6 +1184,10 @@ export const scheduleConsultation = createServerFn({ method: "POST" })
       scheduledAt = when.toISOString();
     }
 
+    const siblings = (await loadSiblingRows(supabaseAdmin, req.id)).filter(
+      (row) => row.provider_id === me && !CLOSED_ORDER_STATUSES.includes(row.status),
+    );
+    const targets = siblings.length ? siblings : [req];
     const { error } = await supabaseAdmin
       .from("medication_requests")
       .update({
@@ -1126,7 +1195,11 @@ export const scheduleConsultation = createServerFn({ method: "POST" })
         consultation_scheduled_at: scheduledAt,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.id);
+      .in(
+        "id",
+        targets.map((row) => row.id),
+      )
+      .eq("provider_id", me);
     if (error) throw new Error(error.message);
 
     await supabaseAdmin.from("medication_request_events").insert({

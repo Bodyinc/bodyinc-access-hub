@@ -392,6 +392,7 @@ export function ConsultationRoomPage({
   // Local UI State
   const [activeMainTab, setActiveMainTab] = useState<"chat" | "call">("chat");
   const [changeMedOpen, setChangeMedOpen] = useState(false);
+  const [changeLineId, setChangeLineId] = useState<string | null>(null);
   const [approveOpen, setApproveOpen] = useState(false);
   const [approveNote, setApproveNote] = useState("");
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -1783,7 +1784,10 @@ export function ConsultationRoomPage({
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => setChangeMedOpen(true)}
+                        onClick={() => {
+                          setChangeLineId(roomData.request.id);
+                          setChangeMedOpen(true);
+                        }}
                         className="flex-1 min-w-[85px] h-8 text-[11px] font-semibold border-[#D5DEDD] text-[#3B4759] hover:bg-[#F3F6F6] px-1"
                         title="Change Medicines"
                       >
@@ -1872,11 +1876,40 @@ export function ConsultationRoomPage({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 pt-1 space-y-2 text-xs divide-y divide-[#E8EEED]">
-                    <div className="pt-1 flex justify-between">
+                    <div className="pt-1 space-y-2">
                       <span className="text-[#3B4759]/70">Medication</span>
-                      <span className="font-semibold text-[#152A51]">
-                        {roomData.medicine?.name || "—"}
-                      </span>
+                      {(roomData.orderItems?.length ? roomData.orderItems : [
+                        {
+                          id: roomData.request.id,
+                          medicine_name: roomData.medicine?.name || "—",
+                          plan_name: roomData.package?.name ?? null,
+                          status: roomData.request.status,
+                          medicine_id: roomData.request.medicine_id,
+                          variant_id: roomData.request.variant_id,
+                          package_id: roomData.request.package_id,
+                        },
+                      ]).map((line) => (
+                        <div key={line.id} className="flex items-start justify-between gap-2">
+                          <span className="font-semibold text-[#152A51]">
+                            {line.medicine_name}
+                            {line.plan_name ? ` · ${line.plan_name}` : ""}
+                          </span>
+                          {["pending_review", "approved", "awaiting_additional_payment"].includes(
+                            line.status,
+                          ) ? (
+                            <button
+                              type="button"
+                              className="shrink-0 text-[11px] font-semibold text-[#6A9B9C]"
+                              onClick={() => {
+                                setChangeLineId(line.id);
+                                setChangeMedOpen(true);
+                              }}
+                            >
+                              Change
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
                     </div>
                     {roomData.package && (
                       <div className="pt-2 flex justify-between">
@@ -2901,14 +2934,34 @@ export function ConsultationRoomPage({
         <RequestChangeMedicineDialog
           open={changeMedOpen}
           onOpenChange={setChangeMedOpen}
-          requestId={roomData.request.id}
-          currentMedicineId={roomData.request.medicine_id ?? undefined}
-          currentPackageId={roomData.request.package_id ?? undefined}
-          currentVariantId={roomData.request.variant_id ?? undefined}
+          requestId={
+            roomData.orderItems?.find((line) => line.id === changeLineId)?.id ?? roomData.request.id
+          }
+          currentMedicineId={
+            roomData.orderItems?.find((line) => line.id === changeLineId)?.medicine_id ??
+            roomData.request.medicine_id ??
+            undefined
+          }
+          currentPackageId={
+            roomData.orderItems?.find((line) => line.id === changeLineId)?.package_id ??
+            roomData.request.package_id ??
+            undefined
+          }
+          currentVariantId={
+            roomData.orderItems?.find((line) => line.id === changeLineId)?.variant_id ??
+            roomData.request.variant_id ??
+            undefined
+          }
           hideFinancial={clinicalOnly}
           current={{
-            medicineName: roomData.medicine?.name ?? null,
-            planName: roomData.package?.name ?? null,
+            medicineName:
+              roomData.orderItems?.find((line) => line.id === changeLineId)?.medicine_name ??
+              roomData.medicine?.name ??
+              null,
+            planName:
+              roomData.orderItems?.find((line) => line.id === changeLineId)?.plan_name ??
+              roomData.package?.name ??
+              null,
             price: clinicalOnly
               ? null
               : roomData.package?.price != null

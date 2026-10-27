@@ -11,6 +11,14 @@ import {
   loadPastOrders,
   sessionHasIntake,
 } from "@/lib/clinical-intake";
+import {
+  CLOSED_ORDER_STATUSES,
+  collapseOrderRows,
+  findGroupConsultation,
+  loadOrderLines,
+  loadSiblingRows,
+  userIdsInOpenChat,
+} from "@/lib/order-groups";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -234,7 +242,7 @@ export const listRequests = createServerFn({ method: "POST" })
     const term = data.search ? normalizeIdSearch(data.search) : "";
     const idRange = term ? uuidPrefixRange(term) : null;
     const SELECT_COLS =
-      "id, user_id, session_id, provider_id, medicine_id, package_id, kind, status, requires_consultation, tracking_number, created_at, life_file_status, life_file_order_id, life_file_error, life_file_pharmacy_id";
+      "id, user_id, session_id, provider_id, medicine_id, package_id, kind, status, requires_consultation, tracking_number, created_at, life_file_status, life_file_order_id, life_file_error, life_file_pharmacy_id, order_group_id";
 
     let q = supabaseAdmin
       .from("medication_requests")
@@ -323,13 +331,16 @@ export const listRequests = createServerFn({ method: "POST" })
     const provMap = new Map((provs ?? []).map((p: any) => [p.id, p]));
     const pharmacyMap = new Map((pharmacies ?? []).map((p: any) => [p.id, p]));
 
-    let result = list.map((r: any) => {
+    let result: any[] = list.map((r: any) => {
       const p = pMap.get(r.user_id) as any;
       const sess = !p ? (sMap.get(r.session_id) as any) : null;
       const prov = provMap.get(r.provider_id) as any;
       const pharmacy = pharmacyMap.get(r.life_file_pharmacy_id) as any;
       return {
         id: r.id,
+        user_id: r.user_id ?? null,
+        session_id: r.session_id ?? null,
+        order_group_id: r.order_group_id ?? null,
         customer_name: p?.full_name ?? sess?.full_name ?? null,
         customer_email: p?.email ?? sess?.email ?? null,
         is_guest: !p && !!sess,
@@ -384,6 +395,8 @@ export const listRequests = createServerFn({ method: "POST" })
       });
     }
 
+    result = collapseOrderRows(result).map(({ user_id: _user, session_id: _session, order_group_id: _group, ...row }) => row);
+
     if (term) {
       const s = term.toLowerCase();
       result = result.filter(
@@ -392,7 +405,8 @@ export const listRequests = createServerFn({ method: "POST" })
           (role !== "provider" && (r.customer_email ?? "").toLowerCase().includes(s)) ||
           (r.medicine_name ?? "").toLowerCase().includes(s) ||
           r.id.toLowerCase().replace(/-/g, "").startsWith(s.replace(/-/g, "")) ||
-          r.id.toLowerCase().includes(s),
+          r.id.toLowerCase().includes(s) ||
+          (r.order_item_ids ?? []).some((id: string) => id.toLowerCase().includes(s)),
       );
     }
     if (role === "provider") {
@@ -429,6 +443,21 @@ export const getRequest = createServerFn({ method: "POST" })
       allowUnassigned: true,
     });
 
+    if (role === "provider" && !req.provider_id) {
+      const filled = await sessionHasIntake(supabaseAdmin, req.session_id);
+      const inChat = req.user_id
+        ? (await userIdsInOpenChat(supabaseAdmin, [req.user_id])).has(req.user_id)
+        : false;
+      if (!filled || !inChat) throw new Error("This order is not in your queue.");
+    }
+
+    const siblings = await loadSiblingRows(supabaseAdmin, req.id);
+    const order_items = await loadOrderLines(supabaseAdmin, req.id);
+    const groupConsult = await findGroupConsultation(
+      supabaseAdmin,
+      siblings.length ? siblings : [req],
+    );
+
     const [
       profileRes,
       sessionRes,
@@ -438,7 +467,6 @@ export const getRequest = createServerFn({ method: "POST" })
       eventsRes,
       rxRes,
       addPayRes,
-      consultRes,
     ] = await Promise.all([
       req.user_id
         ? supabaseAdmin
@@ -486,21 +514,9 @@ export const getRequest = createServerFn({ method: "POST" })
         .select("id, amount_cents, currency, reason, status, created_at, paid_at")
         .eq("request_id", req.id)
         .order("created_at", { ascending: false }),
-      req.subscription_id || req.user_id
-        ? supabaseAdmin
-            .from("patient_consultations")
-            .select("id, qb_appointment_id, qb_dialog_id, started_at, qb_user_id")
-            .or(
-              req.subscription_id
-                ? `subscription_id.eq.${req.subscription_id}`
-                : `user_id.eq.${req.user_id}`,
-            )
-            .order("started_at", { ascending: false })
-            .limit(1)
-        : Promise.resolve({ data: [] }),
     ]);
 
-    const consultRow = ((consultRes as any)?.data as any[])?.[0] ?? null;
+    const consultRow = groupConsult;
     const completedEvent = ((eventsRes.data ?? []) as any[]).find(
       (ev) => typeof ev.note === "string" && /consultation (completed|ended)/i.test(ev.note),
     );
@@ -509,8 +525,8 @@ export const getRequest = createServerFn({ method: "POST" })
           id: consultRow.id,
           qb_appointment_id: consultRow.qb_appointment_id,
           started_at: consultRow.started_at,
-          ended_at: completedEvent ? completedEvent.created_at : null,
-          is_ended: Boolean(completedEvent),
+          ended_at: consultRow.ended_at ?? (completedEvent ? completedEvent.created_at : null),
+          is_ended: Boolean(consultRow.ended_at || completedEvent),
         }
       : null;
 
@@ -539,6 +555,7 @@ export const getRequest = createServerFn({ method: "POST" })
           requestId: req.id,
           userId: req.user_id,
           sessionId: req.session_id,
+          excludeIds: order_items.map((line) => line.id),
         }),
       ]);
       return {
@@ -581,6 +598,7 @@ export const getRequest = createServerFn({ method: "POST" })
         })),
         prescriptions: rxRes.data ?? [],
         additional_payments: [],
+        order_items,
       };
     }
 
@@ -594,6 +612,7 @@ export const getRequest = createServerFn({ method: "POST" })
       events: eventsRes.data ?? [],
       prescriptions: rxRes.data ?? [],
       additional_payments: addPayRes.data ?? [],
+      order_items,
     };
   });
 
@@ -1591,11 +1610,28 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       patch.status = "pending_review";
     }
 
-    const { error } = await supabaseAdmin
-      .from("medication_requests")
-      .update(patch)
-      .eq("id", data.requestId);
-    if (error) throw new Error(error.message);
+    const siblings = (await loadSiblingRows(supabaseAdmin, data.requestId)).filter(
+      (row) =>
+        row.id !== data.requestId &&
+        !CLOSED_ORDER_STATUSES.includes(row.status) &&
+        (row.provider_id == null || row.provider_id === existing.provider_id),
+    );
+    const moving = [existing, ...siblings];
+    for (const row of moving) {
+      const rowPatch = { ...patch };
+      if (
+        rowPatch.status &&
+        row.status !== "payment_completed" &&
+        row.status !== "provider_assigned"
+      ) {
+        delete rowPatch.status;
+      }
+      const { error } = await supabaseAdmin
+        .from("medication_requests")
+        .update(rowPatch)
+        .eq("id", row.id);
+      if (error) throw new Error(error.message);
+    }
     if (data.providerId) {
       const { data: provProfile } = await supabaseAdmin
         .from("profiles")
@@ -1616,6 +1652,16 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
         context.userId,
         assignmentNote,
       );
+      for (const row of siblings) {
+        await logEvent(
+          supabaseAdmin,
+          row.id,
+          "provider_assigned",
+          role === "admin" ? "admin" : "provider",
+          context.userId,
+          assignmentNote,
+        );
+      }
 
       try {
         await supabaseAdmin.from("medication_request_notes").insert({
