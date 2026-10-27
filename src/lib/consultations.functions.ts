@@ -23,6 +23,7 @@ import {
 } from "@/lib/consultations/quickblox";
 import { sessionForBodyIncProvider } from "@/lib/consultations/provider-agent";
 import { ageFromDob, bmiFrom } from "@/lib/format";
+import { findGroupConsultation, loadOrderLines, loadSiblingRows } from "@/lib/order-groups";
 
 export type ConsultationVisitStatus = "open" | "ended" | "unknown";
 
@@ -520,14 +521,20 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
       return { ok: false, message: "This order is missing a subscription." };
     }
 
-    const { data: existingRows, error: existingError } = await supabaseAdmin
-      .from("patient_consultations")
-      .select("id, qb_appointment_id, qb_dialog_id, started_at")
-      .eq("subscription_id", req.subscription_id)
-      .eq("user_id", req.user_id)
-      .order("started_at", { ascending: true });
-    if (existingError) return { ok: false, message: existingError.message };
-    const existing = (existingRows ?? []).find((row) => row.qb_appointment_id) ?? null;
+    const siblings = await loadSiblingRows(supabaseAdmin, req.id);
+    const orderLines = await loadOrderLines(supabaseAdmin, req.id);
+    let existing: any = null;
+    try {
+      existing = await findGroupConsultation(
+        supabaseAdmin,
+        siblings.length ? siblings : [req],
+      );
+    } catch (lookupError) {
+      return {
+        ok: false,
+        message: lookupError instanceof Error ? lookupError.message : "Unable to load this consultation.",
+      };
+    }
     const storedId = existing?.qb_appointment_id ?? null;
 
     try {
@@ -593,7 +600,10 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
       }
 
       const fullName = profile?.full_name?.trim() || intake?.full_name?.trim() || "Patient";
-      const medicineName = medicine?.name?.trim() || "treatment";
+      const medicineName =
+        orderLines.map((line) => line.medicine_name).filter((name) => name && name !== "—").join(", ") ||
+        medicine?.name?.trim() ||
+        "treatment";
       const client = await ensurePatientQuickbloxClient({
         userId: req.user_id,
         subscriptionId: req.subscription_id,
@@ -665,13 +675,16 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
         }
       }
 
-      await supabaseAdmin.from("medication_request_events").insert({
-        request_id: req.id,
-        status: req.status,
-        actor_role: role,
-        created_by: context.userId,
-        note: "Consultation started",
-      });
+      const visitRows = siblings.length ? siblings : [req];
+      await supabaseAdmin.from("medication_request_events").insert(
+        visitRows.map((row) => ({
+          request_id: row.id,
+          status: row.status,
+          actor_role: role,
+          created_by: context.userId,
+          note: "Consultation started",
+        })),
+      );
 
       try {
         const { notifyUserById } = await import("@/lib/email.notifications");
@@ -744,6 +757,39 @@ export type LiveQueueItem = {
   providerName?: string | null;
   isAssigned?: boolean;
 };
+
+function collapseLiveQueue(items: LiveQueueItem[]): LiveQueueItem[] {
+  const byPatient = new Map<string, LiveQueueItem>();
+  for (const item of items) {
+    const key = item.clientId
+      ? `c:${item.clientId}`
+      : item.requestId
+        ? `r:${item.requestId}`
+        : item.appointmentId;
+    const prev = byPatient.get(key);
+    if (!prev || Math.abs(item.createdAt - prev.createdAt) > 10 * 60 * 1000) {
+      if (!prev) byPatient.set(key, item);
+      else byPatient.set(`${key}:${item.appointmentId}`, item);
+      continue;
+    }
+    const keep =
+      item.isActiveCurrent && !prev.isActiveCurrent
+        ? item
+        : prev.isActiveCurrent
+          ? prev
+          : !item.isEnded && prev.isEnded
+            ? item
+            : prev;
+    const other = keep === item ? prev : item;
+    const names = [...new Set([keep.medicineName, other.medicineName].filter(Boolean))] as string[];
+    byPatient.set(key, {
+      ...keep,
+      medicineName: names.join(", ") || keep.medicineName,
+      description: names.length > 1 ? `${names.join(", ")} consultation` : keep.description,
+    });
+  }
+  return [...byPatient.values()];
+}
 
 export type PatientConsultationHistoryItem = {
   id: string;
@@ -822,6 +868,17 @@ export type ConsultationRoomData = {
     created_at: string;
     notes: { id: string; body: string; created_at: string }[];
   }>;
+  orderItems: Array<{
+    id: string;
+    medicine_id: string | null;
+    medicine_name: string;
+    variant_id: string | null;
+    package_id: string | null;
+    plan_name: string | null;
+    status: string;
+    provider_id: string | null;
+    requires_consultation: boolean;
+  }>;
   medicine: {
     id: string;
     name: string;
@@ -894,20 +951,16 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
         return { ok: false, message: "Forbidden: You are not assigned to this consultation." };
       }
 
-      // Retrieve or provision QuickBlox consultation
+      const orderItems = await loadOrderLines(supabaseAdmin, req.id);
+      const groupSiblings = await loadSiblingRows(supabaseAdmin, req.id);
       let existingConsultation: any = null;
-      if (req.subscription_id || req.user_id) {
-        let q = supabaseAdmin
-          .from("patient_consultations")
-          .select("id, qb_appointment_id, qb_user_id, qb_dialog_id, started_at, created_at")
-          .order("started_at", { ascending: false });
-        if (req.subscription_id) {
-          q = q.eq("subscription_id", req.subscription_id);
-        } else if (req.user_id) {
-          q = q.eq("user_id", req.user_id);
-        }
-        const { data: rows } = await q;
-        existingConsultation = rows?.[0] ?? null;
+      try {
+        existingConsultation = await findGroupConsultation(
+          supabaseAdmin,
+          groupSiblings.length ? groupSiblings : [req],
+        );
+      } catch (lookupError) {
+        console.warn("[consultations] group lookup failed:", lookupError);
       }
 
       const reviewerSession = await reviewerQuickbloxSession(role, context.userId, supabaseAdmin);
@@ -986,7 +1039,13 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       const dobRaw = patientSource?.dob ?? orderSession?.dob ?? null;
       const dob = dobRaw ? String(dobRaw).slice(0, 10) : null;
       const fullName = patientSource?.full_name?.trim() || "Patient";
-      const medicineName = medRow?.name?.trim() || "treatment";
+      const medicineName =
+        orderItems
+          .map((line) => line.medicine_name)
+          .filter((name) => name && name !== "—")
+          .join(", ") ||
+        medRow?.name?.trim() ||
+        "treatment";
 
       // Query QuickBlox appointments for this provider session to inspect the live queue and find active visit
       let providerAppts: QbAppointment[] = [];
@@ -1618,6 +1677,10 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
         };
       });
 
+      const collapsedQueue = collapseLiveQueue(liveQueue);
+      liveQueue.length = 0;
+      liveQueue.push(...collapsedQueue);
+
       // Sort liveQueue: current item first, then open/in-queue items (newest first), then ended items
       liveQueue.sort((x, y) => {
         if (x.isActiveCurrent) return -1;
@@ -1724,7 +1787,9 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
             requestId: req.id,
             userId: req.user_id,
             sessionId: req.session_id,
+            excludeIds: orderItems.map((line) => line.id),
           }),
+          orderItems,
           medicine: medRow ? { id: medRow.id, name: medRow.name } : null,
           package: pkgRow
             ? {

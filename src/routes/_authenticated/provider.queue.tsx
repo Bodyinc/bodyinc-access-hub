@@ -76,7 +76,8 @@ function ProviderQueuePage() {
       <div className="space-y-1">
         <h1 className={adminPageTitle}>Unassigned queue</h1>
         <p className={adminPageSubtitle}>
-          Open orders from patients in the states you&apos;re licensed in. Claim one to take it on.
+          Patients in your licensed states who finished intake and are in chat. Several medicines
+          bought together show as one order.
         </p>
       </div>
 
@@ -127,7 +128,12 @@ function ProviderQueuePage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-[#3B4759]/80">{r.state_code}</TableCell>
-                  <TableCell className="text-[#3B4759]/80">{r.medicine_name}</TableCell>
+                  <TableCell className="text-[#3B4759]/80">
+                    <div>{r.medicine_name}</div>
+                    {r.item_count > 1 ? (
+                      <div className="text-[12px] text-[#3B4759]/50">{r.item_count} medicines</div>
+                    ) : null}
+                  </TableCell>
                   <TableCell className="text-[#3B4759]/80">
                     {r.kind === "followup" ? "Renewal" : "Initial"}
                   </TableCell>

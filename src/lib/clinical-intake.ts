@@ -204,19 +204,24 @@ export async function loadClinicalIntake(
 
 export async function loadPastOrders(
   supabaseAdmin: any,
-  opts: { requestId: string; userId?: string | null; sessionId?: string | null },
+  opts: {
+    requestId: string;
+    userId?: string | null;
+    sessionId?: string | null;
+    excludeIds?: string[];
+  },
 ): Promise<PastOrder[]> {
   if (!opts.userId && !opts.sessionId) return [];
+  const hidden = new Set([opts.requestId, ...(opts.excludeIds ?? [])]);
   let q = supabaseAdmin
     .from("medication_requests")
     .select("id, medicine_id, kind, status, created_at")
-    .neq("id", opts.requestId)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(40);
   q = opts.userId ? q.eq("user_id", opts.userId) : q.eq("session_id", opts.sessionId);
   const { data: rows, error } = await q;
   if (error) throw new Error(error.message);
-  const list = (rows ?? []) as any[];
+  const list = ((rows ?? []) as any[]).filter((row) => !hidden.has(row.id)).slice(0, 20);
   if (list.length === 0) return [];
 
   const medIds = Array.from(new Set(list.map((row) => row.medicine_id).filter(Boolean)));

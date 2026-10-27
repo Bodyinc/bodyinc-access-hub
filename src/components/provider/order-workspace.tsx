@@ -44,6 +44,7 @@ export function OrderWorkspace({
   prescriptions,
   intake,
   pastOrders,
+  orderItems = [],
   canClaim,
   canChange,
   canReject,
@@ -55,6 +56,7 @@ export function OrderWorkspace({
   onJoin,
   onApprove,
   onChange,
+  onChangeItem,
   onReject,
   onPrescribe,
   onSend,
@@ -77,6 +79,13 @@ export function OrderWorkspace({
   prescriptions: any[];
   intake: ClinicalIntake | null;
   pastOrders: PastOrder[];
+  orderItems?: {
+    id: string;
+    medicine_name: string;
+    plan_name: string | null;
+    status: string;
+    provider_id: string | null;
+  }[];
   canClaim: boolean;
   canChange: boolean;
   canReject: boolean;
@@ -88,6 +97,7 @@ export function OrderWorkspace({
   onJoin: () => void;
   onApprove: () => void;
   onChange: () => void;
+  onChangeItem?: (requestId: string) => void;
   onReject: () => void;
   onPrescribe: () => void;
   onSend: () => void;
@@ -210,8 +220,22 @@ export function OrderWorkspace({
                 />
                 <Field label="Date of birth" value={patient?.dob ? formatDate(patient.dob) : "—"} />
                 <Field label="State" value={patient?.state_code ?? "—"} />
-                <Field label="Medication" value={medicine?.name ?? "—"} />
-                <Field label="Plan" value={planName ?? "—"} />
+                <Field
+                  label="Medication"
+                  value={
+                    orderItems.length > 1
+                      ? orderItems.map((item) => item.medicine_name).join(", ")
+                      : (medicine?.name ?? "—")
+                  }
+                />
+                <Field
+                  label="Plan"
+                  value={
+                    orderItems.length > 1
+                      ? orderItems.map((item) => item.plan_name || "Plan").join(", ")
+                      : (planName ?? "—")
+                  }
+                />
                 <Field label="Status" value={clinicalStatusLabel(status)} />
                 <Field label="Assigned provider" value={providerName ?? "Unassigned"} />
               </div>
@@ -250,6 +274,50 @@ export function OrderWorkspace({
                   >
                     {remindPending ? "Sending…" : "Send reminder"}
                   </Button>
+                </div>
+              ) : null}
+
+              {orderItems.length > 1 ? (
+                <div className="space-y-2 rounded-lg border border-[#D5DEDD] p-3">
+                  <div className="text-[13px] font-semibold text-[#152A51]">
+                    Medicines in this order
+                  </div>
+                  <p className="text-[12px] text-[#3B4759]/70">
+                    These were purchased together and share one consultation. Change each medicine
+                    from here if the plan needs to be different.
+                  </p>
+                  {orderItems.map((item) => {
+                    const lineChangeable =
+                      ["pending_review", "approved", "awaiting_additional_payment"].includes(
+                        item.status,
+                      ) && Boolean(onChangeItem);
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E8EEED] pt-2"
+                      >
+                        <div>
+                          <div className="text-[14px] font-medium text-[#3B4759]">
+                            {item.medicine_name}
+                          </div>
+                          <div className="text-[12px] text-[#3B4759]/60">
+                            {item.plan_name ?? "Plan"} · {clinicalStatusLabel(item.status)}
+                          </div>
+                        </div>
+                        {lineChangeable ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onChangeItem?.(item.id)}
+                            className="h-9 border-[#D5DEDD] text-[13px] font-semibold text-[#3B4759]"
+                          >
+                            <Repeat className="mr-1 h-4 w-4" /> Change
+                          </Button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : null}
 

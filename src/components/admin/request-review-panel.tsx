@@ -126,6 +126,7 @@ export function RequestReviewPanel({
   });
 
   const [changeOpen, setChangeOpen] = useState(false);
+  const [changeRequestId, setChangeRequestId] = useState<string | null>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [rxOpen, setRxOpen] = useState(false);
@@ -414,6 +415,18 @@ export function RequestReviewPanel({
     prescriptions,
     additional_payments,
   } = q.data as any;
+  const orderItems = ((q.data as any).order_items ?? []) as {
+    id: string;
+    medicine_id: string | null;
+    medicine_name: string;
+    variant_id: string | null;
+    package_id: string | null;
+    plan_name: string | null;
+    status: string;
+    provider_id: string | null;
+  }[];
+  const changeLine =
+    orderItems.find((line) => line.id === (changeRequestId ?? requestId)) ?? null;
 
   const status: string = request.status;
   const isUnassigned = !provider;
@@ -484,6 +497,7 @@ export function RequestReviewPanel({
           prescriptions={prescriptions}
           intake={(q.data as any).intake ?? null}
           pastOrders={(q.data as any).past_orders ?? []}
+          orderItems={orderItems}
           canClaim={canClaim}
           canChange={canChange}
           canReject={canReject}
@@ -494,7 +508,14 @@ export function RequestReviewPanel({
           onClaim={() => claimMut.mutate()}
           onJoin={() => consultMut.mutate()}
           onApprove={() => setApproveOpen(true)}
-          onChange={() => setChangeOpen(true)}
+          onChange={() => {
+            setChangeRequestId(requestId);
+            setChangeOpen(true);
+          }}
+          onChangeItem={(id) => {
+            setChangeRequestId(id);
+            setChangeOpen(true);
+          }}
           onReject={() => setRejectOpen(true)}
           onPrescribe={() => setRxOpen(true)}
           onSend={() => setSendPharmacyOpen(true)}
@@ -549,8 +570,22 @@ export function RequestReviewPanel({
             {clinicalOnly ? null : <Row label="Email" value={patient?.email ?? "—"} />}
             <Row label="State" value={patient?.state_code ?? "—"} />
             <Row label="Assigned provider" value={provider?.full_name ?? "Unassigned"} />
-            <Row label="Medication" value={medicine?.name ?? "—"} />
-            <Row label="Plan" value={pkg?.name ?? "—"} />
+            <Row
+              label="Medication"
+              value={
+                orderItems.length > 1
+                  ? orderItems.map((line) => line.medicine_name).join(", ")
+                  : (medicine?.name ?? "—")
+              }
+            />
+            <Row
+              label="Plan"
+              value={
+                orderItems.length > 1
+                  ? orderItems.map((line) => line.plan_name || "Plan").join(", ")
+                  : (pkg?.name ?? "—")
+              }
+            />
             {clinicalOnly ? null : (
               <Row
                 label="Plan price"
@@ -618,6 +653,44 @@ export function RequestReviewPanel({
               </div>
             ) : null}
           </div>
+
+          {orderItems.length > 1 ? (
+            <div className="space-y-2 rounded-lg border border-[#D5DEDD] p-3">
+              <div className="text-[13px] font-semibold text-[#152A51]">Medicines in this order</div>
+              <p className="text-[12px] text-[#3B4759]/70">
+                Purchased together. One consultation covers every medicine. Change a line when that
+                plan needs to be different.
+              </p>
+              {orderItems.map((line) => (
+                <div
+                  key={line.id}
+                  className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E8EEED] pt-2"
+                >
+                  <div>
+                    <div className="text-[14px] font-medium text-[#3B4759]">{line.medicine_name}</div>
+                    <div className="text-[12px] text-[#3B4759]/60">
+                      {line.plan_name ?? "Plan"} · {requestStatusLabel(line.status)}
+                    </div>
+                  </div>
+                  {["pending_review", "approved", "awaiting_additional_payment"].includes(
+                    line.status,
+                  ) ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setChangeRequestId(line.id);
+                        setChangeOpen(true);
+                      }}
+                    >
+                      Change
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           {canManage ? (
             <div className="flex flex-wrap items-end gap-2 border-t border-[#D5DEDD] pt-4">
@@ -1104,17 +1177,17 @@ export function RequestReviewPanel({
       ) : null}
 
       <RequestChangeMedicineDialog
-        requestId={requestId}
+        requestId={changeLine?.id ?? requestId}
         open={changeOpen}
         onOpenChange={setChangeOpen}
         onChanged={refresh}
         hideFinancial={clinicalOnly}
-        currentMedicineId={medicine?.id ?? request.medicine_id ?? null}
-        currentVariantId={request.variant_id ?? null}
-        currentPackageId={pkg?.id ?? request.package_id ?? null}
+        currentMedicineId={changeLine?.medicine_id ?? medicine?.id ?? request.medicine_id ?? null}
+        currentVariantId={changeLine?.variant_id ?? request.variant_id ?? null}
+        currentPackageId={changeLine?.package_id ?? pkg?.id ?? request.package_id ?? null}
         current={{
-          medicineName: medicine?.name ?? null,
-          planName: pkg?.name ?? null,
+          medicineName: changeLine?.medicine_name ?? medicine?.name ?? null,
+          planName: changeLine?.plan_name ?? pkg?.name ?? null,
           price: clinicalOnly ? null : pkg?.price != null ? Number(pkg.price) : null,
         }}
       />

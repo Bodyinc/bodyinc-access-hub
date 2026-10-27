@@ -700,6 +700,7 @@ export type Database = {
           life_file_status: string | null
           life_file_submitted_at: string | null
           medicine_id: string | null
+          order_group_id: string
           package_id: string | null
           payment_id: string | null
           plan_change_deadline: string | null
@@ -738,6 +739,7 @@ export type Database = {
           life_file_status?: string | null
           life_file_submitted_at?: string | null
           medicine_id?: string | null
+          order_group_id?: string
           package_id?: string | null
           payment_id?: string | null
           plan_change_deadline?: string | null
@@ -776,6 +778,7 @@ export type Database = {
           life_file_status?: string | null
           life_file_submitted_at?: string | null
           medicine_id?: string | null
+          order_group_id?: string
           package_id?: string | null
           payment_id?: string | null
           plan_change_deadline?: string | null
