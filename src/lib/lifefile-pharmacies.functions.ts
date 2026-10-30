@@ -11,9 +11,9 @@ const pharmacySchema = z.object({
     .min(1, "API URL is required")
     .max(500)
     .refine((v) => /^https?:\/\//i.test(v), "Enter a valid URL starting with https://"),
-  vendor_id: z.string().trim().max(120).optional().or(z.literal("")),
-  location_id: z.string().trim().max(120).optional().or(z.literal("")),
-  api_network_id: z.string().trim().max(120).optional().or(z.literal("")),
+  vendor_id: z.string().trim().min(1, "Vendor ID is required").max(120),
+  location_id: z.string().trim().min(1, "Location ID is required").max(120),
+  api_network_id: z.string().trim().min(1, "API Network ID is required").max(120),
   is_active: z.boolean().default(true),
 });
 
@@ -108,7 +108,11 @@ const credentialSchema = z.object({
     .refine((v) => !v || /^https?:\/\//i.test(v), "Enter a valid URL starting with https://"),
   api_username: z.string().trim().min(1, "Username is required").max(200),
   api_password: z.string().min(1, "Password is required").max(200),
-  provider_life_file_id: z.string().trim().max(120).optional().or(z.literal("")),
+  provider_life_file_id: z
+    .string()
+    .trim()
+    .min(1, "Provider LifeFile ID is required")
+    .max(120),
   practice_id: z
     .union([z.string().trim(), z.number()])
     .transform((v) => String(v).trim())

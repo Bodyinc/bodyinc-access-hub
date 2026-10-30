@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { PageHeader } from "@/components/admin/page-header";
+import { FieldError, RequiredMark } from "@/components/admin/required-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,10 +27,12 @@ import {
   updateLifeFilePharmacy,
 } from "@/lib/lifefile-pharmacies.functions";
 import {
-  adminBtnPrimary,
-  adminBtnSecondary,
+  adminBtnCompactDanger,
+  adminBtnCompactPrimary,
+  adminBtnCompactSecondary,
   adminCard,
   adminInput,
+  adminInputError,
   adminLabel,
   adminSectionTitle,
 } from "@/lib/admin-ui";
@@ -72,6 +76,21 @@ function LifeFilePharmaciesPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
+  function validatePharmacy(values: FormState) {
+    const errors: Partial<Record<keyof FormState, string>> = {};
+    if (!values.name.trim()) errors.name = "Please enter the pharmacy name.";
+    if (!values.api_base_url.trim()) errors.api_base_url = "Please enter the API URL.";
+    else if (!/^https?:\/\//i.test(values.api_base_url.trim())) {
+      errors.api_base_url = "Enter a valid URL starting with https://.";
+    }
+    if (!values.vendor_id.trim()) errors.vendor_id = "Please enter the Vendor ID.";
+    if (!values.location_id.trim()) errors.location_id = "Please enter the Location ID.";
+    if (!values.api_network_id.trim()) errors.api_network_id = "Please enter the API Network ID.";
+    return errors;
+  }
 
   const q = useQuery({
     queryKey: ["life-file-pharmacies"],
@@ -99,6 +118,7 @@ function LifeFilePharmaciesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["life-file-pharmacies"] });
       toast.success("Pharmacy deleted.");
+      setDeleteTarget(null);
     },
     onError: (e: Error) => toast.error(toastError(e)),
   });
@@ -110,13 +130,14 @@ function LifeFilePharmaciesPage() {
         crumbs={[{ label: "LifeFile Pharmacies" }]}
         actions={
           <Button
-            className={adminBtnPrimary}
+            className={adminBtnCompactPrimary}
             onClick={() => {
               setForm(EMPTY);
+              setFieldErrors({});
               setOpen(true);
             }}
           >
-            <Plus className="mr-1 h-4 w-4" /> Add pharmacy
+            <Plus className="h-4 w-4" /> Add pharmacy
           </Button>
         }
       />
@@ -153,11 +174,11 @@ function LifeFilePharmaciesPage() {
                   </div>
                   <div className="truncate text-[13px] text-[#3B4759]/70">{p.api_base_url}</div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <Button
+                    type="button"
                     variant="outline"
-                    size="sm"
-                    className={adminBtnSecondary}
+                    className={adminBtnCompactSecondary}
                     onClick={() => {
                       setForm({
                         id: p.id,
@@ -168,21 +189,20 @@ function LifeFilePharmaciesPage() {
                         api_network_id: p.api_network_id ?? "",
                         is_active: p.is_active !== false,
                       });
+                      setFieldErrors({});
                       setOpen(true);
                     }}
                   >
-                    <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+                    <Pencil className="h-4 w-4" /> Edit
                   </Button>
                   <Button
+                    type="button"
                     variant="outline"
-                    size="sm"
-                    className="border-[#E7CFC3] text-[#8F4A33]"
+                    className={adminBtnCompactDanger}
                     disabled={deleteMut.isPending}
-                    onClick={() => {
-                      if (confirm(`Delete pharmacy "${p.name}"?`)) deleteMut.mutate(p.id);
-                    }}
+                    onClick={() => setDeleteTarget({ id: p.id, name: p.name ?? "this pharmacy" })}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" /> Delete
                   </Button>
                 </div>
               </div>
@@ -198,47 +218,82 @@ function LifeFilePharmaciesPage() {
           </DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-1">
-              <Label className={adminLabel}>Pharmacy name</Label>
+              <Label className={adminLabel}>
+                Pharmacy name
+                <RequiredMark />
+              </Label>
               <Input
-                className={adminInput}
+                className={`${adminInput} ${fieldErrors.name ? adminInputError : ""}`}
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, name: e.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder="e.g. Striker"
               />
+              <FieldError message={fieldErrors.name} />
             </div>
             <div className="space-y-1">
-              <Label className={adminLabel}>API URL</Label>
+              <Label className={adminLabel}>
+                API URL
+                <RequiredMark />
+              </Label>
               <Input
-                className={adminInput}
+                className={`${adminInput} ${fieldErrors.api_base_url ? adminInputError : ""}`}
                 value={form.api_base_url}
-                onChange={(e) => setForm((f) => ({ ...f, api_base_url: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, api_base_url: e.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, api_base_url: undefined }));
+                }}
                 placeholder="https://…"
               />
+              <FieldError message={fieldErrors.api_base_url} />
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className={adminLabel}>Vendor ID</Label>
+                <Label className={adminLabel}>
+                  Vendor ID
+                  <RequiredMark />
+                </Label>
                 <Input
-                  className={adminInput}
+                  className={`${adminInput} ${fieldErrors.vendor_id ? adminInputError : ""}`}
                   value={form.vendor_id}
-                  onChange={(e) => setForm((f) => ({ ...f, vendor_id: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, vendor_id: e.target.value }));
+                    setFieldErrors((prev) => ({ ...prev, vendor_id: undefined }));
+                  }}
                 />
+                <FieldError message={fieldErrors.vendor_id} />
               </div>
               <div className="space-y-1">
-                <Label className={adminLabel}>Location ID</Label>
+                <Label className={adminLabel}>
+                  Location ID
+                  <RequiredMark />
+                </Label>
                 <Input
-                  className={adminInput}
+                  className={`${adminInput} ${fieldErrors.location_id ? adminInputError : ""}`}
                   value={form.location_id}
-                  onChange={(e) => setForm((f) => ({ ...f, location_id: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, location_id: e.target.value }));
+                    setFieldErrors((prev) => ({ ...prev, location_id: undefined }));
+                  }}
                 />
+                <FieldError message={fieldErrors.location_id} />
               </div>
               <div className="space-y-1">
-                <Label className={adminLabel}>API Network ID</Label>
+                <Label className={adminLabel}>
+                  API Network ID
+                  <RequiredMark />
+                </Label>
                 <Input
-                  className={adminInput}
+                  className={`${adminInput} ${fieldErrors.api_network_id ? adminInputError : ""}`}
                   value={form.api_network_id}
-                  onChange={(e) => setForm((f) => ({ ...f, api_network_id: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, api_network_id: e.target.value }));
+                    setFieldErrors((prev) => ({ ...prev, api_network_id: undefined }));
+                  }}
                 />
+                <FieldError message={fieldErrors.api_network_id} />
               </div>
             </div>
             <div className="flex items-center gap-2 pt-1">
@@ -250,19 +305,36 @@ function LifeFilePharmaciesPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" className={adminBtnCompactSecondary} onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button
-              className={adminBtnPrimary}
+              type="button"
+              className={adminBtnCompactPrimary}
               disabled={saveMut.isPending}
-              onClick={() => saveMut.mutate()}
+              onClick={() => {
+                const next = validatePharmacy(form);
+                setFieldErrors(next);
+                if (Object.values(next).some(Boolean)) return;
+                saveMut.mutate();
+              }}
             >
               {saveMut.isPending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={deleteTarget !== null}
+        title="Delete this pharmacy?"
+        description={`This permanently removes "${deleteTarget?.name ?? "this pharmacy"}". You cannot delete it while medicines or provider logins still use it.`}
+        pending={deleteMut.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMut.mutate(deleteTarget.id);
+        }}
+      />
     </div>
   );
 }
