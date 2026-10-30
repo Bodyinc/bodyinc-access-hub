@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { FormActionBar } from "@/components/admin/form-action-bar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
@@ -88,6 +89,7 @@ export function MedicineForm({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [bulletToRemove, setBulletToRemove] = useState<number | null>(null);
 
   const form = useForm<MedicineFormValues>({
     resolver: zodResolver(medicineFormSchema) as any,
@@ -234,7 +236,7 @@ export function MedicineForm({
 
             {/* Fields column — minmax(0,1fr) keeps all inputs the same width */}
             <div className="flex w-full min-w-0 flex-col gap-4">
-              <MedicineField label="Medicine Name" error={errors.name?.message}>
+              <MedicineField label="Medicine Name" error={errors.name?.message} required>
                 <Input
                   {...register("name")}
                   placeholder="e.g. GLP-1 Compound"
@@ -243,7 +245,7 @@ export function MedicineForm({
                 />
               </MedicineField>
 
-              <MedicineField label="Short description" error={errors.short_description?.message}>
+              <MedicineField label="Short description" error={errors.short_description?.message} required>
                 <Textarea
                   {...register("short_description")}
                   rows={2}
@@ -395,7 +397,14 @@ export function MedicineForm({
                   size="icon"
                   className="h-[45px] w-[45px] shrink-0 rounded-[14px] text-[#3B4759]/60 hover:bg-destructive/5 hover:text-destructive"
                   disabled={submitting}
-                  onClick={() => remove(index)}
+                  onClick={() => {
+                    const text = form.getValues(`important_info.${index}.text`);
+                    if (!text?.trim()) {
+                      remove(index);
+                      return;
+                    }
+                    setBulletToRemove(index);
+                  }}
                 >
                   <Trash2 className="h-5 w-5" />
                 </Button>
@@ -440,6 +449,17 @@ export function MedicineForm({
           primaryClassName="h-[45px] w-full min-w-0 rounded-[14px] border border-[#E3E084]/40 bg-[#E3E084] px-6 text-[14px] font-semibold text-[#152A51] shadow-none hover:bg-[#D6D26A] sm:w-auto sm:min-w-[140px]"
         />
       </div>
+      <ConfirmDeleteDialog
+        open={bulletToRemove !== null}
+        title="Remove this bullet?"
+        description="This information will be removed from the medicine when you save."
+        confirmLabel="Remove"
+        onCancel={() => setBulletToRemove(null)}
+        onConfirm={() => {
+          if (bulletToRemove !== null) remove(bulletToRemove);
+          setBulletToRemove(null);
+        }}
+      />
     </form>
   );
 }

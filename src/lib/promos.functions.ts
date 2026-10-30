@@ -7,7 +7,7 @@ const promoBase = z.object({
   code: z
     .string()
     .trim()
-    .min(1)
+    .min(1, "Promo code is required")
     .max(60)
     .regex(/^[A-Za-z0-9_-]+$/, "Code may only contain letters, numbers, dashes, and underscores"),
   discount_type: z.enum(["percent", "amount"]),
