@@ -108,11 +108,7 @@ const credentialSchema = z.object({
     .refine((v) => !v || /^https?:\/\//i.test(v), "Enter a valid URL starting with https://"),
   api_username: z.string().trim().min(1, "Username is required").max(200),
   api_password: z.string().min(1, "Password is required").max(200),
-  provider_life_file_id: z
-    .string()
-    .trim()
-    .min(1, "Provider LifeFile ID is required")
-    .max(120),
+  provider_life_file_id: z.string().trim().max(120).optional().or(z.literal("")),
   practice_id: z
     .union([z.string().trim(), z.number()])
     .transform((v) => String(v).trim())
