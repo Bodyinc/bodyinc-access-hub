@@ -65,9 +65,6 @@ function validateCredentials(form: CredForm): CredErrors {
   if (!form.pharmacy_id) errors.pharmacy_id = "Please select a pharmacy.";
   if (!form.api_username.trim()) errors.api_username = "Please enter a username.";
   if (!form.id && !form.api_password.trim()) errors.api_password = "Please enter a password.";
-  if (!form.provider_life_file_id.trim()) {
-    errors.provider_life_file_id = "Please enter the Provider LifeFile ID.";
-  }
   if (!form.practice_id.trim()) {
     errors.practice_id = "Please enter the Practice ID.";
   } else if (!/^\d+$/.test(form.practice_id.trim()) || Number(form.practice_id) <= 0) {
@@ -147,8 +144,8 @@ export function ProviderLifeFileCredentialsSection({ providerId }: { providerId:
         <div>
           <CardTitle className={adminSectionTitle}>LifeFile pharmacy configuration</CardTitle>
           <p className="mt-1 text-[13px] font-normal text-[#3B4759]/80">
-            Add username, password, and Provider LifeFile ID for each pharmacy this practitioner
-            can send to.
+            Add the pharmacy API username and password this practitioner uses to send orders.
+            Provider LifeFile ID is optional.
           </p>
         </div>
         {!editing ? (
@@ -289,10 +286,7 @@ export function ProviderLifeFileCredentialsSection({ providerId }: { providerId:
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className={adminLabel}>
-                  Provider LifeFile ID
-                  <RequiredMark />
-                </Label>
+                <Label className={adminLabel}>Provider LifeFile ID (optional)</Label>
                 <Input
                   className={`${adminInput} ${fieldErrors.provider_life_file_id ? adminInputError : ""}`}
                   value={form.provider_life_file_id}
