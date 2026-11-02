@@ -1377,7 +1377,8 @@ export function ConsultationRoomPage({
         toast.error(res.message);
         return;
       }
-      toast.success("Consultation completed. Patient portal status updated.");
+      toast.success(res.message || "Consultation completed.");
+      if (res.pharmacy_error) toast.error(res.pharmacy_error);
       endCall();
       setFinishConfirmOpen(false);
       setFinishConclusion("");
@@ -1748,7 +1749,7 @@ export function ConsultationRoomPage({
                 <div className="mt-3 space-y-2">
                   {waitingOnProvider ? (
                     <p className="rounded-md bg-[#F3F6F6] p-2 text-[11px] font-medium text-[#3B4759]/80 leading-snug">
-                      Waiting for the assigned practitioner to approve. After approval they prescribe, then send the order to the pharmacy.
+                      Waiting for the assigned practitioner to approve. Finishing the consultation sends an approved order to the pharmacy.
                     </p>
                   ) : null}
 
@@ -2984,7 +2985,7 @@ export function ConsultationRoomPage({
             </DialogTitle>
             <DialogDescription>
               {clinicalOnly
-                ? "Confirming clinical approval. A prescription PDF will be generated and dispatched to the pharmacy."
+                ? "This approves the order. Finishing the consultation creates the prescription and sends it to the pharmacy."
                 : "This order will be approved and transmitted to the pharmacy."}
             </DialogDescription>
           </DialogHeader>

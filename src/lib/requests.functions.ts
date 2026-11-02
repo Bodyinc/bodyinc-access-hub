@@ -650,7 +650,7 @@ export const approveRequest = createServerFn({ method: "POST" })
     if (!req.provider_id) {
       throw new Error("Assign a provider before approving.");
     }
-    // Clinical approval is provider-only. Prescription and pharmacy send are the next steps.
+    // Clinical approval is provider-only. Finishing the consultation prescribes and sends.
     if (role !== "provider" || req.provider_id !== context.userId) {
       throw new Error(
         "Only the assigned provider can approve this order. Assign a provider and have them approve from the practitioner portal.",
@@ -662,9 +662,9 @@ export const approveRequest = createServerFn({ method: "POST" })
     if (
       req.requires_consultation &&
       (req.user_id || req.subscription_id) &&
-      !(await consultationFinished(supabaseAdmin, req))
+      !(await consultationOpened(supabaseAdmin, req))
     ) {
-      throw new Error("Join and finish the consultation before approving this order.");
+      throw new Error("Open the consultation before approving this order.");
     }
 
     await supabaseAdmin
@@ -711,6 +711,23 @@ export const approveRequest = createServerFn({ method: "POST" })
       pharmacy_error: null,
     };
   });
+
+async function consultationOpened(
+  supabaseAdmin: any,
+  req: { id: string; user_id?: string | null; subscription_id?: string | null },
+): Promise<boolean> {
+  let q = supabaseAdmin
+    .from("patient_consultations")
+    .select("id")
+    .order("started_at", { ascending: false })
+    .limit(1);
+  if (req.subscription_id) q = q.eq("subscription_id", req.subscription_id);
+  else if (req.user_id) q = q.eq("user_id", req.user_id);
+  else return false;
+  const { data } = await q;
+  if (((data ?? []) as unknown[]).length > 0) return true;
+  return consultationFinished(supabaseAdmin, req);
+}
 
 async function consultationFinished(
   supabaseAdmin: any,
