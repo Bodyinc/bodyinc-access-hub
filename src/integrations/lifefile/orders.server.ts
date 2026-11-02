@@ -34,6 +34,8 @@ export type LifeFileOrderInput = {
     medicineName: string;
     directions: string | null;
     lfProductID: number;
+    /** Plan length in months. 1-month sends 1, 2-month sends 2, 3-month sends 3. */
+    quantity: number;
   };
   config: LifeFileConfig;
 };
@@ -92,6 +94,10 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
     );
   }
   const product = input.prescription;
+  const quantity = Math.round(Number(product.quantity));
+  if (!Number.isFinite(quantity) || quantity < 1) {
+    throw new Error("Pharmacy quantity must be the plan length: 1, 2, or 3 months.");
+  }
 
   const payload = {
     message: {
@@ -154,6 +160,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
           rxType: "new",
           drugName: product.medicineName,
           lfProductID: product.lfProductID,
+          quantity,
           directions: product.directions?.trim() || undefined,
           uuid: crypto.randomUUID(),
         },
@@ -165,6 +172,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
     requestId: input.requestId,
     medicine: product.medicineName,
     lfProductID: product.lfProductID,
+    quantity,
     practiceId: input.config.practiceId,
     username: input.config.apiUsername,
   });
