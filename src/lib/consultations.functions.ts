@@ -1884,6 +1884,70 @@ export const saveConsultationClinicalNote = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function sendApprovedOrdersAfterConsult(
+  supabaseAdmin: any,
+  requestId: string,
+  role: "admin" | "provider",
+  userId: string,
+): Promise<{ message: string; error: string | null }> {
+  const siblings = await loadSiblingRows(supabaseAdmin, requestId);
+  const ids = [...new Set([requestId, ...siblings.map((row: { id: string }) => row.id)])];
+  const { data: rows, error } = await supabaseAdmin
+    .from("medication_requests")
+    .select(
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
+    )
+    .in("id", ids);
+  if (error) return { message: "Consultation finished.", error: error.message };
+
+  const ready = ((rows ?? []) as any[]).filter(
+    (row) =>
+      (row.status === "approved" || row.status === "prescribed") &&
+      !(row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed"),
+  );
+  if (!ready.length) {
+    return { message: "Consultation appointment completed successfully.", error: null };
+  }
+
+  const { fulfillApprovedRequest } = await import("@/lib/requests.functions");
+  const failures: string[] = [];
+  let sent = 0;
+  for (const row of ready) {
+    try {
+      await fulfillApprovedRequest(supabaseAdmin, row, { role, userId });
+      sent += 1;
+    } catch (sendError) {
+      const message = sendError instanceof Error ? sendError.message : "Pharmacy send failed.";
+      if (/already submitted to LifeFile/i.test(message)) {
+        sent += 1;
+        continue;
+      }
+      console.error("[finishConsultationAppointment] automatic pharmacy send failed:", sendError);
+      failures.push(message);
+    }
+  }
+
+  if (failures.length && sent === 0) {
+    return {
+      message: "Consultation finished. The pharmacy send failed.",
+      error: failures[0],
+    };
+  }
+  if (failures.length) {
+    return {
+      message: `Consultation finished. ${sent} order${sent === 1 ? "" : "s"} sent to the pharmacy.`,
+      error: failures[0],
+    };
+  }
+  return {
+    message:
+      sent === 1
+        ? "Consultation finished. The order was prescribed and sent to the pharmacy."
+        : `Consultation finished. ${sent} orders were prescribed and sent to the pharmacy.`,
+    error: null,
+  };
+}
+
 export const finishConsultationAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) =>
@@ -1894,7 +1958,7 @@ export const finishConsultationAppointment = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }): Promise<{ ok: boolean; message: string }> => {
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message: string; pharmacy_error?: string | null }> => {
     const role = await assertReviewer(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -2055,5 +2119,16 @@ export const finishConsultationAppointment = createServerFn({ method: "POST" })
       console.error("[finishConsultationAppointment] pharmacy dispatch failed:", error);
     }
 
-    return { ok: true, message: "Consultation appointment completed successfully." };
+    const pharmacy = await sendApprovedOrdersAfterConsult(
+      supabaseAdmin,
+      data.requestId,
+      role === "admin" ? "admin" : "provider",
+      context.userId,
+    );
+
+    return {
+      ok: true,
+      message: pharmacy.message,
+      pharmacy_error: pharmacy.error,
+    };
   });

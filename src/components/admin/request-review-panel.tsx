@@ -263,7 +263,8 @@ export function RequestReviewPanel({
         toast.error(res.message);
         return;
       }
-      toast.success("Consultation concluded successfully.");
+      toast.success(res.message || "Consultation concluded successfully.");
+      if (res.pharmacy_error) toast.error(res.pharmacy_error);
       setFinishOpen(false);
       refresh();
     },

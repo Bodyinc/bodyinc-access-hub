@@ -271,11 +271,11 @@ const builders: Record<EmailTemplateKey, Builder> = {
   patient_sent_to_pharmacy: (p) => {
     const med = str(p, "MEDICINE_NAME", "your medication");
     return layout({
-      preheader: `Your ${med} order was sent to the pharmacy.`,
-      title: "Sent to pharmacy",
+      preheader: `Your prescription for ${med} was created and sent to the pharmacy.`,
+      title: "Prescription sent to pharmacy",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Your order for <strong>${escapeHtml(med)}</strong> has been sent to the pharmacy for fulfillment.</p>`,
-      bodyText: `Hi ${firstName(p)},\n\nYour order for ${med} has been sent to the pharmacy for fulfillment.`,
+        <p>Your prescription for <strong>${escapeHtml(med)}</strong> has been created and sent to the pharmacy for fulfillment.</p>`,
+      bodyText: `Hi ${firstName(p)},\n\nYour prescription for ${med} has been created and sent to the pharmacy for fulfillment.`,
     });
   },
 
