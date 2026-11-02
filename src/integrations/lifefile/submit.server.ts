@@ -91,7 +91,7 @@ export async function submitRequestToLifeFile(
       .maybeSingle(),
     supabaseAdmin
       .from("prescriptions")
-      .select("id, medicine_name, directions, medicine_id, variant_id, created_at")
+      .select("id, medicine_name, directions, medicine_id, variant_id, package_id, created_at")
       .eq("request_id", req.id)
       .order("created_at", { ascending: false })
       .limit(1),
@@ -138,6 +138,28 @@ export async function submitRequestToLifeFile(
     throw new Error("Provider NPI is required for Life File.");
   }
 
+  const { data: requestPlan } = await supabaseAdmin
+    .from("medication_requests")
+    .select("package_id")
+    .eq("id", req.id)
+    .maybeSingle();
+  const packageId = requestPlan?.package_id ?? prescriptionRow.package_id ?? null;
+  let quantity: number | null = null;
+  if (packageId) {
+    const { data: plan } = await supabaseAdmin
+      .from("packages")
+      .select("duration_months")
+      .eq("id", packageId)
+      .maybeSingle();
+    const months = Number(plan?.duration_months);
+    if (Number.isFinite(months) && months >= 1) quantity = Math.round(months);
+  }
+  if (!quantity) {
+    throw new Error(
+      "This order has no plan length, so the pharmacy quantity cannot be set. A 1-month plan sends 1, a 2-month plan sends 2, and a 3-month plan sends 3.",
+    );
+  }
+
   try {
     const lifeFileResponse = await createLifeFileOrder({
       requestId: req.id,
@@ -168,6 +190,7 @@ export async function submitRequestToLifeFile(
         medicineName: medicineLabel,
         directions: prescriptionRow.directions,
         lfProductID: routing.lfProductId,
+        quantity,
       },
     });
 
