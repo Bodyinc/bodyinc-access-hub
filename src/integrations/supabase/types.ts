@@ -883,33 +883,42 @@ export type Database = {
         Row: {
           api_base_url: string
           api_network_id: string | null
+          api_password: string | null
+          api_username: string | null
           created_at: string
           id: string
           is_active: boolean
           location_id: string | null
           name: string
+          practice_id: number | null
           updated_at: string
           vendor_id: string | null
         }
         Insert: {
           api_base_url: string
           api_network_id?: string | null
+          api_password?: string | null
+          api_username?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           location_id?: string | null
           name: string
+          practice_id?: number | null
           updated_at?: string
           vendor_id?: string | null
         }
         Update: {
           api_base_url?: string
           api_network_id?: string | null
+          api_password?: string | null
+          api_username?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           location_id?: string | null
           name?: string
+          practice_id?: number | null
           updated_at?: string
           vendor_id?: string | null
         }

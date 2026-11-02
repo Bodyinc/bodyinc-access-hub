@@ -183,6 +183,14 @@ function humanizeDatabase(raw: string): string | null {
   if (/permission denied|row-level security|jwt/i.test(raw)) {
     return sentence("You do not have permission to do that");
   }
+  if (
+    /column .* does not exist|could not find the .* column|schema cache/i.test(raw) &&
+    /api_username|api_password|practice_id/i.test(raw)
+  ) {
+    return sentence(
+      "LifeFile pharmacy logins are not ready yet. Apply the latest database update, then try again",
+    );
+  }
   return null;
 }
 

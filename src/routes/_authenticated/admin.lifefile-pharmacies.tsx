@@ -52,18 +52,24 @@ type FormState = {
   id?: string;
   name: string;
   api_base_url: string;
+  api_username: string;
+  api_password: string;
   vendor_id: string;
   location_id: string;
   api_network_id: string;
+  practice_id: string;
   is_active: boolean;
 };
 
 const EMPTY: FormState = {
   name: "",
   api_base_url: "",
+  api_username: "",
+  api_password: "",
   vendor_id: "",
   location_id: "",
   api_network_id: "",
+  practice_id: "",
   is_active: true,
 };
 
@@ -86,9 +92,15 @@ function LifeFilePharmaciesPage() {
     else if (!/^https?:\/\//i.test(values.api_base_url.trim())) {
       errors.api_base_url = "Enter a valid URL starting with https://.";
     }
+    if (!values.api_username.trim()) errors.api_username = "Please enter the API username.";
+    if (!values.api_password.trim()) errors.api_password = "Please enter the API password.";
     if (!values.vendor_id.trim()) errors.vendor_id = "Please enter the Vendor ID.";
     if (!values.location_id.trim()) errors.location_id = "Please enter the Location ID.";
     if (!values.api_network_id.trim()) errors.api_network_id = "Please enter the API Network ID.";
+    if (!values.practice_id.trim()) errors.practice_id = "Please enter the Practice ID.";
+    else if (!/^\d+$/.test(values.practice_id.trim()) || Number(values.practice_id) <= 0) {
+      errors.practice_id = "Practice ID must be a positive number.";
+    }
     return errors;
   }
 
@@ -151,7 +163,7 @@ function LifeFilePharmaciesPage() {
             <p className="text-[14px] text-[#3B4759]/60">Loading…</p>
           ) : (q.data ?? []).length === 0 ? (
             <p className="text-[14px] text-[#3B4759]/60">
-              No pharmacies yet. Add Striker, Optimal, etc. before linking medicines and providers.
+              No pharmacies yet. Add each pharmacy's own LifeFile login, then choose that pharmacy on the medicine.
             </p>
           ) : (
             (q.data ?? []).map((p: any) => (
@@ -173,6 +185,10 @@ function LifeFilePharmaciesPage() {
                     </Badge>
                   </div>
                   <div className="truncate text-[13px] text-[#3B4759]/70">{p.api_base_url}</div>
+                  <div className="text-[13px] text-[#3B4759]/70">
+                    {p.api_username ? `User: ${p.api_username}` : "No API username yet"}
+                    {p.practice_id != null ? ` · Practice: ${p.practice_id}` : ""}
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button
@@ -184,9 +200,12 @@ function LifeFilePharmaciesPage() {
                         id: p.id,
                         name: p.name ?? "",
                         api_base_url: p.api_base_url ?? "",
+                        api_username: p.api_username ?? "",
+                        api_password: "",
                         vendor_id: p.vendor_id ?? "",
                         location_id: p.location_id ?? "",
                         api_network_id: p.api_network_id ?? "",
+                        practice_id: p.practice_id != null ? String(p.practice_id) : "",
                         is_active: p.is_active !== false,
                       });
                       setFieldErrors({});
@@ -212,7 +231,7 @@ function LifeFilePharmaciesPage() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{form.id ? "Edit pharmacy" : "Add pharmacy"}</DialogTitle>
           </DialogHeader>
@@ -248,6 +267,56 @@ function LifeFilePharmaciesPage() {
                 placeholder="https://…"
               />
               <FieldError message={fieldErrors.api_base_url} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className={adminLabel}>
+                  API username
+                  <RequiredMark />
+                </Label>
+                <Input
+                  className={`${adminInput} ${fieldErrors.api_username ? adminInputError : ""}`}
+                  value={form.api_username}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, api_username: e.target.value }));
+                    setFieldErrors((prev) => ({ ...prev, api_username: undefined }));
+                  }}
+                />
+                <FieldError message={fieldErrors.api_username} />
+              </div>
+              <div className="space-y-1">
+                <Label className={adminLabel}>
+                  API password
+                  <RequiredMark />
+                </Label>
+                <Input
+                  className={`${adminInput} ${fieldErrors.api_password ? adminInputError : ""}`}
+                  type="password"
+                  value={form.api_password}
+                  autoComplete="new-password"
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, api_password: e.target.value }));
+                    setFieldErrors((prev) => ({ ...prev, api_password: undefined }));
+                  }}
+                />
+                <FieldError message={fieldErrors.api_password} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className={adminLabel}>
+                Practice ID
+                <RequiredMark />
+              </Label>
+              <Input
+                className={`${adminInput} ${fieldErrors.practice_id ? adminInputError : ""}`}
+                inputMode="numeric"
+                value={form.practice_id}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, practice_id: e.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, practice_id: undefined }));
+                }}
+              />
+              <FieldError message={fieldErrors.practice_id} />
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1">

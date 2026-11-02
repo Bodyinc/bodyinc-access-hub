@@ -85,6 +85,12 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
 
   const patientName = splitName(input.patient.fullName);
   const providerName = splitName(input.provider.fullName);
+  const nameParts = input.provider.fullName.trim().split(/\s+/).filter(Boolean);
+  if (nameParts.length < 2 || !providerName.firstName || !providerName.lastName) {
+    throw new Error(
+      "LifeFile needs the doctor's first and last name. Enter both on the provider profile.",
+    );
+  }
   const product = input.prescription;
 
   const payload = {
@@ -107,9 +113,6 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
         lastName: providerName.lastName,
         firstName: providerName.firstName,
         email: input.provider.email ?? undefined,
-        ...(input.provider.lifeFileProviderId
-          ? { id: input.provider.lifeFileProviderId }
-          : {}),
       },
 
       practice: {
@@ -163,6 +166,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
     medicine: product.medicineName,
     lfProductID: product.lfProductID,
     practiceId: input.config.practiceId,
+    username: input.config.apiUsername,
   });
 
   const response = await lifeFileRequest<LifeFileResponse>("/order", {

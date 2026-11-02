@@ -232,7 +232,7 @@ async function resolveLifeFileRouting(
   let productQuery = supabaseAdmin
     .from("medicine_life_file_products")
     .select(
-      "id, pharmacy_id, lf_product_id, variant_id, is_active, life_file_pharmacies(id, name, api_base_url, vendor_id, location_id, api_network_id, is_active)",
+      "id, pharmacy_id, lf_product_id, variant_id, is_active, life_file_pharmacies(id, name, api_base_url, api_username, api_password, vendor_id, location_id, api_network_id, practice_id, is_active)",
     )
     .eq("medicine_id", args.medicineId)
     .eq("is_active", true);
@@ -245,6 +245,11 @@ async function resolveLifeFileRouting(
 
   const { data: products, error: productsError } = await productQuery;
   if (productsError) {
+    if (/api_username|api_password|practice_id/i.test(productsError.message)) {
+      throw new Error(
+        "LifeFile pharmacy logins are not ready yet. Apply the latest database update, then add the API username, password, and practice ID under LifeFile Pharmacies.",
+      );
+    }
     // Table may not exist yet in environments that have not migrated — fall back to legacy.
     if (/medicine_life_file_products|does not exist|schema cache/i.test(productsError.message)) {
       return resolveLegacyRouting(supabaseAdmin, args);
@@ -254,8 +259,9 @@ async function resolveLifeFileRouting(
 
   const rows = (products ?? []) as any[];
   if (rows.length === 0) {
-    // Fall back to medicines/variants.lf_product_id + env credentials.
-    return resolveLegacyRouting(supabaseAdmin, args);
+    throw new Error(
+      "This medicine is not linked to a LifeFile pharmacy. On the medicine, choose the pharmacy and product ID, then send again.",
+    );
   }
 
   if (rows.length > 1) {
@@ -285,29 +291,17 @@ async function resolveLifeFileRouting(
     );
   }
 
-  const { data: cred, error: credError } = await supabaseAdmin
-    .from("provider_life_file_credentials")
-    .select(
-      "api_base_url, api_username, api_password, provider_life_file_id, practice_id, npi, is_active",
-    )
-    .eq("provider_id", args.providerId)
-    .eq("pharmacy_id", pharmacy.id)
-    .maybeSingle();
-
-  if (credError && !/provider_life_file_credentials|does not exist|schema cache/i.test(credError.message)) {
-    throw new Error(credError.message);
-  }
-
-  if (!cred || cred.is_active === false) {
+  const apiUsername = String(pharmacy.api_username ?? "").trim();
+  const apiPassword = String(pharmacy.api_password ?? "");
+  const practiceId = Number(pharmacy.practice_id);
+  if (!apiUsername || !apiPassword.trim()) {
     throw new Error(
-      `LifeFile configuration is missing for this provider and pharmacy (${pharmacy.name}).`,
+      `LifeFile login is missing for ${pharmacy.name}. Add the API username and password under LifeFile Pharmacies.`,
     );
   }
-
-  const practiceId = Number(cred.practice_id);
   if (!Number.isFinite(practiceId) || practiceId <= 0) {
     throw new Error(
-      `LifeFile practice ID is missing for this provider and pharmacy (${pharmacy.name}).`,
+      `Practice ID is missing for ${pharmacy.name}. Add it under LifeFile Pharmacies.`,
     );
   }
 
@@ -320,7 +314,7 @@ async function resolveLifeFileRouting(
     );
   }
 
-  const baseUrl = String(cred.api_base_url || pharmacy.api_base_url || "").trim();
+  const baseUrl = String(pharmacy.api_base_url || "").trim();
   if (!baseUrl || baseUrl.includes("example.invalid")) {
     throw new Error(
       `Pharmacy "${pharmacy.name}" has no valid API URL. Update it under Admin → LifeFile Pharmacies.`,
@@ -331,12 +325,12 @@ async function resolveLifeFileRouting(
     pharmacyId: pharmacy.id,
     pharmacyName: pharmacy.name,
     lfProductId,
-    providerLifeFileId: cred.provider_life_file_id ?? null,
-    credentialNpi: cred.npi ?? null,
+    providerLifeFileId: null,
+    credentialNpi: null,
     config: {
       baseUrl,
-      apiUsername: cred.api_username,
-      apiPassword: cred.api_password,
+      apiUsername,
+      apiPassword,
       vendorId,
       locationId,
       apiNetworkId,
@@ -392,44 +386,6 @@ async function resolveLegacyRouting(
     throw new Error("Pharmacy configuration is missing for this medicine.");
   }
 
-  // Prefer provider credentials against any active pharmacy if present; else env.
-  const { data: anyCred } = await supabaseAdmin
-    .from("provider_life_file_credentials")
-    .select(
-      "api_base_url, api_username, api_password, provider_life_file_id, practice_id, npi, is_active, pharmacy_id, life_file_pharmacies(id, name, api_base_url, vendor_id, location_id, api_network_id, is_active)",
-    )
-    .eq("provider_id", args.providerId)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
-
-  if (anyCred) {
-    const pharmacy = Array.isArray((anyCred as any).life_file_pharmacies)
-      ? (anyCred as any).life_file_pharmacies[0]
-      : (anyCred as any).life_file_pharmacies;
-    const practiceId = Number(anyCred.practice_id);
-    if (pharmacy?.is_active !== false && Number.isFinite(practiceId) && practiceId > 0) {
-      return {
-        pharmacyId: pharmacy?.id ?? anyCred.pharmacy_id ?? null,
-        pharmacyName: pharmacy?.name ?? null,
-        lfProductId,
-        providerLifeFileId: anyCred.provider_life_file_id ?? null,
-        credentialNpi: anyCred.npi ?? null,
-        config: {
-          baseUrl: String(anyCred.api_base_url || pharmacy?.api_base_url || "").trim(),
-          apiUsername: anyCred.api_username,
-          apiPassword: anyCred.api_password,
-          vendorId: String(pharmacy?.vendor_id ?? process.env.LIFE_FILE_VENDOR_ID ?? "").trim(),
-          locationId: String(pharmacy?.location_id ?? process.env.LIFE_FILE_LOCATION_ID ?? "").trim(),
-          apiNetworkId: String(
-            pharmacy?.api_network_id ?? process.env.LIFE_FILE_API_NETWORK_ID ?? "",
-          ).trim(),
-          practiceId,
-        },
-      };
-    }
-  }
-
   try {
     return {
       pharmacyId: null,
@@ -441,7 +397,7 @@ async function resolveLegacyRouting(
     };
   } catch {
     throw new Error(
-      "LifeFile configuration is missing for this provider and pharmacy. Add pharmacy credentials on the provider, or set LIFE_FILE_* env vars.",
+      "LifeFile configuration is missing. Link the medicine to a pharmacy under LifeFile Pharmacies.",
     );
   }
 }
