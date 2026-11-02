@@ -38,6 +38,9 @@ export async function resolveMedicineName(
   return (data as { name?: string } | null)?.name?.trim() || "your medication";
 }
 
+/** Copied on every admin notification. Not added to patient or provider mail. */
+const ADMIN_EMAIL_CC = "parth@appsrow.com";
+
 type NotifyOpts = {
   supabaseAdmin: any;
   userId: string | null | undefined;
@@ -56,6 +59,7 @@ export async function notifyUserById(opts: NotifyOpts): Promise<boolean> {
     const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
     const result = await sendTransactionalEmail({
       to: { email: contact.email, name: contact.name },
+      ...(opts.template.startsWith("admin_") ? { cc: { email: ADMIN_EMAIL_CC } } : {}),
       template: opts.template,
       params: {
         FIRSTNAME: contact.name?.split(/\s+/)[0] ?? "",
