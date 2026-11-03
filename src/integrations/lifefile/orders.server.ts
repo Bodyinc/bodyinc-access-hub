@@ -155,6 +155,11 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
         service: 9,
       },
 
+      // Patient pays Body Inc, and Body Inc pays the pharmacy.
+      billing: {
+        payorType: "doc",
+      },
+
       rxs: [
         {
           rxType: "new",
@@ -175,6 +180,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
     quantity,
     practiceId: input.config.practiceId,
     username: input.config.apiUsername,
+    payorType: "doc",
   });
 
   const response = await lifeFileRequest<LifeFileResponse>("/order", {
