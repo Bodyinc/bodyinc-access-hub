@@ -694,7 +694,7 @@ function primaryAction(input: {
   claimPending: boolean;
   consultPending: boolean;
 }): Primary | null {
-  if (!input.hasProvider && input.canClaim) {
+  if (!input.hasProvider && input.canClaim && !input.sent) {
     if (!input.intakeFilled) {
       return { key: "claim", label: "Claim", disabled: true, disabledReason: "intake form missing" };
     }

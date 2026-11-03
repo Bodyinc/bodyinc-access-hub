@@ -1703,19 +1703,29 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
             ensurePatientQuickbloxClient,
             createPatientAppointment,
             ensureDialogOccupants,
+            removeDialogOccupants,
             sendChatMessageToDialog,
           } = await import("@/lib/consultations/quickblox");
 
           const agent = await provisionBodyIncProviderAgent(supabaseAdmin, data.providerId);
           let prevToken: string | undefined;
-          if (existing.provider_id) {
+          let prevQbUserId: number | null = null;
+          if (existing.provider_id && existing.provider_id !== data.providerId) {
             try {
               const prevSession = await sessionForBodyIncProvider(
                 supabaseAdmin,
                 existing.provider_id,
               );
               prevToken = prevSession.token;
-            } catch {}
+              prevQbUserId = prevSession.userId ?? null;
+            } catch {
+              const { data: prevProv } = await supabaseAdmin
+                .from("providers")
+                .select("qb_user_id")
+                .eq("id", existing.provider_id)
+                .maybeSingle();
+              prevQbUserId = prevProv?.qb_user_id ?? null;
+            }
           }
 
           const conds: string[] = [];
@@ -1759,6 +1769,18 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
                       dialogId: activeDialogId,
                       occupantsIds: occupants,
                     });
+                    if (
+                      prevQbUserId &&
+                      prevQbUserId !== agent.qbUserId &&
+                      prevQbUserId !== adminQbId &&
+                      prevQbUserId !== c.qb_user_id
+                    ) {
+                      await removeDialogOccupants({
+                        dialogId: activeDialogId,
+                        occupantsIds: [prevQbUserId],
+                        token: prevToken,
+                      });
+                    }
                     await sendChatMessageToDialog({
                       dialogId: activeDialogId,
                       message: assignmentNote,

@@ -43,6 +43,17 @@ const OPEN_STATUSES = [
   "dispatched",
 ];
 
+// A practitioner may claim an order that still needs a clinician. Orders already sent to the
+// pharmacy (or further along fulfillment) are not claimable.
+const CLAIMABLE_STATUSES = [
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
+  "approved",
+  "prescribed",
+];
+
 // Patient keys are "u_<user id>" for account holders and "s_<intake session id>" for guests.
 function parsePatientKey(key: string): { kind: "user" | "session"; id: string } {
   const kind = key.startsWith("s_") ? "session" : "user";
@@ -113,7 +124,7 @@ async function providerStates(supabaseAdmin: any, me: string): Promise<string[]>
 async function loadClaimable(
   supabaseAdmin: any,
   me: string,
-  statuses: readonly string[] = OPEN_STATUSES,
+  statuses: readonly string[] = CLAIMABLE_STATUSES,
 ): Promise<any[]> {
   const states = await providerStates(supabaseAdmin, me);
   if (states.length === 0) return [];
@@ -197,7 +208,7 @@ async function loadClaimable(
 async function countClaimable(
   supabaseAdmin: any,
   me: string,
-  statuses: readonly string[] = OPEN_STATUSES,
+  statuses: readonly string[] = CLAIMABLE_STATUSES,
 ): Promise<number> {
   const rows = await loadClaimable(supabaseAdmin, me, statuses);
   return rows.length;
@@ -218,7 +229,7 @@ async function canClaimRequest(
     .eq("id", requestId)
     .maybeSingle();
 
-  if (!req || req.provider_id || !OPEN_STATUSES.includes(req.status)) return false;
+  if (!req || req.provider_id || !CLAIMABLE_STATUSES.includes(req.status)) return false;
 
   let state: string | null = null;
   if (req.user_id) {
