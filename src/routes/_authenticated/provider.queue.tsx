@@ -76,8 +76,9 @@ function ProviderQueuePage() {
       <div className="space-y-1">
         <h1 className={adminPageTitle}>Unassigned queue</h1>
         <p className={adminPageSubtitle}>
-          Patients in your licensed states who finished intake and are in chat. Several medicines
-          bought together show as one order.
+          Patients in your licensed states who finished intake and are in chat. If a provider is
+          already assigned, the order is not listed here. Several medicines bought together show
+          as one order.
         </p>
       </div>
 

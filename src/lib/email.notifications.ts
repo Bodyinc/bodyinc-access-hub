@@ -41,6 +41,22 @@ export async function resolveMedicineName(
 /** Copied on every admin notification. Not added to patient or provider mail. */
 const ADMIN_EMAIL_CC = "parth@appsrow.com";
 
+const DEFAULT_PROVIDER_PORTAL = "https://provider.bodyinc.com";
+
+/** Absolute provider site. A relative or localhost link makes the email button open a missing page. */
+function providerPortalOrigin(): string {
+  const configured = (process.env.PROVIDER_APP_URL || process.env.PROVIDER_PORTAL_URL || "")
+    .trim()
+    .replace(/\/$/, "");
+  if (
+    /^https?:\/\//i.test(configured) &&
+    !/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(configured)
+  ) {
+    return configured;
+  }
+  return DEFAULT_PROVIDER_PORTAL;
+}
+
 type NotifyOpts = {
   supabaseAdmin: any;
   userId: string | null | undefined;
@@ -233,10 +249,22 @@ export async function notifyProviderRequestEvent(opts: {
   if (opts.actorUserId && opts.actorUserId === opts.providerId) return;
 
   const medicineName = await resolveMedicineName(opts.supabaseAdmin, opts.medicineId);
-  const providerPortal =
-    process.env.PROVIDER_PORTAL_URL?.replace(/\/$/, "") ||
-    process.env.APP_URL?.replace(/\/$/, "") ||
-    "";
+  const providerPortal = providerPortalOrigin();
+  const { data: reqRow } = await opts.supabaseAdmin
+    .from("medication_requests")
+    .select("user_id")
+    .eq("id", opts.requestId)
+    .maybeSingle();
+  const patient = await resolveProfileContact(opts.supabaseAdmin, reqRow?.user_id);
+  let patientName = patient?.name?.trim() || "";
+  if (!patientName && reqRow?.user_id) {
+    const { data: nameRow } = await opts.supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", reqRow.user_id)
+      .maybeSingle();
+    patientName = (nameRow as { full_name?: string | null } | null)?.full_name?.trim() || "";
+  }
 
   await notifyUserById({
     supabaseAdmin: opts.supabaseAdmin,
@@ -245,12 +273,154 @@ export async function notifyProviderRequestEvent(opts: {
     params: {
       ORDER_ID: opts.requestId,
       MEDICINE_NAME: medicineName,
-      REQUEST_URL: providerPortal
-        ? `${providerPortal}/provider/requests/${opts.requestId}`
-        : `/provider/requests/${opts.requestId}`,
+      PATIENT_NAME: patientName || "A patient",
+      REQUEST_URL: `${providerPortal}/provider/requests/${opts.requestId}`,
       ...opts.extraParams,
     },
   });
+}
+
+const CLAIM_READY_STATUSES = [
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
+  "approved",
+  "prescribed",
+];
+
+/** One email per new unassigned patient, to every active provider licensed in that state. */
+export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
+  try {
+    const { filledSessionIdSet } = await import("@/lib/clinical-intake");
+    const { userIdsInOpenChat } = await import("@/lib/order-groups");
+    const { data: rows, error } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, user_id, session_id, medicine_id, status, order_group_id")
+      .is("provider_id", null)
+      .in("status", CLAIM_READY_STATUSES)
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (error || !rows?.length) return;
+
+    const sessionIds = Array.from(
+      new Set(rows.map((r: any) => r.session_id).filter(Boolean)),
+    ) as string[];
+    const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean))) as string[];
+    const [filled, inChat] = await Promise.all([
+      filledSessionIdSet(supabaseAdmin, sessionIds),
+      userIdsInOpenChat(supabaseAdmin, userIds),
+    ]);
+    let ready = rows.filter(
+      (r: any) => r.session_id && filled.has(r.session_id) && r.user_id && inChat.has(r.user_id),
+    );
+    const groupIds = Array.from(new Set(ready.map((r: any) => r.order_group_id).filter(Boolean)));
+    if (groupIds.length) {
+      const { data: taken } = await supabaseAdmin
+        .from("medication_requests")
+        .select("order_group_id")
+        .in("order_group_id", groupIds)
+        .not("provider_id", "is", null);
+      const takenGroups = new Set((taken ?? []).map((r: any) => r.order_group_id).filter(Boolean));
+      ready = ready.filter((r: any) => !r.order_group_id || !takenGroups.has(r.order_group_id));
+    }
+    if (!ready.length) return;
+
+    const readyIds = ready.map((r: any) => r.id).filter(Boolean);
+    const { data: already } = await supabaseAdmin
+      .from("email_reminders")
+      .select("target_id")
+      .eq("reminder_type", "provider_claim_offer")
+      .eq("period_key", "ready")
+      .in("target_id", readyIds);
+    const announced = new Set((already ?? []).map((r: any) => r.target_id));
+
+    const byPatient = new Map<string, any[]>();
+    for (const row of ready as any[]) {
+      const list = byPatient.get(row.user_id) ?? [];
+      list.push(row);
+      byPatient.set(row.user_id, list);
+    }
+
+    const { data: providers, error: provErr } = await supabaseAdmin
+      .from("providers")
+      .select("id, license_states, is_active, is_unavailable")
+      .eq("is_active", true);
+    if (provErr || !providers?.length) return;
+    const active = (providers as any[]).filter((p) => !p.is_unavailable);
+    const seenProvider = new Set<string>();
+    const uniqueProviders = active.filter((p) => {
+      if (!p.id || seenProvider.has(p.id)) return false;
+      seenProvider.add(p.id);
+      return true;
+    });
+
+    const portal = providerPortalOrigin();
+
+    for (const rows of byPatient.values()) {
+      const group = [...rows].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      if (group.some((row) => announced.has(row.id))) continue;
+      const lead = group[0];
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, state_code")
+        .eq("id", lead.user_id)
+        .maybeSingle();
+      const state = String((profile as any)?.state_code ?? "")
+        .trim()
+        .toUpperCase();
+      const patientName = (profile as any)?.full_name?.trim() || "A patient";
+      if (!state) continue;
+      const licensed = uniqueProviders.filter((p) =>
+        ((p.license_states ?? []) as string[])
+          .map((s) => String(s).toUpperCase())
+          .includes(state),
+      );
+      if (!licensed.length) continue;
+      const medicineNames = Array.from(
+        new Set(
+          (
+            await Promise.all(group.map((row) => resolveMedicineName(supabaseAdmin, row.medicine_id)))
+          ).filter(Boolean),
+        ),
+      );
+      const { error: claimErr } = await supabaseAdmin.from("email_reminders").insert({
+        reminder_type: "provider_claim_offer",
+        target_id: lead.id,
+        period_key: "ready",
+      });
+      if (claimErr) continue;
+      announced.add(lead.id);
+      for (const row of group.slice(1)) {
+        const { error: siblingErr } = await supabaseAdmin.from("email_reminders").insert({
+          reminder_type: "provider_claim_offer",
+          target_id: row.id,
+          period_key: "ready",
+        });
+        if (!siblingErr) announced.add(row.id);
+      }
+      const seenInbox = new Set<string>();
+      for (const provider of licensed) {
+        const contact = await resolveProfileContact(supabaseAdmin, provider.id);
+        const inbox = contact?.email?.trim().toLowerCase();
+        if (!inbox || seenInbox.has(inbox)) continue;
+        seenInbox.add(inbox);
+        await notifyUserById({
+          supabaseAdmin,
+          userId: provider.id,
+          template: "provider_patient_ready",
+          params: {
+            ORDER_ID: lead.id,
+            MEDICINE_NAME: medicineNames.join(", ") || "a treatment",
+            PATIENT_NAME: patientName,
+            REQUEST_URL: `${portal}/provider/requests/${lead.id}`,
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[email] notifyProvidersPatientReadyToClaim failed:", e);
+  }
 }
 
 /** Email every admin when a provider clinically approves an order (ready for pharmacy send). */

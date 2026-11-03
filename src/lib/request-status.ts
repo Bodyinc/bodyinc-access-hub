@@ -26,7 +26,10 @@ export const REQUEST_STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-export function requestStatusLabel(status: string): string {
+export function requestStatusLabel(status: string, deltaCents?: number | null): string {
+  if (status === "awaiting_additional_payment" && deltaCents != null && deltaCents <= 0) {
+    return "Waiting on patient";
+  }
   return REQUEST_STATUS_LABELS[status] ?? status;
 }
 
@@ -39,7 +42,10 @@ const CLINICAL_STATUS_LABELS: Record<string, string> = {
   consultation_reschedule: "Reschedule requested",
 };
 
-export function clinicalStatusLabel(status: string): string {
+export function clinicalStatusLabel(status: string, deltaCents?: number | null): string {
+  if (status === "awaiting_additional_payment" && arguments.length > 1) {
+    return requestStatusLabel(status, deltaCents);
+  }
   return CLINICAL_STATUS_LABELS[status] ?? requestStatusLabel(status);
 }
 

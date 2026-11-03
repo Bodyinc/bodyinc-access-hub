@@ -12,13 +12,15 @@ export const Route = createFileRoute("/_authenticated/provider/help")({
 });
 
 const STEPS = [
-  "Start on the Dashboard. Cards open a filtered list, and Join now opens the next consultation.",
-  "The Consultation window lists every assigned patient who needs a call. Join opens that order, with intake, notes, and history.",
-  "On the order, review the intake form first. Red flags, allergies, medications, and history are on the Intake form tab.",
-  "Join the consultation when it is required, then add internal notes. Approve only after a required call is finished.",
-  "Approve, then Prescribe, then Send to pharmacy. The patient is notified at each step.",
-  "Reject and Change medicine both need a reason. Every medicine change waits for the patient to confirm or decline. No response within 48 hours restores the previous plan, and the order returns to your decision.",
-  "Claim from the Unassigned Queue only when the intake form is filled. Claiming opens the order. A second practitioner cannot claim the same order.",
+  "Start on the Dashboard. The cards open a filtered list, and Join consultation opens the next visit.",
+  "My Requests is the work list for orders assigned to you. Under review is the list to finish first.",
+  "My Patients is a directory of everyone assigned to you, including finished orders. Open the order from My Requests when you need to decide.",
+  "Consultations lists assigned orders that need a visit, or already have one in progress. That list can be longer than Under review.",
+  "On the order, review the intake form first. Allergies, medications, and history are on that tab.",
+  "If the order needs a consultation, use Join consultation, then Approve. Finishing the consultation sends that approved order to the pharmacy.",
+  "If the order does not need a consultation, Approve writes the prescription and sends it to the pharmacy.",
+  "Reject and Change medicine both need a reason. The patient confirms or declines a medicine change. No response within 48 hours restores the previous plan.",
+  "Claim from the Unassigned queue only when the intake form is filled. Once any provider claims or is assigned, the order leaves that queue.",
 ];
 
 function ProviderHelpPage() {
@@ -27,7 +29,7 @@ function ProviderHelpPage() {
       <div className="space-y-1">
         <h1 className={adminPageTitle}>Help and support</h1>
         <p className={adminPageSubtitle}>
-          One order page is the workspace. My Patients is only a directory.
+          My Requests is where you decide. My Patients is the directory of people assigned to you.
         </p>
       </div>
       <ol className="list-decimal space-y-2 pl-5 text-[14px] text-[#3B4759]">

@@ -101,7 +101,7 @@ export async function submitRequestToLifeFile(
   if (!provider) throw new Error("Provider record not found.");
   const prescriptionRow = Array.isArray(prescription) ? prescription[0] : prescription;
   if (!prescriptionRow) {
-    throw new Error("Prescription not found. Generate the prescription first.");
+    throw new Error("Prescribe first, then send to the pharmacy.");
   }
 
   const { data: providerProfile } = await supabaseAdmin

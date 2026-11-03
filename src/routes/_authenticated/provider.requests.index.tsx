@@ -31,7 +31,7 @@ function ProviderRequestsPage() {
   return (
     <RequestList
       title="My Requests"
-      subtitle="Review and approve the medication orders assigned to you."
+      subtitle="Orders assigned to you. Under review is the list to finish first. Consultations can show more rows because it also includes visits that are scheduled or already in progress."
       showProvider={false}
       clinicalOnly
       initialStatus={status}

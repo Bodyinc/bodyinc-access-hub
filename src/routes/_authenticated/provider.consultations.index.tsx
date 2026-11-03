@@ -49,8 +49,8 @@ function ProviderConsultationsPage() {
       <div className="space-y-1">
         <h1 className={adminPageTitle}>Consultation window</h1>
         <p className={adminPageSubtitle}>
-          Every assigned patient who needs a consultation, in one list. Join opens that
-          patient&apos;s order, including intake, history, and notes. Patients without a required
+          Every assigned patient who needs a consultation, in one list. Join consultation opens that
+          patient's order, including intake, history, and notes. Patients without a required
           or in-progress visit are hidden.
         </p>
       </div>
@@ -113,7 +113,7 @@ function ProviderConsultationsPage() {
                         })
                       }
                     >
-                      Join
+                      Join consultation
                     </Button>
                   </TableCell>
                 </TableRow>

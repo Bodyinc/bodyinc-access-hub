@@ -277,8 +277,8 @@ export function RequestList({
                         }`}
                       >
                         {clinicalOnly
-                          ? clinicalStatusLabel(r.status)
-                          : requestStatusLabel(r.status)}
+                          ? clinicalStatusLabel(r.status, r.plan_change_delta_cents)
+                          : requestStatusLabel(r.status, r.plan_change_delta_cents)}
                       </Badge>
                     </TableCell>
                     {!clinicalOnly ? (

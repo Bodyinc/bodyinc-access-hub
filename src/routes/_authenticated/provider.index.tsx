@@ -136,7 +136,7 @@ function ProviderDashboard() {
             }
             className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
           >
-            Join now
+            Join consultation
           </Button>
         ) : null}
         <Button
@@ -204,7 +204,7 @@ function ProviderDashboard() {
                       </span>
                     </span>
                     <span className="text-[12px] font-semibold text-[#3B4759]">
-                      {clinicalStatusLabel(row.status)}
+                      {clinicalStatusLabel(row.status, row.plan_change_delta_cents)}
                     </span>
                   </button>
                 </li>

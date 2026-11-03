@@ -272,12 +272,8 @@ export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
       .maybeSingle();
     if (pkgErr) throw new Error(pkgErr.message);
     if (!pkg) throw new Error("Selected plan not found.");
-    if (!pkg.is_active) throw new Error("Selected plan is inactive.");
-    if (!pkg.stripe_price_id) {
-      throw new Error(
-        "This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.",
-      );
-    }
+    const { planIsSelectable } = await import("@/lib/medicines.functions");
+    await planIsSelectable(supabaseAdmin, pkg);
 
     const { applyPackageChangeToSubscription } = await import("@/lib/subscription-reschedule");
     const { data: oldPkg } = sub.package_id

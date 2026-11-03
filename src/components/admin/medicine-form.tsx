@@ -74,6 +74,7 @@ const EMPTY: MedicineFormValues = {
   requires_questionnaire: false,
   requires_consultation: false,
   requires_followup: false,
+  show_to_providers: false,
   category_ids: [],
 };
 
@@ -144,7 +145,7 @@ export function MedicineForm({
     id: string;
     name: keyof Pick<
       MedicineFormValues,
-      "requires_questionnaire" | "requires_consultation" | "requires_followup"
+      "requires_questionnaire" | "requires_consultation" | "requires_followup" | "show_to_providers"
     >;
     label: string;
   }[] = [
@@ -162,6 +163,11 @@ export function MedicineForm({
       id: "req-followup",
       name: "requires_followup",
       label: "Requires follow-up approval each cycle",
+    },
+    {
+      id: "show-providers",
+      name: "show_to_providers",
+      label: "Show to providers when changing a patient's medicine",
     },
   ];
 
