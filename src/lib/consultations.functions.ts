@@ -520,6 +520,10 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
     if (!req.subscription_id) {
       return { ok: false, message: "This order is missing a subscription." };
     }
+    const { orderHasIntake } = await import("@/lib/clinical-intake");
+    if (!(await orderHasIntake(supabaseAdmin, req.session_id, req.user_id))) {
+      return { ok: false, message: "The patient has not finished the intake form yet." };
+    }
 
     const siblings = await loadSiblingRows(supabaseAdmin, req.id);
     const orderLines = await loadOrderLines(supabaseAdmin, req.id);

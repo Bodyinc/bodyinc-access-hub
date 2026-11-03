@@ -1,10 +1,63 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { assertAdmin } from "@/lib/admin-guard";
+import { assertAdmin, assertReviewer } from "@/lib/admin-guard";
+import { toStoredMedicine, type StoredMedicine } from "@/lib/medicines.store";
 import { archiveInStripe, BILLING_SUBSCRIPTION_STATUSES } from "@/lib/stripe-objects";
 
 const syncInput = z.object({ medicineId: z.string().uuid() });
+
+const CHANGE_MEDICINE_COLUMNS =
+  "id, name, short_description, long_description, image_url, from_price_cents, status, important_info, notice_text, sort_order, is_active, requires_questionnaire, requires_consultation, requires_followup, show_to_providers, lf_product_id, created_at, updated_at, medication_category_medicines(category_id), packages(id, name, duration_months, original_price, price, is_most_popular, is_active, features, clinical_note, sort_order, stripe_price_id, variant_id), medicine_variants(id, name, is_active, lf_product_id, from_price_cents, sort_order)";
+
+// The provider catalog hides doses on a medicine that is off the patient shop.
+// Change-medicine still needs those doses when the medicine is marked for providers.
+export const listMedicinesForChange = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) =>
+    z
+      .object({ currentMedicineId: z.string().uuid().optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<StoredMedicine[]> => {
+    await assertReviewer(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("medicines")
+      .select(CHANGE_MEDICINE_COLUMNS)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return ((rows ?? []) as any[])
+      .filter(
+        (row) =>
+          row.is_active ||
+          row.show_to_providers ||
+          row.id === data.currentMedicineId,
+      )
+      .map((row) => toStoredMedicine(row));
+  });
+
+export async function planIsSelectable(
+  supabaseAdmin: any,
+  pkg: { is_active?: boolean | null; medicine_id?: string | null; stripe_price_id?: string | null },
+): Promise<void> {
+  if (!pkg.stripe_price_id) {
+    throw new Error(
+      "This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.",
+    );
+  }
+  if (pkg.is_active) return;
+  const { data: med } = pkg.medicine_id
+    ? await supabaseAdmin
+        .from("medicines")
+        .select("is_active, show_to_providers")
+        .eq("id", pkg.medicine_id)
+        .maybeSingle()
+    : { data: null };
+  if (med && med.is_active === false && med.show_to_providers) return;
+  throw new Error("Selected plan is inactive.");
+}
 const deleteInput = z.object({ medicineId: z.string().uuid() });
 
 export type MedicineDeletionImpact = {

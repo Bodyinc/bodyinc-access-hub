@@ -1048,6 +1048,7 @@ export type Database = {
           requires_consultation: boolean
           requires_followup: boolean
           requires_questionnaire: boolean
+          show_to_providers: boolean
           short_description: string
           sort_order: number
           status: Database["public"]["Enums"]["medicine_status"]
@@ -1068,6 +1069,7 @@ export type Database = {
           requires_consultation?: boolean
           requires_followup?: boolean
           requires_questionnaire?: boolean
+          show_to_providers?: boolean
           short_description: string
           sort_order?: number
           status?: Database["public"]["Enums"]["medicine_status"]
@@ -1088,6 +1090,7 @@ export type Database = {
           requires_consultation?: boolean
           requires_followup?: boolean
           requires_questionnaire?: boolean
+          show_to_providers?: boolean
           short_description?: string
           sort_order?: number
           status?: Database["public"]["Enums"]["medicine_status"]

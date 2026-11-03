@@ -48,8 +48,8 @@ function ProviderPatientsPage() {
       <div className="space-y-1">
         <h1 className={adminPageTitle}>My patients</h1>
         <p className={adminPageSubtitle}>
-          Read-only directory of patients assigned to you. Intake lives on each order. Patient ID
-          and date of birth keep duplicate names distinct.
+          Everyone assigned to you, including finished orders. This is a directory. To approve, prescribe,
+          or join a consultation, open the order from My Requests.
         </p>
       </div>
 

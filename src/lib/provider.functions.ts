@@ -4,7 +4,13 @@ import { z } from "zod";
 import { assertProvider } from "@/lib/provider-guard";
 import { ageFromDob, bmiFrom } from "@/lib/format";
 import { PENDING_REQUEST_STATUSES } from "@/lib/request-status";
-import { filledSessionIdSet, sessionHasIntake } from "@/lib/clinical-intake";
+import {
+  completedIntakeUserIds,
+  filledSessionIdSet,
+  intakeSessionForOrder,
+  orderHasIntake,
+  repairOrdersAwaitingIntake,
+} from "@/lib/clinical-intake";
 import {
   CLOSED_ORDER_STATUSES,
   clusterPurchases,
@@ -74,19 +80,40 @@ export const providerDashboard = createServerFn({ method: "POST" })
 
     const { data: rows } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status, created_at, updated_at, user_id, session_id, kind, order_group_id")
+      .select(
+        "id, status, created_at, updated_at, user_id, session_id, subscription_id, provider_id, kind, order_group_id",
+      )
       .eq("provider_id", me)
       .limit(1000);
 
     const list = (rows ?? []) as any[];
+    await repairOrdersAwaitingIntake(supabaseAdmin, list);
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
+    const sessionIds = list.map((row) => row.session_id).filter(Boolean);
+    const userIds = list.map((row) => row.user_id).filter(Boolean);
+    const [filledSessions, completedUsers] = await Promise.all([
+      filledSessionIdSet(supabaseAdmin, sessionIds),
+      completedIntakeUserIds(supabaseAdmin, userIds),
+    ]);
+    const intakeReady = (row: any) =>
+      Boolean(row.session_id && filledSessions.has(row.session_id)) ||
+      Boolean(row.user_id && completedUsers.has(row.user_id));
+    const hiddenUntilIntake = new Set([
+      "payment_completed",
+      "provider_assigned",
+      "pending_review",
+      "awaiting_additional_payment",
+    ]);
 
     const counts = {
-      pending_review: countPurchaseGroups(list, (r) => r.status === "pending_review"),
+      pending_review: countPurchaseGroups(
+        list,
+        (r) => r.status === "pending_review" && intakeReady(r),
+      ),
       awaiting_additional_payment: countPurchaseGroups(
         list,
-        (r) => r.status === "awaiting_additional_payment",
+        (r) => r.status === "awaiting_additional_payment" && intakeReady(r),
       ),
       approved: countPurchaseGroups(
         list,
@@ -96,11 +123,20 @@ export const providerDashboard = createServerFn({ method: "POST" })
         list,
         (r) => r.status === "prescribed" && new Date(r.updated_at) >= startOfDay,
       ),
-      open: countPurchaseGroups(list, (r) => OPEN_STATUSES.includes(r.status)),
+      open: countPurchaseGroups(
+        list,
+        (r) => OPEN_STATUSES.includes(r.status) && (intakeReady(r) || !hiddenUntilIntake.has(r.status)),
+      ),
     };
 
     const claimable = await countClaimable(supabaseAdmin, me);
     const launchpad = await providerLaunchpad(supabaseAdmin, me);
+    try {
+      const { notifyProvidersPatientReadyToClaim } = await import("@/lib/email.notifications");
+      await notifyProvidersPatientReadyToClaim(supabaseAdmin);
+    } catch (e) {
+      console.error("[dashboard] provider claim email failed:", e);
+    }
 
     const { data: meProfile } = await supabaseAdmin
       .from("profiles")
@@ -139,14 +175,24 @@ async function loadClaimable(
     .order("created_at", { ascending: false })
     .limit(300);
 
-  const list = (rows ?? []) as any[];
+  let list = (rows ?? []) as any[];
+  const groupIds = Array.from(new Set(list.map((r) => r.order_group_id).filter(Boolean)));
+  if (groupIds.length) {
+    const { data: taken } = await supabaseAdmin
+      .from("medication_requests")
+      .select("order_group_id")
+      .in("order_group_id", groupIds)
+      .not("provider_id", "is", null);
+    const takenGroups = new Set((taken ?? []).map((r: any) => r.order_group_id).filter(Boolean));
+    list = list.filter((r) => !r.order_group_id || !takenGroups.has(r.order_group_id));
+  }
   if (list.length === 0) return [];
 
   const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
   const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, openChat] =
+  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, completedUsers, openChat] =
     await Promise.all([
     userIds.length
       ? supabaseAdmin.from("profiles").select("id, full_name, state_code, dob").in("id", userIds)
@@ -161,6 +207,7 @@ async function loadClaimable(
       ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
       : Promise.resolve({ data: [] as any[] }),
     filledSessionIdSet(supabaseAdmin, sessionIds),
+    completedIntakeUserIds(supabaseAdmin, userIds),
     userIdsInOpenChat(supabaseAdmin, userIds),
   ]);
 
@@ -173,7 +220,10 @@ async function loadClaimable(
       const p: any = pMap.get(r.user_id);
       const sess: any = !p ? sMap.get(r.session_id) : null;
       const state = (p?.state_code ?? sess?.state_code ?? null) as string | null;
-      const intakeFilled = Boolean(r.session_id && filledSessions.has(r.session_id));
+      const intakeFilled = Boolean(
+        (r.session_id && filledSessions.has(r.session_id)) ||
+          (r.user_id && completedUsers.has(r.user_id)),
+      );
       return {
         id: r.id,
         user_id: r.user_id ?? null,
@@ -260,16 +310,28 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
     const me = context.userId;
     // Badges count work that still needs a decision. Approved, prescribed, shipped,
     // and "waiting on the patient" orders stay on the lists but drop off the badge.
-    const [{ count, error }, queue] = await Promise.all([
+    const [{ data: pendingRows, error }, queue] = await Promise.all([
       supabaseAdmin
         .from("medication_requests")
-        .select("id", { count: "exact", head: true })
+        .select("id, session_id, user_id")
         .eq("provider_id", me)
         .in("status", [...PENDING_REQUEST_STATUSES]),
       countClaimable(supabaseAdmin, me, PENDING_REQUEST_STATUSES),
     ]);
     if (error) throw new Error(error.message);
-    return { requests: count ?? 0, queue };
+    const pending = (pendingRows ?? []) as { id: string; session_id: string | null; user_id: string | null }[];
+    const sessionIds = pending.map((row) => row.session_id).filter(Boolean) as string[];
+    const userIds = pending.map((row) => row.user_id).filter(Boolean) as string[];
+    const [filledSessions, completedUsers] = await Promise.all([
+      filledSessionIdSet(supabaseAdmin, sessionIds),
+      completedIntakeUserIds(supabaseAdmin, userIds),
+    ]);
+    const requests = pending.filter(
+      (row) =>
+        Boolean(row.session_id && filledSessions.has(row.session_id)) ||
+        Boolean(row.user_id && completedUsers.has(row.user_id)),
+    ).length;
+    return { requests, queue };
   });
 
 export const listClaimableRequests = createServerFn({ method: "POST" })
@@ -312,12 +374,34 @@ export const claimRequest = createServerFn({ method: "POST" })
 
     const { data: current } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status, user_id, medicine_id, session_id")
+      .select("id, status, user_id, medicine_id, session_id, subscription_id")
       .eq("id", data.requestId)
       .maybeSingle();
 
-    if (!(await sessionHasIntake(supabaseAdmin, current?.session_id))) {
+    if (!(await orderHasIntake(supabaseAdmin, current?.session_id, current?.user_id))) {
       throw new Error("intake form missing");
+    }
+    if (current && !current.session_id) {
+      const sessionId = await intakeSessionForOrder(
+        supabaseAdmin,
+        current.session_id,
+        current.user_id,
+      );
+      if (sessionId) {
+        current.session_id = sessionId;
+        await supabaseAdmin
+          .from("medication_requests")
+          .update({ session_id: sessionId })
+          .eq("id", current.id)
+          .is("session_id", null);
+        if (current.subscription_id) {
+          await supabaseAdmin
+            .from("subscriptions")
+            .update({ session_id: sessionId })
+            .eq("id", current.subscription_id)
+            .is("session_id", null);
+        }
+      }
     }
     if (!current?.user_id || !(await userIdsInOpenChat(supabaseAdmin, [current.user_id])).has(current.user_id)) {
       throw new Error("This patient is not in chat.");
@@ -834,6 +918,7 @@ type WorkItem = {
   dob: string | null;
   medicine_name: string;
   status: string;
+  plan_change_delta_cents: number | null;
   requires_consultation: boolean;
   consultation_status: "Not required" | "Required" | "In progress" | "Completed";
   consultation_mode: "instant" | "scheduled";
@@ -846,7 +931,7 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
   const { data: rows } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, requires_consultation, user_id, session_id, medicine_id, kind, created_at, consultation_mode, consultation_scheduled_at, order_group_id",
+      "id, status, plan_change_delta_cents, requires_consultation, user_id, session_id, medicine_id, kind, created_at, consultation_mode, consultation_scheduled_at, order_group_id",
     )
     .eq("provider_id", me)
     .in("status", ACTIVE_CONSULT_STATUSES)
@@ -862,7 +947,8 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
   );
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }] =
+  const allSessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
+  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }, filledSessions, completedUsers] =
     await Promise.all([
       userIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, dob").in("id", userIds)
@@ -871,7 +957,10 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
         ? supabaseAdmin.from("intake_sessions").select("id, full_name, dob").in("id", sessionIds)
         : Promise.resolve({ data: [] as any[] }),
       medIds.length
-        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        ? supabaseAdmin
+            .from("medicines")
+            .select("id, name, requires_consultation")
+            .in("id", medIds)
         : Promise.resolve({ data: [] as any[] }),
       userIds.length
         ? supabaseAdmin
@@ -880,11 +969,18 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
             .in("user_id", userIds)
             .order("started_at", { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
+      filledSessionIdSet(supabaseAdmin, allSessionIds),
+      completedIntakeUserIds(supabaseAdmin, userIds),
     ]);
+  const ready = list.filter(
+    (r) =>
+      Boolean(r.session_id && filledSessions.has(r.session_id)) ||
+      Boolean(r.user_id && completedUsers.has(r.user_id)),
+  );
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
   const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s]));
-  const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name]));
+  const medMap = new Map((meds ?? []).map((m: any) => [m.id, m]));
   const consultByUser = new Map<string, { ended_at: string | null }>();
   for (const row of (consults ?? []) as any[]) {
     const prev = consultByUser.get(row.user_id);
@@ -892,12 +988,15 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
     else if (!row.ended_at) consultByUser.set(row.user_id, { ended_at: null });
   }
 
-  return clusterPurchases(list).map((members) => {
+  return clusterPurchases(ready).map((members) => {
     const r = leadOf(members);
     const profile = pMap.get(r.user_id) as any;
     const session = !profile ? (sMap.get(r.session_id) as any) : null;
     const consult = r.user_id ? consultByUser.get(r.user_id) : undefined;
-    const requires = members.some((member) => member.requires_consultation);
+    const requires = members.some((member) => {
+      const med = medMap.get(member.medicine_id) as { requires_consultation?: boolean } | undefined;
+      return med ? Boolean(med.requires_consultation) : Boolean(member.requires_consultation);
+    });
     let consultation_status: WorkItem["consultation_status"] = "Not required";
     if (requires) {
       if (!consult) consultation_status = "Required";
@@ -911,7 +1010,11 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
         ? 1
         : 2;
     const names = [
-      ...new Set(members.map((member) => String(medMap.get(member.medicine_id) ?? "")).filter(Boolean)),
+      ...new Set(
+        members
+          .map((member) => String((medMap.get(member.medicine_id) as { name?: string } | undefined)?.name ?? ""))
+          .filter(Boolean),
+      ),
     ];
     const scheduled = members.find((member) => member.consultation_mode === "scheduled");
     return {
@@ -921,6 +1024,7 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
       dob: profile?.dob ?? session?.dob ?? null,
       medicine_name: names.join(", ") || "—",
       status: r.status,
+      plan_change_delta_cents: r.plan_change_delta_cents ?? null,
       requires_consultation: requires,
       consultation_status,
       consultation_mode: scheduled ? "scheduled" : "instant",

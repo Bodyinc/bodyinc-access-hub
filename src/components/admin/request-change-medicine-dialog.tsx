@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { medicinesQueryOptions } from "@/lib/query-options/medicines";
+import { listMedicinesForChange } from "@/lib/medicines.functions";
 import { categoriesQueryOptions } from "@/lib/query-options/categories";
 import { changeRequestMedicine } from "@/lib/requests.functions";
 import type { StoredMedicinePackage } from "@/lib/medicines.store";
@@ -67,7 +67,12 @@ export function RequestChangeMedicineDialog({
   currentPackageId?: string | null;
   hideFinancial?: boolean;
 }) {
-  const medicinesQ = useQuery(medicinesQueryOptions());
+  const loadMedicines = useServerFn(listMedicinesForChange);
+  const medicinesQ = useQuery({
+    queryKey: ["medicines-for-change", currentMedicineId ?? null],
+    queryFn: () => loadMedicines({ data: { currentMedicineId: currentMedicineId ?? undefined } }),
+    enabled: open,
+  });
   const categoriesQ = useQuery(categoriesQueryOptions());
   const change = useServerFn(changeRequestMedicine);
 
@@ -92,8 +97,11 @@ export function RequestChangeMedicineDialog({
   }, [open, currentMedicineId, currentVariantId, currentPackageId]);
 
   const medicines = useMemo(
-    () => (medicinesQ.data ?? []).filter((m) => m.is_active),
-    [medicinesQ.data],
+    () =>
+      (medicinesQ.data ?? []).filter(
+        (m) => m.is_active || m.show_to_providers || m.id === currentMedicineId,
+      ),
+    [medicinesQ.data, currentMedicineId],
   );
 
   // Same-category first: practitioners switch within a treatment category by default, and must
@@ -125,23 +133,27 @@ export function RequestChangeMedicineDialog({
   }, [medicines, search, allowOtherCategory, currentCategoryIds, currentMedicineId]);
 
   const medicine = medicines.find((m) => m.id === medicineId) ?? null;
+  const hiddenFromPatients = Boolean(medicine && !medicine.is_active);
   const hasVariants = (medicine?.variants.length ?? 0) > 0;
   const activeVariants = useMemo(() => {
-    const list = (medicine?.variants ?? []).filter((v) => v.is_active);
+    const list = (medicine?.variants ?? []).filter((v) => v.is_active || hiddenFromPatients);
     // A since-deactivated variant must still be listed while it is the order's current one,
     // otherwise its plans are unreachable and the dialog looks empty.
     if (medicine && medicine.id === currentMedicineId && currentVariantId) {
       const cur = medicine.variants.find((v) => v.id === currentVariantId);
-      if (cur && !cur.is_active) return [cur, ...list];
+      if (cur && !list.some((v) => v.id === cur.id)) return [cur, ...list];
     }
     return list;
-  }, [medicine, currentMedicineId, currentVariantId]);
+  }, [medicine, currentMedicineId, currentVariantId, hiddenFromPatients]);
   const variant = hasVariants ? (activeVariants.find((v) => v.id === variantId) ?? null) : null;
 
+  const rawPlans = hasVariants ? (variant?.packages ?? []) : (medicine?.packages ?? []);
   const packages = useMemo(() => {
-    const list = hasVariants ? (variant?.packages ?? []) : (medicine?.packages ?? []);
-    return list.filter((p) => (p.is_active && p.stripe_price_id) || p.id === currentPackageId);
-  }, [hasVariants, variant, medicine, currentPackageId]);
+    return rawPlans.filter(
+      (p) =>
+        (p.stripe_price_id && (p.is_active || hiddenFromPatients)) || p.id === currentPackageId,
+    );
+  }, [rawPlans, hiddenFromPatients, currentPackageId]);
 
   useEffect(() => {
     if (!medicine) return;
@@ -316,6 +328,11 @@ export function RequestChangeMedicineDialog({
                               Current
                             </Badge>
                           ) : null}
+                          {!m.is_active ? (
+                            <Badge variant="secondary" className="text-[10px]">
+                              Hidden from patients
+                            </Badge>
+                          ) : null}
                         </div>
                         {other ? (
                           <div className="text-[11px] text-muted-foreground">Other category</div>
@@ -371,6 +388,7 @@ export function RequestChangeMedicineDialog({
                       <SelectItem key={v.id} value={v.id}>
                         {v.name}
                         {v.id === currentVariantId ? " (current)" : ""}
+                        {!v.is_active ? " (hidden from patients)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -383,7 +401,9 @@ export function RequestChangeMedicineDialog({
                 <Label className="text-xs">Plan</Label>
                 {packages.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    No purchasable plan for this selection.
+                    {rawPlans.some((p) => !p.stripe_price_id)
+                      ? "This plan is not synced to Stripe yet. Open the medicine, save it, and try again."
+                      : "No purchasable plan for this selection."}
                   </p>
                 ) : (
                   <Select value={packageId} onValueChange={setPackageId}>
@@ -395,6 +415,7 @@ export function RequestChangeMedicineDialog({
                         <SelectItem key={p.id} value={p.id}>
                           {planLabel(p)}
                           {p.id === currentPackageId ? " (current)" : ""}
+                          {!p.is_active ? " (hidden from patients)" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>

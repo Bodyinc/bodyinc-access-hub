@@ -183,7 +183,7 @@ export function OrderWorkspace({
             REQUEST_STATUS_BADGE[requestStatusTone(status)]
           }`}
         >
-          {clinicalStatusLabel(status)}
+          {clinicalStatusLabel(status, request.plan_change_delta_cents)}
         </Badge>
       </div>
 
@@ -197,7 +197,7 @@ export function OrderWorkspace({
         <TabsList className="h-auto flex-wrap justify-start bg-[#E8EEED]">
           {["overview", "intake", "consultation", "notes", "history"].map((key) => (
             <TabsTrigger key={key} value={key} className="capitalize">
-              {key === "intake" ? "Intake form" : key}
+              {key === "intake" ? "Eligibility" : key}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -236,14 +236,17 @@ export function OrderWorkspace({
                       : (planName ?? "—")
                   }
                 />
-                <Field label="Status" value={clinicalStatusLabel(status)} />
+                <Field
+                  label="Status"
+                  value={clinicalStatusLabel(status, request.plan_change_delta_cents)}
+                />
                 <Field label="Assigned provider" value={providerName ?? "Unassigned"} />
               </div>
 
               {consultRequired && !consultDone && status === "pending_review" ? (
                 <p className="rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
-                  This consultation is required and has not been finished. Join the call before you
-                  approve.
+                  This consultation is required and has not been finished. Join the consultation before
+                  you approve.
                 </p>
               ) : null}
               {!intakeFilled ? (
@@ -255,13 +258,15 @@ export function OrderWorkspace({
               {status === "awaiting_additional_payment" ? (
                 <div className="space-y-2 rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
                   <p>
-                    Waiting for the patient to confirm or decline the new plan
+                    {Number(request.plan_change_delta_cents) > 0
+                      ? "Waiting for the patient to pay the difference for the new plan"
+                      : "Waiting for the patient to confirm or decline the new plan. The price did not go up, so there is nothing extra to pay."}{" "}
                     {request.plan_change_deadline
-                      ? ` by ${formatDateTimeFull(request.plan_change_deadline)}`
+                      ? `Respond by ${formatDateTimeFull(request.plan_change_deadline)}. `
                       : waitingDays >= 2
-                        ? ` (${waitingDays} days)`
+                        ? `Waiting ${waitingDays} days. `
                         : ""}
-                    . After they respond, this order returns here so you can approve, prescribe, and
+                    After they respond, this order returns here so you can approve, prescribe, and
                     send. No response within 48 hours restores the previous plan.
                   </p>
                   <Button
@@ -536,7 +541,7 @@ export function OrderWorkspace({
                     ? "Open call record"
                     : consultPending
                       ? "Connecting…"
-                      : "Join call"}
+                      : "Join consultation"}
                 </Button>
                 <Button
                   type="button"
@@ -705,10 +710,18 @@ function primaryAction(input: {
     };
   }
   if (input.sent || ["rejected", "cancelled", "delivered"].includes(input.status)) return null;
+  if (
+    !input.intakeFilled &&
+    ["pending_review", "payment_completed", "provider_assigned", "awaiting_additional_payment"].includes(
+      input.status,
+    )
+  ) {
+    return null;
+  }
   if (input.consultRequired && !input.consultDone && input.status === "pending_review") {
     return {
       key: "join",
-      label: input.consultPending ? "Connecting…" : "Join call",
+      label: input.consultPending ? "Connecting…" : "Join consultation",
       disabled: input.consultPending,
     };
   }

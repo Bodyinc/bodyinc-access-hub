@@ -293,8 +293,8 @@ export function RequestReviewPanel({
       }
       toastActionWithEmail(
         res?.status === "approved"
-          ? "Order approved. Generate the prescription next."
-          : "Order approved and sent to LifeFile.",
+          ? "Order approved."
+          : "Order approved and sent to the pharmacy.",
         res?.email_sent,
       );
       setApproveOpen(false);
@@ -440,9 +440,11 @@ export function RequestReviewPanel({
     ["pending_review", "approved", "awaiting_additional_payment"].includes(status) &&
     (!clinicalOnly || !isUnassigned);
   const canGenerate = status === "approved" && canManage;
+  const intakeFilled = Boolean((q.data as any)?.intake?.filled);
   const canStartConsult =
     canManage &&
     Boolean(request.user_id) &&
+    (!clinicalOnly || intakeFilled) &&
     !["rejected", "delivered", "canceled", "cancelled"].includes(status);
   const lifeFileOrderId =
     (request as { life_file_order_id?: string | null }).life_file_order_id ||
@@ -455,7 +457,6 @@ export function RequestReviewPanel({
   const sentToLifeFile =
     ["sent_to_pharmacy", "dispatched", "delivered"].includes(status) ||
     (Boolean(lifeFileOrderId) && lifeFileStatus !== "failed");
-  const intakeFilled = Boolean((q.data as any)?.intake?.filled);
   const consultBlocking =
     clinicalOnly && Boolean(request.requires_consultation) && !consultation?.is_ended;
   const canApprove =
@@ -559,7 +560,9 @@ export function RequestReviewPanel({
               REQUEST_STATUS_BADGE[requestStatusTone(status)]
             }`}
           >
-            {clinicalOnly ? clinicalStatusLabel(status) : requestStatusLabel(status)}
+            {clinicalOnly
+              ? clinicalStatusLabel(status, request.plan_change_delta_cents)
+              : requestStatusLabel(status, request.plan_change_delta_cents)}
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
@@ -823,7 +826,7 @@ export function RequestReviewPanel({
                 onClick={() => setRxOpen(true)}
                 className="h-10 bg-[#6A9B9C] px-4 text-[13px] font-semibold text-white hover:bg-[#5B8788]"
               >
-                <FileText className="mr-1 h-4 w-4" /> Generate prescription
+                <FileText className="mr-1 h-4 w-4" /> Prescribe
               </Button>
             ) : null}
             {canRetryLifeFile ? (
@@ -900,7 +903,7 @@ export function RequestReviewPanel({
                   ) : (
                     <>
                       <Video className="mr-1.5 h-4 w-4" />
-                      {activeConsultation ? "Open consultation room" : "Join live consultation"}
+                      Join consultation
                     </>
                   )}
                 </Button>
@@ -934,7 +937,7 @@ export function RequestReviewPanel({
                   ) : (
                     <>
                       <Video className="mr-1.5 h-4 w-4" />
-                      {activeConsultation ? "Open consultation room" : "Start consultation"}
+                      Join consultation
                     </>
                   )}
                 </Button>
@@ -971,8 +974,9 @@ export function RequestReviewPanel({
 
           {status === "awaiting_additional_payment" ? (
             <p className="rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
-              {clinicalOnly
-                ? "Waiting for the patient to confirm the new plan. The updated order is sent to the pharmacy automatically once they confirm."
+              {request.plan_change_delta_cents != null &&
+              Number(request.plan_change_delta_cents) <= 0
+                ? "Waiting for the patient to confirm or decline the new plan. The price did not go up, so there is nothing extra to pay. After they respond, this order comes back for your decision."
                 : "Waiting for the patient to pay the price difference. The updated order is sent to the pharmacy automatically once payment succeeds."}
             </p>
           ) : null}
@@ -1236,8 +1240,7 @@ export function RequestReviewPanel({
           <DialogHeader>
             <DialogTitle>Approve order</DialogTitle>
             <DialogDescription>
-              Clinically approve this order for {medicine?.name ?? "this medication"}. Generate the
-              prescription next, then send it to the pharmacy. The patient is notified at each step.
+              Approve this order for {medicine?.name ?? "this medication"}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -1289,15 +1292,15 @@ export function RequestReviewPanel({
         </DialogContent>
       </Dialog>
 
-      {/* Generate prescription */}
+      {/* Prescribe */}
       <Dialog open={rxOpen} onOpenChange={setRxOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Generate prescription</DialogTitle>
+            <DialogTitle>Prescribe</DialogTitle>
             <DialogDescription>
-              Creates the prescription for {medicine?.name ?? "this medication"}. The patient is
-              notified. Send it to the pharmacy after this step. For a Life File test order, include:
-              Test Order Do Not Fill.
+              Write the prescription for {medicine?.name ?? "this medication"}. The patient is
+              notified. Send it to the pharmacy after this step. For a test order, include: Test
+              Order Do Not Fill.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -1314,7 +1317,7 @@ export function RequestReviewPanel({
               Cancel
             </Button>
             <Button onClick={() => generateMut.mutate()} disabled={generateMut.isPending}>
-              {generateMut.isPending ? "Generating…" : "Generate"}
+              {generateMut.isPending ? "Saving…" : "Prescribe"}
             </Button>
           </DialogFooter>
         </DialogContent>

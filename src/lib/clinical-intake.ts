@@ -105,6 +105,166 @@ export async function sessionHasIntake(
   return filled.has(sessionId);
 }
 
+const WAITING_FOR_INTAKE = new Set([
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
+]);
+
+/** Latest finished intake session for each patient. */
+export async function completedIntakeSessionByUser(
+  supabaseAdmin: any,
+  userIds: string[],
+): Promise<Map<string, string>> {
+  const ids = Array.from(new Set(userIds.filter(Boolean)));
+  if (ids.length === 0) return new Map();
+  const { data, error } = await supabaseAdmin
+    .from("intake_sessions")
+    .select("id, claimed_by_user_id, status, updated_at")
+    .in("claimed_by_user_id", ids);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as {
+    id: string;
+    claimed_by_user_id: string | null;
+    status: string;
+    updated_at: string | null;
+  }[];
+  const answered = await filledSessionIdSet(
+    supabaseAdmin,
+    rows.map((row) => row.id),
+  );
+  const best = new Map<string, { id: string; updated_at: string }>();
+  for (const row of rows) {
+    if (!row.claimed_by_user_id) continue;
+    if (row.status !== "completed" && !answered.has(row.id)) continue;
+    const prev = best.get(row.claimed_by_user_id);
+    const updatedAt = row.updated_at ?? "";
+    if (!prev || updatedAt > prev.updated_at) {
+      best.set(row.claimed_by_user_id, { id: row.id, updated_at: updatedAt });
+    }
+  }
+  return new Map(Array.from(best, ([userId, session]) => [userId, session.id]));
+}
+
+/** Patients who already finished an intake, even when a later order has no session id. */
+export async function completedIntakeUserIds(
+  supabaseAdmin: any,
+  userIds: string[],
+): Promise<Set<string>> {
+  const sessions = await completedIntakeSessionByUser(supabaseAdmin, userIds);
+  return new Set(sessions.keys());
+}
+
+/**
+ * Write the patient's finished intake onto orders that were saved without it.
+ * Orders that still have no finished intake are unassigned so they stay off a provider.
+ */
+export async function repairOrdersAwaitingIntake(
+  supabaseAdmin: any,
+  rows: {
+    id: string;
+    user_id?: string | null;
+    session_id?: string | null;
+    subscription_id?: string | null;
+    provider_id?: string | null;
+    status?: string | null;
+  }[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  const byUser = await completedIntakeSessionByUser(
+    supabaseAdmin,
+    rows.map((row) => row.user_id).filter(Boolean) as string[],
+  );
+  const filledSessions = await filledSessionIdSet(
+    supabaseAdmin,
+    rows.map((row) => row.session_id).filter(Boolean) as string[],
+  );
+  const now = new Date().toISOString();
+  const linkGroups = new Map<string, string[]>();
+  const subscriptionGroups = new Map<string, string[]>();
+  const clearIds: string[] = [];
+
+  for (const row of rows) {
+    const ownSessionFilled = Boolean(row.session_id && filledSessions.has(row.session_id));
+    const recovered = !row.session_id && row.user_id ? byUser.get(row.user_id) : undefined;
+    if (recovered) {
+      row.session_id = recovered;
+      const ids = linkGroups.get(recovered) ?? [];
+      ids.push(row.id);
+      linkGroups.set(recovered, ids);
+      if (row.subscription_id) {
+        const subs = subscriptionGroups.get(recovered) ?? [];
+        subs.push(row.subscription_id);
+        subscriptionGroups.set(recovered, subs);
+      }
+    }
+    const ready = ownSessionFilled || Boolean(recovered) || Boolean(row.user_id && byUser.has(row.user_id));
+    if (row.provider_id && row.status && WAITING_FOR_INTAKE.has(row.status) && !ready) {
+      row.provider_id = null;
+      clearIds.push(row.id);
+    }
+  }
+
+  for (const [sessionId, ids] of linkGroups) {
+    const { error } = await supabaseAdmin
+      .from("medication_requests")
+      .update({ session_id: sessionId, updated_at: now })
+      .in("id", ids)
+      .is("session_id", null);
+    if (error) console.warn("[intake] save session on order failed:", error.message);
+  }
+  for (const [sessionId, ids] of subscriptionGroups) {
+    const { error } = await supabaseAdmin
+      .from("subscriptions")
+      .update({ session_id: sessionId })
+      .in("id", Array.from(new Set(ids)))
+      .is("session_id", null);
+    if (error) console.warn("[intake] save session on subscription failed:", error.message);
+  }
+  if (clearIds.length) {
+    const { error } = await supabaseAdmin
+      .from("medication_requests")
+      .update({ provider_id: null, updated_at: now })
+      .in("id", clearIds);
+    if (error) console.warn("[intake] unassign before intake failed:", error.message);
+    else {
+      const { error: eventError } = await supabaseAdmin.from("medication_request_events").insert(
+        clearIds.map((id) => ({
+          request_id: id,
+          status: "provider_assigned",
+          actor_role: "system",
+          note: "Provider removed because the intake form is not finished.",
+        })),
+      );
+      if (eventError) console.warn("[intake] unassign note failed:", eventError.message);
+    }
+  }
+}
+
+export async function orderHasIntake(
+  supabaseAdmin: any,
+  sessionId: string | null | undefined,
+  userId: string | null | undefined,
+): Promise<boolean> {
+  if (await sessionHasIntake(supabaseAdmin, sessionId)) return true;
+  if (!userId) return false;
+  const users = await completedIntakeUserIds(supabaseAdmin, [userId]);
+  return users.has(userId);
+}
+
+/** Session that holds the patient's finished answers, including a later order that forgot the link. */
+export async function intakeSessionForOrder(
+  supabaseAdmin: any,
+  sessionId: string | null | undefined,
+  userId: string | null | undefined,
+): Promise<string | null> {
+  if (sessionId && (await sessionHasIntake(supabaseAdmin, sessionId))) return sessionId;
+  if (!userId) return sessionId ?? null;
+  const sessions = await completedIntakeSessionByUser(supabaseAdmin, [userId]);
+  return sessions.get(userId) ?? sessionId ?? null;
+}
+
 export async function loadClinicalIntake(
   supabaseAdmin: any,
   sessionId: string | null | undefined,

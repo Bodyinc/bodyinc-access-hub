@@ -6,10 +6,13 @@ import { z } from "zod";
 import { assertReviewer, assertAdmin } from "@/lib/admin-guard";
 import { clinicalEventNote, PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 import {
+  completedIntakeUserIds,
   filledSessionIdSet,
+  intakeSessionForOrder,
   loadClinicalIntake,
   loadPastOrders,
-  sessionHasIntake,
+  orderHasIntake,
+  repairOrdersAwaitingIntake,
 } from "@/lib/clinical-intake";
 import {
   CLOSED_ORDER_STATUSES,
@@ -33,6 +36,31 @@ const OPEN_STATUSES = [
   "sent_to_pharmacy",
   "dispatched",
 ];
+
+/** The medicine switch is the current rule. The copy saved on the order can be older. */
+async function liveConsultationRequired(
+  supabaseAdmin: any,
+  rows: { medicine_id?: string | null; requires_consultation?: boolean | null }[],
+): Promise<boolean> {
+  const ids = [...new Set(rows.map((row) => row.medicine_id).filter(Boolean))] as string[];
+  if (ids.length === 0) return rows.some((row) => Boolean(row.requires_consultation));
+  const { data, error } = await supabaseAdmin
+    .from("medicines")
+    .select("id, requires_consultation")
+    .in("id", ids);
+  if (error || !data) return rows.some((row) => Boolean(row.requires_consultation));
+  const flags = new Map(
+    (data as { id: string; requires_consultation?: boolean }[]).map((med) => [
+      med.id,
+      Boolean(med.requires_consultation),
+    ]),
+  );
+  return rows.some((row) =>
+    row.medicine_id && flags.has(row.medicine_id)
+      ? flags.get(row.medicine_id)
+      : Boolean(row.requires_consultation),
+  );
+}
 
 async function logEvent(
   supabaseAdmin: any,
@@ -242,7 +270,7 @@ export const listRequests = createServerFn({ method: "POST" })
     const term = data.search ? normalizeIdSearch(data.search) : "";
     const idRange = term ? uuidPrefixRange(term) : null;
     const SELECT_COLS =
-      "id, user_id, session_id, provider_id, medicine_id, package_id, kind, status, requires_consultation, tracking_number, created_at, life_file_status, life_file_order_id, life_file_error, life_file_pharmacy_id, order_group_id";
+      "id, user_id, session_id, subscription_id, provider_id, medicine_id, package_id, kind, status, requires_consultation, tracking_number, created_at, life_file_status, life_file_order_id, life_file_error, life_file_pharmacy_id, order_group_id, plan_change_delta_cents";
 
     let q = supabaseAdmin
       .from("medication_requests")
@@ -286,6 +314,8 @@ export const listRequests = createServerFn({ method: "POST" })
       );
     }
 
+    await repairOrdersAwaitingIntake(supabaseAdmin, list as any[]);
+
     const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
     const sessionIds = Array.from(
       new Set(
@@ -315,7 +345,10 @@ export const listRequests = createServerFn({ method: "POST" })
         ? supabaseAdmin.from("intake_sessions").select("id, full_name, email").in("id", sessionIds)
         : Promise.resolve({ data: [] as any[] }),
       medIds.length
-        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        ? supabaseAdmin
+            .from("medicines")
+            .select("id, name, requires_consultation")
+            .in("id", medIds)
         : Promise.resolve({ data: [] as any[] }),
       provIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", provIds)
@@ -349,7 +382,9 @@ export const listRequests = createServerFn({ method: "POST" })
         pharmacy_name: pharmacy?.name ?? null,
         kind: r.kind,
         status: r.status,
-        requires_consultation: r.requires_consultation,
+        plan_change_delta_cents: r.plan_change_delta_cents ?? null,
+        requires_consultation:
+          (medMap.get(r.medicine_id) as any)?.requires_consultation ?? r.requires_consultation,
         tracking_number: r.tracking_number,
         life_file_status: r.life_file_status ?? null,
         life_file_order_id: r.life_file_order_id ?? null,
@@ -361,8 +396,9 @@ export const listRequests = createServerFn({ method: "POST" })
     if (role === "provider") {
       const sessionIds = list.map((r: any) => r.session_id).filter(Boolean);
       const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
-      const [filledSessions, consultRes] = await Promise.all([
+      const [filledSessions, completedUsers, consultRes] = await Promise.all([
         filledSessionIdSet(supabaseAdmin, sessionIds),
+        completedIntakeUserIds(supabaseAdmin, userIds),
         userIds.length
           ? supabaseAdmin
               .from("patient_consultations")
@@ -381,18 +417,30 @@ export const listRequests = createServerFn({ method: "POST" })
         const source = list.find((r: any) => r.id === row.id);
         const consult = source?.user_id ? consultByUser.get(source.user_id) : undefined;
         let consultation_status = "Not required";
-        if (source?.requires_consultation) {
+        if (row.requires_consultation) {
           if (!consult) consultation_status = "Required";
           else if (!consult.ended_at) consultation_status = "In progress";
           else consultation_status = "Completed";
         }
         return {
           ...row,
-          intake_filled: Boolean(source?.session_id && filledSessions.has(source.session_id)),
+          intake_filled: Boolean(
+            (source?.session_id && filledSessions.has(source.session_id)) ||
+              (source?.user_id && completedUsers.has(source.user_id)),
+          ),
           consultation_status,
           patient_waiting: consultation_status === "In progress",
         };
       });
+      const hiddenUntilIntake = new Set([
+        "payment_completed",
+        "provider_assigned",
+        "pending_review",
+        "awaiting_additional_payment",
+      ]);
+      result = result.filter(
+        (row: any) => row.intake_filled || !hiddenUntilIntake.has(row.status),
+      );
     }
 
     result = collapseOrderRows(result).map(({ user_id: _user, session_id: _session, order_group_id: _group, ...row }) => row);
@@ -442,9 +490,10 @@ export const getRequest = createServerFn({ method: "POST" })
     const req = await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "*", {
       allowUnassigned: true,
     });
+    await repairOrdersAwaitingIntake(supabaseAdmin, [req]);
 
     if (role === "provider" && !req.provider_id) {
-      const filled = await sessionHasIntake(supabaseAdmin, req.session_id);
+      const filled = await orderHasIntake(supabaseAdmin, req.session_id, req.user_id);
       const inChat = req.user_id
         ? (await userIdsInOpenChat(supabaseAdmin, [req.user_id])).has(req.user_id)
         : false;
@@ -456,6 +505,15 @@ export const getRequest = createServerFn({ method: "POST" })
     const groupConsult = await findGroupConsultation(
       supabaseAdmin,
       siblings.length ? siblings : [req],
+    );
+    req.requires_consultation = await liveConsultationRequired(
+      supabaseAdmin,
+      siblings.length ? siblings : [req],
+    );
+    const intakeSessionId = await intakeSessionForOrder(
+      supabaseAdmin,
+      req.session_id,
+      req.user_id,
     );
 
     const [
@@ -475,11 +533,11 @@ export const getRequest = createServerFn({ method: "POST" })
             .eq("id", req.user_id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
-      req.session_id
+      intakeSessionId
         ? supabaseAdmin
             .from("intake_sessions")
             .select("id, full_name, email, state_code, dob, sex, height_cm, weight_kg")
-            .eq("id", req.session_id)
+            .eq("id", intakeSessionId)
             .maybeSingle()
         : Promise.resolve({ data: null }),
       req.medicine_id
@@ -550,7 +608,7 @@ export const getRequest = createServerFn({ method: "POST" })
       } = req as Record<string, unknown>;
       const identity = (profileRes.data as any) ?? (sessionRes.data as any) ?? null;
       const [intake, past_orders] = await Promise.all([
-        loadClinicalIntake(supabaseAdmin, req.session_id, sessionRes.data as any),
+        loadClinicalIntake(supabaseAdmin, intakeSessionId, sessionRes.data as any),
         loadPastOrders(supabaseAdmin, {
           requestId: req.id,
           userId: req.user_id,
@@ -637,10 +695,11 @@ export const approveRequest = createServerFn({ method: "POST" })
       context.userId,
       "id, status, provider_id, user_id, session_id, subscription_id, medicine_id, variant_id, package_id, requires_consultation, life_file_order_id, life_file_status",
     );
+    req.requires_consultation = await liveConsultationRequired(supabaseAdmin, [req]);
     if (req.status !== "pending_review") {
       throw new Error(
         req.status === "approved"
-          ? "This order is already approved. Generate the prescription next."
+          ? "This order is already approved. Prescribe next."
           : `Cannot approve a request that is ${req.status}.`,
       );
     }
@@ -656,7 +715,7 @@ export const approveRequest = createServerFn({ method: "POST" })
         "Only the assigned provider can approve this order. Assign a provider and have them approve from the practitioner portal.",
       );
     }
-    if (!(await sessionHasIntake(supabaseAdmin, req.session_id))) {
+    if (!(await orderHasIntake(supabaseAdmin, req.session_id, req.user_id))) {
       throw new Error("intake form missing");
     }
     if (
@@ -702,6 +761,31 @@ export const approveRequest = createServerFn({ method: "POST" })
       providerId: req.provider_id,
       patientUserId: req.user_id,
     }).catch((e) => console.error("[approveRequest] admin email failed:", e));
+
+    if (!req.requires_consultation) {
+      try {
+        await fulfillApprovedRequest(
+          supabaseAdmin,
+          { ...req, status: "approved" },
+          { role, userId: context.userId },
+        );
+        return {
+          ok: true,
+          email_sent,
+          admin_emails_sent: true,
+          status: "sent_to_pharmacy",
+          pharmacy_error: null,
+        };
+      } catch (error) {
+        return {
+          ok: true,
+          email_sent,
+          admin_emails_sent: true,
+          status: "approved",
+          pharmacy_error: error instanceof Error ? error.message : "Could not send to the pharmacy.",
+        };
+      }
+    }
 
     return {
       ok: true,
@@ -913,12 +997,8 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     if (newPkg.id === req.package_id) {
       throw new Error("That is already this order's medicine, variant and plan.");
     }
-    if (!newPkg.is_active) throw new Error("Selected plan is inactive.");
-    if (!newPkg.stripe_price_id) {
-      throw new Error(
-        "This plan isn't synced to Stripe yet. Open the medicine and save it, then retry.",
-      );
-    }
+    const { planIsSelectable } = await import("@/lib/medicines.functions");
+    await planIsSelectable(supabaseAdmin, newPkg);
 
     // Cross-category switches need an explicit clinical reason, which is logged on the order.
     const currentMedicineId = (req as any).medicine_id as string | null;
@@ -1287,7 +1367,11 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
 
       await supabaseAdmin
         .from("medication_requests")
-        .update({ status: "awaiting_additional_payment", updated_at: now })
+        .update({
+          status: "awaiting_additional_payment",
+          plan_change_delta_cents: deltaCents,
+          updated_at: now,
+        })
         .eq("id", req.id);
       await logEvent(
         supabaseAdmin,
@@ -1489,7 +1573,7 @@ export const sendRequestToPharmacy = createServerFn({ method: "POST" })
     if (role === "provider") {
       if (req.provider_id !== context.userId) throw new Error("Order not found.");
       if (req.status !== "prescribed") {
-        throw new Error("Generate the prescription before sending this order to the pharmacy.");
+        throw new Error("Prescribe before sending this order to the pharmacy.");
       }
     } else if (!["approved", "prescribed"].includes(req.status) && !providerSendFailed) {
       throw new Error(
@@ -1610,6 +1694,33 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
           `This practitioner is not licensed in ${patientState}. Choose someone licensed in the patient's state.`,
         );
       }
+      if (!(await orderHasIntake(supabaseAdmin, existing.session_id, existing.user_id))) {
+        throw new Error(
+          "This patient has not finished the intake form, so the order cannot be assigned yet.",
+        );
+      }
+      if (!existing.session_id) {
+        const sessionId = await intakeSessionForOrder(
+          supabaseAdmin,
+          existing.session_id,
+          existing.user_id,
+        );
+        if (sessionId) {
+          existing.session_id = sessionId;
+          await supabaseAdmin
+            .from("medication_requests")
+            .update({ session_id: sessionId, updated_at: new Date().toISOString() })
+            .eq("id", existing.id)
+            .is("session_id", null);
+          if (existing.subscription_id) {
+            await supabaseAdmin
+              .from("subscriptions")
+              .update({ session_id: sessionId })
+              .eq("id", existing.subscription_id)
+              .is("session_id", null);
+          }
+        }
+      }
     }
 
     const patch: {
@@ -1635,7 +1746,10 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
     );
     const moving = [existing, ...siblings];
     for (const row of moving) {
-      const rowPatch = { ...patch };
+      const rowPatch = {
+        ...patch,
+        ...(existing.session_id && !row.session_id ? { session_id: existing.session_id } : {}),
+      };
       if (
         rowPatch.status &&
         row.status !== "payment_completed" &&
@@ -2061,7 +2175,7 @@ export const retryLifeFileSubmission = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     if (!hasRx) {
-      throw new Error("Generate the prescription before sending to LifeFile.");
+      throw new Error("Prescribe before sending to the pharmacy.");
     }
 
     const { submitRequestToLifeFile } = await import("@/integrations/lifefile/submit.server");

@@ -23,6 +23,7 @@ export type EmailTemplateKey =
   | "patient_provider_assigned"
   | "provider_assigned"
   | "provider_ready_for_review"
+  | "provider_patient_ready"
   | "provider_needs_attention"
   | "admin_provider_approved"
   | "admin_new_feedback";
@@ -446,28 +447,51 @@ const builders: Record<EmailTemplateKey, Builder> = {
   provider_assigned: (p) => {
     const med = str(p, "MEDICINE_NAME", "a treatment");
     const order = orderShort(p);
-    const link = cta(str(p, "REQUEST_URL"), "Open order");
+    const patient = str(p, "PATIENT_NAME", "A patient");
+    const link = cta(str(p, "REQUEST_URL"), "Open My Requests");
     return layout({
-      preheader: `New order assigned for ${med}.`,
-      title: "New order assigned",
+      preheader: `${patient} was assigned to you.`,
+      title: "A patient was assigned to you",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>An order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> has been assigned to you.</p>
+        <p><strong>${escapeHtml(patient)}</strong> was assigned to you.</p>
+        <p>Medicine: <strong>${escapeHtml(med)}</strong>${order ? `. Order <strong>${escapeHtml(order)}</strong>` : ""}.</p>
+        <p>This patient is in My Requests. Open that list to review them.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nAn order${order ? ` ${order}` : ""} for ${med} has been assigned to you.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\n${patient} was assigned to you.\nMedicine: ${med}${order ? `. Order ${order}` : ""}.\nThis patient is in My Requests. Open that list to review them.${link.text}`,
     });
   },
 
   provider_ready_for_review: (p) => {
     const med = str(p, "MEDICINE_NAME", "a treatment");
     const order = orderShort(p);
-    const link = cta(str(p, "REQUEST_URL"), "Review order");
+    const patient = str(p, "PATIENT_NAME", "A patient");
+    const link = cta(str(p, "REQUEST_URL"), "Open My Requests");
     return layout({
-      preheader: `Order for ${med} is ready for clinical review.`,
-      title: "Ready for clinical review",
+      preheader: `${patient} is assigned to you and ready for review.`,
+      title: "A patient is ready for your review",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> is ready for your review.</p>
+        <p><strong>${escapeHtml(patient)}</strong> is assigned to you and is ready for your review.</p>
+        <p>Medicine: <strong>${escapeHtml(med)}</strong>${order ? `. Order <strong>${escapeHtml(order)}</strong>` : ""}.</p>
+        <p>This patient is in My Requests. Review the intake form there, and join the consultation if this order needs one.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` ${order}` : ""} for ${med} is ready for your review.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\n${patient} is assigned to you and is ready for your review.\nMedicine: ${med}${order ? `. Order ${order}` : ""}.\nThis patient is in My Requests. Review the intake form there, and join the consultation if this order needs one.${link.text}`,
+    });
+  },
+
+  provider_patient_ready: (p) => {
+    const med = str(p, "MEDICINE_NAME", "a treatment");
+    const order = orderShort(p);
+    const patient = str(p, "PATIENT_NAME", "A patient");
+    const link = cta(str(p, "REQUEST_URL"), "Open this order");
+    return layout({
+      preheader: `${patient} is ready to be claimed.`,
+      title: "A new patient is ready to claim",
+      bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
+        <p><strong>${escapeHtml(patient)}</strong> finished signup and is waiting for a provider.</p>
+        <p>Medicine: <strong>${escapeHtml(med)}</strong>${order ? `. Order <strong>${escapeHtml(order)}</strong>` : ""}.</p>
+        <p>If you are licensed in this patient's state, open this order in the Unassigned queue and claim this patient. The first provider to claim it is assigned.</p>
+        ${link.html}`,
+      bodyText: `Hi ${firstName(p)},\n\n${patient} finished signup and is waiting for a provider.\nMedicine: ${med}${order ? `. Order ${order}` : ""}.\nIf you are licensed in this patient's state, open this order in the Unassigned queue and claim this patient. The first provider to claim it is assigned.${link.text}`,
     });
   },
 
