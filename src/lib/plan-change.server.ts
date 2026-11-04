@@ -53,8 +53,8 @@ async function applyDeferredBilling(
     subscription_id?: string | null;
     plan_change_delta_cents?: number | null;
   },
-) {
-  if (!req.subscription_id || !req.package_id) return;
+): Promise<{ billingNote: string | null }> {
+  if (!req.subscription_id || !req.package_id) return { billingNote: null };
   const { data: sub } = await supabaseAdmin
     .from("subscriptions")
     .select("id, stripe_subscription_id, stripe_customer_id")
@@ -65,29 +65,40 @@ async function applyDeferredBilling(
     .select("id, medicine_id, variant_id, duration_months, price, stripe_price_id, is_active")
     .eq("id", req.package_id)
     .maybeSingle();
+  let billingNote: string | null = null;
+  let customerId = (sub?.stripe_customer_id as string | null) ?? null;
   if (sub?.stripe_subscription_id && pkg) {
     const { applyPackageChangeToSubscription } = await import("@/lib/subscription-reschedule");
     const { getStripe } = await import("@/integrations/stripe/client.server");
-    await applyPackageChangeToSubscription({
+    const billing = await applyPackageChangeToSubscription({
       stripe: getStripe(),
       supabaseAdmin,
       sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
       pkg,
     });
+    if (!billing.billingUpdated) {
+      billingNote =
+        "The saved Stripe subscription is not in the current Stripe account, so the next bill was not changed.";
+    }
+    customerId = billing.stripeCustomerId ?? customerId;
   }
   const delta = Number(req.plan_change_delta_cents ?? 0);
-  if (delta < 0 && sub?.stripe_customer_id) {
+  if (delta < 0 && customerId) {
     try {
       const { getStripe } = await import("@/integrations/stripe/client.server");
-      await getStripe().customers.createBalanceTransaction(sub.stripe_customer_id, {
+      await getStripe().customers.createBalanceTransaction(customerId, {
         amount: delta,
         currency: "usd",
         description: "Credit for a confirmed plan change (settles next cycle)",
       });
     } catch (error) {
       console.error("[plan-change] credit failed:", error);
+      billingNote = billingNote ?? "The lower price could not be credited in Stripe.";
     }
+  } else if (delta < 0) {
+    billingNote = billingNote ?? "The lower price could not be credited because Stripe has no customer for this patient.";
   }
+  return { billingNote };
 }
 
 /** Patient confirmed or paid. Billing is applied, then the order is prescribed and sent. */
@@ -108,7 +119,7 @@ export async function confirmPlanChange(
     return { ok: true, already: true, status: req.status, lifeFileOrderId: null, error: null, retry: false };
   }
 
-  await applyDeferredBilling(supabaseAdmin, req);
+  const billing = await applyDeferredBilling(supabaseAdmin, req);
 
   const now = new Date().toISOString();
   await supabaseAdmin
@@ -140,6 +151,16 @@ export async function confirmPlanChange(
     },
     { role: "system", userId: null },
   );
+
+  if (billing.billingNote) {
+    await supabaseAdmin.from("medication_request_events").insert({
+      request_id: requestId,
+      status: sent.error ? "approved" : "sent_to_pharmacy",
+      actor_role: "system",
+      created_by: null,
+      note: `${billing.billingNote} The prescription was still processed.`.slice(0, 500),
+    });
+  }
 
   const note = sent.error
     ? source === "payment"

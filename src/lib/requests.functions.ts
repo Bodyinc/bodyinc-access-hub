@@ -1208,16 +1208,23 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         .maybeSingle();
       sub = s ?? null;
     }
+    let billingCustomerId: string | null = sub?.stripe_customer_id ?? null;
+    let billingNote: string | null = null;
 
-    // Admin changes reschedule the subscription now. A practitioner's change waits
-    // until the patient confirms, so a decline can restore the previous plan.
+    // Admin changes reschedule the subscription now. A higher-price practitioner
+    // change waits for payment. The same or a lower price is applied here.
     if (role !== "provider" && sub?.stripe_subscription_id) {
-      await applyPackageChangeToSubscription({
+      const billing = await applyPackageChangeToSubscription({
         stripe,
         supabaseAdmin,
         sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
         pkg: newPkg as any,
       });
+      billingCustomerId = billing.stripeCustomerId ?? billingCustomerId;
+      if (!billing.billingUpdated) {
+        billingNote =
+          "Stripe does not have this subscription in the current account, so the next bill was not changed.";
+      }
     }
 
     // Update the order's prescribed medicine snapshot.
@@ -1420,12 +1427,17 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
     }
 
     if (role === "provider" && sub?.stripe_subscription_id) {
-      await applyPackageChangeToSubscription({
+      const billing = await applyPackageChangeToSubscription({
         stripe,
         supabaseAdmin,
         sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
         pkg: newPkg as any,
       });
+      billingCustomerId = billing.stripeCustomerId ?? billingCustomerId;
+      if (!billing.billingUpdated) {
+        billingNote =
+          "Stripe does not have this subscription in the current account, so the next bill was not changed.";
+      }
     }
 
     if (deltaCents > 0) {
@@ -1506,7 +1518,9 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         "awaiting_additional_payment",
         role,
         context.userId,
-        `Changed to ${medLabel}; additional $${(deltaCents / 100).toFixed(2)} due.`,
+        [`Changed to ${medLabel}; additional $${(deltaCents / 100).toFixed(2)} due.`, billingNote]
+          .filter(Boolean)
+          .join(" "),
       );
 
       const { notifyPatientRequestEvent, notifyProviderRequestEvent } =
@@ -1539,17 +1553,20 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       };
     }
 
-    if (deltaCents < 0 && sub?.stripe_customer_id) {
+    if (deltaCents < 0 && billingCustomerId) {
       // Cheaper: credit the difference to the customer balance so it settles the next invoice.
       try {
-        await stripe.customers.createBalanceTransaction(sub.stripe_customer_id, {
+        await stripe.customers.createBalanceTransaction(billingCustomerId, {
           amount: deltaCents, // negative = credit toward future invoices
           currency: "usd",
           description: `Credit for changing to ${medLabel} (settles next cycle)`,
         });
       } catch (e) {
         console.error("[requests] customer balance credit failed:", e);
+        billingNote = billingNote ?? "The lower price could not be credited in Stripe.";
       }
+    } else if (deltaCents < 0) {
+      billingNote = billingNote ?? "The lower price could not be credited because Stripe has no customer for this patient.";
     }
 
     // Same price or cheaper: the change is approved immediately.
@@ -1563,9 +1580,14 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       "approved",
       role,
       context.userId,
-      deltaCents < 0
-        ? `Changed to ${medLabel}; $${(Math.abs(deltaCents) / 100).toFixed(2)} credited next cycle.`
-        : `Changed to ${medLabel}.`,
+      [
+        deltaCents < 0
+          ? `Changed to ${medLabel}; $${(Math.abs(deltaCents) / 100).toFixed(2)} credited next cycle.`
+          : `Changed to ${medLabel}.`,
+        billingNote,
+      ]
+        .filter(Boolean)
+        .join(" "),
     );
 
     const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
