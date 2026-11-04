@@ -254,18 +254,20 @@ export function OrderWorkspace({
                   <p>
                     {Number(request.plan_change_delta_cents) > 0
                       ? "Waiting for the patient to pay the difference. When that payment succeeds, the prescription is sent to the pharmacy automatically."
-                      : "Waiting for the patient to confirm the new plan. When they confirm, the prescription is sent to the pharmacy automatically."}{" "}
+                      : "No extra payment is due. Finish the consultation and this order is sent to the pharmacy."}{" "}
                   </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={remindPending}
-                    onClick={onRemind}
-                    className="h-9 border-[#E7CFC3] text-[13px] font-semibold text-[#8F4A33]"
-                  >
-                    {remindPending ? "Sending…" : "Send reminder"}
-                  </Button>
+                  {Number(request.plan_change_delta_cents) > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={remindPending}
+                      onClick={onRemind}
+                      className="h-9 border-[#E7CFC3] text-[13px] font-semibold text-[#8F4A33]"
+                    >
+                      {remindPending ? "Sending…" : "Send reminder"}
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
 

@@ -201,22 +201,17 @@ export async function remindPatientOfPlanChange(opts: {
     .select("plan_change_token, plan_change_delta_cents, medicine_id, user_id")
     .eq("id", opts.request.id)
     .maybeSingle();
+  const amount = Math.max(Number(row?.plan_change_delta_cents ?? 0), 0);
+  if (amount <= 0) {
+    await releasePatientOrderEmail(opts.supabaseAdmin, targetId, periodKey);
+    return false;
+  }
   const medicineName = await resolveMedicineName(
     opts.supabaseAdmin,
     row?.medicine_id ?? opts.request.medicine_id,
   );
-  const base = (
-    process.env.PROVIDER_APP_URL ||
-    process.env.APP_URL ||
-    process.env.ADMIN_APP_URL ||
-    ""
-  ).replace(/\/$/, "");
-  const pageUrl = row?.plan_change_token
-    ? base
-      ? `${base}/plan-change/${row.plan_change_token}`
-      : `/plan-change/${row.plan_change_token}`
-    : process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
-  const amount = Math.max(Number(row?.plan_change_delta_cents ?? 0), 0);
+  const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+  const payUrl = portalBase ? `${portalBase}/orders/${opts.request.id}/pay` : "";
   const sent = await notifyUserById({
     supabaseAdmin: opts.supabaseAdmin,
     userId: row?.user_id ?? opts.request.user_id,
@@ -225,9 +220,7 @@ export async function remindPatientOfPlanChange(opts: {
       ORDER_ID: opts.request.id,
       MEDICINE_NAME: medicineName,
       AMOUNT_DUE: (amount / 100).toFixed(2),
-      PORTAL_URL: pageUrl,
-      CONFIRM_URL: pageUrl,
-      DECLINE_URL: pageUrl,
+      PORTAL_URL: payUrl,
     },
   });
   if (sent) return true;

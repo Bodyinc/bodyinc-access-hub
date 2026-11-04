@@ -1915,7 +1915,7 @@ async function sendApprovedOrdersAfterConsult(
   const { data: rows, error } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status, plan_change_delta_cents",
     )
     .in("id", ids);
   if (error) return { message: "Consultation finished.", error: error.message };
@@ -1927,12 +1927,18 @@ async function sendApprovedOrdersAfterConsult(
     "approved",
     "prescribed",
   ]);
+  const notYetSent = (row: { life_file_order_id?: string | null; life_file_status?: string | null }) =>
+    !(row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed");
   const ready = ((rows ?? []) as any[]).filter(
-    (row) =>
-      autoSend.has(row.status) &&
-      !(row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed"),
+    (row) => autoSend.has(row.status) && notYetSent(row),
   );
-  if (!ready.length) {
+  const settledWithoutPayment = ((rows ?? []) as any[]).filter(
+    (row) =>
+      row.status === "awaiting_additional_payment" &&
+      Number(row.plan_change_delta_cents ?? 0) <= 0 &&
+      notYetSent(row),
+  );
+  if (!ready.length && !settledWithoutPayment.length) {
     const waiting = ((rows ?? []) as any[]).some((row) => row.status === "awaiting_additional_payment");
     return {
       message: waiting
@@ -1943,8 +1949,17 @@ async function sendApprovedOrdersAfterConsult(
   }
 
   const { prescribeAndSendToPharmacy } = await import("@/lib/requests.functions");
+  const { confirmPlanChange } = await import("@/lib/plan-change.server");
   const failures: string[] = [];
   let sent = 0;
+  for (const row of settledWithoutPayment) {
+    const result = await confirmPlanChange(supabaseAdmin, row.id, "consult");
+    if (result.lifeFileOrderId) {
+      sent += 1;
+      continue;
+    }
+    if (result.error) failures.push(result.error);
+  }
   for (const row of ready) {
     const result = await prescribeAndSendToPharmacy(supabaseAdmin, row, { role, userId });
     if (result.lifeFileOrderId) {

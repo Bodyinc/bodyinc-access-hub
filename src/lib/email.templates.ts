@@ -211,25 +211,7 @@ const builders: Record<EmailTemplateKey, Builder> = {
   patient_additional_payment: (p) => {
     const med = str(p, "MEDICINE_NAME", "your medication");
     const amount = str(p, "AMOUNT_DUE", "0.00");
-    const due = Number(amount) > 0;
-    const confirmUrl = str(p, "CONFIRM_URL");
-    const respond = cta(confirmUrl || str(p, "PORTAL_URL"), confirmUrl ? "Review and respond" : "Complete payment");
-    const pay = due && str(p, "PORTAL_URL") && str(p, "PORTAL_URL") !== confirmUrl
-      ? cta(str(p, "PORTAL_URL"), "Complete payment")
-      : { html: "", text: "" };
-    if (confirmUrl) {
-      return layout({
-        preheader: due
-          ? `Confirm the change to ${med}. An additional $${amount} is due.`
-          : `Please confirm or decline the change to ${med}.`,
-        title: `Confirm your plan change — ${med}`,
-        bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-          <p>Your practitioner updated your treatment to <strong>${escapeHtml(med)}</strong>.${due ? ` An additional payment of <strong>$${escapeHtml(amount)}</strong> confirms this change.` : " Please confirm this change, or decline it if you do not agree."} Nothing is sent to the pharmacy until you confirm and your practitioner finishes the prescription. If you do not respond within 48 hours, the previous plan is restored.</p>
-          ${pay.html}
-          ${respond.html}`,
-        bodyText: `Hi ${firstName(p)},\n\nYour practitioner updated your treatment to ${med}.${due ? ` An additional payment of $${amount} confirms this change.` : " Please confirm this change, or decline it if you do not agree."} Nothing is sent to the pharmacy until you confirm and your practitioner finishes the prescription. If you do not respond within 48 hours, the previous plan is restored.${pay.text}${respond.text}`,
-      });
-    }
+    const respond = cta(str(p, "PORTAL_URL"), "Complete payment");
     return layout({
       preheader: `Additional payment of $${amount} is required for ${med}.`,
       title: `Additional payment required — ${med}`,
@@ -500,12 +482,12 @@ const builders: Record<EmailTemplateKey, Builder> = {
     const order = orderShort(p);
     const link = cta(str(p, "REQUEST_URL"), "Open order");
     return layout({
-      preheader: `Order for ${med} needs the patient's confirmation.`,
+      preheader: `Order for ${med} is waiting on an additional payment.`,
       title: "Order needs attention",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p>Order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> needs the patient to confirm a plan change.</p>
+        <p>Order${order ? ` <strong>${escapeHtml(order)}</strong>` : ""} for <strong>${escapeHtml(med)}</strong> is waiting on the patient's additional payment. It is sent to the pharmacy after that payment succeeds.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` ${order}` : ""} for ${med} needs the patient to confirm a plan change.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\nOrder${order ? ` ${order}` : ""} for ${med} is waiting on the patient's additional payment. It is sent to the pharmacy after that payment succeeds.${link.text}`,
     });
   },
 

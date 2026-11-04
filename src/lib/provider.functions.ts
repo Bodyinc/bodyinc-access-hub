@@ -1213,8 +1213,8 @@ export const remindPlanChange = createServerFn({ method: "POST" })
       actor_role: "provider",
       created_by: context.userId,
       note: email_sent
-        ? "Reminder sent to the patient to confirm the plan change."
-        : "Plan-change reminder was already sent today.",
+        ? "Reminder sent to the patient to pay the difference."
+        : "Payment reminder was already sent today.",
     });
     return { ok: true, email_sent };
   });

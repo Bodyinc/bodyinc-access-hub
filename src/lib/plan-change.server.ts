@@ -105,7 +105,7 @@ async function applyDeferredBilling(
 export async function confirmPlanChange(
   supabaseAdmin: any,
   requestId: string,
-  source: "patient" | "payment",
+  source: "patient" | "payment" | "consult",
 ) {
   const { data: req } = await supabaseAdmin
     .from("medication_requests")
@@ -165,10 +165,12 @@ export async function confirmPlanChange(
   const note = sent.error
     ? source === "payment"
       ? `Patient paid the difference. The pharmacy send did not go through: ${sent.error}`
-      : `Patient confirmed the plan change. The pharmacy send did not go through: ${sent.error}`
+      : `The pharmacy send did not go through: ${sent.error}`
     : source === "payment"
       ? "Patient paid the difference. The prescription was sent to the pharmacy."
-      : "Patient confirmed the plan change. The prescription was sent to the pharmacy.";
+      : source === "consult"
+        ? "Consultation finished. The prescription was sent to the pharmacy."
+        : "The prescription was sent to the pharmacy.";
 
   await notifyProvider(
     supabaseAdmin,
@@ -316,6 +318,7 @@ export async function loadPlanChangeByToken(supabaseAdmin: any, token: string) {
     .limit(1)
     .maybeSingle();
   return {
+    request_id: data.id as string,
     status: data.status as string,
     medicine_name: (med as { name?: string } | null)?.name ?? "your medication",
     deadline: data.plan_change_deadline as string | null,

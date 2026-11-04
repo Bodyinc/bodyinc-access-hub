@@ -3,7 +3,7 @@ import { RequestList } from "@/components/admin/request-list";
 
 const STATUS_TABS = [
   { value: "pending_review", label: "Under review" },
-  { value: "awaiting_additional_payment", label: "Waiting on patient" },
+  { value: "awaiting_additional_payment", label: "Additional payment" },
   { value: "ready", label: "Ready to prescribe" },
   { value: "sent_to_pharmacy", label: "Sent to pharmacy" },
   { value: "rejected", label: "Rejected" },
