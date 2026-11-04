@@ -90,7 +90,7 @@ async function applyDeferredBilling(
   }
 }
 
-/** Patient confirmed. Billing is applied and the order returns to the practitioner's decision. */
+/** Patient confirmed or paid. Billing is applied, then the order is prescribed and sent. */
 export async function confirmPlanChange(
   supabaseAdmin: any,
   requestId: string,
@@ -99,13 +99,13 @@ export async function confirmPlanChange(
   const { data: req } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, package_id, subscription_id, plan_change_delta_cents, plan_change_token",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, subscription_id, plan_change_delta_cents, plan_change_token",
     )
     .eq("id", requestId)
     .maybeSingle();
   if (!req) throw new Error("Order not found.");
   if (req.status !== "awaiting_additional_payment") {
-    return { ok: true, already: true, status: req.status };
+    return { ok: true, already: true, status: req.status, lifeFileOrderId: null, error: null, retry: false };
   }
 
   await applyDeferredBilling(supabaseAdmin, req);
@@ -120,7 +120,6 @@ export async function confirmPlanChange(
   await supabaseAdmin
     .from("medication_requests")
     .update({
-      status: "pending_review",
       plan_change_token: null,
       plan_change_deadline: null,
       updated_at: now,
@@ -128,27 +127,44 @@ export async function confirmPlanChange(
     .eq("id", requestId)
     .eq("status", "awaiting_additional_payment");
 
-  await supabaseAdmin.from("medication_request_events").insert({
-    request_id: requestId,
-    status: "pending_review",
-    actor_role: source === "payment" ? "system" : "patient",
-    created_by: req.user_id,
-    note:
-      source === "payment"
-        ? "Patient confirmed the plan change by completing payment. Returned to the practitioner's decision."
-        : "Patient confirmed the plan change. Returned to the practitioner's decision.",
-  });
+  const { prescribeAndSendToPharmacy } = await import("@/lib/requests.functions");
+  const sent = await prescribeAndSendToPharmacy(
+    supabaseAdmin,
+    {
+      id: req.id,
+      provider_id: req.provider_id,
+      user_id: req.user_id,
+      medicine_id: req.medicine_id,
+      variant_id: req.variant_id,
+      package_id: req.package_id,
+    },
+    { role: "system", userId: null },
+  );
+
+  const note = sent.error
+    ? source === "payment"
+      ? `Patient paid the difference. The pharmacy send did not go through: ${sent.error}`
+      : `Patient confirmed the plan change. The pharmacy send did not go through: ${sent.error}`
+    : source === "payment"
+      ? "Patient paid the difference. The prescription was sent to the pharmacy."
+      : "Patient confirmed the plan change. The prescription was sent to the pharmacy.";
 
   await notifyProvider(
     supabaseAdmin,
     req.provider_id,
     requestId,
     "plan_change_confirmed",
-    "Patient confirmed the plan change",
-    "The order is back on your decision step. Approve, prescribe, or reject.",
+    sent.error ? "Pharmacy send needs attention" : "Prescription sent to the pharmacy",
+    note.slice(0, 500),
   );
 
-  return { ok: true, status: "pending_review" };
+  return {
+    ok: !sent.error,
+    status: sent.error ? "approved" : "sent_to_pharmacy",
+    lifeFileOrderId: sent.lifeFileOrderId,
+    error: sent.error,
+    retry: sent.retry,
+  };
 }
 
 export async function declinePlanChange(

@@ -43,9 +43,9 @@ export type RequestChangeCurrent = {
   price: number | null;
 };
 
-// Change the medicine on a medication order under review. Unlike the subscription change dialog,
-// a more expensive switch sends the patient a payment request for the difference before the
-// prescription is generated; a cheaper switch is credited to their next cycle.
+// Change the medicine on a medication order under review. A higher price waits for the
+// difference payment, then the prescription is sent to the pharmacy. The same or a lower
+// price is sent immediately, and a lower price is credited on the next bill.
 export function RequestChangeMedicineDialog({
   requestId,
   open,
@@ -215,10 +215,12 @@ export function RequestChangeMedicineDialog({
     onSuccess: (res: any) => {
       toastActionWithEmail(
         res?.status === "awaiting_additional_payment"
-          ? hideFinancial
-            ? "Order updated. The patient needs to confirm or decline. After they respond, this order returns to your decision."
-            : "Order updated. The patient was asked to pay the difference. Pharmacy dispatch runs automatically after payment."
-          : "Order updated and approved.",
+          ? "Order updated. The patient was asked to pay the difference. The prescription is sent to the pharmacy after they pay."
+          : res?.pharmacy_error
+            ? "Order updated. The pharmacy send did not go through, so it stays at Prescription approved."
+            : res?.status === "sent_to_pharmacy"
+              ? "Order updated. The prescription was sent to the pharmacy."
+              : "Order updated and approved.",
         res?.email_sent,
       );
       onChanged();
@@ -236,8 +238,8 @@ export function RequestChangeMedicineDialog({
           <DialogTitle>Change medicine</DialogTitle>
           <DialogDescription>
             {hideFinancial
-              ? "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. The patient must confirm or decline, including when the price does not go up. After they respond, the order returns here so you can approve, prescribe, and send."
-              : "Switch this order to a different medicine, or keep the same medicine and change its variant/dose or plan. If it costs more, the patient is sent a payment request for the difference, and the updated order is sent to the pharmacy automatically once they pay. If it costs less, the difference is credited to their next cycle."}
+              ? "Switch this order to a different medicine, or keep the same medicine and change its variant or plan. A higher price is sent to the pharmacy after the patient pays the difference. The same or a lower price is sent now, with no extra step for the patient."
+              : "Switch this order to a different medicine, or keep the same medicine and change its variant or plan. A higher price is sent to the pharmacy after the patient pays the difference. The same or a lower price is sent now, and a lower price is credited on the next bill."}
           </DialogDescription>
         </DialogHeader>
 
@@ -360,12 +362,11 @@ export function RequestChangeMedicineDialog({
                   placeholder={
                     isCrossCategory
                       ? "Explain why this patient should move to a different treatment category…"
-                      : "Why is this medicine or plan changing? The patient must confirm."
+                      : "Why is this medicine or plan changing?"
                   }
                 />
                 <p className="text-[11px] text-muted-foreground">
                   Required (min. 10 characters). This is recorded on the order timeline and notes.
-                  The patient has to confirm or decline. The order then returns to your decision.
                 </p>
               </div>
             ) : null}
@@ -465,15 +466,11 @@ export function RequestChangeMedicineDialog({
               </span>
             </div>
             <p className="text-xs text-muted-foreground pt-1">
-              {hideFinancial
-                ? diff > 0
-                  ? "The patient confirms by paying this difference. The order then returns to you. If they decline, or do not respond within 48 hours, the previous plan is restored."
-                  : "The patient must confirm this change. A lower price is credited only after they confirm. If they decline, or do not respond within 48 hours, the previous plan is restored."
-                : diff > 0
-                  ? "The patient will be asked to pay this difference. When that payment succeeds, the updated order is sent to the pharmacy automatically."
-                  : diff < 0
-                    ? "This credit settles on the patient's next billing cycle."
-                    : "No price change."}
+              {diff > 0
+                ? "The patient pays this difference. After that payment, the prescription is sent to the pharmacy. If they do not pay within 48 hours, the previous plan is restored."
+                : diff < 0
+                  ? "Nothing else is asked of the patient. The prescription is sent to the pharmacy now, and this credit applies to the next bill."
+                  : "No price change. The prescription is sent to the pharmacy now."}
             </p>
           </div>
         ) : null}

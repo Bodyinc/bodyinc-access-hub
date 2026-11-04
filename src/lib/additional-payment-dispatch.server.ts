@@ -1,6 +1,5 @@
 // After a medicine change to a more expensive plan, the patient pays the difference.
-// A practitioner's change (plan_change_token set) returns to the practitioner's decision
-// after payment. An admin change still sends the updated order to the pharmacy.
+// Payment then prescribes the order and sends it to the pharmacy. No one has to approve it again.
 //
 // Confirmation arrives from:
 // - Stripe `checkout.session.completed` (checkout created here, linked in the patient email)
@@ -284,8 +283,14 @@ export async function confirmAdditionalPaymentAndDispatch(
   const planChangeToken = (request as { plan_change_token?: string | null }).plan_change_token;
   if (planChangeToken) {
     const { confirmPlanChange } = await import("@/lib/plan-change.server");
-    await confirmPlanChange(supabaseAdmin, request.id, "payment");
-    return { ok: true, dispatched: false, reason: "returned_to_decision" };
+    const confirmed = await confirmPlanChange(supabaseAdmin, request.id, "payment");
+    return {
+      ok: confirmed.ok !== false,
+      dispatched: Boolean(confirmed.lifeFileOrderId),
+      lifeFileOrderId: confirmed.lifeFileOrderId,
+      retry: confirmed.retry,
+      reason: confirmed.error ?? undefined,
+    };
   }
 
   const providerId = request.provider_id;

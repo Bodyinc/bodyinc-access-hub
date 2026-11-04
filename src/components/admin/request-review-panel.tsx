@@ -696,7 +696,16 @@ export function RequestReviewPanel({
             </div>
           ) : null}
 
-          {canManage ? (
+          {canManage && consultation?.is_ended ? (
+            <div className="border-t border-[#D5DEDD] pt-4">
+              <p className="text-[13px] font-medium text-[#3B4759]">
+                Assigned provider: {provider?.full_name ?? "Unassigned"}
+              </p>
+              <p className="mt-1 text-[13px] text-[#3B4759]/70">
+                The consultation is already complete, so the provider cannot be changed.
+              </p>
+            </div>
+          ) : canManage ? (
             <div className="flex flex-wrap items-end gap-2 border-t border-[#D5DEDD] pt-4">
               <div className="min-w-[220px] space-y-1">
                 <div className="text-[13px] font-medium text-[#3B4759]/60">

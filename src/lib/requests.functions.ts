@@ -194,6 +194,138 @@ export async function fulfillApprovedRequest(
   };
 }
 
+const PHARMACY_HOLD_STATUSES = new Set([
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
+  "approved",
+]);
+
+/** Prescribe if needed and submit to LifeFile. A failed send leaves the order at Prescription approved. */
+export async function prescribeAndSendToPharmacy(
+  supabaseAdmin: any,
+  req: {
+    id: string;
+    provider_id: string | null;
+    user_id: string | null;
+    medicine_id: string | null;
+    variant_id: string | null;
+    package_id?: string | null;
+  },
+  actor: { role: "admin" | "provider" | "system"; userId: string | null },
+): Promise<{ lifeFileOrderId: string | null; error: string | null; retry: boolean }> {
+  const { data: fresh, error: loadError } = await supabaseAdmin
+    .from("medication_requests")
+    .select(
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
+    )
+    .eq("id", req.id)
+    .maybeSingle();
+  if (loadError) return { lifeFileOrderId: null, error: loadError.message, retry: true };
+  const row = (fresh ?? req) as {
+    id: string;
+    status?: string;
+    provider_id: string | null;
+    user_id: string | null;
+    medicine_id: string | null;
+    variant_id: string | null;
+    package_id?: string | null;
+    life_file_order_id?: string | null;
+    life_file_status?: string | null;
+  };
+
+  if (row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed") {
+    if (row.status && !["sent_to_pharmacy", "dispatched", "delivered"].includes(row.status)) {
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({ status: "sent_to_pharmacy", updated_at: new Date().toISOString() })
+        .eq("id", req.id);
+    }
+    return { lifeFileOrderId: row.life_file_order_id, error: null, retry: false };
+  }
+
+  const now = new Date().toISOString();
+  if (req.medicine_id) {
+    const { data: med } = await supabaseAdmin
+      .from("medicines")
+      .select("name")
+      .eq("id", req.medicine_id)
+      .maybeSingle();
+    await supabaseAdmin
+      .from("prescriptions")
+      .update({
+        medicine_id: req.medicine_id,
+        variant_id: req.variant_id,
+        package_id: req.package_id ?? null,
+        medicine_name: (med as { name?: string } | null)?.name ?? "Medication",
+        updated_at: now,
+      })
+      .eq("request_id", req.id)
+      .neq("status", "voided");
+  }
+
+  if (!row.status || PHARMACY_HOLD_STATUSES.has(row.status)) {
+    await supabaseAdmin
+      .from("medication_requests")
+      .update({ status: "approved", updated_at: now })
+      .eq("id", req.id);
+  }
+
+  if (!row.provider_id) {
+    await logEvent(
+      supabaseAdmin,
+      req.id,
+      "approved",
+      actor.role,
+      actor.userId,
+      "Automatic pharmacy send needs an assigned provider.",
+    );
+    return { lifeFileOrderId: null, error: "This order has no assigned provider.", retry: false };
+  }
+
+  try {
+    const sent = await fulfillApprovedRequest(
+      supabaseAdmin,
+      {
+        id: req.id,
+        status: "approved",
+        provider_id: row.provider_id,
+        user_id: row.user_id ?? req.user_id,
+        medicine_id: req.medicine_id ?? row.medicine_id,
+        variant_id: req.variant_id ?? row.variant_id,
+        package_id: req.package_id ?? row.package_id,
+        life_file_order_id: row.life_file_order_id,
+        life_file_status: row.life_file_status,
+      },
+      actor,
+    );
+    return { lifeFileOrderId: sent.lifeFileOrderId, error: null, retry: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Pharmacy send failed.";
+    if (/already submitted to LifeFile/i.test(message)) {
+      return { lifeFileOrderId: row.life_file_order_id ?? null, error: null, retry: false };
+    }
+    await supabaseAdmin
+      .from("medication_requests")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("id", req.id);
+    await logEvent(
+      supabaseAdmin,
+      req.id,
+      "approved",
+      actor.role,
+      actor.userId,
+      `Pharmacy send did not go through: ${message}`.slice(0, 500),
+    );
+    const permanent =
+      /no assigned provider|no patient|patient profile not found|provider record not found|provider profile not found|npi is required|prescription not found/i.test(
+        message,
+      );
+    return { lifeFileOrderId: null, error: message, retry: !permanent };
+  }
+}
+
 // Loads a request and enforces provider scoping: a provider may only touch requests assigned to
 // them; an admin may touch any. If `opts?.allowUnassigned` is true, an unassigned request (provider_id = null)
 // may also be accessed by a provider (e.g. for reviewing and claiming in the provider queue).
@@ -1170,21 +1302,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       });
     }
 
-    if (role !== "provider") {
-      await supabaseAdmin
-        .from("prescriptions")
-        .update({
-          medicine_id: newPkg.medicine_id,
-          variant_id: newPkg.variant_id,
-          package_id: newPkg.id,
-          medicine_name: medName,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("request_id", req.id)
-        .neq("status", "voided");
-    }
-
-    if (role === "provider") {
+    if (role === "provider" && deltaCents > 0) {
       const { newPlanChangeToken, planChangeDeadline, planChangeUrl } = await import(
         "@/lib/plan-change.server"
       );
@@ -1299,6 +1417,15 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         status: "awaiting_additional_payment",
         email_sent,
       };
+    }
+
+    if (role === "provider" && sub?.stripe_subscription_id) {
+      await applyPackageChangeToSubscription({
+        stripe,
+        supabaseAdmin,
+        sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
+        pkg: newPkg as any,
+      });
     }
 
     if (deltaCents > 0) {
@@ -1452,7 +1579,23 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       },
     });
 
-    return { ok: true, delta_cents: deltaCents, status: "approved", email_sent };
+    const sent = await prescribeAndSendToPharmacy(supabaseAdmin, {
+      id: req.id,
+      provider_id: req.provider_id,
+      user_id: req.user_id,
+      medicine_id: newPkg.medicine_id,
+      variant_id: newPkg.variant_id,
+      package_id: newPkg.id,
+    }, { role: role === "provider" ? "provider" : "admin", userId: context.userId });
+
+    return {
+      ok: true,
+      delta_cents: deltaCents,
+      status: sent.error ? "approved" : "sent_to_pharmacy",
+      email_sent,
+      lifeFileOrderId: sent.lifeFileOrderId,
+      pharmacy_error: sent.error,
+    };
   });
 
 export const generatePrescription = createServerFn({ method: "POST" })
@@ -1625,6 +1768,29 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (!existing) throw new Error("Request not found.");
+
+    if (data.providerId !== existing.provider_id) {
+      const group = await loadSiblingRows(supabaseAdmin, data.requestId);
+      const consult = await findGroupConsultation(
+        supabaseAdmin,
+        group.length ? group : [existing],
+      );
+      let consultationDone = Boolean(consult?.ended_at);
+      if (!consultationDone) {
+        const { data: events } = await supabaseAdmin
+          .from("medication_request_events")
+          .select("note")
+          .eq("request_id", existing.id);
+        consultationDone = ((events ?? []) as { note?: string | null }[]).some(
+          (ev) => typeof ev.note === "string" && /consultation (completed|ended)/i.test(ev.note),
+        );
+      }
+      if (consultationDone) {
+        throw new Error(
+          "The consultation is already complete, so the provider cannot be changed.",
+        );
+      }
+    }
 
     if (role === "provider" && existing.provider_id && existing.provider_id !== context.userId) {
       throw new Error(
