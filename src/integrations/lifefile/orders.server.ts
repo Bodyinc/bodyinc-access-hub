@@ -167,6 +167,7 @@ export async function createLifeFileOrder(input: LifeFileOrderInput) {
           lfProductID: product.lfProductID,
           quantity,
           directions: product.directions?.trim() || undefined,
+          foreignRxNumber: input.requestId,
           uuid: crypto.randomUUID(),
         },
       ],
