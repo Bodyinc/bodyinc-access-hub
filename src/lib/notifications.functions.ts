@@ -24,15 +24,7 @@ export const listMyNotifications = createServerFn({ method: "POST" })
       .limit(50);
     if (error) throw new Error(error.message);
 
-    const items = ((data ?? []) as AppNotification[]).map((n) => ({
-      ...n,
-      body: n.body
-        ? n.body.replace(
-            /is awaiting an additional payment\.?/gi,
-            "needs the patient to confirm a plan change.",
-          )
-        : n.body,
-    }));
+    const items = (data ?? []) as AppNotification[];
     return { items, unread: items.filter((n) => !n.read_at).length };
   });
 

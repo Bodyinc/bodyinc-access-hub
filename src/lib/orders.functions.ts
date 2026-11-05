@@ -284,12 +284,17 @@ export const changeSubscriptionMedicine = createServerFn({ method: "POST" })
           .maybeSingle()
       : { data: null as any };
     const oldPrice = Number((oldPkg as any)?.price ?? 0);
-    const { description } = await applyPackageChangeToSubscription({
+    const { description, billingUpdated } = await applyPackageChangeToSubscription({
       stripe,
       supabaseAdmin,
       sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
       pkg: pkg as any,
     });
+    if (!billingUpdated) {
+      throw new Error(
+        "This subscription is not in the current Stripe account, so the bill was not changed.",
+      );
+    }
 
     await supabaseAdmin.from("admin_activity_log").insert({
       admin_user_id: context.userId,

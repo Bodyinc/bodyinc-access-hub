@@ -23,15 +23,21 @@ export const getPlanChange = createServerFn({ method: "POST" })
         medicine_name: row.medicine_name,
         amount_cents: 0,
         deadline: row.deadline,
+        pay_url: null,
         message: "This plan change timed out. The previous plan was restored.",
       };
     }
+    const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
     return {
       found: true as const,
       open: row.open,
       medicine_name: row.medicine_name,
       amount_cents: row.delta_cents > 0 ? row.delta_cents : 0,
       deadline: row.deadline,
+      pay_url:
+        row.open && row.delta_cents > 0 && portalBase && row.request_id
+          ? `${portalBase}/orders/${row.request_id}/pay`
+          : null,
       message: row.open ? null : "This plan change has already been answered.",
     };
   });
@@ -60,20 +66,9 @@ export const respondToPlanChange = createServerFn({ method: "POST" })
 
     const delta = Number(req.plan_change_delta_cents ?? 0);
     if (delta > 0) {
-      const { data: pay } = await supabaseAdmin
-        .from("additional_payments")
-        .select("stripe_checkout_session_id")
-        .eq("request_id", req.id)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (pay?.stripe_checkout_session_id) {
-        const { getStripe } = await import("@/integrations/stripe/client.server");
-        const session = await getStripe().checkout.sessions.retrieve(pay.stripe_checkout_session_id);
-        if (session.url && session.status === "open") return { ok: true, payUrl: session.url };
-      }
-      throw new Error("Open the payment link in your email to confirm this change.");
+      const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+      if (portalBase) return { ok: true, payUrl: `${portalBase}/orders/${req.id}/pay` };
+      throw new Error("Open My Meds in the patient portal to pay the difference.");
     }
 
     await confirmPlanChange(supabaseAdmin, req.id, "patient");

@@ -696,7 +696,16 @@ export function RequestReviewPanel({
             </div>
           ) : null}
 
-          {canManage ? (
+          {canManage && consultation?.is_ended ? (
+            <div className="border-t border-[#D5DEDD] pt-4">
+              <p className="text-[13px] font-medium text-[#3B4759]">
+                Assigned provider: {provider?.full_name ?? "Unassigned"}
+              </p>
+              <p className="mt-1 text-[13px] text-[#3B4759]/70">
+                The consultation is already complete, so the provider cannot be changed.
+              </p>
+            </div>
+          ) : canManage ? (
             <div className="flex flex-wrap items-end gap-2 border-t border-[#D5DEDD] pt-4">
               <div className="min-w-[220px] space-y-1">
                 <div className="text-[13px] font-medium text-[#3B4759]/60">
@@ -976,7 +985,7 @@ export function RequestReviewPanel({
             <p className="rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
               {request.plan_change_delta_cents != null &&
               Number(request.plan_change_delta_cents) <= 0
-                ? "Waiting for the patient to confirm or decline the new plan. The price did not go up, so there is nothing extra to pay. After they respond, this order comes back for your decision."
+                ? "No extra payment is due. Finish the consultation and this order is sent to the pharmacy."
                 : "Waiting for the patient to pay the price difference. The updated order is sent to the pharmacy automatically once payment succeeds."}
             </p>
           ) : null}

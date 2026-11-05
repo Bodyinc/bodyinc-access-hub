@@ -44,6 +44,7 @@ import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_aut
 import { Route as ApiConsultationsEmbedRouteImport } from './routes/api.consultations.embed'
 import { Route as ApiInternalAdditionalPaymentPaidRouteImport } from './routes/api.internal.additional-payment-paid'
 import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
+import { Route as ApiLifefileDataPushRouteImport } from './routes/api.lifefile.data-push'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
 import { Route as AuthenticatedAdminBillingRefundHistoryRouteImport } from './routes/_authenticated/admin.billing.refund-history'
@@ -277,6 +278,11 @@ const ApiInternalAdditionalPaymentPaidRoute =
 const ApiInternalNewFeedbackRoute = ApiInternalNewFeedbackRouteImport.update({
   id: '/api/internal/new-feedback',
   path: '/api/internal/new-feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLifefileDataPushRoute = ApiLifefileDataPushRouteImport.update({
+  id: '/api/lifefile/data-push',
+  path: '/api/lifefile/data-push',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
@@ -546,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/api/consultations/embed': typeof ApiConsultationsEmbedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/provider/': typeof AuthenticatedProviderIndexRoute
@@ -608,6 +615,7 @@ export interface FileRoutesByTo {
   '/api/consultations/embed': typeof ApiConsultationsEmbedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/provider': typeof AuthenticatedProviderIndexRoute
@@ -685,6 +693,7 @@ export interface FileRoutesById {
   '/api/consultations/embed': typeof ApiConsultationsEmbedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/provider/': typeof AuthenticatedProviderIndexRoute
@@ -762,6 +771,7 @@ export interface FileRouteTypes {
     | '/api/consultations/embed'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
     | '/admin/'
     | '/provider/'
@@ -824,6 +834,7 @@ export interface FileRouteTypes {
     | '/api/consultations/embed'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
     | '/admin'
     | '/provider'
@@ -900,6 +911,7 @@ export interface FileRouteTypes {
     | '/api/consultations/embed'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/provider/'
@@ -954,6 +966,7 @@ export interface RootRouteChildren {
   ApiConsultationsEmbedRoute: typeof ApiConsultationsEmbedRoute
   ApiInternalAdditionalPaymentPaidRoute: typeof ApiInternalAdditionalPaymentPaidRoute
   ApiInternalNewFeedbackRoute: typeof ApiInternalNewFeedbackRoute
+  ApiLifefileDataPushRoute: typeof ApiLifefileDataPushRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -1202,6 +1215,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/new-feedback'
       fullPath: '/api/internal/new-feedback'
       preLoaderRoute: typeof ApiInternalNewFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/lifefile/data-push': {
+      id: '/api/lifefile/data-push'
+      path: '/api/lifefile/data-push'
+      fullPath: '/api/lifefile/data-push'
+      preLoaderRoute: typeof ApiLifefileDataPushRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/webhook': {
@@ -1844,6 +1864,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConsultationsEmbedRoute: ApiConsultationsEmbedRoute,
   ApiInternalAdditionalPaymentPaidRoute: ApiInternalAdditionalPaymentPaidRoute,
   ApiInternalNewFeedbackRoute: ApiInternalNewFeedbackRoute,
+  ApiLifefileDataPushRoute: ApiLifefileDataPushRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

@@ -194,6 +194,138 @@ export async function fulfillApprovedRequest(
   };
 }
 
+const PHARMACY_HOLD_STATUSES = new Set([
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
+  "approved",
+]);
+
+/** Prescribe if needed and submit to LifeFile. A failed send leaves the order at Prescription approved. */
+export async function prescribeAndSendToPharmacy(
+  supabaseAdmin: any,
+  req: {
+    id: string;
+    provider_id: string | null;
+    user_id: string | null;
+    medicine_id: string | null;
+    variant_id: string | null;
+    package_id?: string | null;
+  },
+  actor: { role: "admin" | "provider" | "system"; userId: string | null },
+): Promise<{ lifeFileOrderId: string | null; error: string | null; retry: boolean }> {
+  const { data: fresh, error: loadError } = await supabaseAdmin
+    .from("medication_requests")
+    .select(
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
+    )
+    .eq("id", req.id)
+    .maybeSingle();
+  if (loadError) return { lifeFileOrderId: null, error: loadError.message, retry: true };
+  const row = (fresh ?? req) as {
+    id: string;
+    status?: string;
+    provider_id: string | null;
+    user_id: string | null;
+    medicine_id: string | null;
+    variant_id: string | null;
+    package_id?: string | null;
+    life_file_order_id?: string | null;
+    life_file_status?: string | null;
+  };
+
+  if (row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed") {
+    if (row.status && !["sent_to_pharmacy", "dispatched", "delivered"].includes(row.status)) {
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({ status: "sent_to_pharmacy", updated_at: new Date().toISOString() })
+        .eq("id", req.id);
+    }
+    return { lifeFileOrderId: row.life_file_order_id, error: null, retry: false };
+  }
+
+  const now = new Date().toISOString();
+  if (req.medicine_id) {
+    const { data: med } = await supabaseAdmin
+      .from("medicines")
+      .select("name")
+      .eq("id", req.medicine_id)
+      .maybeSingle();
+    await supabaseAdmin
+      .from("prescriptions")
+      .update({
+        medicine_id: req.medicine_id,
+        variant_id: req.variant_id,
+        package_id: req.package_id ?? null,
+        medicine_name: (med as { name?: string } | null)?.name ?? "Medication",
+        updated_at: now,
+      })
+      .eq("request_id", req.id)
+      .neq("status", "voided");
+  }
+
+  if (!row.status || PHARMACY_HOLD_STATUSES.has(row.status)) {
+    await supabaseAdmin
+      .from("medication_requests")
+      .update({ status: "approved", updated_at: now })
+      .eq("id", req.id);
+  }
+
+  if (!row.provider_id) {
+    await logEvent(
+      supabaseAdmin,
+      req.id,
+      "approved",
+      actor.role,
+      actor.userId,
+      "Automatic pharmacy send needs an assigned provider.",
+    );
+    return { lifeFileOrderId: null, error: "This order has no assigned provider.", retry: false };
+  }
+
+  try {
+    const sent = await fulfillApprovedRequest(
+      supabaseAdmin,
+      {
+        id: req.id,
+        status: "approved",
+        provider_id: row.provider_id,
+        user_id: row.user_id ?? req.user_id,
+        medicine_id: req.medicine_id ?? row.medicine_id,
+        variant_id: req.variant_id ?? row.variant_id,
+        package_id: req.package_id ?? row.package_id,
+        life_file_order_id: row.life_file_order_id,
+        life_file_status: row.life_file_status,
+      },
+      actor,
+    );
+    return { lifeFileOrderId: sent.lifeFileOrderId, error: null, retry: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Pharmacy send failed.";
+    if (/already submitted to LifeFile/i.test(message)) {
+      return { lifeFileOrderId: row.life_file_order_id ?? null, error: null, retry: false };
+    }
+    await supabaseAdmin
+      .from("medication_requests")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("id", req.id);
+    await logEvent(
+      supabaseAdmin,
+      req.id,
+      "approved",
+      actor.role,
+      actor.userId,
+      `Pharmacy send did not go through: ${message}`.slice(0, 500),
+    );
+    const permanent =
+      /no assigned provider|no patient|patient profile not found|provider record not found|provider profile not found|npi is required|prescription not found/i.test(
+        message,
+      );
+    return { lifeFileOrderId: null, error: message, retry: !permanent };
+  }
+}
+
 // Loads a request and enforces provider scoping: a provider may only touch requests assigned to
 // them; an admin may touch any. If `opts?.allowUnassigned` is true, an unassigned request (provider_id = null)
 // may also be accessed by a provider (e.g. for reviewing and claiming in the provider queue).
@@ -979,7 +1111,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       data.requestId,
       role,
       context.userId,
-      "id, status, provider_id, user_id, subscription_id, package_id, medicine_id, variant_id, previous_medicine_id, previous_variant_id, previous_package_id",
+      "id, status, provider_id, user_id, subscription_id, package_id, medicine_id, variant_id, requires_consultation, previous_medicine_id, previous_variant_id, previous_package_id",
     );
     if (!["pending_review", "approved", "awaiting_additional_payment"].includes(req.status)) {
       throw new Error(`Cannot change medicine on a request that is ${req.status}.`);
@@ -1076,16 +1208,23 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         .maybeSingle();
       sub = s ?? null;
     }
+    let billingCustomerId: string | null = sub?.stripe_customer_id ?? null;
+    let billingNote: string | null = null;
 
-    // Admin changes reschedule the subscription now. A practitioner's change waits
-    // until the patient confirms, so a decline can restore the previous plan.
+    // Admin changes reschedule the subscription now. A higher-price practitioner
+    // change waits for payment. The same or a lower price is applied here.
     if (role !== "provider" && sub?.stripe_subscription_id) {
-      await applyPackageChangeToSubscription({
+      const billing = await applyPackageChangeToSubscription({
         stripe,
         supabaseAdmin,
         sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
         pkg: newPkg as any,
       });
+      billingCustomerId = billing.stripeCustomerId ?? billingCustomerId;
+      if (!billing.billingUpdated) {
+        billingNote =
+          "Stripe does not have this subscription in the current account, so the next bill was not changed.";
+      }
     }
 
     // Update the order's prescribed medicine snapshot.
@@ -1170,28 +1309,10 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       });
     }
 
-    if (role !== "provider") {
-      await supabaseAdmin
-        .from("prescriptions")
-        .update({
-          medicine_id: newPkg.medicine_id,
-          variant_id: newPkg.variant_id,
-          package_id: newPkg.id,
-          medicine_name: medName,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("request_id", req.id)
-        .neq("status", "voided");
-    }
-
-    if (role === "provider") {
-      const { newPlanChangeToken, planChangeDeadline, planChangeUrl } = await import(
-        "@/lib/plan-change.server"
-      );
-      const token = newPlanChangeToken();
-      const deadline = planChangeDeadline();
+    if (role === "provider" && deltaCents > 0) {
       const now = new Date().toISOString();
-      const page = planChangeUrl(token);
+      const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+      const payUrl = portalBase ? `${portalBase}/orders/${req.id}/pay` : "";
 
       await supabaseAdmin
         .from("additional_payments")
@@ -1199,60 +1320,17 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         .eq("request_id", req.id)
         .eq("status", "pending");
 
-      let payUrl = page;
-      if (deltaCents > 0) {
-        const { data: payRow, error: payErr } = await supabaseAdmin
-          .from("additional_payments")
-          .insert({
-            request_id: req.id,
-            user_id: req.user_id,
-            amount_cents: deltaCents,
-            currency: "usd",
-            reason: `Price difference for changing to ${medLabel}`,
-            from_package_id: restorePackageId,
-            to_package_id: newPkg.id,
-            status: "pending",
-          })
-          .select("id")
-          .single();
-        if (payErr || !payRow) throw new Error(payErr?.message ?? "Could not record the additional payment.");
-
-        let customerEmail: string | null = null;
-        let customerId = (sub?.stripe_customer_id as string | null) ?? null;
-        if (req.user_id) {
-          const { data: profile } = await supabaseAdmin
-            .from("profiles")
-            .select("email, stripe_customer_id")
-            .eq("id", req.user_id)
-            .maybeSingle();
-          customerEmail = (profile as { email?: string | null } | null)?.email ?? null;
-          customerId =
-            customerId ||
-            ((profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id ?? null);
-        }
-        try {
-          const { createAdditionalPaymentCheckout } = await import(
-            "@/lib/additional-payment-dispatch.server"
-          );
-          const checkout = await createAdditionalPaymentCheckout({
-            paymentId: payRow.id,
-            requestId: req.id,
-            amountCents: deltaCents,
-            medicineLabel: medLabel,
-            customerId,
-            customerEmail,
-          });
-          if (checkout) {
-            payUrl = checkout.url;
-            await supabaseAdmin
-              .from("additional_payments")
-              .update({ stripe_checkout_session_id: checkout.id, updated_at: now })
-              .eq("id", payRow.id);
-          }
-        } catch (checkoutErr) {
-          console.error("[requests] additional payment checkout failed:", checkoutErr);
-        }
-      }
+      const { error: payErr } = await supabaseAdmin.from("additional_payments").insert({
+        request_id: req.id,
+        user_id: req.user_id,
+        amount_cents: deltaCents,
+        currency: "usd",
+        reason: `Price difference for changing to ${medLabel}`,
+        from_package_id: restorePackageId,
+        to_package_id: newPkg.id,
+        status: "pending",
+      });
+      if (payErr) throw new Error(payErr.message ?? "Could not record the additional payment.");
 
       await supabaseAdmin
         .from("medication_requests")
@@ -1261,8 +1339,8 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
           previous_medicine_id: restoreMedicineId,
           previous_variant_id: restoreVariantId,
           previous_package_id: restorePackageId,
-          plan_change_token: token,
-          plan_change_deadline: deadline,
+          plan_change_token: null,
+          plan_change_deadline: null,
           plan_change_delta_cents: deltaCents,
           updated_at: now,
         })
@@ -1273,9 +1351,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         "awaiting_additional_payment",
         role,
         context.userId,
-        deltaCents > 0
-          ? `Changed to ${medLabel}; waiting for the patient to confirm and pay $${(deltaCents / 100).toFixed(2)}.`
-          : `Changed to ${medLabel}; waiting for the patient to confirm.`,
+        `Changed to ${medLabel}; waiting for the patient to pay $${(deltaCents / 100).toFixed(2)}.`,
       );
 
       const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
@@ -1285,11 +1361,9 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         template: "patient_additional_payment",
         extraParams: {
           MEDICINE_NAME: medLabel,
-          AMOUNT_DUE: deltaCents > 0 ? (deltaCents / 100).toFixed(2) : "0.00",
-          AMOUNT_DUE_CENTS: Math.max(deltaCents, 0),
+          AMOUNT_DUE: (deltaCents / 100).toFixed(2),
+          AMOUNT_DUE_CENTS: deltaCents,
           PORTAL_URL: payUrl,
-          CONFIRM_URL: page,
-          DECLINE_URL: page,
         },
       });
 
@@ -1299,6 +1373,20 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         status: "awaiting_additional_payment",
         email_sent,
       };
+    }
+
+    if (role === "provider" && sub?.stripe_subscription_id) {
+      const billing = await applyPackageChangeToSubscription({
+        stripe,
+        supabaseAdmin,
+        sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
+        pkg: newPkg as any,
+      });
+      billingCustomerId = billing.stripeCustomerId ?? billingCustomerId;
+      if (!billing.billingUpdated) {
+        billingNote =
+          "Stripe does not have this subscription in the current account, so the next bill was not changed.";
+      }
     }
 
     if (deltaCents > 0) {
@@ -1342,27 +1430,29 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
 
       const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
       let payUrl = portalBase ? `${portalBase}/orders/${req.id}/pay` : "";
-      try {
-        const { createAdditionalPaymentCheckout } = await import(
-          "@/lib/additional-payment-dispatch.server"
-        );
-        const checkout = await createAdditionalPaymentCheckout({
-          paymentId: payRow.id,
-          requestId: req.id,
-          amountCents: deltaCents,
-          medicineLabel: medLabel,
-          customerId,
-          customerEmail,
-        });
-        if (checkout) {
-          payUrl = checkout.url;
-          await supabaseAdmin
-            .from("additional_payments")
-            .update({ stripe_checkout_session_id: checkout.id, updated_at: now })
-            .eq("id", payRow.id);
+      if (!payUrl) {
+        try {
+          const { createAdditionalPaymentCheckout } = await import(
+            "@/lib/additional-payment-dispatch.server"
+          );
+          const checkout = await createAdditionalPaymentCheckout({
+            paymentId: payRow.id,
+            requestId: req.id,
+            amountCents: deltaCents,
+            medicineLabel: medLabel,
+            customerId,
+            customerEmail,
+          });
+          if (checkout) {
+            payUrl = checkout.url;
+            await supabaseAdmin
+              .from("additional_payments")
+              .update({ stripe_checkout_session_id: checkout.id, updated_at: now })
+              .eq("id", payRow.id);
+          }
+        } catch (checkoutErr) {
+          console.error("[requests] additional payment checkout failed:", checkoutErr);
         }
-      } catch (checkoutErr) {
-        console.error("[requests] additional payment checkout failed:", checkoutErr);
       }
 
       await supabaseAdmin
@@ -1379,7 +1469,9 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
         "awaiting_additional_payment",
         role,
         context.userId,
-        `Changed to ${medLabel}; additional $${(deltaCents / 100).toFixed(2)} due.`,
+        [`Changed to ${medLabel}; additional $${(deltaCents / 100).toFixed(2)} due.`, billingNote]
+          .filter(Boolean)
+          .join(" "),
       );
 
       const { notifyPatientRequestEvent, notifyProviderRequestEvent } =
@@ -1412,17 +1504,20 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       };
     }
 
-    if (deltaCents < 0 && sub?.stripe_customer_id) {
+    if (deltaCents < 0 && billingCustomerId) {
       // Cheaper: credit the difference to the customer balance so it settles the next invoice.
       try {
-        await stripe.customers.createBalanceTransaction(sub.stripe_customer_id, {
+        await stripe.customers.createBalanceTransaction(billingCustomerId, {
           amount: deltaCents, // negative = credit toward future invoices
           currency: "usd",
           description: `Credit for changing to ${medLabel} (settles next cycle)`,
         });
       } catch (e) {
         console.error("[requests] customer balance credit failed:", e);
+        billingNote = billingNote ?? "The lower price could not be credited in Stripe.";
       }
+    } else if (deltaCents < 0) {
+      billingNote = billingNote ?? "The lower price could not be credited because Stripe has no customer for this patient.";
     }
 
     // Same price or cheaper: the change is approved immediately.
@@ -1436,23 +1531,43 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
       "approved",
       role,
       context.userId,
-      deltaCents < 0
-        ? `Changed to ${medLabel}; $${(Math.abs(deltaCents) / 100).toFixed(2)} credited next cycle.`
-        : `Changed to ${medLabel}.`,
+      [
+        deltaCents < 0
+          ? `Changed to ${medLabel}; $${(Math.abs(deltaCents) / 100).toFixed(2)} credited next cycle.`
+          : `Changed to ${medLabel}.`,
+        billingNote,
+      ]
+        .filter(Boolean)
+        .join(" "),
     );
 
-    const { notifyPatientRequestEvent } = await import("@/lib/email.notifications");
-    const email_sent = await notifyPatientRequestEvent({
-      supabaseAdmin,
-      request: { ...req, medicine_id: newPkg.medicine_id },
-      template: "patient_medicine_changed",
-      extraParams: {
-        MEDICINE_NAME: medLabel,
-        CREDIT_AMOUNT: deltaCents < 0 ? (Math.abs(deltaCents) / 100).toFixed(2) : "0.00",
-      },
-    });
+    // Nothing is due, so the patient is not emailed. A still-open consultation sends the
+    // order when the practitioner finishes it. An already-finished visit sends now.
+    const consultAlreadyFinished = await consultationFinished(supabaseAdmin, req);
+    const deferPharmacy = Boolean(req.requires_consultation) && !consultAlreadyFinished;
+    const sent = deferPharmacy
+      ? { error: null as string | null, lifeFileOrderId: null as string | null }
+      : await prescribeAndSendToPharmacy(
+          supabaseAdmin,
+          {
+            id: req.id,
+            provider_id: req.provider_id,
+            user_id: req.user_id,
+            medicine_id: newPkg.medicine_id,
+            variant_id: newPkg.variant_id,
+            package_id: newPkg.id,
+          },
+          { role: role === "provider" ? "provider" : "admin", userId: context.userId },
+        );
 
-    return { ok: true, delta_cents: deltaCents, status: "approved", email_sent };
+    return {
+      ok: true,
+      delta_cents: deltaCents,
+      status: !deferPharmacy && !sent.error ? "sent_to_pharmacy" : "approved",
+      email_sent: false,
+      lifeFileOrderId: sent.lifeFileOrderId,
+      pharmacy_error: sent.error,
+    };
   });
 
 export const generatePrescription = createServerFn({ method: "POST" })
@@ -1479,9 +1594,7 @@ export const generatePrescription = createServerFn({ method: "POST" })
     if (req.status !== "approved") {
       throw new Error(
         req.status === "awaiting_additional_payment"
-          ? role === "provider"
-            ? "The patient needs to confirm the plan change before a prescription can be generated."
-            : "The additional payment must be completed before generating the prescription."
+          ? "The additional payment must be completed before generating the prescription."
           : `Cannot generate a prescription for a request that is ${req.status}.`,
       );
     }
@@ -1494,9 +1607,7 @@ export const generatePrescription = createServerFn({ method: "POST" })
       .maybeSingle();
     if (pendingPay) {
       throw new Error(
-        role === "provider"
-          ? "The patient still needs to confirm the plan change."
-          : "An additional payment is still pending for this order.",
+        "An additional payment is still pending for this order.",
       );
     }
 
@@ -1625,6 +1736,29 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (!existing) throw new Error("Request not found.");
+
+    if (data.providerId !== existing.provider_id) {
+      const group = await loadSiblingRows(supabaseAdmin, data.requestId);
+      const consult = await findGroupConsultation(
+        supabaseAdmin,
+        group.length ? group : [existing],
+      );
+      let consultationDone = Boolean(consult?.ended_at);
+      if (!consultationDone) {
+        const { data: events } = await supabaseAdmin
+          .from("medication_request_events")
+          .select("note")
+          .eq("request_id", existing.id);
+        consultationDone = ((events ?? []) as { note?: string | null }[]).some(
+          (ev) => typeof ev.note === "string" && /consultation (completed|ended)/i.test(ev.note),
+        );
+      }
+      if (consultationDone) {
+        throw new Error(
+          "The consultation is already complete, so the provider cannot be changed.",
+        );
+      }
+    }
 
     if (role === "provider" && existing.provider_id && existing.provider_id !== context.userId) {
       throw new Error(

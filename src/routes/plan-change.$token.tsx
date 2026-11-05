@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getPlanChange, respondToPlanChange } from "@/lib/plan-change.functions";
+import { getPlanChange } from "@/lib/plan-change.functions";
 
 export const Route = createFileRoute("/plan-change/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Confirm plan change — Body Inc" },
+      { title: "Plan change — Body Inc" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -20,30 +20,18 @@ export const Route = createFileRoute("/plan-change/$token")({
 function PlanChangePage() {
   const { token } = Route.useParams();
   const load = useServerFn(getPlanChange);
-  const respond = useServerFn(respondToPlanChange);
-  const [done, setDone] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ["plan-change", token],
     queryFn: () => load({ data: { token } }),
   });
 
-  const mut = useMutation({
-    mutationFn: (decision: "confirm" | "decline") => respond({ data: { token, decision } }),
-    onSuccess: (res, decision) => {
-      if (res.payUrl) {
-        window.location.href = res.payUrl;
-        return;
-      }
-      setDone(
-        decision === "decline"
-          ? "You declined this change. Your previous plan stays in place, and your practitioner will decide the next step."
-          : "You confirmed this change. Your practitioner will review it again before anything is sent to the pharmacy.",
-      );
-    },
-  });
-
   const row = q.data;
+  const payUrl = row && row.found ? row.pay_url : null;
+
+  useEffect(() => {
+    if (payUrl) window.location.replace(payUrl);
+  }, [payUrl]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F4F7F6] p-4 font-['DM_Sans',sans-serif]">
@@ -51,54 +39,33 @@ function PlanChangePage() {
         <CardHeader>
           <CardTitle className="text-[#152A51]">Plan change</CardTitle>
           <CardDescription>
-            Confirm or decline the treatment your practitioner proposed.
+            {payUrl
+              ? "Taking you to the payment page."
+              : "This change does not need a response from you."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-[14px] text-[#3B4759]">
           {q.isLoading ? <p>Loading…</p> : null}
           {q.isError ? <p>This link could not be opened. Ask your practitioner to send it again.</p> : null}
           {row && !row.found ? <p>This link is no longer valid.</p> : null}
-          {done ? <p className="font-medium">{done}</p> : null}
-          {row?.found && !done ? (
+          {row?.found ? (
             <>
               {row.message ? <p className="font-medium">{row.message}</p> : null}
               <p>
                 Proposed treatment: <span className="font-semibold">{row.medicine_name}</span>
               </p>
               {(row.amount_cents ?? 0) > 0 ? (
-                <p>Confirming this change includes an additional payment of ${((row.amount_cents ?? 0) / 100).toFixed(2)}.</p>
+                <p>
+                  An additional payment of ${((row.amount_cents ?? 0) / 100).toFixed(2)} is due in the
+                  patient portal.
+                </p>
               ) : (
-                <p>There is no extra charge. A lower price, if any, is credited only after you confirm.</p>
+                <p>There is no extra charge. You can close this page.</p>
               )}
-              {row.deadline ? (
-                <p className="text-[13px] text-[#3B4759]/70">
-                  If you do not respond by {new Date(row.deadline).toLocaleString()}, the previous plan is restored.
-                </p>
-              ) : null}
-              {row.open ? (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <Button
-                    type="button"
-                    disabled={mut.isPending}
-                    onClick={() => mut.mutate("confirm")}
-                    className="bg-[#6A9B9C] text-white hover:bg-[#5B8788]"
-                  >
-                    {mut.isPending ? "Saving…" : (row.amount_cents ?? 0) > 0 ? "Pay to confirm" : "Confirm"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={mut.isPending}
-                    onClick={() => mut.mutate("decline")}
-                  >
-                    Decline
-                  </Button>
-                </div>
-              ) : null}
-              {mut.isError ? (
-                <p className="text-[#8F4A33]">
-                  {mut.error instanceof Error ? mut.error.message : "Could not save your response."}
-                </p>
+              {payUrl ? (
+                <Button asChild className="bg-[#6A9B9C] text-white hover:bg-[#5B8788]">
+                  <a href={payUrl}>Continue to payment</a>
+                </Button>
               ) : null}
             </>
           ) : null}

@@ -132,7 +132,7 @@ export function RequestList({
               {STATUS_FILTERS.map((s) => (
                 <SelectItem key={s.value} value={s.value} className="text-[16px] text-[#3B4759]">
                   {clinicalOnly && s.value === "awaiting_additional_payment"
-                    ? "Waiting on patient"
+                    ? "Additional payment"
                     : s.label}
                 </SelectItem>
               ))}

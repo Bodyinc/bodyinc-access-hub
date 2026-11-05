@@ -98,9 +98,9 @@ function ProviderDashboard() {
       onClick: () => navigate({ to: "/provider/requests", search: { status: "ready" } }),
     },
     {
-      label: "Waiting on patient",
+      label: "Additional payment",
       value: d.awaiting_additional_payment ?? 0,
-      hint: "Plan change needs the patient's confirmation",
+      hint: "Waiting for the patient to pay the price difference",
       onClick: () =>
         navigate({
           to: "/provider/requests",

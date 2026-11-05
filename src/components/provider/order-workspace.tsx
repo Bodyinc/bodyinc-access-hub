@@ -153,12 +153,6 @@ export function OrderWorkspace({
     else if (primary.key === "send") onSend();
   }
 
-  const waitingSince = request.updated_at ? new Date(request.updated_at).getTime() : 0;
-  const waitingDays =
-    status === "awaiting_additional_payment" && waitingSince
-      ? Math.floor((Date.now() - waitingSince) / 86_400_000)
-      : 0;
-
   return (
     <div className="space-y-5">
       <Link
@@ -259,26 +253,21 @@ export function OrderWorkspace({
                 <div className="space-y-2 rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
                   <p>
                     {Number(request.plan_change_delta_cents) > 0
-                      ? "Waiting for the patient to pay the difference for the new plan"
-                      : "Waiting for the patient to confirm or decline the new plan. The price did not go up, so there is nothing extra to pay."}{" "}
-                    {request.plan_change_deadline
-                      ? `Respond by ${formatDateTimeFull(request.plan_change_deadline)}. `
-                      : waitingDays >= 2
-                        ? `Waiting ${waitingDays} days. `
-                        : ""}
-                    After they respond, this order returns here so you can approve, prescribe, and
-                    send. No response within 48 hours restores the previous plan.
+                      ? "Waiting for the patient to pay the difference. When that payment succeeds, the prescription is sent to the pharmacy automatically."
+                      : "No extra payment is due. Finish the consultation and this order is sent to the pharmacy."}{" "}
                   </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={remindPending}
-                    onClick={onRemind}
-                    className="h-9 border-[#E7CFC3] text-[13px] font-semibold text-[#8F4A33]"
-                  >
-                    {remindPending ? "Sending…" : "Send reminder"}
-                  </Button>
+                  {Number(request.plan_change_delta_cents) > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={remindPending}
+                      onClick={onRemind}
+                      className="h-9 border-[#E7CFC3] text-[13px] font-semibold text-[#8F4A33]"
+                    >
+                      {remindPending ? "Sending…" : "Send reminder"}
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
 

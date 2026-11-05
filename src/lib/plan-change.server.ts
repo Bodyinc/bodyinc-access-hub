@@ -53,8 +53,8 @@ async function applyDeferredBilling(
     subscription_id?: string | null;
     plan_change_delta_cents?: number | null;
   },
-) {
-  if (!req.subscription_id || !req.package_id) return;
+): Promise<{ billingNote: string | null }> {
+  if (!req.subscription_id || !req.package_id) return { billingNote: null };
   const { data: sub } = await supabaseAdmin
     .from("subscriptions")
     .select("id, stripe_subscription_id, stripe_customer_id")
@@ -65,50 +65,61 @@ async function applyDeferredBilling(
     .select("id, medicine_id, variant_id, duration_months, price, stripe_price_id, is_active")
     .eq("id", req.package_id)
     .maybeSingle();
+  let billingNote: string | null = null;
+  let customerId = (sub?.stripe_customer_id as string | null) ?? null;
   if (sub?.stripe_subscription_id && pkg) {
     const { applyPackageChangeToSubscription } = await import("@/lib/subscription-reschedule");
     const { getStripe } = await import("@/integrations/stripe/client.server");
-    await applyPackageChangeToSubscription({
+    const billing = await applyPackageChangeToSubscription({
       stripe: getStripe(),
       supabaseAdmin,
       sub: { id: sub.id, stripe_subscription_id: sub.stripe_subscription_id },
       pkg,
     });
+    if (!billing.billingUpdated) {
+      billingNote =
+        "The saved Stripe subscription is not in the current Stripe account, so the next bill was not changed.";
+    }
+    customerId = billing.stripeCustomerId ?? customerId;
   }
   const delta = Number(req.plan_change_delta_cents ?? 0);
-  if (delta < 0 && sub?.stripe_customer_id) {
+  if (delta < 0 && customerId) {
     try {
       const { getStripe } = await import("@/integrations/stripe/client.server");
-      await getStripe().customers.createBalanceTransaction(sub.stripe_customer_id, {
+      await getStripe().customers.createBalanceTransaction(customerId, {
         amount: delta,
         currency: "usd",
         description: "Credit for a confirmed plan change (settles next cycle)",
       });
     } catch (error) {
       console.error("[plan-change] credit failed:", error);
+      billingNote = billingNote ?? "The lower price could not be credited in Stripe.";
     }
+  } else if (delta < 0) {
+    billingNote = billingNote ?? "The lower price could not be credited because Stripe has no customer for this patient.";
   }
+  return { billingNote };
 }
 
-/** Patient confirmed. Billing is applied and the order returns to the practitioner's decision. */
+/** Patient confirmed or paid. Billing is applied, then the order is prescribed and sent. */
 export async function confirmPlanChange(
   supabaseAdmin: any,
   requestId: string,
-  source: "patient" | "payment",
+  source: "patient" | "payment" | "consult",
 ) {
   const { data: req } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, package_id, subscription_id, plan_change_delta_cents, plan_change_token",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, subscription_id, plan_change_delta_cents, plan_change_token",
     )
     .eq("id", requestId)
     .maybeSingle();
   if (!req) throw new Error("Order not found.");
   if (req.status !== "awaiting_additional_payment") {
-    return { ok: true, already: true, status: req.status };
+    return { ok: true, already: true, status: req.status, lifeFileOrderId: null, error: null, retry: false };
   }
 
-  await applyDeferredBilling(supabaseAdmin, req);
+  const billing = await applyDeferredBilling(supabaseAdmin, req);
 
   const now = new Date().toISOString();
   await supabaseAdmin
@@ -120,7 +131,6 @@ export async function confirmPlanChange(
   await supabaseAdmin
     .from("medication_requests")
     .update({
-      status: "pending_review",
       plan_change_token: null,
       plan_change_deadline: null,
       updated_at: now,
@@ -128,27 +138,56 @@ export async function confirmPlanChange(
     .eq("id", requestId)
     .eq("status", "awaiting_additional_payment");
 
-  await supabaseAdmin.from("medication_request_events").insert({
-    request_id: requestId,
-    status: "pending_review",
-    actor_role: source === "payment" ? "system" : "patient",
-    created_by: req.user_id,
-    note:
-      source === "payment"
-        ? "Patient confirmed the plan change by completing payment. Returned to the practitioner's decision."
-        : "Patient confirmed the plan change. Returned to the practitioner's decision.",
-  });
+  const { prescribeAndSendToPharmacy } = await import("@/lib/requests.functions");
+  const sent = await prescribeAndSendToPharmacy(
+    supabaseAdmin,
+    {
+      id: req.id,
+      provider_id: req.provider_id,
+      user_id: req.user_id,
+      medicine_id: req.medicine_id,
+      variant_id: req.variant_id,
+      package_id: req.package_id,
+    },
+    { role: "system", userId: null },
+  );
+
+  if (billing.billingNote) {
+    await supabaseAdmin.from("medication_request_events").insert({
+      request_id: requestId,
+      status: sent.error ? "approved" : "sent_to_pharmacy",
+      actor_role: "system",
+      created_by: null,
+      note: `${billing.billingNote} The prescription was still processed.`.slice(0, 500),
+    });
+  }
+
+  const note = sent.error
+    ? source === "payment"
+      ? `Patient paid the difference. The pharmacy send did not go through: ${sent.error}`
+      : `The pharmacy send did not go through: ${sent.error}`
+    : source === "payment"
+      ? "Patient paid the difference. The prescription was sent to the pharmacy."
+      : source === "consult"
+        ? "Consultation finished. The prescription was sent to the pharmacy."
+        : "The prescription was sent to the pharmacy.";
 
   await notifyProvider(
     supabaseAdmin,
     req.provider_id,
     requestId,
     "plan_change_confirmed",
-    "Patient confirmed the plan change",
-    "The order is back on your decision step. Approve, prescribe, or reject.",
+    sent.error ? "Pharmacy send needs attention" : "Prescription sent to the pharmacy",
+    note.slice(0, 500),
   );
 
-  return { ok: true, status: "pending_review" };
+  return {
+    ok: !sent.error,
+    status: sent.error ? "approved" : "sent_to_pharmacy",
+    lifeFileOrderId: sent.lifeFileOrderId,
+    error: sent.error,
+    retry: sent.retry,
+  };
 }
 
 export async function declinePlanChange(
@@ -279,6 +318,7 @@ export async function loadPlanChangeByToken(supabaseAdmin: any, token: string) {
     .limit(1)
     .maybeSingle();
   return {
+    request_id: data.id as string,
     status: data.status as string,
     medicine_name: (med as { name?: string } | null)?.name ?? "your medication",
     deadline: data.plan_change_deadline as string | null,

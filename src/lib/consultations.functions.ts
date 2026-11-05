@@ -461,7 +461,13 @@ export const openConsultation = createServerFn({ method: "POST" })
 
     if (role === "provider") {
       const ids = await assignedPatientIds(supabaseAdmin, context.userId);
-      if (!ids.includes(row.user_id)) return { ok: false, message: "Forbidden" };
+      if (!ids.includes(row.user_id)) {
+        return {
+          ok: false,
+          message:
+            "Claim this patient's order first. Open Unassigned Queue, claim the order, then join the consultation.",
+        };
+      }
     }
 
     try {
@@ -509,7 +515,12 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
     if (error) return { ok: false, message: error.message };
     if (!req) return { ok: false, message: "Request not found." };
     if (role === "provider" && req.provider_id !== context.userId) {
-      return { ok: false, message: "Forbidden" };
+      return {
+        ok: false,
+        message: req.provider_id
+          ? "This order belongs to another provider. Only the assigned provider can join this consultation."
+          : "Claim this order first. Open Unassigned Queue, claim the order, then join the consultation.",
+      };
     }
     if (!req.user_id) {
       return {
@@ -952,7 +963,12 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       if (reqErr) return { ok: false, message: reqErr.message };
       if (!req) return { ok: false, message: "Medication request not found." };
       if (role === "provider" && req.provider_id !== context.userId) {
-        return { ok: false, message: "Forbidden: You are not assigned to this consultation." };
+        return {
+          ok: false,
+          message: req.provider_id
+            ? "This order belongs to another provider. Only the assigned provider can join this consultation."
+            : "Claim this order first. Open Unassigned Queue, claim the order, then join the consultation.",
+        };
       }
 
       const orderItems = await loadOrderLines(supabaseAdmin, req.id);
@@ -1899,35 +1915,60 @@ async function sendApprovedOrdersAfterConsult(
   const { data: rows, error } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status, plan_change_delta_cents",
     )
     .in("id", ids);
   if (error) return { message: "Consultation finished.", error: error.message };
 
+  const autoSend = new Set([
+    "payment_completed",
+    "provider_assigned",
+    "pending_review",
+    "approved",
+    "prescribed",
+  ]);
+  const notYetSent = (row: { life_file_order_id?: string | null; life_file_status?: string | null }) =>
+    !(row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed");
   const ready = ((rows ?? []) as any[]).filter(
-    (row) =>
-      (row.status === "approved" || row.status === "prescribed") &&
-      !(row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed"),
+    (row) => autoSend.has(row.status) && notYetSent(row),
   );
-  if (!ready.length) {
-    return { message: "Consultation appointment completed successfully.", error: null };
+  const settledWithoutPayment = ((rows ?? []) as any[]).filter(
+    (row) =>
+      row.status === "awaiting_additional_payment" &&
+      Number(row.plan_change_delta_cents ?? 0) <= 0 &&
+      notYetSent(row),
+  );
+  if (!ready.length && !settledWithoutPayment.length) {
+    const waiting = ((rows ?? []) as any[]).some((row) => row.status === "awaiting_additional_payment");
+    return {
+      message: waiting
+        ? "Consultation finished. The pharmacy send waits until the patient pays the difference."
+        : "Consultation appointment completed successfully.",
+      error: null,
+    };
   }
 
-  const { fulfillApprovedRequest } = await import("@/lib/requests.functions");
+  const { prescribeAndSendToPharmacy } = await import("@/lib/requests.functions");
+  const { confirmPlanChange } = await import("@/lib/plan-change.server");
   const failures: string[] = [];
   let sent = 0;
-  for (const row of ready) {
-    try {
-      await fulfillApprovedRequest(supabaseAdmin, row, { role, userId });
+  for (const row of settledWithoutPayment) {
+    const result = await confirmPlanChange(supabaseAdmin, row.id, "consult");
+    if (result.lifeFileOrderId) {
       sent += 1;
-    } catch (sendError) {
-      const message = sendError instanceof Error ? sendError.message : "Pharmacy send failed.";
-      if (/already submitted to LifeFile/i.test(message)) {
-        sent += 1;
-        continue;
-      }
-      console.error("[finishConsultationAppointment] automatic pharmacy send failed:", sendError);
-      failures.push(message);
+      continue;
+    }
+    if (result.error) failures.push(result.error);
+  }
+  for (const row of ready) {
+    const result = await prescribeAndSendToPharmacy(supabaseAdmin, row, { role, userId });
+    if (result.lifeFileOrderId) {
+      sent += 1;
+      continue;
+    }
+    if (result.error) {
+      console.error("[finishConsultationAppointment] automatic pharmacy send failed:", result.error);
+      failures.push(result.error);
     }
   }
 
