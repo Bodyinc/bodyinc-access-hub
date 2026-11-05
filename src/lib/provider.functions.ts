@@ -18,6 +18,7 @@ import {
   countPurchaseGroups,
   leadOf,
   loadSiblingRows,
+  shopCheckoutRequestIdSet,
   userIdsInOpenChat,
 } from "@/lib/order-groups";
 
@@ -168,7 +169,7 @@ async function loadClaimable(
   const { data: rows } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at, order_group_id",
+      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at, order_group_id, subscription_id, stripe_invoice_id",
     )
     .is("provider_id", null)
     .in("status", [...statuses])
@@ -192,7 +193,7 @@ async function loadClaimable(
   const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, completedUsers, openChat] =
+  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, completedUsers, openChat, shopIds] =
     await Promise.all([
     userIds.length
       ? supabaseAdmin.from("profiles").select("id, full_name, state_code, dob").in("id", userIds)
@@ -209,6 +210,7 @@ async function loadClaimable(
     filledSessionIdSet(supabaseAdmin, sessionIds),
     completedIntakeUserIds(supabaseAdmin, userIds),
     userIdsInOpenChat(supabaseAdmin, userIds),
+    shopCheckoutRequestIdSet(supabaseAdmin, list),
   ]);
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
@@ -239,6 +241,7 @@ async function loadClaimable(
         requires_consultation: r.requires_consultation,
         intake_filled: intakeFilled,
         in_chat: Boolean(r.user_id && openChat.has(r.user_id)),
+        from_shop: shopIds.has(r.id),
         claim_locked_by: r.claim_locked_by ?? null,
         claim_locked_at: r.claim_locked_at ?? null,
         created_at: r.created_at,
@@ -247,7 +250,7 @@ async function loadClaimable(
     .filter(
       (r) =>
         r.intake_filled &&
-        r.in_chat &&
+        (r.in_chat || r.from_shop) &&
         !!r.state_code &&
         states.includes(String(r.state_code).toUpperCase()),
     );
@@ -374,7 +377,7 @@ export const claimRequest = createServerFn({ method: "POST" })
 
     const { data: current } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status, user_id, medicine_id, session_id, subscription_id")
+      .select("id, status, user_id, medicine_id, session_id, subscription_id, stripe_invoice_id, kind")
       .eq("id", data.requestId)
       .maybeSingle();
 
@@ -403,7 +406,13 @@ export const claimRequest = createServerFn({ method: "POST" })
         }
       }
     }
-    if (!current?.user_id || !(await userIdsInOpenChat(supabaseAdmin, [current.user_id])).has(current.user_id)) {
+    const fromShop = current
+      ? (await shopCheckoutRequestIdSet(supabaseAdmin, [current])).has(current.id)
+      : false;
+    if (
+      !fromShop &&
+      (!current?.user_id || !(await userIdsInOpenChat(supabaseAdmin, [current.user_id])).has(current.user_id))
+    ) {
       throw new Error("This patient is not in chat.");
     }
 

@@ -285,11 +285,13 @@ const CLAIM_READY_STATUSES = [
 /** One email per new unassigned patient, to every active provider licensed in that state. */
 export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
   try {
-    const { filledSessionIdSet } = await import("@/lib/clinical-intake");
-    const { userIdsInOpenChat } = await import("@/lib/order-groups");
+    const { completedIntakeUserIds, filledSessionIdSet } = await import("@/lib/clinical-intake");
+    const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
     const { data: rows, error } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, user_id, session_id, medicine_id, status, order_group_id")
+      .select(
+        "id, user_id, session_id, medicine_id, status, order_group_id, subscription_id, stripe_invoice_id, kind",
+      )
       .is("provider_id", null)
       .in("status", CLAIM_READY_STATUSES)
       .order("created_at", { ascending: false })
@@ -300,13 +302,20 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
       new Set(rows.map((r: any) => r.session_id).filter(Boolean)),
     ) as string[];
     const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean))) as string[];
-    const [filled, inChat] = await Promise.all([
+    const [filled, inChat, shopIds, completedUsers] = await Promise.all([
       filledSessionIdSet(supabaseAdmin, sessionIds),
       userIdsInOpenChat(supabaseAdmin, userIds),
+      shopCheckoutRequestIdSet(supabaseAdmin, rows as any[]),
+      completedIntakeUserIds(supabaseAdmin, userIds),
     ]);
-    let ready = rows.filter(
-      (r: any) => r.session_id && filled.has(r.session_id) && r.user_id && inChat.has(r.user_id),
-    );
+    let ready = rows.filter((r: any) => {
+      const fromShop = shopIds.has(r.id);
+      const intakeReady = Boolean(
+        (r.session_id && filled.has(r.session_id)) ||
+          (fromShop && r.user_id && completedUsers.has(r.user_id)),
+      );
+      return intakeReady && r.user_id && (inChat.has(r.user_id) || fromShop);
+    });
     const groupIds = Array.from(new Set(ready.map((r: any) => r.order_group_id).filter(Boolean)));
     if (groupIds.length) {
       const { data: taken } = await supabaseAdmin
@@ -407,6 +416,7 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
             MEDICINE_NAME: medicineNames.join(", ") || "a treatment",
             PATIENT_NAME: patientName,
             REQUEST_URL: `${portal}/provider/requests/${lead.id}`,
+            ORDER_SOURCE: shopIds.has(lead.id) ? "shop" : "onboarding",
           },
         });
       }

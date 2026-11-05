@@ -205,6 +205,72 @@ export async function loadOrderLines(supabaseAdmin: any, requestId: string): Pro
     }));
 }
 
+/** Initial orders created by a paid shop checkout. Refills on that subscription are not included. */
+export async function shopCheckoutRequestIdSet(
+  supabaseAdmin: any,
+  rows: {
+    id: string;
+    kind?: string | null;
+    subscription_id?: string | null;
+    stripe_invoice_id?: string | null;
+  }[],
+): Promise<Set<string>> {
+  const initials = rows.filter((row) => (row.kind ?? "initial") === "initial" && row.id);
+  if (initials.length === 0) return new Set();
+
+  const subIds = [...new Set(initials.map((row) => row.subscription_id).filter(Boolean))] as string[];
+  const invoiceIds = [...new Set(initials.map((row) => row.stripe_invoice_id).filter(Boolean))] as string[];
+  const subToStripe = new Map<string, string>();
+  if (subIds.length) {
+    const { data, error } = await supabaseAdmin
+      .from("subscriptions")
+      .select("id, stripe_subscription_id")
+      .in("id", subIds);
+    if (error) throw new Error(error.message);
+    for (const row of (data ?? []) as { id: string; stripe_subscription_id?: string | null }[]) {
+      if (row.stripe_subscription_id) subToStripe.set(row.id, row.stripe_subscription_id);
+    }
+  }
+
+  const stripeSubIds = [...new Set(subToStripe.values())];
+  const shopSubs = new Set<string>();
+  const shopInvoices = new Set<string>();
+  if (stripeSubIds.length) {
+    const { data, error } = await supabaseAdmin
+      .from("shop_checkout_orders")
+      .select("stripe_subscription_id")
+      .eq("status", "paid")
+      .in("stripe_subscription_id", stripeSubIds);
+    if (error) throw new Error(error.message);
+    for (const row of (data ?? []) as { stripe_subscription_id?: string | null }[]) {
+      if (row.stripe_subscription_id) shopSubs.add(row.stripe_subscription_id);
+    }
+  }
+  if (invoiceIds.length) {
+    const { data, error } = await supabaseAdmin
+      .from("shop_checkout_orders")
+      .select("stripe_invoice_id")
+      .eq("status", "paid")
+      .in("stripe_invoice_id", invoiceIds);
+    if (error) throw new Error(error.message);
+    for (const row of (data ?? []) as { stripe_invoice_id?: string | null }[]) {
+      if (row.stripe_invoice_id) shopInvoices.add(row.stripe_invoice_id);
+    }
+  }
+
+  const ids = new Set<string>();
+  for (const row of initials) {
+    const stripeSub = row.subscription_id ? subToStripe.get(row.subscription_id) : null;
+    if (
+      (stripeSub && shopSubs.has(stripeSub)) ||
+      (row.stripe_invoice_id && shopInvoices.has(row.stripe_invoice_id))
+    ) {
+      ids.add(row.id);
+    }
+  }
+  return ids;
+}
+
 /** Patients with a consultation row that has not been closed are in chat. */
 export async function userIdsInOpenChat(
   supabaseAdmin: any,

@@ -464,16 +464,20 @@ const builders: Record<EmailTemplateKey, Builder> = {
     const med = str(p, "MEDICINE_NAME", "a treatment");
     const order = orderShort(p);
     const patient = str(p, "PATIENT_NAME", "A patient");
+    const fromShop = str(p, "ORDER_SOURCE") === "shop";
+    const arrived = fromShop
+      ? "placed a shop order and is waiting for a provider."
+      : "finished signup and is waiting for a provider.";
     const link = cta(str(p, "REQUEST_URL"), "Open this order");
     return layout({
       preheader: `${patient} is ready to be claimed.`,
-      title: "A new patient is ready to claim",
+      title: fromShop ? "A shop order is ready to claim" : "A new patient is ready to claim",
       bodyHtml: `<p>Hi ${escapeHtml(firstName(p))},</p>
-        <p><strong>${escapeHtml(patient)}</strong> finished signup and is waiting for a provider.</p>
+        <p><strong>${escapeHtml(patient)}</strong> ${arrived}</p>
         <p>Medicine: <strong>${escapeHtml(med)}</strong>${order ? `. Order <strong>${escapeHtml(order)}</strong>` : ""}.</p>
         <p>If you are licensed in this patient's state, open this order in the Unassigned queue and claim this patient. The first provider to claim it is assigned.</p>
         ${link.html}`,
-      bodyText: `Hi ${firstName(p)},\n\n${patient} finished signup and is waiting for a provider.\nMedicine: ${med}${order ? `. Order ${order}` : ""}.\nIf you are licensed in this patient's state, open this order in the Unassigned queue and claim this patient. The first provider to claim it is assigned.${link.text}`,
+      bodyText: `Hi ${firstName(p)},\n\n${patient} ${arrived}\nMedicine: ${med}${order ? `. Order ${order}` : ""}.\nIf you are licensed in this patient's state, open this order in the Unassigned queue and claim this patient. The first provider to claim it is assigned.${link.text}`,
     });
   },
 
