@@ -283,7 +283,9 @@ export function RequestList({
                     </TableCell>
                     {!clinicalOnly ? (
                       <TableCell className="text-[13px] font-medium text-[#3B4759]">
-                        {r.life_file_status === "failed" ? (
+                        {r.life_file_status === "submitting" ? (
+                          <span className="text-[#3B4759]/70">Sending</span>
+                        ) : r.life_file_status === "failed" ? (
                           <div>
                             <span className="text-[#B8684B]">Failed</span>
                             {r.life_file_error ? (

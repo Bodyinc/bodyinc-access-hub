@@ -67,6 +67,25 @@ export function dataPushAuthFailure(header: string | null): "missing-config" | "
   return null;
 }
 
+function trackingFrom(row: Record<string, unknown>): string {
+  const direct = [
+    row.trackingNumber,
+    row.tracking_number,
+    row.tracking,
+    row.TrackingNumber,
+    row.shipTrackingNumber,
+  ];
+  for (const value of direct) {
+    const parsed = text(value);
+    if (parsed) return parsed;
+  }
+  const shipping = row.shipping;
+  if (shipping && typeof shipping === "object" && !Array.isArray(shipping)) {
+    return trackingFrom(shipping as Record<string, unknown>);
+  }
+  return "";
+}
+
 function asItem(value: unknown): PushItem | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const row = value as Record<string, unknown>;
@@ -75,7 +94,7 @@ function asItem(value: unknown): PushItem | null {
     orderReferenceId: text(row.orderReferenceId),
     referenceId: text(row.referenceId),
     foreignRxNumber: text(row.foreignRxNumber),
-    trackingNumber: text(row.trackingNumber),
+    trackingNumber: trackingFrom(row),
     shipCarrier: text(row.shipCarrier),
     rxStatus: text(row.rxStatus),
     rxNumber: text(row.rxNumber),
@@ -167,23 +186,46 @@ export async function applyLifeFileDataPush(
       continue;
     }
 
+    if (item.orderId) {
+      await supabaseAdmin
+        .from("medication_requests")
+        .update({
+          life_file_order_id: item.orderId,
+          life_file_status: "submitted",
+          life_file_error: null,
+          life_file_submitted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.id)
+        .is("life_file_order_id", null);
+    }
+
+    const tracking = item.trackingNumber || null;
+    const trackingChanged = Boolean(tracking && tracking !== request.tracking_number);
+    if (trackingChanged && tracking) {
+      const { error } = await supabaseAdmin
+        .from("medication_requests")
+        .update({ tracking_number: tracking, updated_at: new Date().toISOString() })
+        .eq("id", request.id);
+      if (error) throw new Error(error.message);
+      request.tracking_number = tracking;
+    }
+
     const pushKey = meta.idempotencyKey ? `${meta.idempotencyKey}:${index}` : "";
     if (pushKey && (await alreadyProcessed(supabaseAdmin, request.id, pushKey))) {
       result.duplicates += 1;
+      if (trackingChanged) result.updated += 1;
       continue;
     }
 
     const incoming = classify(item, meta.triggerName);
     const status = nextStatus(request.status, incoming);
-    const tracking = item.trackingNumber || null;
-    const trackingChanged = Boolean(tracking && tracking !== request.tracking_number);
-    const update: { updated_at: string; status?: string; tracking_number?: string } = {
+    const update: { updated_at: string; status?: string } = {
       updated_at: new Date().toISOString(),
     };
     if (status) update.status = status;
-    if (trackingChanged && tracking) update.tracking_number = tracking;
 
-    if (status || trackingChanged) {
+    if (status) {
       const { error } = await supabaseAdmin
         .from("medication_requests")
         .update(update)

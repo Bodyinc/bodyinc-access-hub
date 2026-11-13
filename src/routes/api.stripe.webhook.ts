@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Stripe calls this when the medicine-change difference Checkout Session is paid.
-// Subscribe the endpoint to checkout.session.completed and checkout.session.async_payment_succeeded.
+// Stripe calls this when a Checkout Session is paid, and when a renewal card is declined.
+// Subscribe the endpoint to checkout.session.completed, checkout.session.async_payment_succeeded,
+// and invoice.payment_failed.
 export const Route = createFileRoute("/api/stripe/webhook")({
   server: {
     handlers: {
@@ -28,6 +29,24 @@ export const Route = createFileRoute("/api/stripe/webhook")({
         }
 
         try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          if (event.type === "invoice.payment_failed") {
+            const { notifyRenewalCardFailed } = await import("@/lib/email.notifications");
+            const invoice = event.data.object as {
+              id?: string | null;
+              subscription?: unknown;
+              billing_reason?: string | null;
+              parent?: { subscription_details?: { subscription?: unknown } };
+            };
+            const nested = invoice.parent?.subscription_details?.subscription;
+            await notifyRenewalCardFailed(supabaseAdmin, {
+              id: invoice.id,
+              billing_reason: invoice.billing_reason,
+              subscription: invoice.subscription ?? nested,
+            });
+            return Response.json({ ok: true });
+          }
+
           const {
             isAdditionalPaymentStripeEvent,
             lookupFromStripeEvent,
@@ -39,7 +58,6 @@ export const Route = createFileRoute("/api/stripe/webhook")({
           const lookup = lookupFromStripeEvent(event);
           if (!lookup) return Response.json({ ok: true, ignored: true });
 
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const result = await confirmAdditionalPaymentAndDispatch(supabaseAdmin, lookup);
           if (result.reason === "not_found") {
             return Response.json({ ok: true, ignored: true });

@@ -187,22 +187,36 @@ export async function notifyPatientRequestEvent(opts: {
   return false;
 }
 
-/** One reminder per order per calendar day. Does not reuse the original plan-change email claim. */
+export function medicineChangeMailLinks(requestId: string, kind: "payment" | "consent") {
+  const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
+  if (!portalBase) return { PORTAL_URL: "", SECONDARY_URL: "" };
+  const review = `${portalBase}/orders/${requestId}`;
+  if (kind === "payment") {
+    return { PORTAL_URL: `${review}/pay`, SECONDARY_URL: `${review}?action=decline` };
+  }
+  return {
+    PORTAL_URL: `${review}?action=approve`,
+    SECONDARY_URL: `${review}?action=reject`,
+  };
+}
+
+/** One reminder, 24 hours after the change. Does not reuse the original plan-change email claim. */
 export async function remindPatientOfPlanChange(opts: {
   supabaseAdmin: any;
   request: { id: string; user_id?: string | null; medicine_id?: string | null };
 }): Promise<boolean> {
-  const day = new Date().toISOString().slice(0, 10);
   const targetId = opts.request.id;
-  const periodKey = `plan_change_reminder_${day}`;
+  const periodKey = "plan_change_reminder";
   if (!(await claimPatientOrderEmail(opts.supabaseAdmin, targetId, periodKey))) return false;
   const { data: row } = await opts.supabaseAdmin
     .from("medication_requests")
     .select("plan_change_token, plan_change_delta_cents, medicine_id, user_id")
     .eq("id", opts.request.id)
     .maybeSingle();
-  const amount = Math.max(Number(row?.plan_change_delta_cents ?? 0), 0);
-  if (amount <= 0) {
+  const delta = Number(row?.plan_change_delta_cents ?? 0);
+  const amount = Math.max(delta, 0);
+  const waitingForConsent = amount <= 0 && Boolean(row?.plan_change_token);
+  if (amount <= 0 && !waitingForConsent) {
     await releasePatientOrderEmail(opts.supabaseAdmin, targetId, periodKey);
     return false;
   }
@@ -210,17 +224,22 @@ export async function remindPatientOfPlanChange(opts: {
     opts.supabaseAdmin,
     row?.medicine_id ?? opts.request.medicine_id,
   );
-  const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
-  const payUrl = portalBase ? `${portalBase}/orders/${opts.request.id}/pay` : "";
+  const links = medicineChangeMailLinks(
+    opts.request.id,
+    waitingForConsent ? "consent" : "payment",
+  );
   const sent = await notifyUserById({
     supabaseAdmin: opts.supabaseAdmin,
     userId: row?.user_id ?? opts.request.user_id,
-    template: "patient_additional_payment",
+    template: waitingForConsent ? "patient_plan_consent" : "patient_additional_payment",
     params: {
       ORDER_ID: opts.request.id,
       MEDICINE_NAME: medicineName,
       AMOUNT_DUE: (amount / 100).toFixed(2),
-      PORTAL_URL: payUrl,
+      CREDIT_AMOUNT: delta < 0 ? (Math.abs(delta) / 100).toFixed(2) : "0.00",
+      IS_REMINDER: "1",
+      PORTAL_URL: links.PORTAL_URL,
+      SECONDARY_URL: links.SECONDARY_URL,
     },
   });
   if (sent) return true;
@@ -285,7 +304,9 @@ const CLAIM_READY_STATUSES = [
 /** One email per new unassigned patient, to every active provider licensed in that state. */
 export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
   try {
-    const { completedIntakeUserIds, filledSessionIdSet } = await import("@/lib/clinical-intake");
+    const { filledSessionIdSet, loadShopIntakeState, shopIntakeReady } = await import(
+      "@/lib/clinical-intake"
+    );
     const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
     const { data: rows, error } = await supabaseAdmin
       .from("medication_requests")
@@ -302,18 +323,20 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
       new Set(rows.map((r: any) => r.session_id).filter(Boolean)),
     ) as string[];
     const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean))) as string[];
-    const [filled, inChat, shopIds, completedUsers] = await Promise.all([
+    const [filled, inChat, shopIds, shopIntake] = await Promise.all([
       filledSessionIdSet(supabaseAdmin, sessionIds),
       userIdsInOpenChat(supabaseAdmin, userIds),
       shopCheckoutRequestIdSet(supabaseAdmin, rows as any[]),
-      completedIntakeUserIds(supabaseAdmin, userIds),
+      loadShopIntakeState(
+        supabaseAdmin,
+        rows.map((row: { id: string }) => row.id),
+      ),
     ]);
     let ready = rows.filter((r: any) => {
       const fromShop = shopIds.has(r.id);
-      const intakeReady = Boolean(
-        (r.session_id && filled.has(r.session_id)) ||
-          (fromShop && r.user_id && completedUsers.has(r.user_id)),
-      );
+      const intakeReady = fromShop
+        ? shopIntakeReady(shopIntake.byRequest.get(r.id))
+        : Boolean(r.session_id && filled.has(r.session_id));
       return intakeReady && r.user_id && (inChat.has(r.user_id) || fromShop);
     });
     const groupIds = Array.from(new Set(ready.map((r: any) => r.order_group_id).filter(Boolean)));
@@ -596,4 +619,168 @@ export async function dispatchPendingNewFeedbackEmails(supabaseAdmin: any): Prom
   } catch (e) {
     console.error("[email] dispatchPendingNewFeedbackEmails failed:", e);
   }
+}
+
+export async function claimEmailReminder(
+  supabaseAdmin: any,
+  reminderType: string,
+  targetId: string,
+  periodKey: string,
+): Promise<boolean> {
+  const { error } = await supabaseAdmin.from("email_reminders").insert({
+    reminder_type: reminderType,
+    target_id: targetId,
+    period_key: periodKey,
+  });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  console.error(`[email] failed to claim ${reminderType}/${targetId}: ${error.message}`);
+  return false;
+}
+
+export async function releaseEmailReminder(
+  supabaseAdmin: any,
+  reminderType: string,
+  targetId: string,
+  periodKey: string,
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from("email_reminders")
+    .delete()
+    .eq("reminder_type", reminderType)
+    .eq("target_id", targetId)
+    .eq("period_key", periodKey);
+  if (error) {
+    console.error(`[email] failed to release ${reminderType}/${targetId}: ${error.message}`);
+  }
+}
+
+/** One-off mail to an address that may not have an account yet. Never throws. */
+export async function notifyEmailAddress(opts: {
+  email: string;
+  name?: string | null;
+  template: EmailTemplateKey;
+  params?: Record<string, string | number | boolean | null | undefined>;
+}): Promise<boolean> {
+  try {
+    const email = opts.email.trim();
+    if (!email) return false;
+    const { sendTransactionalEmail } = await import("@/integrations/brevo/client.server");
+    const name = opts.name?.trim() || null;
+    const result = await sendTransactionalEmail({
+      to: { email, name },
+      template: opts.template,
+      params: {
+        FIRSTNAME: name?.split(/\s+/)[0] ?? "",
+        FULLNAME: name ?? "",
+        ...opts.params,
+      },
+    });
+    if (!result.ok) {
+      const detail = result.skipped ? result.reason : result.error;
+      console.error(`[brevo] ${opts.template} failed: ${detail}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error(`[email] notifyEmailAddress ${opts.template} failed:`, e);
+    return false;
+  }
+}
+
+/** Last medicine-change email, the day before the 7 days run out. */
+export async function remindPatientPlanChangeFinal(opts: {
+  supabaseAdmin: any;
+  request: { id: string; user_id?: string | null; medicine_id?: string | null };
+}): Promise<boolean> {
+  const periodKey = "plan_change_final";
+  if (!(await claimEmailReminder(opts.supabaseAdmin, PATIENT_STATUS_REMINDER, opts.request.id, periodKey))) {
+    return false;
+  }
+  const { data: row } = await opts.supabaseAdmin
+    .from("medication_requests")
+    .select("plan_change_token, plan_change_delta_cents, medicine_id, user_id, status")
+    .eq("id", opts.request.id)
+    .maybeSingle();
+  if (row?.status !== "awaiting_additional_payment") {
+    await releaseEmailReminder(opts.supabaseAdmin, PATIENT_STATUS_REMINDER, opts.request.id, periodKey);
+    return false;
+  }
+  const delta = Number(row?.plan_change_delta_cents ?? 0);
+  const amount = Math.max(delta, 0);
+  const waitingForConsent = amount <= 0 && Boolean(row?.plan_change_token);
+  if (amount <= 0 && !waitingForConsent) {
+    await releaseEmailReminder(opts.supabaseAdmin, PATIENT_STATUS_REMINDER, opts.request.id, periodKey);
+    return false;
+  }
+  const medicineName = await resolveMedicineName(
+    opts.supabaseAdmin,
+    row?.medicine_id ?? opts.request.medicine_id,
+  );
+  const links = medicineChangeMailLinks(opts.request.id, waitingForConsent ? "consent" : "payment");
+  const sent = await notifyUserById({
+    supabaseAdmin: opts.supabaseAdmin,
+    userId: row?.user_id ?? opts.request.user_id,
+    template: waitingForConsent ? "patient_plan_consent" : "patient_additional_payment",
+    params: {
+      ORDER_ID: opts.request.id,
+      MEDICINE_NAME: medicineName,
+      AMOUNT_DUE: (amount / 100).toFixed(2),
+      CREDIT_AMOUNT: delta < 0 ? (Math.abs(delta) / 100).toFixed(2) : "0.00",
+      IS_REMINDER: "1",
+      IS_FINAL: "1",
+      PORTAL_URL: links.PORTAL_URL,
+      SECONDARY_URL: links.SECONDARY_URL,
+    },
+  });
+  if (sent) return true;
+  await releaseEmailReminder(opts.supabaseAdmin, PATIENT_STATUS_REMINDER, opts.request.id, periodKey);
+  return false;
+}
+
+/** Renewal invoice failed. One email per invoice, even if Stripe retries the card. */
+export async function notifyRenewalCardFailed(
+  supabaseAdmin: any,
+  invoice: { id?: string | null; subscription?: unknown; billing_reason?: string | null },
+): Promise<boolean> {
+  if (invoice.billing_reason && invoice.billing_reason !== "subscription_cycle") return false;
+  const subscription = invoice.subscription as { id?: string } | string | null | undefined;
+  const stripeSubscriptionId = typeof subscription === "string" ? subscription : subscription?.id;
+  if (!stripeSubscriptionId || !invoice.id) return false;
+
+  const { data: sub } = await supabaseAdmin
+    .from("subscriptions")
+    .select("id, user_id, medicine_id, status")
+    .eq("stripe_subscription_id", stripeSubscriptionId)
+    .maybeSingle();
+  if (!sub?.id) return false;
+
+  if (sub.status !== "past_due") {
+    await supabaseAdmin
+      .from("subscriptions")
+      .update({ status: "past_due", updated_at: new Date().toISOString() })
+      .eq("id", sub.id);
+  }
+  if (!sub.user_id) return false;
+
+  const periodKey = invoice.id;
+  if (!(await claimEmailReminder(supabaseAdmin, "renewal_card_failed", sub.id, periodKey))) return false;
+  const medicineName = await resolveMedicineName(supabaseAdmin, sub.medicine_id);
+  const sent = await notifyUserById({
+    supabaseAdmin,
+    userId: sub.user_id,
+    template: "patient_renewal_failed",
+    params: {
+      MEDICINE_NAME: medicineName,
+      PORTAL_URL: process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "",
+    },
+  });
+  if (sent) return true;
+  await releaseEmailReminder(supabaseAdmin, "renewal_card_failed", sub.id, periodKey);
+  return false;
+}
+
+/** The assigned provider opened the case, so the one-day waiting email should not go out. */
+export async function markProviderCaseOpened(supabaseAdmin: any, requestId: string): Promise<void> {
+  await claimEmailReminder(supabaseAdmin, "provider_case_opened", requestId, "opened");
 }

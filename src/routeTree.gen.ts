@@ -42,8 +42,11 @@ import { Route as AuthenticatedProviderProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedProviderQueueRouteImport } from './routes/_authenticated/provider.queue'
 import { Route as AuthenticatedRxPrescriptionIdRouteImport } from './routes/_authenticated/rx.$prescriptionId'
 import { Route as ApiConsultationsEmbedRouteImport } from './routes/api.consultations.embed'
+import { Route as ApiInternalAdditionalPaymentDeclinedRouteImport } from './routes/api.internal.additional-payment-declined'
 import { Route as ApiInternalAdditionalPaymentPaidRouteImport } from './routes/api.internal.additional-payment-paid'
 import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
+import { Route as ApiInternalPlanChangeAcceptedRouteImport } from './routes/api.internal.plan-change-accepted'
+import { Route as ApiInternalRemindersRouteImport } from './routes/api.internal.reminders'
 import { Route as ApiLifefileDataPushRouteImport } from './routes/api.lifefile.data-push'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as AuthenticatedAdminBillingIndexRouteImport } from './routes/_authenticated/admin.billing.index'
@@ -269,6 +272,12 @@ const ApiConsultationsEmbedRoute = ApiConsultationsEmbedRouteImport.update({
   path: '/api/consultations/embed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalAdditionalPaymentDeclinedRoute =
+  ApiInternalAdditionalPaymentDeclinedRouteImport.update({
+    id: '/api/internal/additional-payment-declined',
+    path: '/api/internal/additional-payment-declined',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalAdditionalPaymentPaidRoute =
   ApiInternalAdditionalPaymentPaidRouteImport.update({
     id: '/api/internal/additional-payment-paid',
@@ -278,6 +287,17 @@ const ApiInternalAdditionalPaymentPaidRoute =
 const ApiInternalNewFeedbackRoute = ApiInternalNewFeedbackRouteImport.update({
   id: '/api/internal/new-feedback',
   path: '/api/internal/new-feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalPlanChangeAcceptedRoute =
+  ApiInternalPlanChangeAcceptedRouteImport.update({
+    id: '/api/internal/plan-change-accepted',
+    path: '/api/internal/plan-change-accepted',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalRemindersRoute = ApiInternalRemindersRouteImport.update({
+  id: '/api/internal/reminders',
+  path: '/api/internal/reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLifefileDataPushRoute = ApiLifefileDataPushRouteImport.update({
@@ -550,8 +570,11 @@ export interface FileRoutesByFullPath {
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/api/consultations/embed': typeof ApiConsultationsEmbedRoute
+  '/api/internal/additional-payment-declined': typeof ApiInternalAdditionalPaymentDeclinedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
+  '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -613,8 +636,11 @@ export interface FileRoutesByTo {
   '/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/api/consultations/embed': typeof ApiConsultationsEmbedRoute
+  '/api/internal/additional-payment-declined': typeof ApiInternalAdditionalPaymentDeclinedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
+  '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -691,8 +717,11 @@ export interface FileRoutesById {
   '/_authenticated/provider/queue': typeof AuthenticatedProviderQueueRoute
   '/_authenticated/rx/$prescriptionId': typeof AuthenticatedRxPrescriptionIdRoute
   '/api/consultations/embed': typeof ApiConsultationsEmbedRoute
+  '/api/internal/additional-payment-declined': typeof ApiInternalAdditionalPaymentDeclinedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
+  '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -769,8 +798,11 @@ export interface FileRouteTypes {
     | '/provider/queue'
     | '/rx/$prescriptionId'
     | '/api/consultations/embed'
+    | '/api/internal/additional-payment-declined'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/internal/plan-change-accepted'
+    | '/api/internal/reminders'
     | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
     | '/admin/'
@@ -832,8 +864,11 @@ export interface FileRouteTypes {
     | '/provider/queue'
     | '/rx/$prescriptionId'
     | '/api/consultations/embed'
+    | '/api/internal/additional-payment-declined'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/internal/plan-change-accepted'
+    | '/api/internal/reminders'
     | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
     | '/admin'
@@ -909,8 +944,11 @@ export interface FileRouteTypes {
     | '/_authenticated/provider/queue'
     | '/_authenticated/rx/$prescriptionId'
     | '/api/consultations/embed'
+    | '/api/internal/additional-payment-declined'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/internal/plan-change-accepted'
+    | '/api/internal/reminders'
     | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
     | '/_authenticated/admin/'
@@ -964,8 +1002,11 @@ export interface RootRouteChildren {
   AppointmentSplatRoute: typeof AppointmentSplatRoute
   PlanChangeTokenRoute: typeof PlanChangeTokenRoute
   ApiConsultationsEmbedRoute: typeof ApiConsultationsEmbedRoute
+  ApiInternalAdditionalPaymentDeclinedRoute: typeof ApiInternalAdditionalPaymentDeclinedRoute
   ApiInternalAdditionalPaymentPaidRoute: typeof ApiInternalAdditionalPaymentPaidRoute
   ApiInternalNewFeedbackRoute: typeof ApiInternalNewFeedbackRoute
+  ApiInternalPlanChangeAcceptedRoute: typeof ApiInternalPlanChangeAcceptedRoute
+  ApiInternalRemindersRoute: typeof ApiInternalRemindersRoute
   ApiLifefileDataPushRoute: typeof ApiLifefileDataPushRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
@@ -1203,6 +1244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConsultationsEmbedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/additional-payment-declined': {
+      id: '/api/internal/additional-payment-declined'
+      path: '/api/internal/additional-payment-declined'
+      fullPath: '/api/internal/additional-payment-declined'
+      preLoaderRoute: typeof ApiInternalAdditionalPaymentDeclinedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/additional-payment-paid': {
       id: '/api/internal/additional-payment-paid'
       path: '/api/internal/additional-payment-paid'
@@ -1215,6 +1263,20 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/new-feedback'
       fullPath: '/api/internal/new-feedback'
       preLoaderRoute: typeof ApiInternalNewFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/plan-change-accepted': {
+      id: '/api/internal/plan-change-accepted'
+      path: '/api/internal/plan-change-accepted'
+      fullPath: '/api/internal/plan-change-accepted'
+      preLoaderRoute: typeof ApiInternalPlanChangeAcceptedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/reminders': {
+      id: '/api/internal/reminders'
+      path: '/api/internal/reminders'
+      fullPath: '/api/internal/reminders'
+      preLoaderRoute: typeof ApiInternalRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/lifefile/data-push': {
@@ -1862,8 +1924,12 @@ const rootRouteChildren: RootRouteChildren = {
   AppointmentSplatRoute: AppointmentSplatRoute,
   PlanChangeTokenRoute: PlanChangeTokenRoute,
   ApiConsultationsEmbedRoute: ApiConsultationsEmbedRoute,
+  ApiInternalAdditionalPaymentDeclinedRoute:
+    ApiInternalAdditionalPaymentDeclinedRoute,
   ApiInternalAdditionalPaymentPaidRoute: ApiInternalAdditionalPaymentPaidRoute,
   ApiInternalNewFeedbackRoute: ApiInternalNewFeedbackRoute,
+  ApiInternalPlanChangeAcceptedRoute: ApiInternalPlanChangeAcceptedRoute,
+  ApiInternalRemindersRoute: ApiInternalRemindersRoute,
   ApiLifefileDataPushRoute: ApiLifefileDataPushRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }

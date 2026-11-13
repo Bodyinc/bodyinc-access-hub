@@ -19,7 +19,7 @@ const STEPS = [
   "On the order, review the intake form first. Allergies, medications, and history are on that tab.",
   "If the order needs a consultation, use Join consultation, then Approve. Finishing the consultation sends that approved order to the pharmacy.",
   "If the order does not need a consultation, Approve writes the prescription and sends it to the pharmacy.",
-  "Reject and Change medicine both need a reason. The patient confirms or declines a medicine change. No response within 48 hours restores the previous plan.",
+  "Reject and Change medicine both need a reason. A higher price asks the patient to pay or decline. The same or a lower price asks the patient to approve or reject. No response within 7 days restores the previous plan, and the patient is not charged.",
   "Claim from the Unassigned queue only when the intake form is filled. Once any provider claims or is assigned, the order leaves that queue.",
 ];
 
