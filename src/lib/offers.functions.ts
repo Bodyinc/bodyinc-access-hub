@@ -120,7 +120,22 @@ export const deleteOffer = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("portal_offers").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    const { backupThen, fetchMatching, newBackupId } = await import("@/lib/data-backup.server");
+    const db = supabaseAdmin as any;
+    const rows = await fetchMatching(db, "portal_offers", "id", [data.id]);
+    await backupThen(
+      db,
+      {
+        wipeId: newBackupId(),
+        group: "offer",
+        wipedBy: context.userId,
+        label: rows[0]?.headline?.trim() || "Offer",
+        batches: [{ table: "portal_offers", rows }],
+      },
+      async () => {
+        const { error } = await supabaseAdmin.from("portal_offers").delete().eq("id", data.id);
+        if (error) throw new Error(error.message);
+      },
+    );
     return { ok: true };
   });

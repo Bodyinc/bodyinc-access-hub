@@ -1684,7 +1684,7 @@ export const changeRequestMedicine = createServerFn({ method: "POST" })
             variant_id: newPkg.variant_id,
             package_id: newPkg.id,
           },
-          { role: role === "provider" ? "provider" : "admin", userId: context.userId },
+          { role: "admin", userId: context.userId },
         );
 
     return {

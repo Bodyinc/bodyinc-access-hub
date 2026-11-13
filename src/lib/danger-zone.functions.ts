@@ -13,18 +13,17 @@ async function archiveRows(
   table: string,
   wipedBy: string,
   rows: any[],
+  label: string,
 ) {
-  for (let i = 0; i < rows.length; i += 100) {
-    const chunk = rows.slice(i, i + 100).map((row) => ({
-      wipe_id: wipeId,
-      group_key: group,
-      table_name: table,
-      row_data: row,
-      wiped_by: wipedBy,
-    }));
-    const { error } = await db.from("platform_data_backups").insert(chunk);
-    if (error) throw new Error(`backup ${table}: ${error.message}`);
-  }
+  const { storeDeletedRows } = await import("@/lib/data-backup.server");
+  await storeDeletedRows(db as any, {
+    wipeId,
+    group,
+    table,
+    rows,
+    wipedBy,
+    label,
+  });
 }
 
 async function archiveTable(
@@ -33,6 +32,7 @@ async function archiveTable(
   group: string,
   table: string,
   wipedBy: string,
+  label: string,
 ) {
   const rows: any[] = [];
   const page = 500;
@@ -43,7 +43,7 @@ async function archiveTable(
     rows.push(...data);
     if (data.length < page) break;
   }
-  await archiveRows(db, wipeId, group, table, wipedBy, rows);
+  await archiveRows(db, wipeId, group, table, wipedBy, rows, label);
   return rows.length;
 }
 
@@ -55,6 +55,7 @@ async function archiveMatching(
   column: string,
   ids: string[],
   wipedBy: string,
+  label: string,
 ) {
   const rows: any[] = [];
   for (let i = 0; i < ids.length; i += 100) {
@@ -63,7 +64,7 @@ async function archiveMatching(
     if (error) throw new Error(`${table}: ${error.message}`);
     rows.push(...(data ?? []));
   }
-  await archiveRows(db, wipeId, group, table, wipedBy, rows);
+  await archiveRows(db, wipeId, group, table, wipedBy, rows, label);
 }
 
 const inputSchema = z.object({
@@ -83,10 +84,11 @@ export const wipePlatformData = createServerFn({ method: "POST" })
     const deleted: Record<string, number> = {};
     const wipeId = crypto.randomUUID();
     const db = supabaseAdmin as never as { from: (t: string) => any };
+    const label = `Clear data: ${groups.join(", ")}`;
 
     for (const entry of TABLES) {
       if (!groups.includes(entry.group)) continue;
-      const stored = await archiveTable(db, wipeId, entry.group, entry.table, context.userId);
+      const stored = await archiveTable(db, wipeId, entry.group, entry.table, context.userId, label);
       const { error } = await db.from(entry.table).delete().not(entry.col, "is", null);
       if (error) throw new Error(`${entry.table}: ${error.message}`);
       deleted[entry.group] = (deleted[entry.group] ?? 0) + stored;
@@ -98,7 +100,7 @@ export const wipePlatformData = createServerFn({ method: "POST" })
         .select("*")
         .in("action", ["request.change_medicine", "subscription.change_medicine"]);
       if (logError) throw new Error(`admin_activity_log: ${logError.message}`);
-      await archiveRows(db, wipeId, "orders", "admin_activity_log", context.userId, logs ?? []);
+      await archiveRows(db, wipeId, "orders", "admin_activity_log", context.userId, logs ?? [], label);
       const { deleteMedicineChangeHistory } = await import("@/lib/audit.functions");
       await deleteMedicineChangeHistory(supabaseAdmin, { all: true });
     }
@@ -111,12 +113,19 @@ export const wipePlatformData = createServerFn({ method: "POST" })
       const roles = patientRoles ?? [];
       const patientUserIds = roles.map((r: { user_id: string }) => r.user_id);
       if (patientUserIds.length > 0) {
-        await archiveRows(db, wipeId, "patient", "user_roles", context.userId, roles);
-        await archiveMatching(db, wipeId, "patient", "patient_consultations", "user_id", patientUserIds, context.userId);
-        await archiveMatching(db, wipeId, "patient", "referrals", "referrer_user_id", patientUserIds, context.userId);
-        await archiveMatching(db, wipeId, "patient", "referrals", "referred_user_id", patientUserIds, context.userId);
-        await archiveMatching(db, wipeId, "patient", "notifications", "user_id", patientUserIds, context.userId);
-        await archiveMatching(db, wipeId, "patient", "profiles", "id", patientUserIds, context.userId);
+        const { authUserBackup } = await import("@/lib/data-backup.server");
+        const authRows = [];
+        for (const uid of patientUserIds) {
+          const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(uid);
+          if (authUser.user) authRows.push(authUserBackup(authUser.user));
+        }
+        await archiveRows(db, wipeId, "patient", "auth.users", context.userId, authRows, label);
+        await archiveRows(db, wipeId, "patient", "user_roles", context.userId, roles, label);
+        await archiveMatching(db, wipeId, "patient", "patient_consultations", "user_id", patientUserIds, context.userId, label);
+        await archiveMatching(db, wipeId, "patient", "referrals", "referrer_user_id", patientUserIds, context.userId, label);
+        await archiveMatching(db, wipeId, "patient", "referrals", "referred_user_id", patientUserIds, context.userId, label);
+        await archiveMatching(db, wipeId, "patient", "notifications", "user_id", patientUserIds, context.userId, label);
+        await archiveMatching(db, wipeId, "patient", "profiles", "id", patientUserIds, context.userId, label);
 
         await supabaseAdmin.from("patient_consultations").delete().in("user_id", patientUserIds);
         await supabaseAdmin.from("referrals").delete().in("referrer_user_id", patientUserIds);
