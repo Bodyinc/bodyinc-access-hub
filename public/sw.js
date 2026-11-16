@@ -64,3 +64,42 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
+
+self.addEventListener("push", (event) => {
+  let data = { title: "Body Inc", body: "", url: "/provider/notifications" };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    try {
+      const text = event.data && event.data.text();
+      if (text) data.body = text;
+    } catch {
+      /* ignore malformed payload */
+    }
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Body Inc", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/provider/notifications" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/provider/notifications";
+  const absolute = new URL(target, self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.navigate?.(absolute);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(absolute);
+    }),
+  );
+});

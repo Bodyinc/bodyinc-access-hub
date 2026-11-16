@@ -45,6 +45,7 @@ import { Route as ApiConsultationsEmbedRouteImport } from './routes/api.consulta
 import { Route as ApiInternalAdditionalPaymentDeclinedRouteImport } from './routes/api.internal.additional-payment-declined'
 import { Route as ApiInternalAdditionalPaymentPaidRouteImport } from './routes/api.internal.additional-payment-paid'
 import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
+import { Route as ApiInternalNotificationPushRouteImport } from './routes/api.internal.notification-push'
 import { Route as ApiInternalPlanChangeAcceptedRouteImport } from './routes/api.internal.plan-change-accepted'
 import { Route as ApiInternalRemindersRouteImport } from './routes/api.internal.reminders'
 import { Route as ApiLifefileDataPushRouteImport } from './routes/api.lifefile.data-push'
@@ -289,6 +290,12 @@ const ApiInternalNewFeedbackRoute = ApiInternalNewFeedbackRouteImport.update({
   path: '/api/internal/new-feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalNotificationPushRoute =
+  ApiInternalNotificationPushRouteImport.update({
+    id: '/api/internal/notification-push',
+    path: '/api/internal/notification-push',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalPlanChangeAcceptedRoute =
   ApiInternalPlanChangeAcceptedRouteImport.update({
     id: '/api/internal/plan-change-accepted',
@@ -573,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/additional-payment-declined': typeof ApiInternalAdditionalPaymentDeclinedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/internal/notification-push': typeof ApiInternalNotificationPushRoute
   '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
   '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
@@ -639,6 +647,7 @@ export interface FileRoutesByTo {
   '/api/internal/additional-payment-declined': typeof ApiInternalAdditionalPaymentDeclinedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/internal/notification-push': typeof ApiInternalNotificationPushRoute
   '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
   '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
@@ -720,6 +729,7 @@ export interface FileRoutesById {
   '/api/internal/additional-payment-declined': typeof ApiInternalAdditionalPaymentDeclinedRoute
   '/api/internal/additional-payment-paid': typeof ApiInternalAdditionalPaymentPaidRoute
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
+  '/api/internal/notification-push': typeof ApiInternalNotificationPushRoute
   '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
   '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
@@ -801,6 +811,7 @@ export interface FileRouteTypes {
     | '/api/internal/additional-payment-declined'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/internal/notification-push'
     | '/api/internal/plan-change-accepted'
     | '/api/internal/reminders'
     | '/api/lifefile/data-push'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/api/internal/additional-payment-declined'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/internal/notification-push'
     | '/api/internal/plan-change-accepted'
     | '/api/internal/reminders'
     | '/api/lifefile/data-push'
@@ -947,6 +959,7 @@ export interface FileRouteTypes {
     | '/api/internal/additional-payment-declined'
     | '/api/internal/additional-payment-paid'
     | '/api/internal/new-feedback'
+    | '/api/internal/notification-push'
     | '/api/internal/plan-change-accepted'
     | '/api/internal/reminders'
     | '/api/lifefile/data-push'
@@ -1005,6 +1018,7 @@ export interface RootRouteChildren {
   ApiInternalAdditionalPaymentDeclinedRoute: typeof ApiInternalAdditionalPaymentDeclinedRoute
   ApiInternalAdditionalPaymentPaidRoute: typeof ApiInternalAdditionalPaymentPaidRoute
   ApiInternalNewFeedbackRoute: typeof ApiInternalNewFeedbackRoute
+  ApiInternalNotificationPushRoute: typeof ApiInternalNotificationPushRoute
   ApiInternalPlanChangeAcceptedRoute: typeof ApiInternalPlanChangeAcceptedRoute
   ApiInternalRemindersRoute: typeof ApiInternalRemindersRoute
   ApiLifefileDataPushRoute: typeof ApiLifefileDataPushRoute
@@ -1263,6 +1277,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/new-feedback'
       fullPath: '/api/internal/new-feedback'
       preLoaderRoute: typeof ApiInternalNewFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/notification-push': {
+      id: '/api/internal/notification-push'
+      path: '/api/internal/notification-push'
+      fullPath: '/api/internal/notification-push'
+      preLoaderRoute: typeof ApiInternalNotificationPushRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/plan-change-accepted': {
@@ -1928,6 +1949,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiInternalAdditionalPaymentDeclinedRoute,
   ApiInternalAdditionalPaymentPaidRoute: ApiInternalAdditionalPaymentPaidRoute,
   ApiInternalNewFeedbackRoute: ApiInternalNewFeedbackRoute,
+  ApiInternalNotificationPushRoute: ApiInternalNotificationPushRoute,
   ApiInternalPlanChangeAcceptedRoute: ApiInternalPlanChangeAcceptedRoute,
   ApiInternalRemindersRoute: ApiInternalRemindersRoute,
   ApiLifefileDataPushRoute: ApiLifefileDataPushRoute,

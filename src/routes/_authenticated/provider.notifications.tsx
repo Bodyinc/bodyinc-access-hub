@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useNotifications, timeAgo } from "@/lib/use-notifications";
 import type { AppNotification } from "@/lib/notifications.functions";
+import { PushNotificationsCard } from "@/components/provider/push-notifications";
 
 export const Route = createFileRoute("/_authenticated/provider/notifications")({
   head: () => ({
@@ -72,6 +73,10 @@ function ProviderNotificationsPage() {
             Mark all read
           </button>
         )}
+      </div>
+
+      <div className="mb-4">
+        <PushNotificationsCard />
       </div>
 
       {isLoading ? (
