@@ -1,7 +1,6 @@
-// Products paid for together are one clinical order: one queue row, one claim,
-// one consultation, and a medicine list the practitioner can change line by line.
-
-export const PURCHASE_WINDOW_MS = 10 * 60 * 1000;
+// Products paid in the same checkout (primary + addon) share one clinical order:
+// one queue row, one claim, one consultation, and a medicine list the practitioner
+// can change line by line. Separate checkouts stay separate even if minutes apart.
 
 export const CLOSED_ORDER_STATUSES = [
   "sent_to_pharmacy",
@@ -51,43 +50,20 @@ export type OrderLine = {
 const SIBLING_COLS =
   "id, user_id, session_id, subscription_id, medicine_id, variant_id, package_id, provider_id, kind, status, requires_consultation, created_at, order_group_id";
 
-function patientPurchaseKey(row: PurchaseRow): string {
-  const who = row.user_id ? `u:${row.user_id}` : `s:${row.session_id ?? row.id}`;
-  return `${who}|${row.kind ?? "initial"}`;
-}
-
-/** Group rows that share an order id, or the same patient and kind inside one purchase window. */
+/** Group rows that share an order_group_id. Ungrouped rows stay alone. */
 export function clusterPurchases<T extends PurchaseRow>(rows: T[]): T[][] {
   const stored = new Map<string, T[]>();
-  const loose: T[] = [];
+  const groups: T[][] = [];
   for (const row of rows) {
     if (row.order_group_id) {
       const list = stored.get(row.order_group_id) ?? [];
       list.push(row);
       stored.set(row.order_group_id, list);
     } else {
-      loose.push(row);
+      groups.push([row]);
     }
   }
-  const groups: T[][] = [...stored.values()];
-  const sorted = [...loose].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  );
-  const open = new Map<string, { start: number; rows: T[] }>();
-  for (const row of sorted) {
-    const key = patientPurchaseKey(row);
-    const at = new Date(row.created_at).getTime();
-    const bucket = open.get(key);
-    if (!bucket || at - bucket.start > PURCHASE_WINDOW_MS) {
-      if (bucket?.rows.length) groups.push(bucket.rows);
-      open.set(key, { start: at, rows: [row] });
-    } else {
-      bucket.rows.push(row);
-    }
-  }
-  for (const bucket of open.values()) {
-    if (bucket.rows.length) groups.push(bucket.rows);
-  }
+  groups.push(...stored.values());
   return groups;
 }
 
@@ -159,20 +135,8 @@ export async function loadSiblingRows(supabaseAdmin: any, requestId: string): Pr
     return (data ?? [current]) as any[];
   }
 
-  const at = new Date(current.created_at).getTime();
-  let q = supabaseAdmin
-    .from("medication_requests")
-    .select(hasGroup ? SIBLING_COLS : SIBLING_COLS.replace(", order_group_id", ""))
-    .eq("kind", current.kind ?? "initial")
-    .gte("created_at", new Date(at - PURCHASE_WINDOW_MS).toISOString())
-    .lte("created_at", new Date(at + PURCHASE_WINDOW_MS).toISOString());
-  q = current.user_id ? q.eq("user_id", current.user_id) : q.eq("session_id", current.session_id);
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  const match = clusterPurchases((data ?? [current]) as PurchaseRow[]).find((group) =>
-    group.some((row) => row.id === requestId),
-  );
-  return (match ?? [current]) as any[];
+  // No order group column / id: do not invent siblings from nearby purchases.
+  return [current] as any[];
 }
 
 export async function loadOrderLines(supabaseAdmin: any, requestId: string): Promise<OrderLine[]> {
