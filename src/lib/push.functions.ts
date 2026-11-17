@@ -1,7 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isPushConfigured, publicVapidKey, sendPushToUser } from "@/lib/push/send";
+import {
+  isPushConfigured,
+  publicVapidKey,
+  sendPushToUser,
+  vapidDiagnostics,
+} from "@/lib/push/send";
 
 const subscriptionSchema = z.object({
   endpoint: z.string().url(),
@@ -14,19 +19,35 @@ const subscriptionSchema = z.object({
 export const getPushStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const configured = isPushConfigured();
+    const keys = vapidDiagnostics();
     const vapidPublicKey = publicVapidKey();
+    const configured = isPushConfigured() && Boolean(vapidPublicKey);
+
     const { data, error } = await context.supabase
       .from("provider_push_subscriptions")
       .select("id, endpoint")
       .eq("user_id", context.userId)
       .limit(20);
-    if (error) throw new Error(error.message);
+
+    let reason: string | null = null;
+    if (!keys.hasPublicKey && !keys.hasPrivateKey) {
+      reason = "Missing VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY on this deploy.";
+    } else if (!keys.hasPublicKey) {
+      reason = "Missing VAPID_PUBLIC_KEY / VITE_VAPID_PUBLIC_KEY on this deploy.";
+    } else if (!keys.hasPrivateKey) {
+      reason = "Missing VAPID_PRIVATE_KEY on this deploy.";
+    } else if (error) {
+      reason = `Database error: ${error.message}`;
+    }
+
     return {
-      configured: configured && Boolean(vapidPublicKey),
-      vapidPublicKey,
+      configured: configured && !error,
+      vapidPublicKey: error ? null : vapidPublicKey,
       subscriptionCount: data?.length ?? 0,
       endpoints: (data ?? []).map((row: { endpoint: string }) => row.endpoint),
+      keys,
+      dbOk: !error,
+      reason,
     };
   });
 

@@ -1,18 +1,15 @@
 import { createRequire } from "node:module";
 
-const require = createRequire(import.meta.url);
-const webpush = require("web-push") as {
-  setVapidDetails: (subject: string, publicKey: string, privateKey: string) => void;
-  sendNotification: (
-    subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
-    payload?: string | Buffer | null,
-  ) => Promise<unknown>;
-};
-
 export type PushPayload = {
   title: string;
   body?: string | null;
   url?: string | null;
+};
+
+export type VapidDiagnostics = {
+  hasPublicKey: boolean;
+  hasPrivateKey: boolean;
+  hasSubject: boolean;
 };
 
 type PushRow = {
@@ -22,13 +19,38 @@ type PushRow = {
   auth_key: string;
 };
 
+type WebPush = {
+  setVapidDetails: (subject: string, publicKey: string, privateKey: string) => void;
+  sendNotification: (
+    subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+    payload?: string | Buffer | null,
+  ) => Promise<unknown>;
+};
+
+/** Dynamic lookup so Vite/Nitro cannot replace these with empty build-time values. */
+function env(name: string): string {
+  return String(process.env[name] ?? "").trim();
+}
+
+function loadWebPush(): WebPush {
+  const require = createRequire(import.meta.url);
+  return require("web-push") as WebPush;
+}
+
 function vapidConfig() {
-  const publicKey =
-    process.env.VAPID_PUBLIC_KEY?.trim() || process.env.VITE_VAPID_PUBLIC_KEY?.trim() || "";
-  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim() || "";
-  const subject = process.env.VAPID_SUBJECT?.trim() || "mailto:ithelp@bodyinc.com";
+  const publicKey = env("VAPID_PUBLIC_KEY") || env("VITE_VAPID_PUBLIC_KEY");
+  const privateKey = env("VAPID_PRIVATE_KEY");
+  const subject = env("VAPID_SUBJECT") || "mailto:ithelp@bodyinc.com";
   if (!publicKey || !privateKey) return null;
   return { publicKey, privateKey, subject };
+}
+
+export function vapidDiagnostics(): VapidDiagnostics {
+  return {
+    hasPublicKey: Boolean(env("VAPID_PUBLIC_KEY") || env("VITE_VAPID_PUBLIC_KEY")),
+    hasPrivateKey: Boolean(env("VAPID_PRIVATE_KEY")),
+    hasSubject: Boolean(env("VAPID_SUBJECT")),
+  };
 }
 
 export function isPushConfigured(): boolean {
@@ -36,11 +58,7 @@ export function isPushConfigured(): boolean {
 }
 
 export function publicVapidKey(): string | null {
-  return (
-    process.env.VITE_VAPID_PUBLIC_KEY?.trim() ||
-    process.env.VAPID_PUBLIC_KEY?.trim() ||
-    null
-  );
+  return env("VITE_VAPID_PUBLIC_KEY") || env("VAPID_PUBLIC_KEY") || null;
 }
 
 /** Send a Web Push to every registered device for this provider user. */
@@ -70,6 +88,7 @@ export async function sendPushToUser(
   const rows = (data ?? []) as PushRow[];
   if (!rows.length) return { sent: 0, removed: 0 };
 
+  const webpush = loadWebPush();
   webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
 
   const body = JSON.stringify({

@@ -32,6 +32,13 @@ type Status = {
   vapidPublicKey: string | null;
   subscriptionCount: number;
   endpoints: string[];
+  keys?: {
+    hasPublicKey: boolean;
+    hasPrivateKey: boolean;
+    hasSubject: boolean;
+  };
+  dbOk?: boolean;
+  reason?: string | null;
 };
 
 export function PushNotificationsCard() {
@@ -41,27 +48,36 @@ export function PushNotificationsCard() {
   const testPush = useServerFn(sendTestPush);
 
   const [status, setStatus] = useState<Status | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [supported, setSupported] = useState(true);
 
   async function refresh() {
+    setLoading(true);
+    setLoadError(null);
     const next = (await fetchStatus({ data: undefined as never })) as Status;
     setStatus(next);
     if (!("PushManager" in window) || !("Notification" in window)) {
       setSupported(false);
       setEnabled(false);
+      setLoading(false);
       return next;
     }
     const reg = await getRegistration();
     const local = reg ? await reg.pushManager.getSubscription() : null;
     setEnabled(Boolean(local && next.endpoints.includes(local.endpoint)));
+    setLoading(false);
     return next;
   }
 
   useEffect(() => {
     void refresh().catch((err) => {
+      const message = err instanceof Error ? err.message : String(err);
       console.warn("[push] status load failed:", err);
+      setLoadError(message.slice(0, 240));
+      setLoading(false);
     });
   }, []);
 
@@ -70,7 +86,7 @@ export function PushNotificationsCard() {
     try {
       const current = status ?? (await refresh());
       if (!current?.configured || !current.vapidPublicKey) {
-        toast.error("Push alerts are not configured on the server yet.");
+        toast.error(current?.reason || "Push alerts are not configured on the server yet.");
         return;
       }
       if (!("Notification" in window) || !("PushManager" in window)) {
@@ -169,6 +185,21 @@ export function PushNotificationsCard() {
   const configured = Boolean(status?.configured);
   const showBanner = supported && configured && !enabled;
 
+  let detail: string;
+  if (!supported) {
+    detail = "This browser does not support Web Push.";
+  } else if (loading) {
+    detail = "Checking push setup…";
+  } else if (loadError) {
+    detail = `Could not load push status: ${loadError}`;
+  } else if (!configured) {
+    detail = status?.reason || "Not configured on the server yet (missing VAPID keys).";
+  } else if (enabled) {
+    detail = "On for this device.";
+  } else {
+    detail = "Off for this device.";
+  }
+
   return (
     <div className="space-y-3">
       {showBanner ? (
@@ -194,19 +225,18 @@ export function PushNotificationsCard() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-[#3B4759]">Push notifications</p>
-            <p className="text-xs text-[#3B4759]/70">
-              {!supported
-                ? "This browser does not support Web Push."
-                : !configured
-                  ? "Not configured on the server yet (missing VAPID keys)."
-                  : enabled
-                    ? "On for this device."
-                    : "Off for this device."}
-            </p>
+            <p className="text-xs text-[#3B4759]/70">{detail}</p>
+            {!loading && status?.keys ? (
+              <p className="mt-1 text-[11px] text-[#3B4759]/55">
+                public={status.keys.hasPublicKey ? "yes" : "no"} · private=
+                {status.keys.hasPrivateKey ? "yes" : "no"} · db=
+                {status.dbOk ? "ok" : "error"}
+              </p>
+            ) : null}
           </div>
           <Switch
             checked={enabled}
-            disabled={busy || !supported || !configured}
+            disabled={busy || loading || !supported || !configured}
             onCheckedChange={(value) => void onToggle(value)}
             aria-label="Toggle push notifications"
           />
