@@ -24,6 +24,7 @@ export const Route = createFileRoute("/api/internal/notification-push")({
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          // Dynamic import keeps web-push out of unrelated server-fn bundles.
           const { sendPushToUser } = await import("@/lib/push/send");
 
           const { data: row, error } = await supabaseAdmin
@@ -42,7 +43,8 @@ export const Route = createFileRoute("/api/internal/notification-push")({
           return Response.json({ ok: true, ...result });
         } catch (e) {
           console.error("[push] notification-push webhook failed:", e);
-          return Response.json({ ok: false, error: "Failed to send push." }, { status: 500 });
+          const message = e instanceof Error ? e.message : "Failed to send push.";
+          return Response.json({ ok: false, error: message }, { status: 500 });
         }
       },
     },
