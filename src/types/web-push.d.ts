@@ -19,4 +19,5 @@ declare module "web-push" {
     payload?: string | Buffer | null,
     options?: Record<string, unknown>,
   ): Promise<unknown>;
+
 }

@@ -18,6 +18,10 @@ export default defineConfig({
   // only kicks in on Vercel/CI builds. Switch to "vercel-edge" for Edge runtime.
   nitro: {
     preset: "vercel",
+    // Ensure web-push (and its Node deps) are traced into the Vercel serverless function.
+    externals: {
+      traceInclude: ["web-push"],
+    },
   },
   // Project lives under a path containing ":" (Admin:Provider). Vite's fs guard
   // rejects any path with colons on non-Windows systems, so relax it for local dev.

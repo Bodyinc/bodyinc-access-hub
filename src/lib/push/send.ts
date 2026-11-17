@@ -1,15 +1,10 @@
-import { createRequire } from "node:module";
+import { sendNotification, setVapidDetails } from "web-push";
+import { vapidConfig } from "@/lib/push/config";
 
 export type PushPayload = {
   title: string;
   body?: string | null;
   url?: string | null;
-};
-
-export type VapidDiagnostics = {
-  hasPublicKey: boolean;
-  hasPrivateKey: boolean;
-  hasSubject: boolean;
 };
 
 type PushRow = {
@@ -19,47 +14,13 @@ type PushRow = {
   auth_key: string;
 };
 
-type WebPush = {
-  setVapidDetails: (subject: string, publicKey: string, privateKey: string) => void;
-  sendNotification: (
-    subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
-    payload?: string | Buffer | null,
-  ) => Promise<unknown>;
-};
-
-/** Dynamic lookup so Vite/Nitro cannot replace these with empty build-time values. */
-function env(name: string): string {
-  return String(process.env[name] ?? "").trim();
-}
-
-function loadWebPush(): WebPush {
-  const require = createRequire(import.meta.url);
-  return require("web-push") as WebPush;
-}
-
-function vapidConfig() {
-  const publicKey = env("VAPID_PUBLIC_KEY") || env("VITE_VAPID_PUBLIC_KEY");
-  const privateKey = env("VAPID_PRIVATE_KEY");
-  const subject = env("VAPID_SUBJECT") || "mailto:ithelp@bodyinc.com";
-  if (!publicKey || !privateKey) return null;
-  return { publicKey, privateKey, subject };
-}
-
-export function vapidDiagnostics(): VapidDiagnostics {
-  return {
-    hasPublicKey: Boolean(env("VAPID_PUBLIC_KEY") || env("VITE_VAPID_PUBLIC_KEY")),
-    hasPrivateKey: Boolean(env("VAPID_PRIVATE_KEY")),
-    hasSubject: Boolean(env("VAPID_SUBJECT")),
-  };
-}
-
-export function isPushConfigured(): boolean {
-  return vapidConfig() !== null;
-}
-
-export function publicVapidKey(): string | null {
-  return env("VITE_VAPID_PUBLIC_KEY") || env("VAPID_PUBLIC_KEY") || null;
-}
+export {
+  isPushConfigured,
+  publicVapidKey,
+  vapidDiagnostics,
+  vapidConfig,
+} from "@/lib/push/config";
+export type { VapidDiagnostics } from "@/lib/push/config";
 
 /** Send a Web Push to every registered device for this provider user. */
 export async function sendPushToUser(
@@ -88,8 +49,7 @@ export async function sendPushToUser(
   const rows = (data ?? []) as PushRow[];
   if (!rows.length) return { sent: 0, removed: 0 };
 
-  const webpush = loadWebPush();
-  webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+  setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
 
   const body = JSON.stringify({
     title,
@@ -103,7 +63,7 @@ export async function sendPushToUser(
   await Promise.all(
     rows.map(async (row) => {
       try {
-        await webpush.sendNotification(
+        await sendNotification(
           {
             endpoint: row.endpoint,
             keys: { p256dh: row.p256dh, auth: row.auth_key },

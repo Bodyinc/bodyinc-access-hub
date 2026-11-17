@@ -4,9 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   isPushConfigured,
   publicVapidKey,
-  sendPushToUser,
   vapidDiagnostics,
-} from "@/lib/push/send";
+} from "@/lib/push/config";
 
 const subscriptionSchema = z.object({
   endpoint: z.string().url(),
@@ -95,20 +94,27 @@ export const sendTestPush = createServerFn({ method: "POST" })
     if (!isPushConfigured()) {
       return { ok: false as const, error: "Push is not configured on the server." };
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const result = await sendPushToUser(supabaseAdmin, context.userId, {
-      title: "Body Inc test notification",
-      body: "Push alerts are working for your provider account.",
-      url: "/provider/notifications",
-    });
-    if (result.sent === 0) {
-      return {
-        ok: false as const,
-        error:
-          result.removed > 0
-            ? "Your push subscription expired. Enable alerts again."
-            : "No push subscription found for this device. Enable alerts first.",
-      };
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { sendPushToUser } = await import("@/lib/push/send");
+      const result = await sendPushToUser(supabaseAdmin, context.userId, {
+        title: "Body Inc test notification",
+        body: "Push alerts are working for your provider account.",
+        url: "/provider/notifications",
+      });
+      if (result.sent === 0) {
+        return {
+          ok: false as const,
+          error:
+            result.removed > 0
+              ? "Your push subscription expired. Enable alerts again."
+              : "No push subscription found for this device. Enable alerts first.",
+        };
+      }
+      return { ok: true as const, sent: result.sent };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[push] sendTestPush failed:", message);
+      return { ok: false as const, error: message.slice(0, 240) };
     }
-    return { ok: true as const, sent: result.sent };
   });
