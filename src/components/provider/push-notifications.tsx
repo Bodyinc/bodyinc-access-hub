@@ -183,7 +183,6 @@ export function PushNotificationsCard() {
   }
 
   const configured = Boolean(status?.configured);
-  const showBanner = supported && configured && !enabled;
 
   let detail: string;
   if (!supported) {
@@ -191,69 +190,41 @@ export function PushNotificationsCard() {
   } else if (loading) {
     detail = "Checking push setup…";
   } else if (loadError) {
-    detail = `Could not load push status: ${loadError}`;
+    detail = "Could not load push status. Refresh and try again.";
   } else if (!configured) {
-    detail = status?.reason || "Not configured on the server yet (missing VAPID keys).";
+    detail = "Not configured on the server yet (missing VAPID keys).";
   } else if (enabled) {
-    detail = "On for this device.";
+    detail = "On for this device. Alerts can show even when this tab is closed.";
   } else {
-    detail = "Off for this device.";
+    detail = "Off for this device. Turn on to get alerts when this tab is closed.";
   }
 
   return (
-    <div className="space-y-3">
-      {showBanner ? (
-        <div className="flex flex-col gap-3 rounded-[8px] border border-[#D5DEDD] bg-[#F8FBFA] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-[#3B4759]">Enable lock-screen alerts</p>
-            <p className="text-xs text-[#3B4759]/70">
-              Get notified about assigned patients even when this tab is closed.
-            </p>
-          </div>
+    <div className="rounded-[8px] border border-[#D5DEDD] bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[#3B4759]">Push notifications</p>
+          <p className="text-xs text-[#3B4759]/70">{detail}</p>
+        </div>
+        <Switch
+          checked={enabled}
+          disabled={busy || loading || !supported || !configured}
+          onCheckedChange={(value) => void onToggle(value)}
+          aria-label="Toggle push notifications"
+        />
+      </div>
+      {enabled ? (
+        <div className="mt-3">
           <button
             type="button"
             disabled={busy}
-            onClick={() => void enable()}
-            className="rounded-[6px] bg-[#6A9B9C] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#5A8B8C] disabled:opacity-60"
+            onClick={() => void onTest()}
+            className="rounded-[6px] border border-[#D5DEDD] bg-white px-3 py-1.5 text-sm font-medium text-[#6A9B9C] transition-colors hover:bg-[#E8EEED] disabled:opacity-60"
           >
-            Enable alerts
+            Send a test notification
           </button>
         </div>
       ) : null}
-
-      <div className="rounded-[8px] border border-[#D5DEDD] bg-white px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-[#3B4759]">Push notifications</p>
-            <p className="text-xs text-[#3B4759]/70">{detail}</p>
-            {!loading && status?.keys ? (
-              <p className="mt-1 text-[11px] text-[#3B4759]/55">
-                public={status.keys.hasPublicKey ? "yes" : "no"} · private=
-                {status.keys.hasPrivateKey ? "yes" : "no"} · db=
-                {status.dbOk ? "ok" : "error"}
-              </p>
-            ) : null}
-          </div>
-          <Switch
-            checked={enabled}
-            disabled={busy || loading || !supported || !configured}
-            onCheckedChange={(value) => void onToggle(value)}
-            aria-label="Toggle push notifications"
-          />
-        </div>
-        {enabled ? (
-          <div className="mt-3">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onTest()}
-              className="rounded-[6px] border border-[#D5DEDD] bg-white px-3 py-1.5 text-sm font-medium text-[#6A9B9C] transition-colors hover:bg-[#E8EEED] disabled:opacity-60"
-            >
-              Send a test notification
-            </button>
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
