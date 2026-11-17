@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/provider/notifications")({
 
 const HIGH_TYPES = new Set([
   "request_assigned",
+  "request_ready_to_claim",
   "request_ready_for_review",
   "request_needs_attention",
   "intake_updated",

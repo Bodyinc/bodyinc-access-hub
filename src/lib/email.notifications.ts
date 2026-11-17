@@ -424,24 +424,55 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
         });
         if (!siblingErr) announced.add(row.id);
       }
+      const fromShop = shopIds.has(lead.id);
+      const medLabel = medicineNames.join(", ") || "a treatment";
+      const title = fromShop ? "A shop order is ready to claim" : "A new patient is ready to claim";
+      const body = fromShop
+        ? `${patientName} placed a shop order for ${medLabel} and is waiting for a provider.`
+        : `${patientName} finished signup for ${medLabel} and is waiting for a provider.`;
+      const link = `/provider/requests/${lead.id}`;
+
       const seenInbox = new Set<string>();
+      const seenPush = new Set<string>();
       for (const provider of licensed) {
         const contact = await resolveProfileContact(supabaseAdmin, provider.id);
         const inbox = contact?.email?.trim().toLowerCase();
-        if (!inbox || seenInbox.has(inbox)) continue;
-        seenInbox.add(inbox);
-        await notifyUserById({
-          supabaseAdmin,
-          userId: provider.id,
-          template: "provider_patient_ready",
-          params: {
-            ORDER_ID: lead.id,
-            MEDICINE_NAME: medicineNames.join(", ") || "a treatment",
-            PATIENT_NAME: patientName,
-            REQUEST_URL: `${portal}/provider/requests/${lead.id}`,
-            ORDER_SOURCE: shopIds.has(lead.id) ? "shop" : "onboarding",
-          },
-        });
+        if (inbox && !seenInbox.has(inbox)) {
+          seenInbox.add(inbox);
+          await notifyUserById({
+            supabaseAdmin,
+            userId: provider.id,
+            template: "provider_patient_ready",
+            params: {
+              ORDER_ID: lead.id,
+              MEDICINE_NAME: medLabel,
+              PATIENT_NAME: patientName,
+              REQUEST_URL: `${portal}/provider/requests/${lead.id}`,
+              ORDER_SOURCE: fromShop ? "shop" : "onboarding",
+            },
+          });
+        }
+
+        if (!provider.id || seenPush.has(provider.id)) continue;
+        seenPush.add(provider.id);
+        try {
+          await supabaseAdmin.from("notifications").insert({
+            user_id: provider.id,
+            type: "request_ready_to_claim",
+            title,
+            body,
+            link,
+            entity_id: lead.id,
+          });
+        } catch (e) {
+          console.warn("[notify] ready-to-claim in-app failed:", e);
+        }
+        try {
+          const { sendPushToUser } = await import("@/lib/push/send");
+          await sendPushToUser(supabaseAdmin, provider.id, { title, body, url: link });
+        } catch (e) {
+          console.warn("[notify] ready-to-claim push failed:", e);
+        }
       }
     }
   } catch (e) {
