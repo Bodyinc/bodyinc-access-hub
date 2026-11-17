@@ -137,30 +137,49 @@ export const deleteMedicineSafely = createServerFn({ method: "POST" })
       );
     }
 
-    const [{ data: medicine }, { data: packages }, { data: variants }] = await Promise.all([
-      supabaseAdmin
-        .from("medicines")
-        .select("stripe_product_id")
-        .eq("id", data.medicineId)
-        .maybeSingle(),
-      supabaseAdmin.from("packages").select("stripe_price_id").eq("medicine_id", data.medicineId),
-      supabaseAdmin
-        .from("medicine_variants")
-        .select("stripe_product_id")
-        .eq("medicine_id", data.medicineId),
+    const { backupThen, fetchMatching, newBackupId } = await import("@/lib/data-backup.server");
+    const db = supabaseAdmin as any;
+    const [medicineRows, packages, variants, links, questionnaireLinks] = await Promise.all([
+      fetchMatching(db, "medicines", "id", [data.medicineId]),
+      fetchMatching(db, "packages", "medicine_id", [data.medicineId]),
+      fetchMatching(db, "medicine_variants", "medicine_id", [data.medicineId]),
+      fetchMatching(db, "medication_category_medicines", "medicine_id", [data.medicineId]),
+      fetchMatching(db, "questionnaire_medicines", "medicine_id", [data.medicineId]),
     ]);
+    const medicine = medicineRows[0] as { name?: string; stripe_product_id?: string | null } | undefined;
 
-    const archiveResult = await archiveInStripe(
-      getStripe(),
-      (packages ?? []).map((p: any) => p.stripe_price_id).filter(Boolean),
-      [
-        ...(variants ?? []).map((v: any) => v.stripe_product_id),
-        medicine?.stripe_product_id,
-      ].filter(Boolean) as string[],
+    let archiveResult: { archived: number; failed: { id: string; error: string }[] } = {
+      archived: 0,
+      failed: [],
+    };
+    await backupThen(
+      db,
+      {
+        wipeId: newBackupId(),
+        group: "catalog",
+        wipedBy: context.userId,
+        label: medicine?.name?.trim() || "Medicine",
+        batches: [
+          { table: "medicines", rows: medicineRows },
+          { table: "medicine_variants", rows: variants },
+          { table: "packages", rows: packages },
+          { table: "medication_category_medicines", rows: links },
+          { table: "questionnaire_medicines", rows: questionnaireLinks },
+        ],
+      },
+      async () => {
+        archiveResult = await archiveInStripe(
+          getStripe(),
+          packages.map((p: { stripe_price_id?: string | null }) => p.stripe_price_id).filter(Boolean) as string[],
+          [
+            ...variants.map((v: { stripe_product_id?: string | null }) => v.stripe_product_id),
+            medicine?.stripe_product_id,
+          ].filter(Boolean) as string[],
+        );
+        const { error } = await supabaseAdmin.from("medicines").delete().eq("id", data.medicineId);
+        if (error) throw new Error(error.message);
+      },
     );
-
-    const { error } = await supabaseAdmin.from("medicines").delete().eq("id", data.medicineId);
-    if (error) throw new Error(error.message);
 
     return {
       ok: true as const,

@@ -531,8 +531,12 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
     if (!req.subscription_id) {
       return { ok: false, message: "This order is missing a subscription." };
     }
-    const { orderHasIntake } = await import("@/lib/clinical-intake");
-    if (!(await orderHasIntake(supabaseAdmin, req.session_id, req.user_id))) {
+    const { loadShopIntakeState, orderHasIntake, shopIntakeReady } = await import("@/lib/clinical-intake");
+    const shopIntake = await loadShopIntakeState(supabaseAdmin, [req.id]);
+    const intakeReady = shopIntake.shopIds.has(req.id)
+      ? shopIntakeReady(shopIntake.byRequest.get(req.id))
+      : await orderHasIntake(supabaseAdmin, req.session_id, req.user_id);
+    if (!intakeReady) {
       return { ok: false, message: "The patient has not finished the intake form yet." };
     }
 
@@ -1002,6 +1006,13 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       // Effective session: ALWAYS use the authentic logged-in reviewer's session (Admin is Admin, Doctor is Doctor)
       const session = reviewerSession;
 
+      // A shop order only shows the form for this purchase, never an earlier intake.
+      const { loadShopIntakeState } = await import("@/lib/clinical-intake");
+      const shopIntake = await loadShopIntakeState(supabaseAdmin, [req.id]);
+      const displaySessionId = shopIntake.shopIds.has(req.id)
+        ? (shopIntake.byRequest.get(req.id)?.finishedSessionId ?? null)
+        : req.session_id;
+
       // Load Patient Profile and Intake Session
       const [
         { data: profile },
@@ -1017,13 +1028,13 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
               .eq("id", req.user_id)
               .maybeSingle()
           : Promise.resolve({ data: null }),
-        req.session_id
+        displaySessionId
           ? supabaseAdmin
               .from("intake_sessions")
               .select("id, full_name, email, dob, sex, phone, state_code, height_cm, weight_kg")
-              .eq("id", req.session_id)
+              .eq("id", displaySessionId)
               .maybeSingle()
-          : req.user_id
+          : !shopIntake.shopIds.has(req.id) && req.user_id
             ? supabaseAdmin
                 .from("intake_sessions")
                 .select("id, full_name, email, dob, sex, phone, state_code, height_cm, weight_kg")
@@ -1229,7 +1240,7 @@ export const getConsultationRoomDetails = createServerFn({ method: "POST" })
       }
 
       // Load Intake Session questionnaire responses & categories
-      const sessionId = orderSession?.id ?? req.session_id ?? null;
+      const sessionId = displaySessionId;
       let goals: string[] = [];
       let eligibility: Array<{
         medicine_name: string;
@@ -1915,7 +1926,7 @@ async function sendApprovedOrdersAfterConsult(
   const { data: rows, error } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status, plan_change_delta_cents",
+      "id, status, provider_id, user_id, medicine_id, variant_id, package_id, life_file_order_id, life_file_status, plan_change_delta_cents, plan_change_token",
     )
     .in("id", ids);
   if (error) return { message: "Consultation finished.", error: error.message };
@@ -1928,7 +1939,7 @@ async function sendApprovedOrdersAfterConsult(
     "prescribed",
   ]);
   const notYetSent = (row: { life_file_order_id?: string | null; life_file_status?: string | null }) =>
-    !(row.life_file_order_id && row.life_file_status && row.life_file_status !== "failed");
+    !row.life_file_order_id && row.life_file_status !== "submitting";
   const ready = ((rows ?? []) as any[]).filter(
     (row) => autoSend.has(row.status) && notYetSent(row),
   );
@@ -1936,14 +1947,23 @@ async function sendApprovedOrdersAfterConsult(
     (row) =>
       row.status === "awaiting_additional_payment" &&
       Number(row.plan_change_delta_cents ?? 0) <= 0 &&
+      !row.plan_change_token &&
       notYetSent(row),
   );
   if (!ready.length && !settledWithoutPayment.length) {
-    const waiting = ((rows ?? []) as any[]).some((row) => row.status === "awaiting_additional_payment");
+    const waitingPay = ((rows ?? []) as any[]).some(
+      (row) =>
+        row.status === "awaiting_additional_payment" && Number(row.plan_change_delta_cents ?? 0) > 0,
+    );
+    const waitingConsent = ((rows ?? []) as any[]).some(
+      (row) => row.status === "awaiting_additional_payment" && row.plan_change_token,
+    );
     return {
-      message: waiting
+      message: waitingPay
         ? "Consultation finished. The pharmacy send waits until the patient pays the difference."
-        : "Consultation appointment completed successfully.",
+        : waitingConsent
+          ? "Consultation finished. The pharmacy send waits until the patient approves the medicine change."
+          : "Consultation appointment completed successfully.",
       error: null,
     };
   }

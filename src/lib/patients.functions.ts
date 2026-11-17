@@ -253,63 +253,138 @@ export const deletePatient = createServerFn({ method: "POST" })
     if (roleErr) throw new Error(roleErr.message);
     if (!role || role.role !== "patient") throw new Error("Patient not found");
 
-    // Cancel live Stripe subscriptions first — a deleted account must never keep billing.
-    // Abort the whole delete if a cancel fails, so we can't strand a billing subscription.
-    const { data: subs } = await supabaseAdmin
-      .from("subscriptions")
-      .select("stripe_subscription_id, status")
-      .eq("user_id", data.userId)
-      .in("status", ["active", "trialing", "past_due", "unpaid", "incomplete"]);
-    const live = (subs ?? []).filter((s: any) => s.stripe_subscription_id);
-    if (live.length) {
-      const { getStripe } = await import("@/integrations/stripe/client.server");
-      const stripe = getStripe();
-      for (const s of live) {
-        try {
-          await stripe.subscriptions.cancel(s.stripe_subscription_id);
-        } catch (e: any) {
-          if (e?.code !== "resource_missing") {
-            throw new Error(
-              `Could not cancel Stripe subscription ${s.stripe_subscription_id}: ${e?.message ?? e}`,
-            );
+    const {
+      authUserBackup,
+      backupThen,
+      fetchMatching,
+      newBackupId,
+    } = await import("@/lib/data-backup.server");
+    const db = supabaseAdmin as any;
+    const [profileRes, authUserRes, requests, subscriptions, payments, shopOrders, consultations, sessions] =
+      await Promise.all([
+        db.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
+        supabaseAdmin.auth.admin.getUserById(data.userId),
+        fetchMatching(db, "medication_requests", "user_id", [data.userId]),
+        fetchMatching(db, "subscriptions", "user_id", [data.userId]),
+        fetchMatching(db, "payments", "user_id", [data.userId]),
+        fetchMatching(db, "shop_checkout_orders", "user_id", [data.userId]),
+        fetchMatching(db, "patient_consultations", "user_id", [data.userId]),
+        fetchMatching(db, "intake_sessions", "claimed_by_user_id", [data.userId]),
+      ]);
+    if (profileRes.error) throw new Error(profileRes.error.message);
+    const requestIds = requests.map((row: { id: string }) => row.id);
+    const shopIds = shopOrders.map((row: { id: string }) => row.id);
+    const sessionIds = sessions.map((row: { id: string }) => row.id);
+    const [
+      events,
+      notes,
+      prescriptions,
+      extraPayments,
+      shopItems,
+      shopEvents,
+      feedback,
+      roles,
+      intakeAnswers,
+    ] = await Promise.all([
+      fetchMatching(db, "medication_request_events", "request_id", requestIds),
+      fetchMatching(db, "medication_request_notes", "request_id", requestIds),
+      fetchMatching(db, "prescriptions", "request_id", requestIds),
+      fetchMatching(db, "additional_payments", "request_id", requestIds),
+      fetchMatching(db, "shop_checkout_order_items", "order_id", shopIds),
+      fetchMatching(db, "shop_checkout_events", "order_id", shopIds),
+      fetchMatching(db, "subscription_cancellation_feedback", "user_id", [data.userId]),
+      fetchMatching(db, "user_roles", "user_id", [data.userId]),
+      fetchMatching(db, "intake_session_questionnaire_responses", "session_id", sessionIds),
+    ]);
+    const { data: changeLogs } = await db
+      .from("admin_activity_log")
+      .select("*")
+      .in("action", ["request.change_medicine", "subscription.change_medicine"])
+      .limit(5000);
+    const entityIds = new Set([
+      ...requestIds,
+      ...subscriptions.map((row: { id: string }) => row.id),
+    ]);
+    const logs = ((changeLogs ?? []) as any[]).filter((row) => {
+      if (row.after?.user_id === data.userId) return true;
+      return row.entity_id && entityIds.has(row.entity_id);
+    });
+    const person = profileRes.data as { full_name?: string | null; email?: string | null } | null;
+    const label = person?.full_name?.trim() || person?.email || "Patient";
+    const live = subscriptions.filter(
+      (row: { stripe_subscription_id?: string | null; status?: string }) =>
+        row.stripe_subscription_id &&
+        ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(row.status ?? ""),
+    );
+
+    await backupThen(
+      db,
+      {
+        wipeId: newBackupId(),
+        group: "patient",
+        wipedBy: context.userId,
+        label,
+        batches: [
+          { table: "auth.users", rows: authUserRes.data.user ? [authUserBackup(authUserRes.data.user)] : [] },
+          { table: "profiles", rows: profileRes.data ? [profileRes.data] : [] },
+          { table: "user_roles", rows: roles },
+          { table: "medication_requests", rows: requests },
+          { table: "medication_request_events", rows: events },
+          { table: "medication_request_notes", rows: notes },
+          { table: "prescriptions", rows: prescriptions },
+          { table: "additional_payments", rows: extraPayments },
+          { table: "subscriptions", rows: subscriptions },
+          { table: "payments", rows: payments },
+          { table: "shop_checkout_orders", rows: shopOrders },
+          { table: "shop_checkout_order_items", rows: shopItems },
+          { table: "shop_checkout_events", rows: shopEvents },
+          { table: "patient_consultations", rows: consultations },
+          { table: "intake_sessions", rows: sessions },
+          { table: "intake_session_questionnaire_responses", rows: intakeAnswers },
+          { table: "subscription_cancellation_feedback", rows: feedback },
+          { table: "admin_activity_log", rows: logs },
+        ],
+      },
+      async () => {
+        if (live.length) {
+          const { getStripe } = await import("@/integrations/stripe/client.server");
+          const stripe = getStripe();
+          for (const row of live) {
+            try {
+              await stripe.subscriptions.cancel(row.stripe_subscription_id);
+            } catch (e: any) {
+              if (e?.code !== "resource_missing") {
+                throw new Error(
+                  `Could not cancel Stripe subscription ${row.stripe_subscription_id}: ${e?.message ?? e}`,
+                );
+              }
+            }
           }
         }
-      }
-    }
-
-    // These tables have a NOT NULL user_id and would block the auth delete.
-    const { data: orders } = await supabaseAdmin
-      .from("shop_checkout_orders")
-      .select("id")
-      .eq("user_id", data.userId);
-    const orderIds = (orders ?? []).map((o: any) => o.id);
-    if (orderIds.length) {
-      await supabaseAdmin.from("shop_checkout_events").delete().in("order_id", orderIds);
-      await supabaseAdmin.from("shop_checkout_orders").delete().eq("user_id", data.userId);
-    }
-    await supabaseAdmin
-      .from("subscription_cancellation_feedback")
-      .delete()
-      .eq("user_id", data.userId);
-
-    const [{ data: reqs }, { data: patientSubs }] = await Promise.all([
-      supabaseAdmin.from("medication_requests").select("id").eq("user_id", data.userId),
-      supabaseAdmin.from("subscriptions").select("id").eq("user_id", data.userId),
-    ]);
-    const { deleteMedicineChangeHistory } = await import("@/lib/audit.functions");
-    await deleteMedicineChangeHistory(supabaseAdmin, {
-      userId: data.userId,
-      entityIds: [
-        ...(reqs ?? []).map((r: { id: string }) => r.id),
-        ...(patientSubs ?? []).map((s: { id: string }) => s.id),
-      ],
-    });
-
-    // Cascades profiles + user_roles; payments, subscriptions, refund_requests and
-    // intake_sessions keep their rows with user_id nulled, so financial history survives.
-    // The email is freed for a brand-new signup.
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
-    if (error) throw new Error(error.message);
+        if (requestIds.length) {
+          await db.from("additional_payments").delete().in("request_id", requestIds);
+          await db.from("medication_request_events").delete().in("request_id", requestIds);
+          await db.from("medication_request_notes").delete().in("request_id", requestIds);
+          await db.from("prescriptions").delete().in("request_id", requestIds);
+          const { error: requestError } = await db.from("medication_requests").delete().in("id", requestIds);
+          if (requestError) throw new Error(requestError.message);
+        }
+        if (shopIds.length) {
+          await db.from("shop_checkout_events").delete().in("order_id", shopIds);
+          await db.from("shop_checkout_order_items").delete().in("order_id", shopIds);
+          const { error: shopError } = await db.from("shop_checkout_orders").delete().in("id", shopIds);
+          if (shopError) throw new Error(shopError.message);
+        }
+        await db.from("subscription_cancellation_feedback").delete().eq("user_id", data.userId);
+        const { deleteMedicineChangeHistory } = await import("@/lib/audit.functions");
+        await deleteMedicineChangeHistory(supabaseAdmin, {
+          userId: data.userId,
+          entityIds: [...entityIds],
+        });
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+        if (error) throw new Error(error.message);
+      },
+    );
     return { ok: true };
   });
 

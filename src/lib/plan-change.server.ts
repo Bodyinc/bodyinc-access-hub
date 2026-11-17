@@ -1,7 +1,9 @@
 import { randomBytes } from "node:crypto";
 
-export const PLAN_CHANGE_TIMEOUT_MS = 48 * 60 * 60 * 1000;
+export const PLAN_CHANGE_TIMEOUT_DAYS = 7;
+export const PLAN_CHANGE_TIMEOUT_MS = PLAN_CHANGE_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
 const REMINDER_AFTER_MS = 24 * 60 * 60 * 1000;
+const FINAL_BEFORE_MS = 24 * 60 * 60 * 1000;
 
 export function newPlanChangeToken() {
   return randomBytes(24).toString("hex");
@@ -152,7 +154,9 @@ export async function confirmPlanChange(
     { role: "system", userId: null },
   );
 
-  if (billing.billingNote) {
+  const otherSendInFlight = Boolean(sent.retry && !sent.error && !sent.lifeFileOrderId);
+
+  if (billing.billingNote && !otherSendInFlight) {
     await supabaseAdmin.from("medication_request_events").insert({
       request_id: requestId,
       status: sent.error ? "approved" : "sent_to_pharmacy",
@@ -162,28 +166,30 @@ export async function confirmPlanChange(
     });
   }
 
-  const note = sent.error
-    ? source === "payment"
-      ? `Patient paid the difference. The pharmacy send did not go through: ${sent.error}`
-      : `The pharmacy send did not go through: ${sent.error}`
-    : source === "payment"
-      ? "Patient paid the difference. The prescription was sent to the pharmacy."
-      : source === "consult"
-        ? "Consultation finished. The prescription was sent to the pharmacy."
-        : "The prescription was sent to the pharmacy.";
+  if (!otherSendInFlight) {
+    const note = sent.error
+      ? source === "payment"
+        ? `Patient paid the difference. The pharmacy send did not go through: ${sent.error}`
+        : `The pharmacy send did not go through: ${sent.error}`
+      : source === "payment"
+        ? "Patient paid the difference. The prescription was sent to the pharmacy."
+        : source === "consult"
+          ? "Consultation finished. The prescription was sent to the pharmacy."
+          : "The prescription was sent to the pharmacy.";
 
-  await notifyProvider(
-    supabaseAdmin,
-    req.provider_id,
-    requestId,
-    "plan_change_confirmed",
-    sent.error ? "Pharmacy send needs attention" : "Prescription sent to the pharmacy",
-    note.slice(0, 500),
-  );
+    await notifyProvider(
+      supabaseAdmin,
+      req.provider_id,
+      requestId,
+      "plan_change_confirmed",
+      sent.error ? "Pharmacy send needs attention" : "Prescription sent to the pharmacy",
+      note.slice(0, 500),
+    );
+  }
 
   return {
     ok: !sent.error,
-    status: sent.error ? "approved" : "sent_to_pharmacy",
+    status: sent.error ? "approved" : otherSendInFlight ? req.status : "sent_to_pharmacy",
     lifeFileOrderId: sent.lifeFileOrderId,
     error: sent.error,
     retry: sent.retry,
@@ -198,7 +204,7 @@ export async function declinePlanChange(
   const { data: req } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, status, provider_id, user_id, medicine_id, previous_medicine_id, previous_variant_id, previous_package_id",
+      "id, status, provider_id, user_id, medicine_id, plan_change_delta_cents, previous_medicine_id, previous_variant_id, previous_package_id",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -239,10 +245,13 @@ export async function declinePlanChange(
     .eq("id", requestId)
     .eq("status", "awaiting_additional_payment");
 
+  const owedMoney = Number(req.plan_change_delta_cents ?? 0) > 0;
   const note =
     reason === "timeout"
-      ? "Plan change timed out after 48 hours with no patient response. Returned to the practitioner's decision."
-      : "Patient declined the plan change. Returned to the practitioner's decision.";
+      ? "Plan change timed out after 7 days with no patient response. The previous medicine and plan were restored, and the patient was not charged."
+      : owedMoney
+        ? "Patient declined the additional payment. The previous medicine and plan were restored, and the patient was not charged."
+        : "Patient declined the medicine change. The previous medicine and plan were restored, and the patient was not charged.";
 
   await supabaseAdmin.from("medication_request_events").insert({
     request_id: requestId,
@@ -257,14 +266,29 @@ export async function declinePlanChange(
     req.provider_id,
     requestId,
     reason === "timeout" ? "plan_change_timeout" : "plan_change_declined",
-    reason === "timeout" ? "Plan change timed out" : "Patient declined the plan change",
+    reason === "timeout"
+      ? "Plan change timed out"
+      : owedMoney
+        ? "Patient declined the additional payment"
+        : "Patient declined the medicine change",
     note,
   );
+
+  if (reason === "timeout") {
+    const { notifyProviderRequestEvent } = await import("@/lib/email.notifications");
+    await notifyProviderRequestEvent({
+      supabaseAdmin,
+      providerId: req.provider_id,
+      requestId,
+      medicineId: req.medicine_id,
+      template: "provider_plan_change_expired",
+    });
+  }
 
   return { ok: true, status: "pending_review" };
 }
 
-/** Remind after 24 hours and revert after 48. Safe to call on each provider page load. */
+/** Remind after 24 hours and revert after 7 days. Safe to call on each provider page load. */
 export async function expireOverduePlanChanges(supabaseAdmin: any, providerId?: string) {
   let q = supabaseAdmin
     .from("medication_requests")
@@ -287,13 +311,26 @@ export async function expireOverduePlanChanges(supabaseAdmin: any, providerId?: 
       );
       continue;
     }
-    const updated = new Date(row.updated_at).getTime();
-    if (now - updated >= REMINDER_AFTER_MS) {
+    const remindAt = deadline - (PLAN_CHANGE_TIMEOUT_MS - REMINDER_AFTER_MS);
+    if (Number.isFinite(remindAt) && now >= remindAt && deadline - now > FINAL_BEFORE_MS) {
       const { remindPatientOfPlanChange } = await import("@/lib/email.notifications");
       await remindPatientOfPlanChange({ supabaseAdmin, request: row }).catch((err) =>
         console.error("[plan-change] reminder failed:", err),
       );
     }
+    if (Number.isFinite(deadline) && deadline - now <= FINAL_BEFORE_MS) {
+      const { remindPatientPlanChangeFinal } = await import("@/lib/email.notifications");
+      await remindPatientPlanChangeFinal({ supabaseAdmin, request: row }).catch((err) =>
+        console.error("[plan-change] final reminder failed:", err),
+      );
+    }
+  }
+
+  if (providerId) {
+    const { sendScheduledReminders } = await import("@/lib/email-reminders.server");
+    await sendScheduledReminders(supabaseAdmin).catch((err) =>
+      console.error("[email] scheduled reminders failed:", err),
+    );
   }
 }
 

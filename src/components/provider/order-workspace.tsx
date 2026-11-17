@@ -253,11 +253,10 @@ export function OrderWorkspace({
                 <div className="space-y-2 rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
                   <p>
                     {Number(request.plan_change_delta_cents) > 0
-                      ? "Waiting for the patient to pay the difference. When that payment succeeds, the prescription is sent to the pharmacy automatically."
-                      : "No extra payment is due. Finish the consultation and this order is sent to the pharmacy."}{" "}
+                      ? "Waiting for the patient to pay the difference or decline it. Payment sends the prescription to the pharmacy. A decline, or no response within 7 days, restores the previous medicine and plan."
+                      : "Waiting for the patient to approve or reject this change. Approval sends the prescription to the pharmacy. A rejection, or no response within 7 days, restores the previous medicine and plan."}{" "}
                   </p>
-                  {Number(request.plan_change_delta_cents) > 0 ? (
-                    <Button
+                  <Button
                       type="button"
                       size="sm"
                       variant="outline"
@@ -267,7 +266,6 @@ export function OrderWorkspace({
                     >
                       {remindPending ? "Sending…" : "Send reminder"}
                     </Button>
-                  ) : null}
                 </div>
               ) : null}
 

@@ -348,7 +348,38 @@ export const deleteProvider = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
-    if (error) throw new Error(error.message);
+    const { authUserBackup, backupThen, fetchMatching, newBackupId } = await import(
+      "@/lib/data-backup.server"
+    );
+    const db = supabaseAdmin as any;
+    const [authUserRes, profileRes, providerRows, roles, credentials] = await Promise.all([
+      supabaseAdmin.auth.admin.getUserById(data.id),
+      db.from("profiles").select("*").eq("id", data.id).maybeSingle(),
+      fetchMatching(db, "providers", "id", [data.id]),
+      fetchMatching(db, "user_roles", "user_id", [data.id]),
+      fetchMatching(db, "provider_life_file_credentials", "provider_id", [data.id]),
+    ]);
+    if (profileRes.error) throw new Error(profileRes.error.message);
+    const person = profileRes.data as { full_name?: string | null; email?: string | null } | null;
+    await backupThen(
+      db,
+      {
+        wipeId: newBackupId(),
+        group: "provider",
+        wipedBy: context.userId,
+        label: person?.full_name?.trim() || person?.email || "Provider",
+        batches: [
+          { table: "auth.users", rows: authUserRes.data.user ? [authUserBackup(authUserRes.data.user)] : [] },
+          { table: "profiles", rows: profileRes.data ? [profileRes.data] : [] },
+          { table: "user_roles", rows: roles },
+          { table: "providers", rows: providerRows },
+          { table: "provider_life_file_credentials", rows: credentials },
+        ],
+      },
+      async () => {
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
+        if (error) throw new Error(error.message);
+      },
+    );
     return { ok: true };
   });

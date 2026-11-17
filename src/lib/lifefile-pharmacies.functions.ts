@@ -119,15 +119,30 @@ export const deleteLifeFilePharmacy = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("life_file_pharmacies").delete().eq("id", data.id);
-    if (error) {
-      if (/foreign key|restrict/i.test(error.message)) {
-        throw new Error(
-          "Cannot delete this pharmacy while medicines or provider credentials still reference it. Deactivate it instead.",
-        );
-      }
-      throw new Error(error.message);
-    }
+    const { backupThen, fetchMatching, newBackupId } = await import("@/lib/data-backup.server");
+    const db = supabaseAdmin as any;
+    const rows = await fetchMatching(db, "life_file_pharmacies", "id", [data.id]);
+    await backupThen(
+      db,
+      {
+        wipeId: newBackupId(),
+        group: "lifefile",
+        wipedBy: context.userId,
+        label: rows[0]?.name?.trim() || "LifeFile pharmacy",
+        batches: [{ table: "life_file_pharmacies", rows }],
+      },
+      async () => {
+        const { error } = await supabaseAdmin.from("life_file_pharmacies").delete().eq("id", data.id);
+        if (error) {
+          if (/foreign key|restrict/i.test(error.message)) {
+            throw new Error(
+              "Cannot delete this pharmacy while medicines or provider credentials still reference it. Deactivate it instead.",
+            );
+          }
+          throw new Error(error.message);
+        }
+      },
+    );
     return { ok: true };
   });
 
@@ -264,10 +279,25 @@ export const deleteProviderLifeFileCredential = createServerFn({ method: "POST" 
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("provider_life_file_credentials")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    const { backupThen, fetchMatching, newBackupId } = await import("@/lib/data-backup.server");
+    const db = supabaseAdmin as any;
+    const rows = await fetchMatching(db, "provider_life_file_credentials", "id", [data.id]);
+    await backupThen(
+      db,
+      {
+        wipeId: newBackupId(),
+        group: "lifefile",
+        wipedBy: context.userId,
+        label: "LifeFile provider login",
+        batches: [{ table: "provider_life_file_credentials", rows }],
+      },
+      async () => {
+        const { error } = await supabaseAdmin
+          .from("provider_life_file_credentials")
+          .delete()
+          .eq("id", data.id);
+        if (error) throw new Error(error.message);
+      },
+    );
     return { ok: true };
   });

@@ -258,10 +258,7 @@ export async function confirmAdditionalPaymentAndDispatch(
   if (!req) return { ok: false, dispatched: false, reason: "request_not_found" };
   const request = req as RequestRow;
 
-  if (
-    SENT_STATUSES.has(request.status) ||
-    (request.life_file_order_id && request.life_file_status && request.life_file_status !== "failed")
-  ) {
+  if (SENT_STATUSES.has(request.status) || request.life_file_order_id) {
     if (request.status === "awaiting_additional_payment") {
       await supabaseAdmin
         .from("medication_requests")
@@ -331,14 +328,32 @@ export async function confirmAdditionalPaymentAndDispatch(
     return { ok: true, dispatched: true, lifeFileOrderId: sent.lifeFileOrderId };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Pharmacy dispatch failed.";
-    if (/already submitted to LifeFile/i.test(message)) {
-      if (!SENT_STATUSES.has(request.status)) {
+    const { lifeFileSendBlocked } = await import("@/integrations/lifefile/submit.server");
+    const blocked = lifeFileSendBlocked(message);
+    if (blocked === "in_flight") {
+      return { ok: true, dispatched: false, retry: true, reason: message };
+    }
+    if (blocked === "sent") {
+      const { data: fresh } = await supabaseAdmin
+        .from("medication_requests")
+        .select("life_file_order_id, status")
+        .eq("id", request.id)
+        .maybeSingle();
+      const freshStatus = (fresh as { status?: string } | null)?.status;
+      if (freshStatus && !SENT_STATUSES.has(freshStatus)) {
         await supabaseAdmin
           .from("medication_requests")
           .update({ status: "sent_to_pharmacy", updated_at: now })
-          .eq("id", request.id);
+          .eq("id", request.id)
+          .eq("status", freshStatus);
       }
-      return { ok: true, dispatched: true, alreadyDispatched: true };
+      return {
+        ok: true,
+        dispatched: true,
+        alreadyDispatched: true,
+        lifeFileOrderId:
+          (fresh as { life_file_order_id?: string | null } | null)?.life_file_order_id ?? null,
+      };
     }
 
     console.error("[additional-payment] pharmacy dispatch failed:", error);

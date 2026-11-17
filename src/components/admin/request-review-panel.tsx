@@ -469,6 +469,7 @@ export function RequestReviewPanel({
   const canSendToPharmacy =
     canManage &&
     !sentToLifeFile &&
+    lifeFileStatus !== "submitting" &&
     (["approved", "prescribed"].includes(status) ||
       (status === "pending_review" && lifeFileStatus === "failed"));
   const nextStep =
@@ -649,7 +650,21 @@ export function RequestReviewPanel({
                 }
               />
             ) : null}
-            {lifeFileOrderId ? <Row label="Life File order ID" value={lifeFileOrderId} /> : null}
+            {lifeFileOrderId ? (
+              <Row
+                label="Life File order ID"
+                value={
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <span>{lifeFileOrderId}</span>
+                    {request.life_file_submitted_at ? (
+                      <span className="text-[12px] font-medium text-[#3B4759]/70">
+                        {formatDateTimeFull(request.life_file_submitted_at)}
+                      </span>
+                    ) : null}
+                  </span>
+                }
+              />
+            ) : null}
             {lifeFileError ? (
               <div className="sm:col-span-2 space-y-1">
                 <div className="text-[13px] font-medium text-[#3B4759]/60">LifeFile error</div>
@@ -964,7 +979,7 @@ export function RequestReviewPanel({
                 ) : null}
               </div>
             ) : null}
-            {canManage && request.session_id ? (
+            {canManage && request.session_id && intakeFilled ? (
               <Button
                 asChild
                 size="sm"
@@ -981,11 +996,16 @@ export function RequestReviewPanel({
             ) : null}
           </div>
 
+          {!intakeFilled ? (
+            <p className="rounded-lg bg-[#F6E4DA] px-3 py-2 text-[13px] font-medium text-[#8F4A33]">
+              Intake incomplete. The form for this order has not been submitted.
+            </p>
+          ) : null}
           {status === "awaiting_additional_payment" ? (
             <p className="rounded-lg bg-[#FFF4E5] px-3 py-2 text-[13px] font-medium text-[#B45309]">
               {request.plan_change_delta_cents != null &&
               Number(request.plan_change_delta_cents) <= 0
-                ? "No extra payment is due. Finish the consultation and this order is sent to the pharmacy."
+                ? "Waiting for the patient to approve or reject this change. Approval sends it to the pharmacy. A rejection, or no response within 7 days, restores the previous medicine and plan."
                 : "Waiting for the patient to pay the price difference. The updated order is sent to the pharmacy automatically once payment succeeds."}
             </p>
           ) : null}

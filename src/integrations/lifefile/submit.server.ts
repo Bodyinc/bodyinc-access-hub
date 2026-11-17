@@ -14,6 +14,17 @@ export type LifeFileSubmitResult = {
   pharmacyName: string | null;
 };
 
+export const LIFE_FILE_ALREADY_SENT_ERROR =
+  "This order was already submitted to LifeFile. Duplicate submissions are blocked.";
+export const LIFE_FILE_IN_FLIGHT_ERROR = "This order is already being sent to LifeFile.";
+
+/** Lost a race with another send. "sent" already has an order id. "in_flight" is still calling Life File. */
+export function lifeFileSendBlocked(message: string): "sent" | "in_flight" | null {
+  if (message.includes("already being sent to LifeFile")) return "in_flight";
+  if (message.includes("already submitted to LifeFile")) return "sent";
+  return null;
+}
+
 type RequestRow = {
   id: string;
   status: string;
@@ -52,6 +63,14 @@ export async function assertLifeFileReady(
   if (!(routing.credentialNpi || provider.npi)) {
     throw new Error("Provider NPI is required for Life File.");
   }
+
+  const { readLifeFileContactPhone } = await import("@/lib/settings.functions");
+  const contactPhone = await readLifeFileContactPhone(supabaseAdmin);
+  if (!contactPhone) {
+    throw new Error(
+      "Set the pharmacy contact phone in Admin → Settings before sending to the pharmacy.",
+    );
+  }
 }
 
 export async function submitRequestToLifeFile(
@@ -59,10 +78,8 @@ export async function submitRequestToLifeFile(
   req: RequestRow,
   options: { allowRetry?: boolean } = {},
 ): Promise<LifeFileSubmitResult> {
-  if (req.life_file_order_id && req.life_file_status && req.life_file_status !== "failed") {
-    throw new Error(
-      "This order was already submitted to LifeFile. Duplicate submissions are blocked.",
-    );
+  if (req.life_file_order_id) {
+    throw new Error(LIFE_FILE_ALREADY_SENT_ERROR);
   }
 
   if (!options.allowRetry && req.life_file_status === "failed" && req.life_file_order_id) {
@@ -80,7 +97,7 @@ export async function submitRequestToLifeFile(
     supabaseAdmin
       .from("profiles")
       .select(
-        "full_name, dob, sex, email, phone, street_address, apartment, city, state_code, postal_code, country",
+        "full_name, dob, sex, email, street_address, apartment, city, state_code, postal_code, country",
       )
       .eq("id", req.user_id)
       .maybeSingle(),
@@ -160,16 +177,26 @@ export async function submitRequestToLifeFile(
     );
   }
 
+  const { readLifeFileContactPhone } = await import("@/lib/settings.functions");
+  const contactPhone = await readLifeFileContactPhone(supabaseAdmin);
+  if (!contactPhone) {
+    throw new Error(
+      "Set the pharmacy contact phone in Admin → Settings before sending to the pharmacy.",
+    );
+  }
+
+  await claimLifeFileSend(supabaseAdmin, req.id);
+
   try {
     const lifeFileResponse = await createLifeFileOrder({
       requestId: req.id,
       config: routing.config,
+      contactPhone,
       patient: {
         fullName: patient.full_name,
         dob: patient.dob,
         sex: patient.sex,
         email: patient.email,
-        phone: patient.phone,
         streetAddress: patient.street_address,
         apartment: patient.apartment,
         city: patient.city,
@@ -201,7 +228,7 @@ export async function submitRequestToLifeFile(
       );
     }
 
-    await supabaseAdmin
+    const { data: saved } = await supabaseAdmin
       .from("medication_requests")
       .update({
         life_file_status: "submitted",
@@ -211,7 +238,26 @@ export async function submitRequestToLifeFile(
         life_file_submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.id);
+      .eq("id", req.id)
+      .or(`life_file_order_id.is.null,life_file_order_id.eq."${lifeFileOrderId}"`)
+      .select("life_file_order_id")
+      .maybeSingle();
+    if (!saved) {
+      const { data: existing } = await supabaseAdmin
+        .from("medication_requests")
+        .select("life_file_order_id")
+        .eq("id", req.id)
+        .maybeSingle();
+      const kept = existing?.life_file_order_id;
+      if (kept) {
+        return {
+          lifeFileOrderId: kept,
+          pharmacyId: routing.pharmacyId,
+          pharmacyName: routing.pharmacyName,
+        };
+      }
+      throw new Error("Life File returned an order id, but it could not be saved.");
+    }
 
     return {
       lifeFileOrderId,
@@ -228,9 +274,30 @@ export async function submitRequestToLifeFile(
         life_file_pharmacy_id: routing.pharmacyId,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.id);
+      .eq("id", req.id)
+      .eq("life_file_status", "submitting")
+      .is("life_file_order_id", null);
     throw error;
   }
+}
+
+/** Lock the row so a second confirmation cannot create another Life File order. */
+async function claimLifeFileSend(supabaseAdmin: SupabaseClient, requestId: string): Promise<void> {
+  const { data, error } = await supabaseAdmin.rpc("claim_life_file_submission", {
+    p_request_id: requestId,
+  });
+  if (error) {
+    if (/claim_life_file_submission|does not exist|schema cache/i.test(error.message)) {
+      throw new Error(
+        "Pharmacy send is waiting for the latest database update. Apply it, then send again.",
+      );
+    }
+    throw new Error(error.message);
+  }
+  if (data === "claimed") return;
+  if (data === "in_progress") throw new Error(LIFE_FILE_IN_FLIGHT_ERROR);
+  if (data === "missing") throw new Error("Request not found.");
+  throw new Error(LIFE_FILE_ALREADY_SENT_ERROR);
 }
 
 async function resolveLifeFileRouting(

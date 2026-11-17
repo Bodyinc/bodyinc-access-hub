@@ -215,7 +215,9 @@ export function RequestChangeMedicineDialog({
     onSuccess: (res: any) => {
       toastActionWithEmail(
         res?.status === "awaiting_additional_payment"
-          ? "Order updated. The patient was asked to pay the difference. The prescription is sent to the pharmacy after they pay."
+          ? Number(res?.delta_cents) > 0
+            ? "Order updated. The patient was asked to pay the difference. The prescription is sent to the pharmacy after they pay."
+            : "Order updated. The patient was asked to approve or reject this change. It is sent to the pharmacy only after they approve."
           : res?.pharmacy_error
             ? "Order updated. The pharmacy send did not go through, so it stays at Prescription approved."
             : res?.status === "sent_to_pharmacy"
@@ -238,7 +240,7 @@ export function RequestChangeMedicineDialog({
           <DialogTitle>Change medicine</DialogTitle>
           <DialogDescription>
             {hideFinancial
-              ? "Switch this order to a different medicine, or keep the same medicine and change its variant or plan. A higher price is sent to the pharmacy after the patient pays the difference. The same or a lower price is sent now, with no extra step for the patient."
+              ? "Switch this order to a different medicine, or keep the same medicine and change its variant or plan. A higher price waits for the patient to pay or decline. The same or a lower price waits for the patient to approve or reject. The pharmacy send happens only after they pay or approve."
               : "Switch this order to a different medicine, or keep the same medicine and change its variant or plan. A higher price is sent to the pharmacy after the patient pays the difference. The same or a lower price is sent now, and a lower price is credited on the next bill."}
           </DialogDescription>
         </DialogHeader>
@@ -467,10 +469,16 @@ export function RequestChangeMedicineDialog({
             </div>
             <p className="text-xs text-muted-foreground pt-1">
               {diff > 0
-                ? "The patient pays this difference. After that payment, the prescription is sent to the pharmacy. If they do not pay within 48 hours, the previous plan is restored."
+                ? hideFinancial
+                  ? "The patient pays this difference or declines it. After payment, the prescription is sent to the pharmacy. If they decline, or do neither within 7 days, the previous medicine and plan are restored and they are not charged."
+                  : "The patient pays this difference. After that payment, the prescription is sent to the pharmacy."
                 : diff < 0
-                  ? "Nothing else is asked of the patient. The prescription is sent to the pharmacy now, and this credit applies to the next bill."
-                  : "No price change. The prescription is sent to the pharmacy now."}
+                  ? hideFinancial
+                    ? "The patient approves or rejects this change. Approval sends it to the pharmacy and credits this amount on the next bill. A rejection, or no response within 7 days, restores the previous medicine and plan. Nothing is charged."
+                    : "Nothing else is asked of the patient. The prescription is sent to the pharmacy now, and this credit applies to the next bill."
+                  : hideFinancial
+                    ? "The patient approves or rejects this change. Approval sends it to the pharmacy. A rejection, or no response within 7 days, restores the previous medicine and plan."
+                    : "No price change. The prescription is sent to the pharmacy now."}
             </p>
           </div>
         ) : null}
