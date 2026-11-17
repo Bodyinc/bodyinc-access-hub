@@ -455,6 +455,7 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
 
         if (!provider.id || seenPush.has(provider.id)) continue;
         seenPush.add(provider.id);
+        // In-app row only — push is sent once by notify_provider_push_http on INSERT.
         try {
           await supabaseAdmin.from("notifications").insert({
             user_id: provider.id,
@@ -466,12 +467,6 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
           });
         } catch (e) {
           console.warn("[notify] ready-to-claim in-app failed:", e);
-        }
-        try {
-          const { sendPushToUser } = await import("@/lib/push/send");
-          await sendPushToUser(supabaseAdmin, provider.id, { title, body, url: link });
-        } catch (e) {
-          console.warn("[notify] ready-to-claim push failed:", e);
         }
       }
     }

@@ -37,6 +37,7 @@ async function notifyProvider(
   body: string,
 ) {
   if (!providerId) return;
+  // Push is delivered by notify_provider_push_http on this INSERT (do not also send here).
   await supabaseAdmin.from("notifications").insert({
     user_id: providerId,
     type,
@@ -45,16 +46,6 @@ async function notifyProvider(
     link: `/provider/requests/${requestId}`,
     entity_id: requestId,
   });
-  try {
-    const { sendPushToUser } = await import("@/lib/push/send");
-    await sendPushToUser(supabaseAdmin, providerId, {
-      title,
-      body,
-      url: `/provider/requests/${requestId}`,
-    });
-  } catch (e) {
-    console.warn("[plan-change] provider push failed:", e);
-  }
 }
 
 async function applyDeferredBilling(

@@ -2260,7 +2260,6 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
       // Don't block the admin UI on Brevo — send emails / push in the background.
       const medicineId = existing.medicine_id ?? null;
       const status = existing.status;
-      const assignedProviderId = data.providerId!;
       void import("@/lib/email.notifications")
         .then(async ({ notifyPatientRequestEvent, notifyProviderRequestEvent }) => {
           const portalBase = process.env.PATIENT_PORTAL_URL?.replace(/\/$/, "") ?? "";
@@ -2274,7 +2273,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
           });
           await notifyProviderRequestEvent({
             supabaseAdmin,
-            providerId: assignedProviderId,
+            providerId: data.providerId!,
             requestId: data.requestId,
             medicineId,
             template:
@@ -2283,29 +2282,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
           });
         })
         .catch((e) => console.error("[assignRequestProvider] email failed:", e));
-
-      // Direct push backup — DB pg_net webhook can be missing/disabled in production.
-      void (async () => {
-        try {
-          let medName = "a treatment";
-          if (medicineId) {
-            const { data: med } = await supabaseAdmin
-              .from("medicines")
-              .select("name")
-              .eq("id", medicineId)
-              .maybeSingle();
-            medName = (med as { name?: string } | null)?.name?.trim() || medName;
-          }
-          const { sendPushToUser } = await import("@/lib/push/send");
-          await sendPushToUser(supabaseAdmin, assignedProviderId, {
-            title: "New patient assigned",
-            body: `An order for ${medName} has been assigned to you.`,
-            url: `/provider/requests/${data.requestId}`,
-          });
-        } catch (e) {
-          console.error("[assignRequestProvider] push failed:", e);
-        }
-      })();
+      // Push comes from notifications INSERT → pg_net webhook (avoid a second direct send).
     }
     return { ok: true, alreadyAssigned: false };
   });
