@@ -6,7 +6,6 @@ import {
   getPushStatus,
   removePushSubscription,
   savePushSubscription,
-  sendTestPush,
 } from "@/lib/push.functions";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -45,7 +44,6 @@ export function PushNotificationsCard() {
   const fetchStatus = useServerFn(getPushStatus);
   const saveSub = useServerFn(savePushSubscription);
   const removeSub = useServerFn(removePushSubscription);
-  const testPush = useServerFn(sendTestPush);
 
   const [status, setStatus] = useState<Status | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -165,23 +163,6 @@ export function PushNotificationsCard() {
     else await disable();
   }
 
-  async function onTest() {
-    setBusy(true);
-    try {
-      const result = await testPush({ data: undefined as never });
-      if (!result.ok) {
-        toast.error(result.error || "Test push failed.");
-        return;
-      }
-      toast.success("Test notification sent.");
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : "Test push failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const configured = Boolean(status?.configured);
 
   let detail: string;
@@ -213,18 +194,6 @@ export function PushNotificationsCard() {
           aria-label="Toggle push notifications"
         />
       </div>
-      {enabled ? (
-        <div className="mt-3">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onTest()}
-            className="rounded-[6px] border border-[#D5DEDD] bg-white px-3 py-1.5 text-sm font-medium text-[#6A9B9C] transition-colors hover:bg-[#E8EEED] disabled:opacity-60"
-          >
-            Send a test notification
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
