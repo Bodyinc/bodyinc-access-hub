@@ -32,6 +32,13 @@ type Status = {
   vapidPublicKey: string | null;
   subscriptionCount: number;
   endpoints: string[];
+  keys?: {
+    hasPublicKey: boolean;
+    hasPrivateKey: boolean;
+    hasSubject: boolean;
+  };
+  dbOk?: boolean;
+  reason?: string | null;
 };
 
 export function PushNotificationsCard() {
@@ -41,27 +48,36 @@ export function PushNotificationsCard() {
   const testPush = useServerFn(sendTestPush);
 
   const [status, setStatus] = useState<Status | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [supported, setSupported] = useState(true);
 
   async function refresh() {
+    setLoading(true);
+    setLoadError(null);
     const next = (await fetchStatus({ data: undefined as never })) as Status;
     setStatus(next);
     if (!("PushManager" in window) || !("Notification" in window)) {
       setSupported(false);
       setEnabled(false);
+      setLoading(false);
       return next;
     }
     const reg = await getRegistration();
     const local = reg ? await reg.pushManager.getSubscription() : null;
     setEnabled(Boolean(local && next.endpoints.includes(local.endpoint)));
+    setLoading(false);
     return next;
   }
 
   useEffect(() => {
     void refresh().catch((err) => {
+      const message = err instanceof Error ? err.message : String(err);
       console.warn("[push] status load failed:", err);
+      setLoadError(message.slice(0, 240));
+      setLoading(false);
     });
   }, []);
 
@@ -70,7 +86,7 @@ export function PushNotificationsCard() {
     try {
       const current = status ?? (await refresh());
       if (!current?.configured || !current.vapidPublicKey) {
-        toast.error("Push alerts are not configured on the server yet.");
+        toast.error(current?.reason || "Push alerts are not configured on the server yet.");
         return;
       }
       if (!("Notification" in window) || !("PushManager" in window)) {
@@ -167,63 +183,48 @@ export function PushNotificationsCard() {
   }
 
   const configured = Boolean(status?.configured);
-  const showBanner = supported && configured && !enabled;
+
+  let detail: string;
+  if (!supported) {
+    detail = "This browser does not support Web Push.";
+  } else if (loading) {
+    detail = "Checking push setup…";
+  } else if (loadError) {
+    detail = "Could not load push status. Refresh and try again.";
+  } else if (!configured) {
+    detail = "Not configured on the server yet (missing VAPID keys).";
+  } else if (enabled) {
+    detail = "On for this device. Alerts can show even when this tab is closed.";
+  } else {
+    detail = "Off for this device. Turn on to get alerts when this tab is closed.";
+  }
 
   return (
-    <div className="space-y-3">
-      {showBanner ? (
-        <div className="flex flex-col gap-3 rounded-[8px] border border-[#D5DEDD] bg-[#F8FBFA] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-[#3B4759]">Enable lock-screen alerts</p>
-            <p className="text-xs text-[#3B4759]/70">
-              Get notified about assigned patients even when this tab is closed.
-            </p>
-          </div>
+    <div className="rounded-[8px] border border-[#D5DEDD] bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[#3B4759]">Push notifications</p>
+          <p className="text-xs text-[#3B4759]/70">{detail}</p>
+        </div>
+        <Switch
+          checked={enabled}
+          disabled={busy || loading || !supported || !configured}
+          onCheckedChange={(value) => void onToggle(value)}
+          aria-label="Toggle push notifications"
+        />
+      </div>
+      {enabled ? (
+        <div className="mt-3">
           <button
             type="button"
             disabled={busy}
-            onClick={() => void enable()}
-            className="rounded-[6px] bg-[#6A9B9C] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#5A8B8C] disabled:opacity-60"
+            onClick={() => void onTest()}
+            className="rounded-[6px] border border-[#D5DEDD] bg-white px-3 py-1.5 text-sm font-medium text-[#6A9B9C] transition-colors hover:bg-[#E8EEED] disabled:opacity-60"
           >
-            Enable alerts
+            Send a test notification
           </button>
         </div>
       ) : null}
-
-      <div className="rounded-[8px] border border-[#D5DEDD] bg-white px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-[#3B4759]">Push notifications</p>
-            <p className="text-xs text-[#3B4759]/70">
-              {!supported
-                ? "This browser does not support Web Push."
-                : !configured
-                  ? "Not configured on the server yet (missing VAPID keys)."
-                  : enabled
-                    ? "On for this device."
-                    : "Off for this device."}
-            </p>
-          </div>
-          <Switch
-            checked={enabled}
-            disabled={busy || !supported || !configured}
-            onCheckedChange={(value) => void onToggle(value)}
-            aria-label="Toggle push notifications"
-          />
-        </div>
-        {enabled ? (
-          <div className="mt-3">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onTest()}
-              className="rounded-[6px] border border-[#D5DEDD] bg-white px-3 py-1.5 text-sm font-medium text-[#6A9B9C] transition-colors hover:bg-[#E8EEED] disabled:opacity-60"
-            >
-              Send a test notification
-            </button>
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
