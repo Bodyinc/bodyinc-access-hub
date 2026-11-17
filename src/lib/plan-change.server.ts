@@ -45,6 +45,16 @@ async function notifyProvider(
     link: `/provider/requests/${requestId}`,
     entity_id: requestId,
   });
+  try {
+    const { sendPushToUser } = await import("@/lib/push/send");
+    await sendPushToUser(supabaseAdmin, providerId, {
+      title,
+      body,
+      url: `/provider/requests/${requestId}`,
+    });
+  } catch (e) {
+    console.warn("[plan-change] provider push failed:", e);
+  }
 }
 
 async function applyDeferredBilling(
