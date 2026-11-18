@@ -592,6 +592,18 @@ export async function repairOrdersAwaitingIntake(
     supabaseAdmin,
     rows.map((row) => row.session_id).filter(Boolean) as string[],
   );
+  const onboardingRows = rows.filter((row) => !shop.shopIds.has(row.id));
+  const ownedOnboarding = new Map<string, boolean>();
+  await Promise.all(
+    onboardingRows.map(async (row) => {
+      const owned = await onboardingSessionOwned(supabaseAdmin, {
+        sessionId: row.session_id,
+        userId: row.user_id,
+        subscriptionId: row.subscription_id,
+      });
+      ownedOnboarding.set(row.id, owned);
+    }),
+  );
   const now = new Date().toISOString();
   const shopAttach = new Map<string, string[]>();
   const shopSubAttach = new Map<string, string[]>();
@@ -638,8 +650,20 @@ export async function repairOrdersAwaitingIntake(
       continue;
     }
 
-    // Onboarding: only the session on this order counts (same rule as shop).
-    const ready = Boolean(row.session_id && filledSessions.has(row.session_id));
+    // Onboarding: only this signup's own session counts (same rule as shop).
+    const owned = ownedOnboarding.get(row.id) ?? false;
+    const ready = Boolean(row.session_id && filledSessions.has(row.session_id) && owned);
+    if (row.session_id && !owned) {
+      const ids = shopDetach.get(row.session_id) ?? [];
+      ids.push(row.id);
+      shopDetach.set(row.session_id, ids);
+      if (row.subscription_id) {
+        const subs = shopSubDetach.get(row.session_id) ?? [];
+        subs.push(row.subscription_id);
+        shopSubDetach.set(row.session_id, subs);
+      }
+      row.session_id = null;
+    }
     if (row.provider_id && row.status && WAITING_FOR_INTAKE.has(row.status) && !ready) {
       row.provider_id = null;
       clearIds.push(row.id);
@@ -696,12 +720,53 @@ export async function repairOrdersAwaitingIntake(
   }
 }
 
+/**
+ * True when the session on this order is this signup's own finished form —
+ * not an older subscription's intake copied onto a later onboarding order.
+ */
+export async function onboardingSessionOwned(
+  supabaseAdmin: any,
+  opts: {
+    sessionId?: string | null;
+    userId?: string | null;
+    subscriptionId?: string | null;
+  },
+): Promise<boolean> {
+  const sessionId = opts.sessionId ?? null;
+  if (!sessionId) return false;
+  if (!(await sessionHasIntake(supabaseAdmin, sessionId))) return false;
+  if (!opts.userId || !opts.subscriptionId) return true;
+
+  const { data: sub, error: subErr } = await supabaseAdmin
+    .from("subscriptions")
+    .select("id, created_at")
+    .eq("id", opts.subscriptionId)
+    .maybeSingle();
+  if (subErr) throw new Error(subErr.message);
+  if (!sub?.created_at) return true;
+
+  const { data: older, error } = await supabaseAdmin
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", opts.userId)
+    .eq("session_id", sessionId)
+    .neq("id", opts.subscriptionId)
+    .lt("created_at", sub.created_at)
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return !(older && older.length);
+}
+
 /** True when this order's linked intake session has answers (never borrows an older signup). */
 export async function orderHasIntake(
   supabaseAdmin: any,
   sessionId: string | null | undefined,
-  _userId?: string | null | undefined,
+  userId?: string | null | undefined,
+  subscriptionId?: string | null | undefined,
 ): Promise<boolean> {
+  if (subscriptionId || userId) {
+    return onboardingSessionOwned(supabaseAdmin, { sessionId, userId, subscriptionId });
+  }
   return sessionHasIntake(supabaseAdmin, sessionId);
 }
 
@@ -709,9 +774,15 @@ export async function orderHasIntake(
 export async function intakeSessionForOrder(
   supabaseAdmin: any,
   sessionId: string | null | undefined,
-  _userId?: string | null | undefined,
+  userId?: string | null | undefined,
+  subscriptionId?: string | null | undefined,
 ): Promise<string | null> {
-  if (sessionId && (await sessionHasIntake(supabaseAdmin, sessionId))) return sessionId;
+  if (
+    sessionId &&
+    (await orderHasIntake(supabaseAdmin, sessionId, userId, subscriptionId))
+  ) {
+    return sessionId;
+  }
   return null;
 }
 
