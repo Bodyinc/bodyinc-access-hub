@@ -200,7 +200,9 @@ export async function sendScheduledReminders(
   lastSweep = Date.now();
   try {
     const { expireOverduePlanChanges } = await import("@/lib/plan-change.server");
+    const { notifyProvidersPatientReadyToClaim } = await import("@/lib/email.notifications");
     await expireOverduePlanChanges(supabaseAdmin);
+    await notifyProvidersPatientReadyToClaim(supabaseAdmin);
     const now = Date.now();
     await remindAbandonedOnboarding(supabaseAdmin, now);
     await remindVisitsTomorrow(supabaseAdmin, now);

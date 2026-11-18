@@ -5,7 +5,6 @@ import { assertProvider } from "@/lib/provider-guard";
 import { ageFromDob, bmiFrom } from "@/lib/format";
 import { PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 import {
-  completedIntakeUserIds,
   filledSessionIdSet,
   intakeSessionForOrder,
   loadShopIntakeState,
@@ -95,9 +94,8 @@ export const providerDashboard = createServerFn({ method: "POST" })
     startOfDay.setHours(0, 0, 0, 0);
     const sessionIds = list.map((row) => row.session_id).filter(Boolean);
     const userIds = list.map((row) => row.user_id).filter(Boolean);
-    const [filledSessions, completedUsers, shopIntake] = await Promise.all([
+    const [filledSessions, shopIntake] = await Promise.all([
       filledSessionIdSet(supabaseAdmin, sessionIds),
-      completedIntakeUserIds(supabaseAdmin, userIds),
       loadShopIntakeState(
         supabaseAdmin,
         list.map((row) => row.id),
@@ -106,8 +104,7 @@ export const providerDashboard = createServerFn({ method: "POST" })
     const intakeReady = (row: any) =>
       shopIntake.shopIds.has(row.id)
         ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-        : Boolean(row.session_id && filledSessions.has(row.session_id)) ||
-          Boolean(row.user_id && completedUsers.has(row.user_id));
+        : Boolean(row.session_id && filledSessions.has(row.session_id));
     const hiddenUntilIntake = new Set([
       "payment_completed",
       "provider_assigned",
@@ -201,7 +198,7 @@ async function loadClaimable(
   const sessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, completedUsers, openChat, shopIds, shopIntake] =
+  const [{ data: profiles }, { data: sessions }, { data: meds }, filledSessions, openChat, shopIds, shopIntake] =
     await Promise.all([
     userIds.length
       ? supabaseAdmin.from("profiles").select("id, full_name, state_code, dob").in("id", userIds)
@@ -216,7 +213,6 @@ async function loadClaimable(
       ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
       : Promise.resolve({ data: [] as any[] }),
     filledSessionIdSet(supabaseAdmin, sessionIds),
-    completedIntakeUserIds(supabaseAdmin, userIds),
     userIdsInOpenChat(supabaseAdmin, userIds),
     shopCheckoutRequestIdSet(supabaseAdmin, list),
     loadShopIntakeState(
@@ -236,10 +232,7 @@ async function loadClaimable(
       const state = (p?.state_code ?? sess?.state_code ?? null) as string | null;
       const intakeFilled = shopIntake.shopIds.has(r.id)
         ? shopIntakeReady(shopIntake.byRequest.get(r.id))
-        : Boolean(
-            (r.session_id && filledSessions.has(r.session_id)) ||
-              (r.user_id && completedUsers.has(r.user_id)),
-          );
+        : Boolean(r.session_id && filledSessions.has(r.session_id));
       return {
         id: r.id,
         user_id: r.user_id ?? null,
@@ -347,9 +340,8 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
     await repairOrdersAwaitingIntake(supabaseAdmin, pending);
     const sessionIds = pending.map((row) => row.session_id).filter(Boolean) as string[];
     const userIds = pending.map((row) => row.user_id).filter(Boolean) as string[];
-    const [filledSessions, completedUsers, shopIntake] = await Promise.all([
+    const [filledSessions, shopIntake] = await Promise.all([
       filledSessionIdSet(supabaseAdmin, sessionIds),
-      completedIntakeUserIds(supabaseAdmin, userIds),
       loadShopIntakeState(
         supabaseAdmin,
         pending.map((row) => row.id),
@@ -358,8 +350,7 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
     const requests = pending.filter((row) =>
       shopIntake.shopIds.has(row.id)
         ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-        : Boolean(row.session_id && filledSessions.has(row.session_id)) ||
-          Boolean(row.user_id && completedUsers.has(row.user_id)),
+        : Boolean(row.session_id && filledSessions.has(row.session_id)),
     ).length;
     return { requests, queue };
   });
@@ -999,7 +990,7 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
   const allSessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
-  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }, filledSessions, completedUsers, shopIntake] =
+  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }, filledSessions, shopIntake] =
     await Promise.all([
       userIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, dob").in("id", userIds)
@@ -1021,7 +1012,6 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
             .order("started_at", { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
       filledSessionIdSet(supabaseAdmin, allSessionIds),
-      completedIntakeUserIds(supabaseAdmin, userIds),
       loadShopIntakeState(
         supabaseAdmin,
         list.map((row) => row.id),
@@ -1032,10 +1022,7 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
     if (shopIntake.shopIds.has(r.id)) {
       return shopIntakeReady(shopIntake.byRequest.get(r.id));
     }
-    return (
-      Boolean(r.session_id && filledSessions.has(r.session_id)) ||
-      Boolean(r.user_id && completedUsers.has(r.user_id))
-    );
+    return Boolean(r.session_id && filledSessions.has(r.session_id));
   });
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
