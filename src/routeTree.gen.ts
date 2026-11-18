@@ -47,6 +47,7 @@ import { Route as ApiInternalAdditionalPaymentPaidRouteImport } from './routes/a
 import { Route as ApiInternalNewFeedbackRouteImport } from './routes/api.internal.new-feedback'
 import { Route as ApiInternalNotificationPushRouteImport } from './routes/api.internal.notification-push'
 import { Route as ApiInternalPlanChangeAcceptedRouteImport } from './routes/api.internal.plan-change-accepted'
+import { Route as ApiInternalReadyToClaimRouteImport } from './routes/api.internal.ready-to-claim'
 import { Route as ApiInternalRemindersRouteImport } from './routes/api.internal.reminders'
 import { Route as ApiLifefileDataPushRouteImport } from './routes/api.lifefile.data-push'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
@@ -302,6 +303,11 @@ const ApiInternalPlanChangeAcceptedRoute =
     path: '/api/internal/plan-change-accepted',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalReadyToClaimRoute = ApiInternalReadyToClaimRouteImport.update({
+  id: '/api/internal/ready-to-claim',
+  path: '/api/internal/ready-to-claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalRemindersRoute = ApiInternalRemindersRouteImport.update({
   id: '/api/internal/reminders',
   path: '/api/internal/reminders',
@@ -582,6 +588,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
   '/api/internal/notification-push': typeof ApiInternalNotificationPushRoute
   '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
+  '/api/internal/ready-to-claim': typeof ApiInternalReadyToClaimRoute
   '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -649,6 +656,7 @@ export interface FileRoutesByTo {
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
   '/api/internal/notification-push': typeof ApiInternalNotificationPushRoute
   '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
+  '/api/internal/ready-to-claim': typeof ApiInternalReadyToClaimRoute
   '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -731,6 +739,7 @@ export interface FileRoutesById {
   '/api/internal/new-feedback': typeof ApiInternalNewFeedbackRoute
   '/api/internal/notification-push': typeof ApiInternalNotificationPushRoute
   '/api/internal/plan-change-accepted': typeof ApiInternalPlanChangeAcceptedRoute
+  '/api/internal/ready-to-claim': typeof ApiInternalReadyToClaimRoute
   '/api/internal/reminders': typeof ApiInternalRemindersRoute
   '/api/lifefile/data-push': typeof ApiLifefileDataPushRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -813,6 +822,7 @@ export interface FileRouteTypes {
     | '/api/internal/new-feedback'
     | '/api/internal/notification-push'
     | '/api/internal/plan-change-accepted'
+    | '/api/internal/ready-to-claim'
     | '/api/internal/reminders'
     | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
@@ -880,6 +890,7 @@ export interface FileRouteTypes {
     | '/api/internal/new-feedback'
     | '/api/internal/notification-push'
     | '/api/internal/plan-change-accepted'
+    | '/api/internal/ready-to-claim'
     | '/api/internal/reminders'
     | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
@@ -961,6 +972,7 @@ export interface FileRouteTypes {
     | '/api/internal/new-feedback'
     | '/api/internal/notification-push'
     | '/api/internal/plan-change-accepted'
+    | '/api/internal/ready-to-claim'
     | '/api/internal/reminders'
     | '/api/lifefile/data-push'
     | '/api/stripe/webhook'
@@ -1020,6 +1032,7 @@ export interface RootRouteChildren {
   ApiInternalNewFeedbackRoute: typeof ApiInternalNewFeedbackRoute
   ApiInternalNotificationPushRoute: typeof ApiInternalNotificationPushRoute
   ApiInternalPlanChangeAcceptedRoute: typeof ApiInternalPlanChangeAcceptedRoute
+  ApiInternalReadyToClaimRoute: typeof ApiInternalReadyToClaimRoute
   ApiInternalRemindersRoute: typeof ApiInternalRemindersRoute
   ApiLifefileDataPushRoute: typeof ApiLifefileDataPushRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -1291,6 +1304,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/plan-change-accepted'
       fullPath: '/api/internal/plan-change-accepted'
       preLoaderRoute: typeof ApiInternalPlanChangeAcceptedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/ready-to-claim': {
+      id: '/api/internal/ready-to-claim'
+      path: '/api/internal/ready-to-claim'
+      fullPath: '/api/internal/ready-to-claim'
+      preLoaderRoute: typeof ApiInternalReadyToClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/reminders': {
@@ -1951,6 +1971,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalNewFeedbackRoute: ApiInternalNewFeedbackRoute,
   ApiInternalNotificationPushRoute: ApiInternalNotificationPushRoute,
   ApiInternalPlanChangeAcceptedRoute: ApiInternalPlanChangeAcceptedRoute,
+  ApiInternalReadyToClaimRoute: ApiInternalReadyToClaimRoute,
   ApiInternalRemindersRoute: ApiInternalRemindersRoute,
   ApiLifefileDataPushRoute: ApiLifefileDataPushRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,

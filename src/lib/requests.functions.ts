@@ -6,7 +6,6 @@ import { z } from "zod";
 import { assertReviewer, assertAdmin } from "@/lib/admin-guard";
 import { clinicalEventNote, PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 import {
-  completedIntakeUserIds,
   filledSessionIdSet,
   intakeSessionForOrder,
   loadClinicalIntake,
@@ -579,9 +578,8 @@ export const listRequests = createServerFn({ method: "POST" })
     if (role === "provider") {
       const sessionIds = list.map((r: any) => r.session_id).filter(Boolean);
       const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
-      const [filledSessions, completedUsers, consultRes] = await Promise.all([
+      const [filledSessions, consultRes] = await Promise.all([
         filledSessionIdSet(supabaseAdmin, sessionIds),
-        completedIntakeUserIds(supabaseAdmin, userIds),
         userIds.length
           ? supabaseAdmin
               .from("patient_consultations")
@@ -609,10 +607,7 @@ export const listRequests = createServerFn({ method: "POST" })
           ...row,
           intake_filled: shopIntake.shopIds.has(row.id)
             ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-            : Boolean(
-                (source?.session_id && filledSessions.has(source.session_id)) ||
-                  (source?.user_id && completedUsers.has(source.user_id)),
-              ),
+            : Boolean(source?.session_id && filledSessions.has(source.session_id)),
           consultation_status,
           patient_waiting: consultation_status === "In progress",
         };

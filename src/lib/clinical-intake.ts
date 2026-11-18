@@ -210,7 +210,6 @@ function laterShopSession(current: ShopSessionRow | null, next: ShopSessionRow):
 /**
  * Initial shop orders can be claimed only after the intake for that purchase is finished.
  * A form the patient completed for an earlier medicine does not count.
- * Other orders are unchanged and still use the patient-level intake.
  */
 export async function loadShopIntakeState(
   supabaseAdmin: any,
@@ -570,9 +569,8 @@ export async function withShopConsultationIntake(
 }
 
 /**
- * Write the patient's finished intake onto orders that were saved without it.
- * Orders that still have no finished intake are unassigned so they stay off a provider.
- * Shop orders wait for the intake from that purchase, not a form from an earlier medicine.
+ * Keep each order on its own finished intake. Shop and onboarding both refuse an older
+ * form from another signup/purchase. Orders still waiting on intake are unassigned.
  */
 export async function repairOrdersAwaitingIntake(
   supabaseAdmin: any,
@@ -590,17 +588,11 @@ export async function repairOrdersAwaitingIntake(
     supabaseAdmin,
     rows.map((row) => row.id),
   );
-  const byUser = await completedIntakeSessionByUser(
-    supabaseAdmin,
-    rows.map((row) => row.user_id).filter(Boolean) as string[],
-  );
   const filledSessions = await filledSessionIdSet(
     supabaseAdmin,
     rows.map((row) => row.session_id).filter(Boolean) as string[],
   );
   const now = new Date().toISOString();
-  const linkGroups = new Map<string, string[]>();
-  const subscriptionGroups = new Map<string, string[]>();
   const shopAttach = new Map<string, string[]>();
   const shopSubAttach = new Map<string, string[]>();
   const shopDetach = new Map<string, string[]>();
@@ -646,20 +638,8 @@ export async function repairOrdersAwaitingIntake(
       continue;
     }
 
-    const ownSessionFilled = Boolean(row.session_id && filledSessions.has(row.session_id));
-    const recovered = !row.session_id && row.user_id ? byUser.get(row.user_id) : undefined;
-    if (recovered) {
-      row.session_id = recovered;
-      const ids = linkGroups.get(recovered) ?? [];
-      ids.push(row.id);
-      linkGroups.set(recovered, ids);
-      if (row.subscription_id) {
-        const subs = subscriptionGroups.get(recovered) ?? [];
-        subs.push(row.subscription_id);
-        subscriptionGroups.set(recovered, subs);
-      }
-    }
-    const ready = ownSessionFilled || Boolean(recovered) || Boolean(row.user_id && byUser.has(row.user_id));
+    // Onboarding: only the session on this order counts (same rule as shop).
+    const ready = Boolean(row.session_id && filledSessions.has(row.session_id));
     if (row.provider_id && row.status && WAITING_FOR_INTAKE.has(row.status) && !ready) {
       row.provider_id = null;
       clearIds.push(row.id);
@@ -696,22 +676,6 @@ export async function repairOrdersAwaitingIntake(
       .eq("session_id", sessionId);
     if (error) console.warn("[intake] clear borrowed shop subscription session failed:", error.message);
   }
-  for (const [sessionId, ids] of linkGroups) {
-    const { error } = await supabaseAdmin
-      .from("medication_requests")
-      .update({ session_id: sessionId, updated_at: now })
-      .in("id", ids)
-      .is("session_id", null);
-    if (error) console.warn("[intake] save session on order failed:", error.message);
-  }
-  for (const [sessionId, ids] of subscriptionGroups) {
-    const { error } = await supabaseAdmin
-      .from("subscriptions")
-      .update({ session_id: sessionId })
-      .in("id", Array.from(new Set(ids)))
-      .is("session_id", null);
-    if (error) console.warn("[intake] save session on subscription failed:", error.message);
-  }
   if (clearIds.length) {
     const { error } = await supabaseAdmin
       .from("medication_requests")
@@ -732,27 +696,23 @@ export async function repairOrdersAwaitingIntake(
   }
 }
 
+/** True when this order's linked intake session has answers (never borrows an older signup). */
 export async function orderHasIntake(
   supabaseAdmin: any,
   sessionId: string | null | undefined,
-  userId: string | null | undefined,
+  _userId?: string | null | undefined,
 ): Promise<boolean> {
-  if (await sessionHasIntake(supabaseAdmin, sessionId)) return true;
-  if (!userId) return false;
-  const users = await completedIntakeUserIds(supabaseAdmin, [userId]);
-  return users.has(userId);
+  return sessionHasIntake(supabaseAdmin, sessionId);
 }
 
-/** Session that holds the patient's finished answers, including a later order that forgot the link. */
+/** Session linked to this order only — do not fall back to an earlier patient intake. */
 export async function intakeSessionForOrder(
   supabaseAdmin: any,
   sessionId: string | null | undefined,
-  userId: string | null | undefined,
+  _userId?: string | null | undefined,
 ): Promise<string | null> {
   if (sessionId && (await sessionHasIntake(supabaseAdmin, sessionId))) return sessionId;
-  if (!userId) return sessionId ?? null;
-  const sessions = await completedIntakeSessionByUser(supabaseAdmin, [userId]);
-  return sessions.get(userId) ?? sessionId ?? null;
+  return null;
 }
 
 export async function loadClinicalIntake(

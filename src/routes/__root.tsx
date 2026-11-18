@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, lazy, Suspense, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -21,10 +21,7 @@ import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 import { supabase } from "@/integrations/supabase/client";
 import { registerServiceWorker } from "@/lib/register-pwa";
-
-const LazyToaster = lazy(() =>
-  import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })),
-);
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -198,9 +195,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <Suspense fallback={null}>
-        <LazyToaster />
-      </Suspense>
+      {/* Eager mount: lazy Toaster missed auth toasts fired before the chunk loaded. */}
+      <Toaster richColors closeButton position="top-center" />
     </QueryClientProvider>
   );
 }
