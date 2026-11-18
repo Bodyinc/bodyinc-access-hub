@@ -678,7 +678,12 @@ export const getRequest = createServerFn({ method: "POST" })
     if (role === "provider" && !req.provider_id) {
       const filled = fromShop
         ? shopIntakeReady(shopDecision)
-        : await orderHasIntake(supabaseAdmin, req.session_id, req.user_id);
+        : await orderHasIntake(
+            supabaseAdmin,
+            req.session_id,
+            req.user_id,
+            req.subscription_id,
+          );
       const inChat = req.user_id
         ? (await userIdsInOpenChat(supabaseAdmin, [req.user_id])).has(req.user_id)
         : false;
@@ -703,7 +708,12 @@ export const getRequest = createServerFn({ method: "POST" })
     // A shop order shows only the form for this purchase. An earlier intake stays off this screen.
     const intakeSessionId = fromShop
       ? (shopDecision?.finishedSessionId ?? null)
-      : await intakeSessionForOrder(supabaseAdmin, req.session_id, req.user_id);
+      : await intakeSessionForOrder(
+          supabaseAdmin,
+          req.session_id,
+          req.user_id,
+          req.subscription_id,
+        );
     if (fromShop && req.session_id && req.session_id !== intakeSessionId) {
       req.session_id = shopDecision?.ownSessionId ?? null;
     }
@@ -914,7 +924,12 @@ export const approveRequest = createServerFn({ method: "POST" })
     if (
       shopIntake.shopIds.has(req.id)
         ? !shopIntakeReady(shopIntake.byRequest.get(req.id))
-        : !(await orderHasIntake(supabaseAdmin, req.session_id, req.user_id))
+        : !(await orderHasIntake(
+            supabaseAdmin,
+            req.session_id,
+            req.user_id,
+            req.subscription_id,
+          ))
     ) {
       throw new Error("intake form missing");
     }
@@ -1972,7 +1987,14 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
               .eq("id", existing.subscription_id);
           }
         }
-      } else if (!(await orderHasIntake(supabaseAdmin, existing.session_id, existing.user_id))) {
+      } else if (
+        !(await orderHasIntake(
+          supabaseAdmin,
+          existing.session_id,
+          existing.user_id,
+          existing.subscription_id,
+        ))
+      ) {
         throw new Error(
           "This patient has not finished the intake form, so the order cannot be assigned yet.",
         );
@@ -1981,6 +2003,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
           supabaseAdmin,
           existing.session_id,
           existing.user_id,
+          existing.subscription_id,
         );
         if (sessionId) {
           existing.session_id = sessionId;

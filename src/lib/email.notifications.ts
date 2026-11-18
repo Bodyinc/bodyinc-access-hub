@@ -304,7 +304,7 @@ const CLAIM_READY_STATUSES = [
 /** One email per new unassigned patient, to every active provider licensed in that state. */
 export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
   try {
-    const { filledSessionIdSet, loadShopIntakeState, shopIntakeReady } = await import(
+    const { loadShopIntakeState, orderHasIntake, shopIntakeReady } = await import(
       "@/lib/clinical-intake"
     );
     const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
@@ -319,12 +319,8 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
       .limit(40);
     if (error || !rows?.length) return;
 
-    const sessionIds = Array.from(
-      new Set(rows.map((r: any) => r.session_id).filter(Boolean)),
-    ) as string[];
     const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean))) as string[];
-    const [filled, inChat, shopIds, shopIntake] = await Promise.all([
-      filledSessionIdSet(supabaseAdmin, sessionIds),
+    const [inChat, shopIds, shopIntake] = await Promise.all([
       userIdsInOpenChat(supabaseAdmin, userIds),
       shopCheckoutRequestIdSet(supabaseAdmin, rows as any[]),
       loadShopIntakeState(
@@ -332,12 +328,19 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
         rows.map((row: { id: string }) => row.id),
       ),
     ]);
+    const intakeFlags = await Promise.all(
+      (rows as any[]).map(async (r) => {
+        const fromShop = shopIds.has(r.id);
+        const intakeReady = fromShop
+          ? shopIntakeReady(shopIntake.byRequest.get(r.id))
+          : await orderHasIntake(supabaseAdmin, r.session_id, r.user_id, r.subscription_id);
+        return { id: r.id, fromShop, intakeReady };
+      }),
+    );
+    const intakeById = new Map(intakeFlags.map((row) => [row.id, row]));
     let ready = rows.filter((r: any) => {
-      const fromShop = shopIds.has(r.id);
-      const intakeReady = fromShop
-        ? shopIntakeReady(shopIntake.byRequest.get(r.id))
-        : Boolean(r.session_id && filled.has(r.session_id));
-      return intakeReady && r.user_id && (inChat.has(r.user_id) || fromShop);
+      const flag = intakeById.get(r.id);
+      return Boolean(flag?.intakeReady && r.user_id && (inChat.has(r.user_id) || flag.fromShop));
     });
     const groupIds = Array.from(new Set(ready.map((r: any) => r.order_group_id).filter(Boolean)));
     if (groupIds.length) {

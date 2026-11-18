@@ -417,13 +417,21 @@ export const claimRequest = createServerFn({ method: "POST" })
             .eq("id", current.subscription_id);
         }
       }
-    } else if (!(await orderHasIntake(supabaseAdmin, current?.session_id, current?.user_id))) {
+    } else if (
+      !(await orderHasIntake(
+        supabaseAdmin,
+        current?.session_id,
+        current?.user_id,
+        current?.subscription_id,
+      ))
+    ) {
       throw new Error("intake form missing");
     } else if (current && !current.session_id) {
       const sessionId = await intakeSessionForOrder(
         supabaseAdmin,
         current.session_id,
         current.user_id,
+        current.subscription_id,
       );
       if (sessionId) {
         current.session_id = sessionId;
