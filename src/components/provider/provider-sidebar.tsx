@@ -21,6 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const items = [
@@ -48,6 +49,7 @@ const navIdle = "bg-transparent hover:!bg-[#F2F7F6]/70";
 
 export function ProviderSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isMobile, setOpenMobile } = useSidebar();
   const router = useRouter();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -79,6 +81,10 @@ export function ProviderSidebar() {
 
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
+
+  function closeMobileNav() {
+    if (isMobile) setOpenMobile(false);
+  }
 
   async function handleLogout() {
     logoutQuickbloxSdk();
@@ -149,7 +155,7 @@ export function ProviderSidebar() {
                       tooltip={badge ? `${item.title} (${badge})` : item.title}
                       className={`${navItemBase} ${active ? navActive : navIdle} ${badge ? "pr-9" : ""}`}
                     >
-                      <Link to={item.url} preload="intent">
+                      <Link to={item.url} preload="intent" onClick={closeMobileNav}>
                         <span className="truncate">{item.title}</span>
                         {badge && (
                           <>
@@ -173,7 +179,10 @@ export function ProviderSidebar() {
             <SidebarMenu className="gap-0.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={handleLogout}
+                  onClick={() => {
+                    closeMobileNav();
+                    void handleLogout();
+                  }}
                   className={`${navItemBase} cursor-pointer ${navIdle}`}
                 >
                   <span>Logout</span>

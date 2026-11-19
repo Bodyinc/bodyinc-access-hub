@@ -318,10 +318,7 @@ export async function loadShopIntakeState(
     sessionsByUser.set(session.claimed_by_user_id, list);
   }
 
-  const answered = await filledSessionIdSet(
-    supabaseAdmin,
-    Array.from(sessionById.keys()),
-  );
+  const answered = new Set<string>();
   const responseTimes = new Map<string, string>();
   const sessionIds = Array.from(sessionById.keys());
   if (sessionIds.length) {
@@ -331,6 +328,7 @@ export async function loadShopIntakeState(
       .in("session_id", sessionIds);
     if (responseError) throw new Error(responseError.message);
     for (const row of (responses ?? []) as { session_id: string; created_at: string | null }[]) {
+      answered.add(row.session_id);
       if (!row.created_at) continue;
       const prev = responseTimes.get(row.session_id);
       if (!prev || row.created_at > prev) responseTimes.set(row.session_id, row.created_at);
@@ -572,6 +570,133 @@ export async function withShopConsultationIntake(
  * Keep each order on its own finished intake. Shop and onboarding both refuse an older
  * form from another signup/purchase. Orders still waiting on intake are unassigned.
  */
+type OwnershipRow = {
+  id: string;
+  session_id?: string | null;
+  user_id?: string | null;
+  subscription_id?: string | null;
+};
+
+async function subscriptionsSharingSessions(
+  supabaseAdmin: any,
+  userIds: string[],
+  sessionIds: string[],
+): Promise<{ id: string; user_id: string; session_id: string; created_at: string }[]> {
+  const users = Array.from(new Set(userIds.filter(Boolean)));
+  const sessions = Array.from(new Set(sessionIds.filter(Boolean)));
+  const out: { id: string; user_id: string; session_id: string; created_at: string }[] = [];
+  for (let i = 0; i < users.length; i += 50) {
+    const userChunk = users.slice(i, i + 50);
+    for (let j = 0; j < sessions.length; j += 50) {
+      const sessionChunk = sessions.slice(j, j + 50);
+      let from = 0;
+      for (;;) {
+        const { data, error } = await supabaseAdmin
+          .from("subscriptions")
+          .select("id, user_id, session_id, created_at")
+          .in("user_id", userChunk)
+          .in("session_id", sessionChunk)
+          .range(from, from + 999);
+        if (error) throw new Error(error.message);
+        const page = (data ?? []) as {
+          id: string;
+          user_id: string;
+          session_id: string;
+          created_at: string;
+        }[];
+        out.push(...page);
+        if (page.length < 1000) break;
+        from += 1000;
+      }
+    }
+  }
+  return out;
+}
+
+async function rowsIn<T>(
+  supabaseAdmin: any,
+  table: string,
+  column: string,
+  ids: string[],
+  select: string,
+): Promise<T[]> {
+  const unique = Array.from(new Set(ids.filter(Boolean)));
+  const out: T[] = [];
+  for (let i = 0; i < unique.length; i += 100) {
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .select(select)
+      .in(column, unique.slice(i, i + 100));
+    if (error) throw new Error(error.message);
+    out.push(...((data ?? []) as T[]));
+  }
+  return out;
+}
+
+/**
+ * Same answer as calling onboardingSessionOwned once per order, in a handful of queries
+ * instead of two or three database round trips per order.
+ */
+export async function onboardingOwnershipByRequest(
+  supabaseAdmin: any,
+  rows: OwnershipRow[],
+  filledSessions?: Set<string>,
+): Promise<Map<string, boolean>> {
+  const result = new Map<string, boolean>();
+  const sessionIds = rows.map((row) => row.session_id).filter(Boolean) as string[];
+  const filled = filledSessions ?? (await filledSessionIdSet(supabaseAdmin, sessionIds));
+  const needOlder: OwnershipRow[] = [];
+
+  for (const row of rows) {
+    const sessionId = row.session_id ?? null;
+    if (!sessionId || !filled.has(sessionId)) {
+      result.set(row.id, false);
+      continue;
+    }
+    if (!row.user_id || !row.subscription_id) {
+      result.set(row.id, true);
+      continue;
+    }
+    needOlder.push(row);
+  }
+  if (needOlder.length === 0) return result;
+
+  const subIds = needOlder.map((row) => row.subscription_id).filter(Boolean) as string[];
+  const userIds = Array.from(new Set(needOlder.map((row) => row.user_id).filter(Boolean))) as string[];
+  const ownedSessionIds = Array.from(
+    new Set(needOlder.map((row) => row.session_id).filter(Boolean)),
+  ) as string[];
+  const [subs, candidates] = await Promise.all([
+    rowsIn<{ id: string; created_at: string | null }>(
+      supabaseAdmin,
+      "subscriptions",
+      "id",
+      subIds,
+      "id, created_at",
+    ),
+    subscriptionsSharingSessions(supabaseAdmin, userIds, ownedSessionIds),
+  ]);
+  const allowedSessions = new Set(ownedSessionIds);
+  const createdAt = new Map(subs.map((row) => [row.id, row.created_at]));
+
+  for (const row of needOlder) {
+    const at = createdAt.get(row.subscription_id!);
+    const atMs = at ? Date.parse(at) : Number.NaN;
+    if (!at || Number.isNaN(atMs)) {
+      result.set(row.id, true);
+      continue;
+    }
+    const borrowed = candidates.some((other) => {
+      if (other.user_id !== row.user_id || other.session_id !== row.session_id) return false;
+      if (!allowedSessions.has(other.session_id) || other.id === row.subscription_id) return false;
+      const otherMs = Date.parse(other.created_at);
+      return !Number.isNaN(otherMs) && otherMs < atMs;
+    });
+    result.set(row.id, !borrowed);
+  }
+  return result;
+}
+
 export async function repairOrdersAwaitingIntake(
   supabaseAdmin: any,
   rows: {
@@ -584,25 +709,19 @@ export async function repairOrdersAwaitingIntake(
   }[],
 ): Promise<void> {
   if (rows.length === 0) return;
-  const shop = await loadShopIntakeState(
-    supabaseAdmin,
-    rows.map((row) => row.id),
-  );
-  const filledSessions = await filledSessionIdSet(
-    supabaseAdmin,
-    rows.map((row) => row.session_id).filter(Boolean) as string[],
-  );
+  const sessionIds = rows.map((row) => row.session_id).filter(Boolean) as string[];
+  const [shop, filledSessions] = await Promise.all([
+    loadShopIntakeState(
+      supabaseAdmin,
+      rows.map((row) => row.id),
+    ),
+    filledSessionIdSet(supabaseAdmin, sessionIds),
+  ]);
   const onboardingRows = rows.filter((row) => !shop.shopIds.has(row.id));
-  const ownedOnboarding = new Map<string, boolean>();
-  await Promise.all(
-    onboardingRows.map(async (row) => {
-      const owned = await onboardingSessionOwned(supabaseAdmin, {
-        sessionId: row.session_id,
-        userId: row.user_id,
-        subscriptionId: row.subscription_id,
-      });
-      ownedOnboarding.set(row.id, owned);
-    }),
+  const ownedOnboarding = await onboardingOwnershipByRequest(
+    supabaseAdmin,
+    onboardingRows,
+    filledSessions,
   );
   const now = new Date().toISOString();
   const shopAttach = new Map<string, string[]>();
@@ -670,36 +789,38 @@ export async function repairOrdersAwaitingIntake(
     }
   }
 
-  for (const [sessionId, ids] of shopAttach) {
-    const { error } = await supabaseAdmin
-      .from("medication_requests")
-      .update({ session_id: sessionId, updated_at: now })
-      .in("id", ids);
-    if (error) console.warn("[intake] save shop session on order failed:", error.message);
-  }
-  for (const [sessionId, ids] of shopSubAttach) {
-    const { error } = await supabaseAdmin
-      .from("subscriptions")
-      .update({ session_id: sessionId })
-      .in("id", Array.from(new Set(ids)));
-    if (error) console.warn("[intake] save shop session on subscription failed:", error.message);
-  }
-  for (const [sessionId, ids] of shopDetach) {
-    const { error } = await supabaseAdmin
-      .from("medication_requests")
-      .update({ session_id: null, updated_at: now })
-      .in("id", ids)
-      .eq("session_id", sessionId);
-    if (error) console.warn("[intake] clear borrowed shop session failed:", error.message);
-  }
-  for (const [sessionId, ids] of shopSubDetach) {
-    const { error } = await supabaseAdmin
-      .from("subscriptions")
-      .update({ session_id: null })
-      .in("id", Array.from(new Set(ids)))
-      .eq("session_id", sessionId);
-    if (error) console.warn("[intake] clear borrowed shop subscription session failed:", error.message);
-  }
+  await Promise.all([
+    ...Array.from(shopAttach, async ([sessionId, ids]) => {
+      const { error } = await supabaseAdmin
+        .from("medication_requests")
+        .update({ session_id: sessionId, updated_at: now })
+        .in("id", ids);
+      if (error) console.warn("[intake] save shop session on order failed:", error.message);
+    }),
+    ...Array.from(shopSubAttach, async ([sessionId, ids]) => {
+      const { error } = await supabaseAdmin
+        .from("subscriptions")
+        .update({ session_id: sessionId })
+        .in("id", Array.from(new Set(ids)));
+      if (error) console.warn("[intake] save shop session on subscription failed:", error.message);
+    }),
+    ...Array.from(shopDetach, async ([sessionId, ids]) => {
+      const { error } = await supabaseAdmin
+        .from("medication_requests")
+        .update({ session_id: null, updated_at: now })
+        .in("id", ids)
+        .eq("session_id", sessionId);
+      if (error) console.warn("[intake] clear borrowed shop session failed:", error.message);
+    }),
+    ...Array.from(shopSubDetach, async ([sessionId, ids]) => {
+      const { error } = await supabaseAdmin
+        .from("subscriptions")
+        .update({ session_id: null })
+        .in("id", Array.from(new Set(ids)))
+        .eq("session_id", sessionId);
+      if (error) console.warn("[intake] clear borrowed shop subscription session failed:", error.message);
+    }),
+  ]);
   if (clearIds.length) {
     const { error } = await supabaseAdmin
       .from("medication_requests")
@@ -732,29 +853,15 @@ export async function onboardingSessionOwned(
     subscriptionId?: string | null;
   },
 ): Promise<boolean> {
-  const sessionId = opts.sessionId ?? null;
-  if (!sessionId) return false;
-  if (!(await sessionHasIntake(supabaseAdmin, sessionId))) return false;
-  if (!opts.userId || !opts.subscriptionId) return true;
-
-  const { data: sub, error: subErr } = await supabaseAdmin
-    .from("subscriptions")
-    .select("id, created_at")
-    .eq("id", opts.subscriptionId)
-    .maybeSingle();
-  if (subErr) throw new Error(subErr.message);
-  if (!sub?.created_at) return true;
-
-  const { data: older, error } = await supabaseAdmin
-    .from("subscriptions")
-    .select("id")
-    .eq("user_id", opts.userId)
-    .eq("session_id", sessionId)
-    .neq("id", opts.subscriptionId)
-    .lt("created_at", sub.created_at)
-    .limit(1);
-  if (error) throw new Error(error.message);
-  return !(older && older.length);
+  const owned = await onboardingOwnershipByRequest(supabaseAdmin, [
+    {
+      id: "_",
+      session_id: opts.sessionId,
+      user_id: opts.userId,
+      subscription_id: opts.subscriptionId,
+    },
+  ]);
+  return owned.get("_") ?? false;
 }
 
 /** True when this order's linked intake session has answers (never borrows an older signup). */

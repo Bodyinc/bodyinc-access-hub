@@ -176,6 +176,7 @@ export const medicineFormSchema = z.object({
   requires_consultation: z.boolean().default(false),
   requires_followup: z.boolean().default(false),
   show_to_providers: z.boolean().default(false),
+  shop_only: z.boolean().default(false),
   category_ids: z.array(z.string().uuid()).default([]),
 });
 
