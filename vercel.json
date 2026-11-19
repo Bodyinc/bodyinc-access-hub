@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "src/routes/api.internal.ready-to-claim.ts": {
+      "maxDuration": 60
+    }
+  },
   "buildCommand": "npm run build",
   "outputDirectory": ".vercel/output",
   "framework": null,

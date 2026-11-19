@@ -7,10 +7,12 @@ import { PENDING_REQUEST_STATUSES } from "@/lib/request-status";
 import {
   filledSessionIdSet,
   intakeSessionForOrder,
+  intakeIsReady,
   loadShopIntakeState,
   orderHasIntake,
   repairOrdersAwaitingIntake,
   shopIntakeReady,
+  WAITING_FOR_INTAKE,
 } from "@/lib/clinical-intake";
 import {
   CLOSED_ORDER_STATUSES,
@@ -89,22 +91,17 @@ export const providerDashboard = createServerFn({ method: "POST" })
       .limit(1000);
 
     const list = (rows ?? []) as any[];
-    await repairOrdersAwaitingIntake(supabaseAdmin, list);
+    const waiting = list.filter((row) => WAITING_FOR_INTAKE.has(row.status));
+    const repaired = await repairOrdersAwaitingIntake(supabaseAdmin, waiting);
+    const { shop: shopIntake, filledSessions } = repaired;
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const sessionIds = list.map((row) => row.session_id).filter(Boolean);
-    const userIds = list.map((row) => row.user_id).filter(Boolean);
-    const [filledSessions, shopIntake] = await Promise.all([
-      filledSessionIdSet(supabaseAdmin, sessionIds),
-      loadShopIntakeState(
-        supabaseAdmin,
-        list.map((row) => row.id),
-      ),
-    ]);
     const intakeReady = (row: any) =>
-      shopIntake.shopIds.has(row.id)
-        ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-        : Boolean(row.session_id && filledSessions.has(row.session_id));
+      intakeIsReady({
+        fromShop: shopIntake.shopIds.has(row.id),
+        decision: shopIntake.byRequest.get(row.id),
+        onboardingReady: Boolean(row.session_id && filledSessions.has(row.session_id)),
+      });
     const hiddenUntilIntake = new Set([
       "payment_completed",
       "provider_assigned",
@@ -135,14 +132,11 @@ export const providerDashboard = createServerFn({ method: "POST" })
       ),
     };
 
-    const { notifyProvidersPatientReadyToClaim } = await import("@/lib/email.notifications");
     const [claimable, launchpad, meProfile] = await Promise.all([
       countClaimable(supabaseAdmin, me),
       providerLaunchpad(supabaseAdmin, me),
       supabaseAdmin.from("profiles").select("full_name").eq("id", me).maybeSingle(),
-      notifyProvidersPatientReadyToClaim(supabaseAdmin).catch((e) => {
-        console.error("[dashboard] provider claim email failed:", e);
-      }),
+      claimSweepFromDashboard(supabaseAdmin),
     ]);
 
     return {
@@ -152,6 +146,20 @@ export const providerDashboard = createServerFn({ method: "POST" })
       ...launchpad,
     };
   });
+
+let lastDashboardClaimSweep = 0;
+
+/** Backup for the intake webhook. Not on every dashboard refresh. */
+function claimSweepFromDashboard(supabaseAdmin: any): Promise<void> {
+  const now = Date.now();
+  if (now - lastDashboardClaimSweep < 60_000) return Promise.resolve();
+  lastDashboardClaimSweep = now;
+  return import("@/lib/email.notifications")
+    .then(({ notifyProvidersPatientReadyToClaim }) => notifyProvidersPatientReadyToClaim(supabaseAdmin))
+    .catch((e) => {
+      console.error("[dashboard] provider claim email failed:", e);
+    });
+}
 
 async function providerStates(supabaseAdmin: any, me: string): Promise<string[]> {
   const { data } = await supabaseAdmin
@@ -230,9 +238,11 @@ async function loadClaimable(
       const p: any = pMap.get(r.user_id);
       const sess: any = !p ? sMap.get(r.session_id) : null;
       const state = (p?.state_code ?? sess?.state_code ?? null) as string | null;
-      const intakeFilled = shopIntake.shopIds.has(r.id)
-        ? shopIntakeReady(shopIntake.byRequest.get(r.id))
-        : Boolean(r.session_id && filledSessions.has(r.session_id));
+      const intakeFilled = intakeIsReady({
+        fromShop: shopIntake.shopIds.has(r.id),
+        decision: shopIntake.byRequest.get(r.id),
+        onboardingReady: Boolean(r.session_id && filledSessions.has(r.session_id)),
+      });
       return {
         id: r.id,
         user_id: r.user_id ?? null,
@@ -337,20 +347,13 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
       provider_id: string | null;
       status: string | null;
     }[];
-    await repairOrdersAwaitingIntake(supabaseAdmin, pending);
-    const sessionIds = pending.map((row) => row.session_id).filter(Boolean) as string[];
-    const userIds = pending.map((row) => row.user_id).filter(Boolean) as string[];
-    const [filledSessions, shopIntake] = await Promise.all([
-      filledSessionIdSet(supabaseAdmin, sessionIds),
-      loadShopIntakeState(
-        supabaseAdmin,
-        pending.map((row) => row.id),
-      ),
-    ]);
+    const repaired = await repairOrdersAwaitingIntake(supabaseAdmin, pending);
     const requests = pending.filter((row) =>
-      shopIntake.shopIds.has(row.id)
-        ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-        : Boolean(row.session_id && filledSessions.has(row.session_id)),
+      intakeIsReady({
+        fromShop: repaired.shop.shopIds.has(row.id),
+        decision: repaired.shop.byRequest.get(row.id),
+        onboardingReady: Boolean(row.session_id && repaired.filledSessions.has(row.session_id)),
+      }),
     ).length;
     return { requests, queue };
   });
@@ -403,8 +406,8 @@ export const claimRequest = createServerFn({ method: "POST" })
       ? await loadShopIntakeState(supabaseAdmin, [current.id])
       : { shopIds: new Set<string>(), byRequest: new Map() };
     const fromShop = Boolean(current && shopIntake.shopIds.has(current.id));
+    const decision = current ? shopIntake.byRequest.get(current.id) : undefined;
     if (current && fromShop) {
-      const decision = shopIntake.byRequest.get(current.id);
       const finished = decision?.finishedSessionId ?? null;
       if (!shopIntakeReady(decision)) throw new Error("intake form missing");
       if (finished && current.session_id !== finished) {
@@ -418,6 +421,7 @@ export const claimRequest = createServerFn({ method: "POST" })
         }
       }
     } else if (
+      !shopIntakeReady(decision) &&
       !(await orderHasIntake(
         supabaseAdmin,
         current?.session_id,
@@ -426,7 +430,7 @@ export const claimRequest = createServerFn({ method: "POST" })
       ))
     ) {
       throw new Error("intake form missing");
-    } else if (current && !current.session_id) {
+    } else if (current && !current.session_id && !shopIntakeReady(decision)) {
       const sessionId = await intakeSessionForOrder(
         supabaseAdmin,
         current.session_id,
@@ -989,7 +993,9 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
 
   const list = (rows ?? []) as any[];
   if (list.length === 0) return [];
-  await repairOrdersAwaitingIntake(supabaseAdmin, list);
+  const repaired = await repairOrdersAwaitingIntake(supabaseAdmin, list);
+  const shopIntake = repaired.shop;
+  const filledSessions = repaired.filledSessions;
 
   const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
   const sessionIds = Array.from(
@@ -997,8 +1003,7 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
   );
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
 
-  const allSessionIds = Array.from(new Set(list.map((r) => r.session_id).filter(Boolean)));
-  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }, filledSessions, shopIntake] =
+  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }] =
     await Promise.all([
       userIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, dob").in("id", userIds)
@@ -1019,18 +1024,14 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
             .in("user_id", userIds)
             .order("started_at", { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
-      filledSessionIdSet(supabaseAdmin, allSessionIds),
-      loadShopIntakeState(
-        supabaseAdmin,
-        list.map((row) => row.id),
-      ),
     ]);
   const ready = list.filter((r) => {
     if (!r.provider_id) return false;
-    if (shopIntake.shopIds.has(r.id)) {
-      return shopIntakeReady(shopIntake.byRequest.get(r.id));
-    }
-    return Boolean(r.session_id && filledSessions.has(r.session_id));
+    return intakeIsReady({
+      fromShop: shopIntake.shopIds.has(r.id),
+      decision: shopIntake.byRequest.get(r.id),
+      onboardingReady: Boolean(r.session_id && filledSessions.has(r.session_id)),
+    });
   });
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));

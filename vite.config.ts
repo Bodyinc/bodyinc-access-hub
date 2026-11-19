@@ -18,6 +18,11 @@ export default defineConfig({
   // only kicks in on Vercel/CI builds. Switch to "vercel-edge" for Edge runtime.
   nitro: {
     preset: "vercel",
+    vercel: {
+      functions: {
+        maxDuration: 60,
+      },
+    },
     // Ensure web-push (and its Node deps) are traced into the Vercel serverless function.
     externals: {
       traceInclude: ["web-push"],
