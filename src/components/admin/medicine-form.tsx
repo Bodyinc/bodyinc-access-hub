@@ -75,6 +75,7 @@ const EMPTY: MedicineFormValues = {
   requires_consultation: false,
   requires_followup: false,
   show_to_providers: false,
+  shop_only: false,
   category_ids: [],
 };
 
@@ -145,7 +146,11 @@ export function MedicineForm({
     id: string;
     name: keyof Pick<
       MedicineFormValues,
-      "requires_questionnaire" | "requires_consultation" | "requires_followup" | "show_to_providers"
+      | "requires_questionnaire"
+      | "requires_consultation"
+      | "requires_followup"
+      | "show_to_providers"
+      | "shop_only"
     >;
     label: string;
   }[] = [
@@ -168,6 +173,11 @@ export function MedicineForm({
       id: "show-providers",
       name: "show_to_providers",
       label: "Show to providers when changing a patient's medicine",
+    },
+    {
+      id: "shop-only",
+      name: "shop_only",
+      label: "Visible in the shop only (hidden from onboarding)",
     },
   ];
 

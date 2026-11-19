@@ -88,6 +88,7 @@ function toFormValues(m: StoredMedicine): MedicineFormValues {
     requires_consultation: m.requires_consultation,
     requires_followup: m.requires_followup,
     show_to_providers: m.show_to_providers,
+    shop_only: m.shop_only,
     lf_product_id: m.lf_product_id != null ? String(m.lf_product_id) : "",
     life_file_pharmacy_id: m.life_file_pharmacy_id ?? undefined,
     category_ids: m.category_ids,

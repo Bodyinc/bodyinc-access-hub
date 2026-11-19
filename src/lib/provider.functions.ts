@@ -135,22 +135,22 @@ export const providerDashboard = createServerFn({ method: "POST" })
       ),
     };
 
-    const claimable = await countClaimable(supabaseAdmin, me);
-    const launchpad = await providerLaunchpad(supabaseAdmin, me);
-    try {
-      const { notifyProvidersPatientReadyToClaim } = await import("@/lib/email.notifications");
-      await notifyProvidersPatientReadyToClaim(supabaseAdmin);
-    } catch (e) {
-      console.error("[dashboard] provider claim email failed:", e);
-    }
+    const { notifyProvidersPatientReadyToClaim } = await import("@/lib/email.notifications");
+    const [claimable, launchpad, meProfile] = await Promise.all([
+      countClaimable(supabaseAdmin, me),
+      providerLaunchpad(supabaseAdmin, me),
+      supabaseAdmin.from("profiles").select("full_name").eq("id", me).maybeSingle(),
+      notifyProvidersPatientReadyToClaim(supabaseAdmin).catch((e) => {
+        console.error("[dashboard] provider claim email failed:", e);
+      }),
+    ]);
 
-    const { data: meProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name")
-      .eq("id", me)
-      .maybeSingle();
-
-    return { ...counts, claimable, full_name: meProfile?.full_name ?? "", ...launchpad };
+    return {
+      ...counts,
+      claimable,
+      full_name: meProfile.data?.full_name ?? "",
+      ...launchpad,
+    };
   });
 
 async function providerStates(supabaseAdmin: any, me: string): Promise<string[]> {

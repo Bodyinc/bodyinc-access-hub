@@ -172,7 +172,7 @@ function MedicinesListPage() {
             Medicines
           </h1>
           <p className="text-base font-normal leading-snug text-[#3B4759]/70 sm:text-lg lg:text-[20px]">
-            Manage the medication catalog shown to patients during onboarding.
+            Manage the medication catalog shown to patients in onboarding and the shop.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-3 self-start sm:self-auto">
@@ -320,6 +320,11 @@ function MedicinesListPage() {
                     <TableCell className="px-5 py-[14px] text-[15px] font-semibold text-[#152A51]">
                       <div className="space-y-1.5">
                         <div>{m.name}</div>
+                        {m.shop_only && (
+                          <Badge className="rounded-md border-0 bg-[#E8EEED] px-2 py-0.5 text-[12px] font-semibold text-[#152A51] shadow-none">
+                            Shop only
+                          </Badge>
+                        )}
                         {unsyncedPackages(m).length > 0 && (
                           <Badge className="gap-1 rounded-md border-0 bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800 shadow-none">
                             <AlertTriangle className="h-3 w-3" />

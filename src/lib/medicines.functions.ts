@@ -8,7 +8,7 @@ import { archiveInStripe, BILLING_SUBSCRIPTION_STATUSES } from "@/lib/stripe-obj
 const syncInput = z.object({ medicineId: z.string().uuid() });
 
 const CHANGE_MEDICINE_COLUMNS =
-  "id, name, short_description, long_description, image_url, from_price_cents, status, important_info, notice_text, sort_order, is_active, requires_questionnaire, requires_consultation, requires_followup, show_to_providers, lf_product_id, created_at, updated_at, medication_category_medicines(category_id), packages(id, name, duration_months, original_price, price, is_most_popular, is_active, features, clinical_note, sort_order, stripe_price_id, variant_id), medicine_variants(id, name, is_active, lf_product_id, from_price_cents, sort_order)";
+  "id, name, short_description, long_description, image_url, from_price_cents, status, important_info, notice_text, sort_order, is_active, requires_questionnaire, requires_consultation, requires_followup, show_to_providers, shop_only, lf_product_id, created_at, updated_at, medication_category_medicines(category_id), packages(id, name, duration_months, original_price, price, is_most_popular, is_active, features, clinical_note, sort_order, stripe_price_id, variant_id), medicine_variants(id, name, is_active, lf_product_id, from_price_cents, sort_order)";
 
 // The provider catalog hides doses on a medicine that is off the patient shop.
 // Change-medicine still needs those doses when the medicine is marked for providers.

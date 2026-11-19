@@ -304,7 +304,7 @@ const CLAIM_READY_STATUSES = [
 /** One email per new unassigned patient, to every active provider licensed in that state. */
 export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
   try {
-    const { loadShopIntakeState, orderHasIntake, shopIntakeReady } = await import(
+    const { loadShopIntakeState, onboardingOwnershipByRequest, shopIntakeReady } = await import(
       "@/lib/clinical-intake"
     );
     const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
@@ -328,15 +328,27 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
         rows.map((row: { id: string }) => row.id),
       ),
     ]);
-    const intakeFlags = await Promise.all(
-      (rows as any[]).map(async (r) => {
-        const fromShop = shopIds.has(r.id);
-        const intakeReady = fromShop
-          ? shopIntakeReady(shopIntake.byRequest.get(r.id))
-          : await orderHasIntake(supabaseAdmin, r.session_id, r.user_id, r.subscription_id);
-        return { id: r.id, fromShop, intakeReady };
-      }),
+    const owned = await onboardingOwnershipByRequest(
+      supabaseAdmin,
+      (rows as any[])
+        .filter((row) => !shopIds.has(row.id))
+        .map((row) => ({
+          id: row.id,
+          session_id: row.session_id,
+          user_id: row.user_id,
+          subscription_id: row.subscription_id,
+        })),
     );
+    const intakeFlags = (rows as any[]).map((row) => {
+      const fromShop = shopIds.has(row.id);
+      return {
+        id: row.id,
+        fromShop,
+        intakeReady: fromShop
+          ? shopIntakeReady(shopIntake.byRequest.get(row.id))
+          : (owned.get(row.id) ?? false),
+      };
+    });
     const intakeById = new Map(intakeFlags.map((row) => [row.id, row]));
     let ready = rows.filter((r: any) => {
       const flag = intakeById.get(r.id);

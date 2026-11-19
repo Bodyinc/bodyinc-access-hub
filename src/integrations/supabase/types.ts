@@ -1048,6 +1048,7 @@ export type Database = {
           requires_consultation: boolean
           requires_followup: boolean
           requires_questionnaire: boolean
+          shop_only: boolean
           show_to_providers: boolean
           short_description: string
           sort_order: number
@@ -1069,6 +1070,7 @@ export type Database = {
           requires_consultation?: boolean
           requires_followup?: boolean
           requires_questionnaire?: boolean
+          shop_only?: boolean
           show_to_providers?: boolean
           short_description: string
           sort_order?: number
@@ -1090,6 +1092,7 @@ export type Database = {
           requires_consultation?: boolean
           requires_followup?: boolean
           requires_questionnaire?: boolean
+          shop_only?: boolean
           show_to_providers?: boolean
           short_description?: string
           sort_order?: number
@@ -2543,7 +2546,7 @@ export type Database = {
         }
         Relationships: []
       }
-      public_medicines: {
+      onboarding_medicines: {
         Row: {
           from_price_cents: number | null
           id: string | null
@@ -2555,6 +2558,21 @@ export type Database = {
           short_description: string | null
           sort_order: number | null
         }
+        Relationships: []
+      }
+      public_medicines: {
+        Row: {
+          from_price_cents: number | null
+          id: string | null
+          image_url: string | null
+          important_info: Json | null
+          long_description: string | null
+          name: string | null
+          notice_text: string | null
+          shop_only: boolean | null
+          short_description: string | null
+          sort_order: number | null
+        }
         Insert: {
           from_price_cents?: number | null
           id?: string | null
@@ -2563,6 +2581,7 @@ export type Database = {
           long_description?: string | null
           name?: string | null
           notice_text?: string | null
+          shop_only?: boolean | null
           short_description?: string | null
           sort_order?: number | null
         }
@@ -2574,6 +2593,7 @@ export type Database = {
           long_description?: string | null
           name?: string | null
           notice_text?: string | null
+          shop_only?: boolean | null
           short_description?: string | null
           sort_order?: number | null
         }
