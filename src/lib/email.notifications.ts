@@ -38,6 +38,116 @@ export async function resolveMedicineName(
   return (data as { name?: string } | null)?.name?.trim() || "your medication";
 }
 
+/** Every medicine bought in the same checkout, in one label. A single line stays a single name. */
+async function medicineLabelForOrder(
+  supabaseAdmin: any,
+  rows: Array<{ id?: string | null; medicine_id?: string | null; order_group_id?: string | null }>,
+): Promise<{ label: string; requestIds: string[] }> {
+  let source = rows;
+  const idsToLoad = rows.map((row) => row.id).filter((id): id is string => Boolean(id) && !rows.some((row) => row.id === id && row.order_group_id));
+  if (idsToLoad.length) {
+    const { data, error } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, medicine_id, order_group_id")
+      .in("id", idsToLoad);
+    if (!error && data?.length) {
+      const loaded = new Map((data as Array<{ id: string; medicine_id: string | null; order_group_id: string | null }>).map((row) => [row.id, row]));
+      source = rows.map((row) => (row.id && loaded.get(row.id)) || row);
+    }
+  }
+  const groupIds = [...new Set(source.map((row) => row.order_group_id).filter(Boolean))] as string[];
+  let members = source.map((row) => ({ id: row.id ?? null, medicine_id: row.medicine_id ?? null }));
+  if (groupIds.length) {
+    const { data, error } = await supabaseAdmin
+      .from("medication_requests")
+      .select("id, medicine_id")
+      .in("order_group_id", groupIds);
+    if (!error && data?.length) {
+      members = data as Array<{ id: string; medicine_id: string | null }>;
+    }
+  }
+  const medicineIds = [...new Set(members.map((row) => row.medicine_id).filter(Boolean))] as string[];
+  const names = [
+    ...new Set(
+      (await Promise.all(medicineIds.map((id) => resolveMedicineName(supabaseAdmin, id))))
+        .map((name) => name.trim())
+        .filter((name) => name && name !== "your medication"),
+    ),
+  ];
+  return {
+    label: names.join(", ") || "a treatment",
+    requestIds: members.map((row) => row.id).filter((id): id is string => Boolean(id)),
+  };
+}
+
+function addonPackageCount(raw: unknown): number {
+  if (!raw || typeof raw !== "object") return 0;
+  const obj = raw as {
+    parent?: { subscription_details?: { metadata?: Record<string, string> | null } };
+    subscription_details?: { metadata?: Record<string, string> | null };
+    lines?: { data?: Array<{ metadata?: Record<string, string> | null }> };
+  };
+  const metas = [
+    obj.parent?.subscription_details?.metadata,
+    obj.subscription_details?.metadata,
+    ...(obj.lines?.data ?? []).map((line) => line?.metadata),
+  ];
+  for (const meta of metas) {
+    const rawIds = meta?.addon_package_ids;
+    if (typeof rawIds === "string" && rawIds.trim()) {
+      return rawIds.split(",").map((id) => id.trim()).filter(Boolean).length;
+    }
+  }
+  return 0;
+}
+
+/** Primary checkout mail can fire before add-on orders are written. Hold it briefly. */
+async function checkoutLinesStillArriving(
+  supabaseAdmin: any,
+  requestIds: string[],
+): Promise<boolean> {
+  if (!requestIds.length) return false;
+  const { data, error } = await supabaseAdmin
+    .from("medication_requests")
+    .select("id, payment_id, created_at, order_group_id")
+    .in("id", requestIds);
+  if (error || !data?.length) return false;
+
+  const now = Date.now();
+  const holdMs = 3 * 60 * 1000;
+  const byGroup = new Map<string, Array<{ payment_id?: string | null; created_at?: string | null }>>();
+  for (const row of data as Array<{
+    payment_id?: string | null;
+    created_at?: string | null;
+    order_group_id?: string | null;
+    id: string;
+  }>) {
+    const key = row.order_group_id || row.id;
+    const list = byGroup.get(key) ?? [];
+    list.push(row);
+    byGroup.set(key, list);
+  }
+
+  for (const members of byGroup.values()) {
+    const newest = Math.max(
+      ...members.map((row) => new Date(row.created_at ?? 0).getTime()),
+    );
+    if (!Number.isFinite(newest) || now - newest > holdMs) continue;
+    const paymentIds = [...new Set(members.map((row) => row.payment_id).filter(Boolean))] as string[];
+    if (!paymentIds.length) continue;
+    const { data: payments } = await supabaseAdmin
+      .from("payments")
+      .select("raw_event")
+      .in("id", paymentIds);
+    const expectedAddons = Math.max(
+      0,
+      ...(payments ?? []).map((pay: { raw_event?: unknown }) => addonPackageCount(pay.raw_event)),
+    );
+    if (expectedAddons > 0 && members.length < 1 + expectedAddons) return true;
+  }
+  return false;
+}
+
 /** Copied on every admin notification. Not added to patient or provider mail. */
 const ADMIN_EMAIL_CC = "parth@appsrow.com";
 
@@ -169,7 +279,15 @@ export async function notifyPatientRequestEvent(opts: {
     return true;
   }
 
-  const medicineName = await resolveMedicineName(opts.supabaseAdmin, opts.request.medicine_id);
+  const medicineName =
+    opts.template === "patient_provider_assigned"
+      ? await (async () => {
+          const { label } = await medicineLabelForOrder(opts.supabaseAdmin, [
+            { id: opts.request.id, medicine_id: opts.request.medicine_id },
+          ]);
+          return label === "a treatment" ? "your medication" : label;
+        })()
+      : await resolveMedicineName(opts.supabaseAdmin, opts.request.medicine_id);
   const sent = await notifyUserById({
     supabaseAdmin: opts.supabaseAdmin,
     userId: opts.request.user_id,
@@ -260,20 +378,24 @@ export async function notifyProviderRequestEvent(opts: {
   if (!opts.providerId) return;
   if (opts.actorUserId && opts.actorUserId === opts.providerId) return;
 
-  const medicineName = await resolveMedicineName(opts.supabaseAdmin, opts.medicineId);
-  const providerPortal = providerPortalOrigin();
-  const { data: reqRow } = await opts.supabaseAdmin
+  const { data: orderRow } = await opts.supabaseAdmin
     .from("medication_requests")
-    .select("user_id")
+    .select("id, medicine_id, order_group_id, user_id")
     .eq("id", opts.requestId)
     .maybeSingle();
-  const patient = await resolveProfileContact(opts.supabaseAdmin, reqRow?.user_id);
+  const medicineName = (
+    await medicineLabelForOrder(opts.supabaseAdmin, [
+      orderRow ?? { id: opts.requestId, medicine_id: opts.medicineId ?? null },
+    ])
+  ).label;
+  const providerPortal = providerPortalOrigin();
+  const patient = await resolveProfileContact(opts.supabaseAdmin, orderRow?.user_id);
   let patientName = patient?.name?.trim() || "";
-  if (!patientName && reqRow?.user_id) {
+  if (!patientName && orderRow?.user_id) {
     const { data: nameRow } = await opts.supabaseAdmin
       .from("profiles")
       .select("full_name")
-      .eq("id", reqRow.user_id)
+      .eq("id", orderRow.user_id)
       .maybeSingle();
     patientName = (nameRow as { full_name?: string | null } | null)?.full_name?.trim() || "";
   }
@@ -284,10 +406,10 @@ export async function notifyProviderRequestEvent(opts: {
     template: opts.template,
     params: {
       ORDER_ID: opts.requestId,
-      MEDICINE_NAME: medicineName,
       PATIENT_NAME: patientName || "A patient",
       REQUEST_URL: `${providerPortal}/provider/requests/${opts.requestId}`,
       ...opts.extraParams,
+      MEDICINE_NAME: medicineName,
     },
   });
 }
@@ -301,14 +423,30 @@ const CLAIM_READY_STATUSES = [
   "prescribed",
 ];
 
-/** One email per new unassigned patient, to every active provider licensed in that state. */
-export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
-  try {
-    const { loadShopIntakeState, onboardingOwnershipByRequest, shopIntakeReady } = await import(
-      "@/lib/clinical-intake"
-    );
-    const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
-    const { data: rows, error } = await supabaseAdmin
+const CLAIM_OFFER = "provider_claim_offer";
+const CLAIM_OFFER_PERIOD = "ready";
+const CLAIM_PAGE = 80;
+const CLAIM_PAGES = 4;
+
+async function releaseClaimOffer(supabaseAdmin: any, ids: string[]): Promise<void> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return;
+  const { error } = await supabaseAdmin
+    .from("email_reminders")
+    .delete()
+    .eq("reminder_type", CLAIM_OFFER)
+    .eq("period_key", CLAIM_OFFER_PERIOD)
+    .in("target_id", unique);
+  if (error) console.warn("[email] release claim offer failed:", error.message);
+}
+
+/** Newest unassigned orders, including ones past the first page that were never mailed. */
+async function loadClaimCandidates(supabaseAdmin: any): Promise<any[]> {
+  const fresh: any[] = [];
+  const stale: any[] = [];
+  for (let page = 0; page < CLAIM_PAGES; page++) {
+    const from = page * CLAIM_PAGE;
+    const { data, error } = await supabaseAdmin
       .from("medication_requests")
       .select(
         "id, user_id, session_id, medicine_id, status, order_group_id, subscription_id, stripe_invoice_id, kind",
@@ -316,8 +454,72 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
       .is("provider_id", null)
       .in("status", CLAIM_READY_STATUSES)
       .order("created_at", { ascending: false })
-      .limit(40);
-    if (error || !rows?.length) return;
+      .range(from, from + CLAIM_PAGE - 1);
+    if (error || !data?.length) break;
+    const ids = data.map((row: { id: string }) => row.id).filter(Boolean);
+    const [{ data: reminders }, { data: notes }] = await Promise.all([
+      supabaseAdmin
+        .from("email_reminders")
+        .select("target_id")
+        .eq("reminder_type", CLAIM_OFFER)
+        .eq("period_key", CLAIM_OFFER_PERIOD)
+        .in("target_id", ids),
+      supabaseAdmin
+        .from("notifications")
+        .select("entity_id")
+        .eq("type", "request_ready_to_claim")
+        .in("entity_id", ids),
+    ]);
+    const reminded = new Set((reminders ?? []).map((row: { target_id: string }) => row.target_id));
+    const noted = new Set(
+      (notes ?? []).map((row: { entity_id: string | null }) => row.entity_id).filter(Boolean),
+    );
+    const staleRows = (data as { id: string; order_group_id?: string | null }[]).filter(
+      (row) => reminded.has(row.id) && !noted.has(row.id) && row.order_group_id,
+    );
+    const deliveredGroups = new Set<string>();
+    const groupIds = [...new Set(staleRows.map((row) => row.order_group_id).filter(Boolean))] as string[];
+    if (groupIds.length) {
+      const { data: members } = await supabaseAdmin
+        .from("medication_requests")
+        .select("id, order_group_id")
+        .in("order_group_id", groupIds);
+      const memberIds = (members ?? []).map((row: { id: string }) => row.id).filter(Boolean);
+      if (memberIds.length) {
+        const { data: groupNotes } = await supabaseAdmin
+          .from("notifications")
+          .select("entity_id")
+          .eq("type", "request_ready_to_claim")
+          .in("entity_id", memberIds);
+        const notedMembers = new Set(
+          (groupNotes ?? []).map((row: { entity_id: string | null }) => row.entity_id).filter(Boolean),
+        );
+        for (const member of (members ?? []) as { id: string; order_group_id?: string | null }[]) {
+          if (member.order_group_id && notedMembers.has(member.id)) deliveredGroups.add(member.order_group_id);
+        }
+      }
+    }
+    for (const row of data as { id: string; order_group_id?: string | null }[]) {
+      if (!reminded.has(row.id)) fresh.push(row);
+      else if (!noted.has(row.id) && !(row.order_group_id && deliveredGroups.has(row.order_group_id))) {
+        stale.push(row);
+      }
+    }
+    if (data.length < CLAIM_PAGE) break;
+    if (fresh.length >= 60) break;
+  }
+  return [...fresh, ...stale].slice(0, 80);
+}
+
+/** One email per new unassigned patient, to every active provider licensed in that state. */
+export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Promise<void> {
+  try {
+    const { loadShopIntakeState, onboardingOwnershipByRequest, intakeIsReady } = await import(
+      "@/lib/clinical-intake"
+    );
+    const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
+    const rows = await loadClaimCandidates(supabaseAdmin);
+    if (!rows.length) return;
 
     const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean))) as string[];
     const [inChat, shopIds, shopIntake] = await Promise.all([
@@ -344,9 +546,11 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
       return {
         id: row.id,
         fromShop,
-        intakeReady: fromShop
-          ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-          : (owned.get(row.id) ?? false),
+        intakeReady: intakeIsReady({
+          fromShop,
+          decision: shopIntake.byRequest.get(row.id),
+          onboardingReady: owned.get(row.id) ?? false,
+        }),
       };
     });
     const intakeById = new Map(intakeFlags.map((row) => [row.id, row]));
@@ -399,7 +603,6 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
 
     for (const rows of byPatient.values()) {
       const group = [...rows].sort((a, b) => String(a.id).localeCompare(String(b.id)));
-      if (group.some((row) => announced.has(row.id))) continue;
       const lead = group[0];
       const { data: profile } = await supabaseAdmin
         .from("profiles")
@@ -417,72 +620,106 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
           .includes(state),
       );
       if (!licensed.length) continue;
-      const medicineNames = Array.from(
-        new Set(
-          (
-            await Promise.all(group.map((row) => resolveMedicineName(supabaseAdmin, row.medicine_id)))
-          ).filter(Boolean),
-        ),
+      const { label: medLabel, requestIds: purchaseIds } = await medicineLabelForOrder(
+        supabaseAdmin,
+        group,
       );
-      const { error: claimErr } = await supabaseAdmin.from("email_reminders").insert({
-        reminder_type: "provider_claim_offer",
-        target_id: lead.id,
-        period_key: "ready",
-      });
-      if (claimErr) continue;
-      announced.add(lead.id);
-      for (const row of group.slice(1)) {
-        const { error: siblingErr } = await supabaseAdmin.from("email_reminders").insert({
-          reminder_type: "provider_claim_offer",
-          target_id: row.id,
-          period_key: "ready",
-        });
-        if (!siblingErr) announced.add(row.id);
+      if (await checkoutLinesStillArriving(supabaseAdmin, purchaseIds)) continue;
+      const { data: alreadySent } = await supabaseAdmin
+        .from("notifications")
+        .select("entity_id")
+        .eq("type", "request_ready_to_claim")
+        .in("entity_id", purchaseIds);
+      if ((alreadySent ?? []).length) {
+        for (const requestId of purchaseIds) {
+          if (announced.has(requestId)) continue;
+          const { error: claimErr } = await supabaseAdmin.from("email_reminders").insert({
+            reminder_type: CLAIM_OFFER,
+            target_id: requestId,
+            period_key: CLAIM_OFFER_PERIOD,
+          });
+          if (!claimErr) announced.add(requestId);
+        }
+        continue;
       }
+      if (purchaseIds.some((id) => announced.has(id))) {
+        await releaseClaimOffer(supabaseAdmin, purchaseIds);
+        for (const id of purchaseIds) announced.delete(id);
+      }
+      const locked: string[] = [];
+      for (const requestId of purchaseIds) {
+        const { error: claimErr } = await supabaseAdmin.from("email_reminders").insert({
+          reminder_type: CLAIM_OFFER,
+          target_id: requestId,
+          period_key: CLAIM_OFFER_PERIOD,
+        });
+        if (!claimErr) {
+          announced.add(requestId);
+          locked.push(requestId);
+        }
+      }
+      if (!locked.length) continue;
       const fromShop = shopIds.has(lead.id);
-      const medLabel = medicineNames.join(", ") || "a treatment";
       const title = fromShop ? "A shop order is ready to claim" : "A new patient is ready to claim";
       const body = fromShop
         ? `${patientName} placed a shop order for ${medLabel} and is waiting for a provider.`
         : `${patientName} finished signup for ${medLabel} and is waiting for a provider.`;
       const link = `/provider/requests/${lead.id}`;
 
+      const contacts = await Promise.all(
+        licensed.map(async (provider) => ({
+          provider,
+          contact: await resolveProfileContact(supabaseAdmin, provider.id),
+        })),
+      );
       const seenInbox = new Set<string>();
       const seenPush = new Set<string>();
-      for (const provider of licensed) {
-        const contact = await resolveProfileContact(supabaseAdmin, provider.id);
-        const inbox = contact?.email?.trim().toLowerCase();
-        if (inbox && !seenInbox.has(inbox)) {
-          seenInbox.add(inbox);
-          await notifyUserById({
-            supabaseAdmin,
-            userId: provider.id,
-            template: "provider_patient_ready",
-            params: {
-              ORDER_ID: lead.id,
-              MEDICINE_NAME: medLabel,
-              PATIENT_NAME: patientName,
-              REQUEST_URL: `${portal}/provider/requests/${lead.id}`,
-              ORDER_SOURCE: fromShop ? "shop" : "onboarding",
-            },
-          });
-        }
-
+      const recipients: { id: string; sendEmail: boolean }[] = [];
+      for (const { provider, contact } of contacts) {
         if (!provider.id || seenPush.has(provider.id)) continue;
         seenPush.add(provider.id);
-        // In-app row only — push is sent once by notify_provider_push_http on INSERT.
-        try {
-          await supabaseAdmin.from("notifications").insert({
-            user_id: provider.id,
-            type: "request_ready_to_claim",
-            title,
-            body,
-            link,
-            entity_id: lead.id,
-          });
-        } catch (e) {
-          console.warn("[notify] ready-to-claim in-app failed:", e);
-        }
+        const inbox = contact?.email?.trim().toLowerCase();
+        const sendEmail = Boolean(inbox && !seenInbox.has(inbox));
+        if (inbox && sendEmail) seenInbox.add(inbox);
+        recipients.push({ id: provider.id, sendEmail });
+      }
+      const results = await Promise.all(
+        recipients.map(async (recipient) => {
+          let ok = false;
+          if (recipient.sendEmail) {
+            ok = await notifyUserById({
+              supabaseAdmin,
+              userId: recipient.id,
+              template: "provider_patient_ready",
+              params: {
+                ORDER_ID: lead.id,
+                MEDICINE_NAME: medLabel,
+                PATIENT_NAME: patientName,
+                REQUEST_URL: `${portal}/provider/requests/${lead.id}`,
+                ORDER_SOURCE: fromShop ? "shop" : "onboarding",
+              },
+            });
+          }
+          // In-app row only — push is sent once by notify_provider_push_http on INSERT.
+          try {
+            const { error: noteErr } = await supabaseAdmin.from("notifications").insert({
+              user_id: recipient.id,
+              type: "request_ready_to_claim",
+              title,
+              body,
+              link,
+              entity_id: lead.id,
+            });
+            if (!noteErr) ok = true;
+          } catch (e) {
+            console.warn("[notify] ready-to-claim in-app failed:", e);
+          }
+          return ok;
+        }),
+      );
+      if (!results.some(Boolean)) {
+        await releaseClaimOffer(supabaseAdmin, locked);
+        for (const id of locked) announced.delete(id);
       }
     }
   } catch (e) {

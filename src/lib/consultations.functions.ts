@@ -531,16 +531,21 @@ export const startRequestConsultation = createServerFn({ method: "POST" })
     if (!req.subscription_id) {
       return { ok: false, message: "This order is missing a subscription." };
     }
-    const { loadShopIntakeState, orderHasIntake, shopIntakeReady } = await import("@/lib/clinical-intake");
+    const { loadShopIntakeState, orderHasIntake, intakeIsReady } = await import("@/lib/clinical-intake");
     const shopIntake = await loadShopIntakeState(supabaseAdmin, [req.id]);
-    const intakeReady = shopIntake.shopIds.has(req.id)
-      ? shopIntakeReady(shopIntake.byRequest.get(req.id))
-      : await orderHasIntake(
-          supabaseAdmin,
-          req.session_id,
-          req.user_id,
-          req.subscription_id,
-        );
+    const fromShop = shopIntake.shopIds.has(req.id);
+    const intakeReady = intakeIsReady({
+      fromShop,
+      decision: shopIntake.byRequest.get(req.id),
+      onboardingReady: fromShop
+        ? false
+        : await orderHasIntake(
+            supabaseAdmin,
+            req.session_id,
+            req.user_id,
+            req.subscription_id,
+          ),
+    });
     if (!intakeReady) {
       return { ok: false, message: "The patient has not finished the intake form yet." };
     }

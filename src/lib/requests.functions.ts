@@ -8,6 +8,7 @@ import { clinicalEventNote, PENDING_REQUEST_STATUSES } from "@/lib/request-statu
 import {
   filledSessionIdSet,
   intakeSessionForOrder,
+  intakeIsReady,
   loadClinicalIntake,
   loadPastOrders,
   loadShopIntakeState,
@@ -490,7 +491,8 @@ export const listRequests = createServerFn({ method: "POST" })
       );
     }
 
-    await repairOrdersAwaitingIntake(supabaseAdmin, list as any[]);
+    const repaired = await repairOrdersAwaitingIntake(supabaseAdmin, list as any[]);
+    const shopIntake = repaired.shop;
 
     const userIds = Array.from(new Set(list.map((r: any) => r.user_id).filter(Boolean)));
     const sessionIds = Array.from(
@@ -513,7 +515,6 @@ export const listRequests = createServerFn({ method: "POST" })
       { data: meds },
       { data: provs },
       { data: pharmacies },
-      shopIntake,
     ] = await Promise.all([
       userIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
@@ -533,10 +534,6 @@ export const listRequests = createServerFn({ method: "POST" })
       pharmacyIds.length
         ? supabaseAdmin.from("life_file_pharmacies").select("id, name").in("id", pharmacyIds)
         : Promise.resolve({ data: [] as any[] }),
-      loadShopIntakeState(
-        supabaseAdmin,
-        (list as { id: string }[]).map((row) => row.id),
-      ),
     ]);
 
     const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
@@ -605,9 +602,11 @@ export const listRequests = createServerFn({ method: "POST" })
         }
         return {
           ...row,
-          intake_filled: shopIntake.shopIds.has(row.id)
-            ? shopIntakeReady(shopIntake.byRequest.get(row.id))
-            : Boolean(source?.session_id && filledSessions.has(source.session_id)),
+          intake_filled: intakeIsReady({
+            fromShop: shopIntake.shopIds.has(row.id),
+            decision: shopIntake.byRequest.get(row.id),
+            onboardingReady: Boolean(source?.session_id && filledSessions.has(source.session_id)),
+          }),
           consultation_status,
           patient_waiting: consultation_status === "In progress",
         };
@@ -676,14 +675,16 @@ export const getRequest = createServerFn({ method: "POST" })
     const fromShop = shopIntake.shopIds.has(req.id);
 
     if (role === "provider" && !req.provider_id) {
-      const filled = fromShop
-        ? shopIntakeReady(shopDecision)
-        : await orderHasIntake(
-            supabaseAdmin,
-            req.session_id,
-            req.user_id,
-            req.subscription_id,
-          );
+      const filled = intakeIsReady({
+        fromShop,
+        decision: shopDecision,
+        onboardingReady: await orderHasIntake(
+          supabaseAdmin,
+          req.session_id,
+          req.user_id,
+          req.subscription_id,
+        ),
+      });
       const inChat = req.user_id
         ? (await userIdsInOpenChat(supabaseAdmin, [req.user_id])).has(req.user_id)
         : false;
@@ -802,7 +803,7 @@ export const getRequest = createServerFn({ method: "POST" })
 
     const intake = await withShopConsultationIntake(
       await loadClinicalIntake(supabaseAdmin, intakeSessionId, sessionRes.data as any),
-      fromShop ? shopDecision : undefined,
+      shopDecision,
     );
 
     if (role === "provider") {
@@ -921,15 +922,20 @@ export const approveRequest = createServerFn({ method: "POST" })
       );
     }
     const shopIntake = await loadShopIntakeState(supabaseAdmin, [req.id]);
+    const fromShop = shopIntake.shopIds.has(req.id);
     if (
-      shopIntake.shopIds.has(req.id)
-        ? !shopIntakeReady(shopIntake.byRequest.get(req.id))
-        : !(await orderHasIntake(
-            supabaseAdmin,
-            req.session_id,
-            req.user_id,
-            req.subscription_id,
-          ))
+      !intakeIsReady({
+        fromShop,
+        decision: shopIntake.byRequest.get(req.id),
+        onboardingReady: fromShop
+          ? false
+          : await orderHasIntake(
+              supabaseAdmin,
+              req.session_id,
+              req.user_id,
+              req.subscription_id,
+            ),
+      })
     ) {
       throw new Error("intake form missing");
     }
@@ -1966,8 +1972,8 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
         );
       }
       const shopIntake = await loadShopIntakeState(supabaseAdmin, [existing.id]);
+      const decision = shopIntake.byRequest.get(existing.id);
       if (shopIntake.shopIds.has(existing.id)) {
-        const decision = shopIntake.byRequest.get(existing.id);
         const finished = decision?.finishedSessionId ?? null;
         if (!shopIntakeReady(decision)) {
           throw new Error(
@@ -1988,6 +1994,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
           }
         }
       } else if (
+        !shopIntakeReady(decision) &&
         !(await orderHasIntake(
           supabaseAdmin,
           existing.session_id,
@@ -1998,7 +2005,7 @@ export const assignRequestProvider = createServerFn({ method: "POST" })
         throw new Error(
           "This patient has not finished the intake form, so the order cannot be assigned yet.",
         );
-      } else if (!existing.session_id) {
+      } else if (!existing.session_id && !shopIntakeReady(decision)) {
         const sessionId = await intakeSessionForOrder(
           supabaseAdmin,
           existing.session_id,

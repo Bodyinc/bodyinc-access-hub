@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+/** Pro plan cap. Keeps the claim-mail sweep from being cut off at the platform default. */
+export const maxDuration = 60;
+
 /**
  * Called from Supabase pg_net when intake becomes finished (or an order becomes
  * claimable). Email + in-app (+ push webhook) go to licensed providers.

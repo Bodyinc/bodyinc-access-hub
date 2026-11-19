@@ -106,7 +106,7 @@ export async function sessionHasIntake(
   return filled.has(sessionId);
 }
 
-const WAITING_FOR_INTAKE = new Set([
+export const WAITING_FOR_INTAKE = new Set([
   "payment_completed",
   "provider_assigned",
   "pending_review",
@@ -195,6 +195,34 @@ export function shopIntakeReady(decision: ShopIntakeDecision | null | undefined)
   return Boolean(decision?.finishedSessionId || decision?.consultationFormSubmitted);
 }
 
+/**
+ * Intake is finished for this order only.
+ * A shop line still needs its own session or this checkout's consultation form.
+ * An onboarding line still needs its own session, unless this same checkout's
+ * consultation form was submitted (the form is stored on the primary plan).
+ * An older signup's form never counts.
+ */
+export function intakeIsReady(opts: {
+  fromShop: boolean;
+  decision?: ShopIntakeDecision | null;
+  onboardingReady?: boolean;
+}): boolean {
+  if (shopIntakeReady(opts.decision)) return true;
+  return !opts.fromShop && Boolean(opts.onboardingReady);
+}
+
+function emptyIntakeDecision(subscriptionId: string | null): ShopIntakeDecision {
+  return {
+    finishedSessionId: null,
+    ownSessionId: null,
+    borrowedSessionId: null,
+    borrowedSubscriptionSessionId: null,
+    subscriptionId,
+    consultationFormSubmitted: false,
+    consultationSubmissionId: null,
+  };
+}
+
 export type ShopIntakeState = {
   shopIds: Set<string>;
   byRequest: Map<string, ShopIntakeDecision>;
@@ -234,7 +262,15 @@ export async function loadShopIntakeState(
     created_at: string;
   }[];
   const shopIds = await shopCheckoutRequestIdSet(supabaseAdmin, requests);
-  if (shopIds.size === 0) return empty;
+  if (shopIds.size === 0) {
+    const byRequest = new Map<string, ShopIntakeDecision>();
+    for (const row of requests) {
+      if (!row.subscription_id) continue;
+      byRequest.set(row.id, emptyIntakeDecision(row.subscription_id));
+    }
+    await attachShopConsultationForms(supabaseAdmin, requests, byRequest);
+    return { shopIds, byRequest };
+  }
 
   const shopRows = requests.filter((row) => shopIds.has(row.id));
   const userIds = Array.from(new Set(shopRows.map((row) => row.user_id).filter(Boolean))) as string[];
@@ -428,7 +464,11 @@ export async function loadShopIntakeState(
     });
   }
 
-  await attachShopConsultationForms(supabaseAdmin, shopRows, byRequest);
+  for (const row of requests) {
+    if (byRequest.has(row.id) || !row.subscription_id) continue;
+    byRequest.set(row.id, emptyIntakeDecision(row.subscription_id));
+  }
+  await attachShopConsultationForms(supabaseAdmin, requests, byRequest);
 
   return { shopIds, byRequest };
 }
@@ -439,8 +479,92 @@ type ShopRequestRow = {
 };
 
 /**
+ * Subscriptions that share this checkout. The consultation form is saved on the
+ * primary plan, so an add-on line has to see that same submission.
+ * A different order's subscription is not included.
+ */
+async function checkoutSubscriptionIds(
+  supabaseAdmin: any,
+  subscriptionIds: string[],
+): Promise<Map<string, string[]>> {
+  const ids = Array.from(new Set(subscriptionIds.filter(Boolean)));
+  const groups = new Map<string, Set<string>>();
+  for (const id of ids) groups.set(id, new Set([id]));
+  if (ids.length === 0) return new Map();
+
+  const { data: reqs, error } = await supabaseAdmin
+    .from("medication_requests")
+    .select("subscription_id, order_group_id")
+    .in("subscription_id", ids);
+  if (!error && reqs?.length) {
+    const groupIds = Array.from(
+      new Set((reqs as { order_group_id?: string | null }[]).map((row) => row.order_group_id).filter(Boolean)),
+    ) as string[];
+    let members = reqs as { subscription_id?: string | null; order_group_id?: string | null }[];
+    if (groupIds.length) {
+      const { data: more, error: moreError } = await supabaseAdmin
+        .from("medication_requests")
+        .select("subscription_id, order_group_id")
+        .in("order_group_id", groupIds);
+      if (!moreError && more?.length) members = more;
+    }
+    const byGroup = new Map<string, string[]>();
+    for (const row of members) {
+      if (!row.order_group_id || !row.subscription_id) continue;
+      const list = byGroup.get(row.order_group_id) ?? [];
+      if (!list.includes(row.subscription_id)) list.push(row.subscription_id);
+      byGroup.set(row.order_group_id, list);
+    }
+    for (const row of reqs as { subscription_id?: string | null; order_group_id?: string | null }[]) {
+      if (!row.subscription_id || !row.order_group_id) continue;
+      const set = groups.get(row.subscription_id) ?? new Set([row.subscription_id]);
+      for (const id of byGroup.get(row.order_group_id) ?? []) set.add(id);
+      groups.set(row.subscription_id, set);
+    }
+  }
+
+  const checkout = await supabaseAdmin
+    .from("subscriptions")
+    .select("id, checkout_group_id")
+    .in("id", ids);
+  if (!checkout.error && checkout.data?.length) {
+    const checkoutIds = Array.from(
+      new Set(
+        (checkout.data as { checkout_group_id?: string | null }[])
+          .map((row) => row.checkout_group_id)
+          .filter(Boolean),
+      ),
+    ) as string[];
+    let family = checkout.data as { id?: string | null; checkout_group_id?: string | null }[];
+    if (checkoutIds.length) {
+      const { data: more, error: moreError } = await supabaseAdmin
+        .from("subscriptions")
+        .select("id, checkout_group_id")
+        .in("checkout_group_id", checkoutIds);
+      if (!moreError && more?.length) family = more;
+    }
+    const byCheckout = new Map<string, string[]>();
+    for (const row of family) {
+      if (!row.checkout_group_id || !row.id) continue;
+      const list = byCheckout.get(row.checkout_group_id) ?? [];
+      if (!list.includes(row.id)) list.push(row.id);
+      byCheckout.set(row.checkout_group_id, list);
+    }
+    for (const row of checkout.data as { id?: string | null; checkout_group_id?: string | null }[]) {
+      if (!row.id || !row.checkout_group_id) continue;
+      const set = groups.get(row.id) ?? new Set([row.id]);
+      for (const id of byCheckout.get(row.checkout_group_id) ?? []) set.add(id);
+      groups.set(row.id, set);
+    }
+  }
+
+  return new Map(Array.from(groups, ([id, set]) => [id, Array.from(set)]));
+}
+
+/**
  * A shop purchase finishes intake in the consultation questionnaire.
- * That submission is for this subscription, so an older onboarding session still does not count.
+ * That submission is for this checkout, so an older onboarding session still does not count.
+ * Add-on medicines share the primary plan's submitted form.
  */
 async function attachShopConsultationForms(
   supabaseAdmin: any,
@@ -451,9 +575,14 @@ async function attachShopConsultationForms(
     const decision = byRequest.get(row.id);
     return Boolean(row.subscription_id && decision && !decision.finishedSessionId);
   });
-  const subscriptionIds = Array.from(
+  const ownIds = Array.from(
     new Set(pending.map((row) => row.subscription_id).filter(Boolean)),
   ) as string[];
+  if (ownIds.length === 0) return;
+  const relatedBySub = await checkoutSubscriptionIds(supabaseAdmin, ownIds);
+  const subscriptionIds = Array.from(
+    new Set(ownIds.flatMap((id) => relatedBySub.get(id) ?? [id])),
+  );
   if (subscriptionIds.length === 0) return;
 
   const submitted = new Map<string, { submissionId: string | null; submittedAt: string | null }>();
@@ -533,8 +662,12 @@ async function attachShopConsultationForms(
 
   for (const row of pending) {
     const decision = byRequest.get(row.id);
-    const hit = row.subscription_id ? submitted.get(row.subscription_id) : undefined;
-    if (!decision || !hit) continue;
+    if (!decision || !row.subscription_id) continue;
+    const related = relatedBySub.get(row.subscription_id) ?? [row.subscription_id];
+    const hit = related
+      .map((id) => submitted.get(id))
+      .find((item): item is { submissionId: string | null; submittedAt: string | null } => Boolean(item));
+    if (!hit) continue;
     decision.consultationFormSubmitted = true;
     decision.consultationSubmissionId = hit.submissionId;
   }
@@ -697,6 +830,11 @@ export async function onboardingOwnershipByRequest(
   return result;
 }
 
+export type IntakeRepairSnapshot = {
+  shop: ShopIntakeState;
+  filledSessions: Set<string>;
+};
+
 export async function repairOrdersAwaitingIntake(
   supabaseAdmin: any,
   rows: {
@@ -707,8 +845,10 @@ export async function repairOrdersAwaitingIntake(
     provider_id?: string | null;
     status?: string | null;
   }[],
-): Promise<void> {
-  if (rows.length === 0) return;
+): Promise<IntakeRepairSnapshot> {
+  if (rows.length === 0) {
+    return { shop: { shopIds: new Set(), byRequest: new Map() }, filledSessions: new Set() };
+  }
   const sessionIds = rows.map((row) => row.session_id).filter(Boolean) as string[];
   const [shop, filledSessions] = await Promise.all([
     loadShopIntakeState(
@@ -770,8 +910,12 @@ export async function repairOrdersAwaitingIntake(
     }
 
     // Onboarding: only this signup's own session counts (same rule as shop).
+    // A consultation form submitted for this same checkout also counts.
     const owned = ownedOnboarding.get(row.id) ?? false;
-    const ready = Boolean(row.session_id && filledSessions.has(row.session_id) && owned);
+    const decision = shop.byRequest.get(row.id);
+    const ready =
+      Boolean(row.session_id && filledSessions.has(row.session_id) && owned) ||
+      shopIntakeReady(decision);
     if (row.session_id && !owned) {
       const ids = shopDetach.get(row.session_id) ?? [];
       ids.push(row.id);
@@ -839,6 +983,7 @@ export async function repairOrdersAwaitingIntake(
       if (eventError) console.warn("[intake] unassign note failed:", eventError.message);
     }
   }
+  return { shop, filledSessions };
 }
 
 /**
