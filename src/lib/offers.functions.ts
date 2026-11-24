@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { assertAdmin } from "@/lib/admin-guard";
+import { assertAdmin, assertReviewer } from "@/lib/admin-guard";
 
 const offerBase = z.object({
   promo_code_id: z.string().uuid().nullable().optional(),
@@ -138,4 +138,94 @@ export const deleteOffer = createServerFn({ method: "POST" })
       },
     );
     return { ok: true };
+  });
+
+export type ActivePortalOffer = {
+  headline: string;
+  couponCode: string | null;
+};
+
+type OfferWindowRow = {
+  headline: string;
+  promo_code_id: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+};
+
+type PromoDisplayRow = {
+  code: string;
+  is_active: boolean;
+  redeem_by: string | null;
+  max_redemptions: number | null;
+  times_redeemed: number;
+};
+
+/** Same window as the patient portal: from starts_at through the end of the ends_at day (UTC). */
+function isWithinOfferWindow(
+  startsAt: string | null,
+  endsAt: string | null,
+  nowMs: number,
+): boolean {
+  if (startsAt && new Date(startsAt).getTime() > nowMs) return false;
+  if (endsAt) {
+    const end = new Date(endsAt);
+    const endOfDayMs = Date.UTC(
+      end.getUTCFullYear(),
+      end.getUTCMonth(),
+      end.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+    if (endOfDayMs < nowMs) return false;
+  }
+  return true;
+}
+
+function isPromoDisplayable(promo: PromoDisplayRow): boolean {
+  if (!promo.is_active) return false;
+  if (promo.redeem_by && new Date(promo.redeem_by) <= new Date()) return false;
+  if (promo.max_redemptions != null && (promo.times_redeemed ?? 0) >= promo.max_redemptions) {
+    return false;
+  }
+  return true;
+}
+
+/** The offer currently shown to patients, so staff see the same headline and code. */
+export const getActivePortalOffer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ActivePortalOffer | null> => {
+    await assertReviewer(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("portal_offers")
+      .select("headline, promo_code_id, starts_at, ends_at")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+
+    const nowMs = Date.now();
+    const row = ((data ?? []) as OfferWindowRow[]).find((candidate) =>
+      isWithinOfferWindow(candidate.starts_at, candidate.ends_at, nowMs),
+    );
+    const headline = row?.headline.trim() ?? "";
+    if (!row || !headline) return null;
+
+    let couponCode: string | null = null;
+    if (row.promo_code_id) {
+      const { data: promo, error: promoError } = await supabaseAdmin
+        .from("promo_codes")
+        .select("code, is_active, redeem_by, max_redemptions, times_redeemed")
+        .eq("id", row.promo_code_id)
+        .maybeSingle();
+      if (promoError) throw new Error(promoError.message);
+      if (promo && isPromoDisplayable(promo as PromoDisplayRow)) {
+        couponCode = promo.code?.trim() || null;
+      }
+    }
+
+    return { headline, couponCode };
   });
