@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Stripe calls this when a Checkout Session is paid, and when a renewal card is declined.
-// Subscribe the endpoint to checkout.session.completed, checkout.session.async_payment_succeeded,
+// Stripe calls this when a Checkout Session is paid, when a refill succeeds, and when a
+// renewal card is declined. Subscribe the endpoint to checkout.session.completed,
+// checkout.session.async_payment_succeeded, invoice.paid, invoice.payment_succeeded,
 // and invoice.payment_failed.
 export const Route = createFileRoute("/api/stripe/webhook")({
   server: {
@@ -47,6 +48,26 @@ export const Route = createFileRoute("/api/stripe/webhook")({
             return Response.json({ ok: true });
           }
 
+          if (event.type === "invoice.paid" || event.type === "invoice.payment_succeeded") {
+            const { recordPaidRenewal } = await import("@/lib/renewal-paid.server");
+            const invoice = event.data.object as {
+              id?: string | null;
+              billing_reason?: string | null;
+              amount_paid?: number | null;
+              currency?: string | null;
+              customer?: unknown;
+              subscription?: unknown;
+              period_end?: number | null;
+              hosted_invoice_url?: string | null;
+              invoice_pdf?: string | null;
+              payment_intent?: unknown;
+              parent?: { subscription_details?: { subscription?: unknown } };
+              lines?: { data?: Array<{ period?: { end?: number | null } | null }> };
+            };
+            const saved = await recordPaidRenewal(supabaseAdmin, invoice);
+            return Response.json({ ok: true, renewal: saved });
+          }
+
           const {
             isAdditionalPaymentStripeEvent,
             lookupFromStripeEvent,
@@ -75,7 +96,7 @@ export const Route = createFileRoute("/api/stripe/webhook")({
             lifeFileOrderId: result.lifeFileOrderId ?? null,
           });
         } catch (error) {
-          console.error("[stripe] additional payment webhook failed:", error);
+          console.error("[stripe] webhook failed:", error);
           return Response.json({ ok: false, error: "Dispatch failed." }, { status: 500 });
         }
       },
