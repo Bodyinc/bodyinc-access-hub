@@ -5,7 +5,6 @@ import { isBrowser } from "@/lib/is-browser";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureSession } from "@/lib/auth-session-cache";
 import { cachePortalRole, readCachedPortalRole } from "@/lib/portal-role-cache";
-import { StaffPromoBanner } from "@/components/staff-promo-banner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -53,6 +52,7 @@ const TITLES: Record<string, string> = {
   "/admin/medication-rules": "Medication Rules",
   "/admin/questionnaires": "Questionnaires",
   "/admin/providers": "Providers",
+  "/admin/payouts": "Payouts",
   "/admin/lifefile-pharmacies": "LifeFile Pharmacies",
   "/admin/medicines": "Medicines",
   "/admin/patients": "Patients",
@@ -101,7 +101,6 @@ function AdminLayout() {
         </div>
 
         <main className="h-full w-full min-w-0 overflow-y-auto p-4 sm:p-6 lg:px-8 lg:pt-6 lg:pb-8">
-          <StaffPromoBanner />
           <Outlet />
         </main>
       </SidebarInset>
