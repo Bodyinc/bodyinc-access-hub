@@ -419,8 +419,6 @@ const CLAIM_READY_STATUSES = [
   "provider_assigned",
   "pending_review",
   "awaiting_additional_payment",
-  "approved",
-  "prescribed",
 ];
 
 const CLAIM_OFFER = "provider_claim_offer";
@@ -452,6 +450,7 @@ async function loadClaimCandidates(supabaseAdmin: any): Promise<any[]> {
         "id, user_id, session_id, medicine_id, status, order_group_id, subscription_id, stripe_invoice_id, kind",
       )
       .is("provider_id", null)
+      .or("life_file_status.is.null,life_file_status.neq.failed")
       .in("status", CLAIM_READY_STATUSES)
       .order("created_at", { ascending: false })
       .range(from, from + CLAIM_PAGE - 1);
@@ -517,7 +516,9 @@ export async function notifyProvidersPatientReadyToClaim(supabaseAdmin: any): Pr
     const { loadShopIntakeState, onboardingOwnershipByRequest, intakeIsReady } = await import(
       "@/lib/clinical-intake"
     );
-    const { shopCheckoutRequestIdSet, userIdsInOpenChat } = await import("@/lib/order-groups");
+    const { restoreProviderOnFailedPharmacySend, shopCheckoutRequestIdSet, userIdsInOpenChat } =
+      await import("@/lib/order-groups");
+    await restoreProviderOnFailedPharmacySend(supabaseAdmin);
     const rows = await loadClaimCandidates(supabaseAdmin);
     if (!rows.length) return;
 

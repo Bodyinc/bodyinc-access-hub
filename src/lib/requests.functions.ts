@@ -23,6 +23,7 @@ import {
   findGroupConsultation,
   loadOrderLines,
   loadSiblingRows,
+  restoreProviderOnFailedPharmacySend,
   userIdsInOpenChat,
 } from "@/lib/order-groups";
 
@@ -345,7 +346,12 @@ export async function prescribeAndSendToPharmacy(
     }
     await supabaseAdmin
       .from("medication_requests")
-      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .update({
+        status: "approved",
+        // The provider who sent it keeps the order. A failed send is a retry, not a new claim.
+        ...(row.provider_id ? { provider_id: row.provider_id } : {}),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", req.id)
       .in("status", [
         "payment_completed",
@@ -355,6 +361,7 @@ export async function prescribeAndSendToPharmacy(
         "approved",
         "prescribed",
       ]);
+    if (!row.provider_id) await restoreProviderOnFailedPharmacySend(supabaseAdmin, req.id);
     await logEvent(
       supabaseAdmin,
       req.id,
@@ -442,6 +449,7 @@ export const listRequests = createServerFn({ method: "POST" })
       const { expireOverduePlanChanges } = await import("@/lib/plan-change.server");
       await expireOverduePlanChanges(supabaseAdmin, context.userId);
     }
+    await restoreProviderOnFailedPharmacySend(supabaseAdmin);
 
     const { normalizeIdSearch, uuidPrefixRange } = await import("@/lib/format");
     const term = data.search ? normalizeIdSearch(data.search) : "";
@@ -666,6 +674,7 @@ export const getRequest = createServerFn({ method: "POST" })
       await expireOverduePlanChanges(supabaseAdmin, context.userId);
     }
 
+    await restoreProviderOnFailedPharmacySend(supabaseAdmin, data.requestId);
     const req = await loadScopedRequest(supabaseAdmin, data.requestId, role, context.userId, "*", {
       allowUnassigned: true,
     });
