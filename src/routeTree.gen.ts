@@ -69,6 +69,7 @@ import { Route as AuthenticatedAdminOrdersIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminOrdersOrderIdRouteImport } from './routes/_authenticated/admin.orders.$orderId'
 import { Route as AuthenticatedAdminPatientsIndexRouteImport } from './routes/_authenticated/admin.patients.index'
 import { Route as AuthenticatedAdminPatientsPatientIdRouteImport } from './routes/_authenticated/admin.patients.$patientId'
+import { Route as AuthenticatedAdminPayoutsIndexRouteImport } from './routes/_authenticated/admin.payouts.index'
 import { Route as AuthenticatedAdminPromosIndexRouteImport } from './routes/_authenticated/admin.promos.index'
 import { Route as AuthenticatedAdminPromosPromoIdRouteImport } from './routes/_authenticated/admin.promos.$promoId'
 import { Route as AuthenticatedAdminPromosNewRouteImport } from './routes/_authenticated/admin.promos.new'
@@ -431,6 +432,12 @@ const AuthenticatedAdminPatientsPatientIdRoute =
     path: '/$patientId',
     getParentRoute: () => AuthenticatedAdminPatientsRoute,
   } as any)
+const AuthenticatedAdminPayoutsIndexRoute =
+  AuthenticatedAdminPayoutsIndexRouteImport.update({
+    id: '/payouts/',
+    path: '/payouts/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPromosIndexRoute =
   AuthenticatedAdminPromosIndexRouteImport.update({
     id: '/promos/',
@@ -621,6 +628,7 @@ export interface FileRoutesByFullPath {
   '/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
   '/admin/orders/': typeof AuthenticatedAdminOrdersIndexRoute
   '/admin/patients/': typeof AuthenticatedAdminPatientsIndexRoute
+  '/admin/payouts/': typeof AuthenticatedAdminPayoutsIndexRoute
   '/admin/promos/': typeof AuthenticatedAdminPromosIndexRoute
   '/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
@@ -689,6 +697,7 @@ export interface FileRoutesByTo {
   '/admin/medicines': typeof AuthenticatedAdminMedicinesIndexRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersIndexRoute
   '/admin/patients': typeof AuthenticatedAdminPatientsIndexRoute
+  '/admin/payouts': typeof AuthenticatedAdminPayoutsIndexRoute
   '/admin/promos': typeof AuthenticatedAdminPromosIndexRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersIndexRoute
   '/admin/questionnaires': typeof AuthenticatedAdminQuestionnairesIndexRoute
@@ -772,6 +781,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/medicines/': typeof AuthenticatedAdminMedicinesIndexRoute
   '/_authenticated/admin/orders/': typeof AuthenticatedAdminOrdersIndexRoute
   '/_authenticated/admin/patients/': typeof AuthenticatedAdminPatientsIndexRoute
+  '/_authenticated/admin/payouts/': typeof AuthenticatedAdminPayoutsIndexRoute
   '/_authenticated/admin/promos/': typeof AuthenticatedAdminPromosIndexRoute
   '/_authenticated/admin/providers/': typeof AuthenticatedAdminProvidersIndexRoute
   '/_authenticated/admin/questionnaires/': typeof AuthenticatedAdminQuestionnairesIndexRoute
@@ -855,6 +865,7 @@ export interface FileRouteTypes {
     | '/admin/medicines/'
     | '/admin/orders/'
     | '/admin/patients/'
+    | '/admin/payouts/'
     | '/admin/promos/'
     | '/admin/providers/'
     | '/admin/questionnaires/'
@@ -923,6 +934,7 @@ export interface FileRouteTypes {
     | '/admin/medicines'
     | '/admin/orders'
     | '/admin/patients'
+    | '/admin/payouts'
     | '/admin/promos'
     | '/admin/providers'
     | '/admin/questionnaires'
@@ -1005,6 +1017,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/medicines/'
     | '/_authenticated/admin/orders/'
     | '/_authenticated/admin/patients/'
+    | '/_authenticated/admin/payouts/'
     | '/_authenticated/admin/promos/'
     | '/_authenticated/admin/providers/'
     | '/_authenticated/admin/questionnaires/'
@@ -1460,6 +1473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPatientsPatientIdRouteImport
       parentRoute: typeof AuthenticatedAdminPatientsRoute
     }
+    '/_authenticated/admin/payouts/': {
+      id: '/_authenticated/admin/payouts/'
+      path: '/payouts'
+      fullPath: '/admin/payouts/'
+      preLoaderRoute: typeof AuthenticatedAdminPayoutsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/promos/': {
       id: '/_authenticated/admin/promos/'
       path: '/promos'
@@ -1832,6 +1852,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPromosNewRoute: typeof AuthenticatedAdminPromosNewRoute
   AuthenticatedAdminConsultationsIndexRoute: typeof AuthenticatedAdminConsultationsIndexRoute
   AuthenticatedAdminFeedbackIndexRoute: typeof AuthenticatedAdminFeedbackIndexRoute
+  AuthenticatedAdminPayoutsIndexRoute: typeof AuthenticatedAdminPayoutsIndexRoute
   AuthenticatedAdminPromosIndexRoute: typeof AuthenticatedAdminPromosIndexRoute
   AuthenticatedAdminReferralsIndexRoute: typeof AuthenticatedAdminReferralsIndexRoute
   AuthenticatedAdminSettingsIndexRoute: typeof AuthenticatedAdminSettingsIndexRoute
@@ -1864,6 +1885,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminConsultationsIndexRoute:
     AuthenticatedAdminConsultationsIndexRoute,
   AuthenticatedAdminFeedbackIndexRoute: AuthenticatedAdminFeedbackIndexRoute,
+  AuthenticatedAdminPayoutsIndexRoute: AuthenticatedAdminPayoutsIndexRoute,
   AuthenticatedAdminPromosIndexRoute: AuthenticatedAdminPromosIndexRoute,
   AuthenticatedAdminReferralsIndexRoute: AuthenticatedAdminReferralsIndexRoute,
   AuthenticatedAdminSettingsIndexRoute: AuthenticatedAdminSettingsIndexRoute,
