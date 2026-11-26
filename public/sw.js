@@ -77,14 +77,14 @@ self.addEventListener("push", (event) => {
       /* ignore malformed payload */
     }
   }
-  const options = {
-    body: data.body || "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
-    data: { url: data.url || "/provider/notifications" },
-  };
-  if (data.tag) options.tag = data.tag;
-  event.waitUntil(self.registration.showNotification(data.title || "Body Inc", options));
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Body Inc", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/provider/notifications" },
+    }),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

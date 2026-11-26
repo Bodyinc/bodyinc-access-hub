@@ -410,7 +410,7 @@ async function loadScopedRequest(
     const isAssignedToMe = req.provider_id === userId;
     const isUnassignedAllowed = Boolean(opts?.allowUnassigned && !req.provider_id);
     if (!isAssignedToMe && !isUnassignedAllowed) {
-      throw new Error("This order is assigned to another provider.");
+      throw new Error("Forbidden");
     }
   }
   return req;
@@ -2333,9 +2333,7 @@ export const getPrescription = createServerFn({ method: "POST" })
       .eq("id", data.prescriptionId)
       .maybeSingle();
     if (!rx) throw new Error("Prescription not found.");
-    if (role === "provider" && rx.provider_id !== context.userId) {
-      throw new Error("This prescription belongs to another provider.");
-    }
+    if (role === "provider" && rx.provider_id !== context.userId) throw new Error("Forbidden");
 
     const [patientRes, provRes] = await Promise.all([
       rx.user_id

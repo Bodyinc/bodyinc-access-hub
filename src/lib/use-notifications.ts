@@ -35,10 +35,9 @@ export function useNotifications() {
   const { data, isLoading } = useQuery({
     queryKey: notificationsQueryKey,
     queryFn: () => fetchNotifications({ data: undefined as never }),
-    staleTime: 15_000,
-    // Realtime is the fast path. This poll covers a missed live update.
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+    // Realtime invalidation is the primary update path; poll only as a slow fallback.
+    refetchInterval: 5 * 60_000,
   });
 
   const mark = useMutation({

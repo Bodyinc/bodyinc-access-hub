@@ -40,7 +40,6 @@ const items: NavItem[] = [
   { title: "Referrals", url: "/admin/referrals" },
   { title: "Promo Codes", url: "/admin/promos" },
   { title: "Providers", url: "/admin/providers" },
-  { title: "Payouts", url: "/admin/payouts" },
   { title: "LifeFile Pharmacies", url: "/admin/lifefile-pharmacies" },
   { title: "Patients", url: "/admin/patients" },
   { title: "Consultations", url: "/admin/consultations" },

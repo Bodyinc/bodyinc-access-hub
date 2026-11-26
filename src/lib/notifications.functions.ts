@@ -24,11 +24,6 @@ export const listMyNotifications = createServerFn({ method: "POST" })
       .limit(50);
     if (error) throw new Error(error.message);
 
-    // Does not block the list. A missed phone alert from the last 10 minutes gets one more try.
-    void import("@/lib/push/deliver")
-      .then(({ retryUnsentPushes }) => retryUnsentPushes())
-      .catch((err) => console.warn("[push] retry skipped:", err));
-
     const items = (data ?? []) as AppNotification[];
     return { items, unread: items.filter((n) => !n.read_at).length };
   });
