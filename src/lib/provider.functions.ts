@@ -21,6 +21,7 @@ import {
   countPurchaseGroups,
   leadOf,
   loadSiblingRows,
+  restoreProviderOnFailedPharmacySend,
   shopCheckoutRequestIdSet,
   userIdsInOpenChat,
 } from "@/lib/order-groups";
@@ -53,15 +54,20 @@ const OPEN_STATUSES = [
   "dispatched",
 ];
 
-// A practitioner may claim an order that still needs a clinician. Orders already sent to the
-// pharmacy (or further along fulfillment) are not claimable.
+// Orders with no provider that another practitioner may claim. Approved orders stay
+// with the provider who approved them, even if the visit is not finished.
 const CLAIMABLE_STATUSES = [
   "payment_completed",
   "provider_assigned",
   "pending_review",
   "awaiting_additional_payment",
-  "approved",
-  "prescribed",
+];
+
+const ESCALATABLE_STATUSES = [
+  "payment_completed",
+  "provider_assigned",
+  "pending_review",
+  "awaiting_additional_payment",
 ];
 
 // Patient keys are "u_<user id>" for account holders and "s_<intake session id>" for guests.
@@ -179,12 +185,15 @@ async function loadClaimable(
   const states = await providerStates(supabaseAdmin, me);
   if (states.length === 0) return [];
 
+  await restoreProviderOnFailedPharmacySend(supabaseAdmin);
+
   const { data: rows } = await supabaseAdmin
     .from("medication_requests")
     .select(
-      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at, order_group_id, subscription_id, stripe_invoice_id",
+      "id, user_id, session_id, medicine_id, kind, status, requires_consultation, created_at, claim_locked_by, claim_locked_at, order_group_id, subscription_id, stripe_invoice_id, life_file_status",
     )
     .is("provider_id", null)
+    .or("life_file_status.is.null,life_file_status.neq.failed")
     .in("status", [...statuses])
     .order("created_at", { ascending: false })
     .limit(300);
@@ -295,11 +304,12 @@ async function canClaimRequest(
 
   const { data: req } = await supabaseAdmin
     .from("medication_requests")
-    .select("id, user_id, session_id, provider_id, status")
+    .select("id, user_id, session_id, provider_id, status, order_group_id, life_file_status")
     .eq("id", requestId)
     .maybeSingle();
 
   if (!req || req.provider_id || !CLAIMABLE_STATUSES.includes(req.status)) return false;
+  if (req.life_file_status === "failed") return false;
 
   let state: string | null = null;
   if (req.user_id) {
@@ -1286,14 +1296,22 @@ export const escalateRequest = createServerFn({ method: "POST" })
     const me = context.userId;
     const { data: req } = await supabaseAdmin
       .from("medication_requests")
-      .select("id, status, provider_id")
+      .select("id, status, provider_id, life_file_status")
       .eq("id", data.requestId)
       .maybeSingle();
     if (!req || req.provider_id !== me) throw new Error("Only the assigned practitioner can escalate this order.");
+    if (req.life_file_status === "failed") {
+      throw new Error(
+        "This pharmacy send failed. Fix the error and send again. The order stays with you.",
+      );
+    }
+    if (!ESCALATABLE_STATUSES.includes(req.status)) {
+      throw new Error("This order is already approved, so it stays with you.");
+    }
     if (CLOSED.includes(req.status)) throw new Error("This order can no longer be escalated.");
 
     const siblings = (await loadSiblingRows(supabaseAdmin, req.id)).filter(
-      (row) => row.provider_id === me && !CLOSED_ORDER_STATUSES.includes(row.status),
+      (row) => row.provider_id === me && ESCALATABLE_STATUSES.includes(row.status),
     );
     const targets = siblings.length ? siblings : [req];
     const now = new Date().toISOString();

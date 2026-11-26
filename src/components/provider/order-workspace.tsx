@@ -340,7 +340,10 @@ export function OrderWorkspace({
                     <Repeat className="mr-1 h-4 w-4" /> Change medicine
                   </Button>
                 ) : null}
-                {providerName && !sent && !["rejected", "cancelled", "refunded"].includes(status) ? (
+                {providerName &&
+                ["payment_completed", "provider_assigned", "pending_review", "awaiting_additional_payment"].includes(
+                  status,
+                ) ? (
                   <Button
                     type="button"
                     size="sm"

@@ -169,6 +169,86 @@ export async function loadOrderLines(supabaseAdmin: any, requestId: string): Pro
     }));
 }
 
+/**
+ * A failed pharmacy send stays with the provider who approved it or wrote the
+ * prescription. It is not a new unassigned order. The same provider, or an admin
+ * on that order, sends it again after the error is fixed.
+ */
+export async function restoreProviderOnFailedPharmacySend(
+  supabaseAdmin: any,
+  requestId?: string,
+): Promise<void> {
+  let query = supabaseAdmin
+    .from("medication_requests")
+    .select("id, decision_by")
+    .eq("life_file_status", "failed")
+    .is("provider_id", null)
+    .limit(100);
+  if (requestId) query = query.eq("id", requestId);
+  const { data, error } = await query;
+  if (error) {
+    console.warn("[orders] failed-send provider lookup failed:", error.message);
+    return;
+  }
+  const rows = (data ?? []) as { id: string; decision_by: string | null }[];
+  if (rows.length === 0) return;
+
+  const ids = rows.map((row) => row.id);
+  const { data: prescriptions, error: prescriptionError } = await supabaseAdmin
+    .from("prescriptions")
+    .select("request_id, provider_id, created_at")
+    .in("request_id", ids)
+    .not("provider_id", "is", null)
+    .order("created_at", { ascending: false });
+  if (prescriptionError) {
+    console.warn("[orders] failed-send prescription lookup failed:", prescriptionError.message);
+  }
+  const prescriptionProvider = new Map<string, string>();
+  for (const prescription of (prescriptions ?? []) as {
+    request_id: string;
+    provider_id: string;
+  }[]) {
+    if (!prescriptionProvider.has(prescription.request_id)) {
+      prescriptionProvider.set(prescription.request_id, prescription.provider_id);
+    }
+  }
+
+  const candidateIds = [
+    ...new Set(
+      rows
+        .map((row) => prescriptionProvider.get(row.id) ?? row.decision_by)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (candidateIds.length === 0) return;
+  const { data: providers, error: providerError } = await supabaseAdmin
+    .from("providers")
+    .select("id")
+    .in("id", candidateIds);
+  if (providerError) {
+    console.warn("[orders] failed-send provider check failed:", providerError.message);
+    return;
+  }
+  const providerIds = new Set(((providers ?? []) as { id: string }[]).map((row) => row.id));
+  const now = new Date().toISOString();
+
+  await Promise.all(
+    rows.map(async (row) => {
+      const providerId = prescriptionProvider.get(row.id) ?? row.decision_by;
+      if (!providerId || !providerIds.has(providerId)) return;
+      const { error: updateError } = await supabaseAdmin
+        .from("medication_requests")
+        .update({ provider_id: providerId, updated_at: now })
+        .eq("id", row.id)
+        .is("provider_id", null)
+        .eq("life_file_status", "failed");
+      if (updateError) {
+        console.warn("[orders] restore failed-send provider failed:", updateError.message);
+      }
+    }),
+  );
+}
+
 /** Initial orders created by a paid shop checkout. Refills on that subscription are not included. */
 export async function shopCheckoutRequestIdSet(
   supabaseAdmin: any,
