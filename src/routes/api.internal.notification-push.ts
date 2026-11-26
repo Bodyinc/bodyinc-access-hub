@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/internal/notification-push")({
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           // Dynamic import keeps web-push out of unrelated server-fn bundles.
-          const { sendPushToUser } = await import("@/lib/push/send");
+          const { deliverNotificationPush } = await import("@/lib/push/deliver");
 
           const { data: row, error } = await supabaseAdmin
             .from("notifications")
@@ -35,11 +35,7 @@ export const Route = createFileRoute("/api/internal/notification-push")({
           if (error) throw new Error(error.message);
           if (!row) return Response.json({ ok: false, error: "Notification not found." }, { status: 404 });
 
-          const result = await sendPushToUser(supabaseAdmin, row.user_id, {
-            title: row.title,
-            body: row.body,
-            url: row.link || "/provider/notifications",
-          });
+          const result = await deliverNotificationPush(supabaseAdmin, row, { sendWithoutClaim: true });
           return Response.json({ ok: true, ...result });
         } catch (e) {
           console.error("[push] notification-push webhook failed:", e);

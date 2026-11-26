@@ -5,10 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/lib/use-notifications";
 import { providerSidebarCounts } from "@/lib/provider.functions";
-import {
-  countPendingConsultations,
-  pendingConsultationCountQueryKey,
-} from "@/lib/consultations.functions";
 import { clearCachedPortalRoles } from "@/lib/portal-role-cache";
 import { logoutQuickbloxSdk } from "@/lib/consultations/qb-sdk-cleanup";
 import {
@@ -37,7 +33,7 @@ const items = [
   { title: "My Profile", url: "/provider/profile" },
 ];
 
-export const providerSidebarCountsQueryKey = ["provider-sidebar-counts"] as const;
+export const providerSidebarCountsQueryKey = ["provider-sidebar-counts", "window"] as const;
 
 const navItemBase =
   "flex h-8 w-full items-center rounded-[8px] px-3 text-[14px] font-medium !text-[#152A51] transition-all";
@@ -55,23 +51,13 @@ export function ProviderSidebar() {
   const queryClient = useQueryClient();
   const { unread } = useNotifications();
   const loadCounts = useServerFn(providerSidebarCounts);
-  const countPendingConsults = useServerFn(countPendingConsultations);
   const countsQ = useQuery({
     queryKey: providerSidebarCountsQueryKey,
     queryFn: () => loadCounts({}),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
-  const pendingConsultationsQ = useQuery({
-    queryKey: pendingConsultationCountQueryKey,
-    queryFn: () => countPendingConsults({}),
-    refetchInterval: 30_000,
-    staleTime: 15_000,
-  });
-  const counts = {
-    ...(countsQ.data ?? { requests: 0, queue: 0 }),
-    consultations: pendingConsultationsQ.data ?? 0,
-  };
+  const counts = countsQ.data ?? { requests: 0, queue: 0, consultations: 0 };
 
   useEffect(() => {
     for (const item of items) {

@@ -25,6 +25,7 @@ import {
   shopCheckoutRequestIdSet,
   userIdsInOpenChat,
 } from "@/lib/order-groups";
+import { closedAtByRequestId, listClosedVisits, missingEndedAtColumn } from "@/lib/consultation-closed";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -340,13 +341,14 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
     const me = context.userId;
     // Badges count work that still needs a decision. Approved, prescribed, shipped,
     // and "waiting on the patient" orders stay on the lists but drop off the badge.
-    const [{ data: pendingRows, error }, queue] = await Promise.all([
+    const [{ data: pendingRows, error }, queue, work] = await Promise.all([
       supabaseAdmin
         .from("medication_requests")
         .select("id, session_id, user_id, subscription_id, provider_id, status")
         .eq("provider_id", me)
         .in("status", [...PENDING_REQUEST_STATUSES]),
       countClaimable(supabaseAdmin, me, PENDING_REQUEST_STATUSES),
+      loadAssignedWork(supabaseAdmin, me),
     ]);
     if (error) throw new Error(error.message);
     const pending = (pendingRows ?? []) as {
@@ -365,7 +367,11 @@ export const providerSidebarCounts = createServerFn({ method: "POST" })
         onboardingReady: Boolean(row.session_id && repaired.filledSessions.has(row.session_id)),
       }),
     ).length;
-    return { requests, queue };
+    return {
+      requests,
+      queue,
+      consultations: work.filter(showsInConsultationWindow).length,
+    };
   });
 
 export const listClaimableRequests = createServerFn({ method: "POST" })
@@ -1012,8 +1018,29 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
     new Set(list.filter((r) => !r.user_id).map((r) => r.session_id).filter(Boolean)),
   );
   const medIds = Array.from(new Set(list.map((r) => r.medicine_id).filter(Boolean)));
+  const subIds = Array.from(new Set(list.map((r) => r.subscription_id).filter(Boolean)));
 
-  const [{ data: profiles }, { data: sessions }, { data: meds }, { data: consults }] =
+  const consultQuery = async () => {
+    if (subIds.length === 0) return [] as any[];
+    const withEnded = await supabaseAdmin
+      .from("patient_consultations")
+      .select("subscription_id, ended_at, started_at")
+      .in("subscription_id", subIds)
+      .order("started_at", { ascending: false });
+    if (withEnded.error && missingEndedAtColumn(withEnded.error)) {
+      const plain = await supabaseAdmin
+        .from("patient_consultations")
+        .select("subscription_id, started_at")
+        .in("subscription_id", subIds)
+        .order("started_at", { ascending: false });
+      if (plain.error) throw new Error(plain.error.message);
+      return (plain.data ?? []).map((row: any) => ({ ...row, ended_at: null }));
+    }
+    if (withEnded.error) throw new Error(withEnded.error.message);
+    return withEnded.data ?? [];
+  };
+
+  const [{ data: profiles }, { data: sessions }, { data: meds }, consults, closedAt] =
     await Promise.all([
       userIds.length
         ? supabaseAdmin.from("profiles").select("id, full_name, dob").in("id", userIds)
@@ -1027,13 +1054,11 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
             .select("id, name, requires_consultation")
             .in("id", medIds)
         : Promise.resolve({ data: [] as any[] }),
-      userIds.length
-        ? supabaseAdmin
-            .from("patient_consultations")
-            .select("user_id, ended_at, started_at")
-            .in("user_id", userIds)
-            .order("started_at", { ascending: false })
-        : Promise.resolve({ data: [] as any[] }),
+      consultQuery(),
+      closedAtByRequestId(
+        supabaseAdmin,
+        list.map((row) => row.id),
+      ),
     ]);
   const ready = list.filter((r) => {
     if (!r.provider_id) return false;
@@ -1046,29 +1071,30 @@ async function loadAssignedWork(supabaseAdmin: any, me: string): Promise<WorkIte
 
   const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
   const sMap = new Map((sessions ?? []).map((s: any) => [s.id, s]));
-  const medMap = new Map((meds ?? []).map((m: any) => [m.id, m]));
-  const consultByUser = new Map<string, { ended_at: string | null }>();
+  const medMap = new Map<string, any>((meds ?? []).map((m: any) => [m.id, m]));
+  // One consultation row per subscription. Match that subscription, not every
+  // visit the patient has ever had, or a finished plan hides a new one.
+  const consultBySub = new Map<string, { ended_at: string | null }>();
   for (const row of (consults ?? []) as any[]) {
-    const prev = consultByUser.get(row.user_id);
-    if (!prev) consultByUser.set(row.user_id, { ended_at: row.ended_at ?? null });
-    else if (!row.ended_at) consultByUser.set(row.user_id, { ended_at: null });
+    if (!row.subscription_id) continue;
+    const prev = consultBySub.get(row.subscription_id);
+    if (!prev || !row.ended_at) {
+      consultBySub.set(row.subscription_id, { ended_at: row.ended_at ?? null });
+    }
   }
 
   return clusterPurchases(ready).map((members) => {
     const r = leadOf(members);
     const profile = pMap.get(r.user_id) as any;
     const session = !profile ? (sMap.get(r.session_id) as any) : null;
-    const consult = r.user_id ? consultByUser.get(r.user_id) : undefined;
-    const requires = members.some((member) => {
-      const med = medMap.get(member.medicine_id) as { requires_consultation?: boolean } | undefined;
-      return med ? Boolean(med.requires_consultation) : Boolean(member.requires_consultation);
-    });
-    let consultation_status: WorkItem["consultation_status"] = "Not required";
-    if (requires) {
-      if (!consult) consultation_status = "Required";
-      else if (!consult.ended_at) consultation_status = "In progress";
-      else consultation_status = "Completed";
-    }
+    const requires = members.some((member) => memberRequiresConsultation(member, medMap));
+    const consultation_status = consultationStatusFor(
+      members,
+      medMap,
+      consultBySub,
+      requires,
+      closedAt,
+    );
     const patient_waiting = consultation_status === "In progress";
     const priority = patient_waiting
       ? 0
@@ -1119,7 +1145,35 @@ async function providerLaunchpad(supabaseAdmin: any, me: string) {
   };
 }
 
+function memberRequiresConsultation(member: any, medMap: Map<string, any>) {
+  const med = medMap.get(member.medicine_id) as { requires_consultation?: boolean } | undefined;
+  return med ? Boolean(med.requires_consultation) : Boolean(member.requires_consultation);
+}
+
+function consultationStatusFor(
+  members: any[],
+  medMap: Map<string, any>,
+  consultBySub: Map<string, { ended_at: string | null }>,
+  requires: boolean,
+  closedAt: Map<string, string>,
+): WorkItem["consultation_status"] {
+  if (members.some((member) => closedAt.has(member.id))) return "Completed";
+  const open = members.some((member) => {
+    const consult = member.subscription_id ? consultBySub.get(member.subscription_id) : undefined;
+    return Boolean(consult && !consult.ended_at);
+  });
+  if (open) return "In progress";
+  if (!requires) return "Not required";
+  const stillNeeded = members.some((member) => {
+    if (!memberRequiresConsultation(member, medMap)) return false;
+    const consult = member.subscription_id ? consultBySub.get(member.subscription_id) : undefined;
+    return !consult?.ended_at;
+  });
+  return stillNeeded ? "Required" : "Completed";
+}
+
 function showsInConsultationWindow(row: WorkItem) {
+  if (row.consultation_status === "Completed") return false;
   return (
     row.consultation_mode === "scheduled" ||
     row.requires_consultation ||
@@ -1144,62 +1198,53 @@ export const listConsultationHistory = createServerFn({ method: "POST" })
     await assertProvider(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const me = context.userId;
-    const { data: orders } = await supabaseAdmin
-      .from("medication_requests")
-      .select("id, user_id, medicine_id")
-      .eq("provider_id", me)
-      .not("user_id", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(500);
-    const list = (orders ?? []) as any[];
-    const userIds = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean)));
-    if (userIds.length === 0) return [];
+    const closed = await listClosedVisits(supabaseAdmin);
+    const requestIds = closed.map((visit) => visit.request_id);
+    if (requestIds.length === 0) return [];
 
-    const { data: consults, error } = await supabaseAdmin
-      .from("patient_consultations")
-      .select("id, user_id, started_at, ended_at")
-      .in("user_id", userIds)
-      .not("ended_at", "is", null)
-      .order("ended_at", { ascending: false })
-      .limit(100);
-    if (error) {
-      if (/ended_at/i.test(error.message)) return [];
-      throw new Error(error.message);
+    const orders: any[] = [];
+    for (let i = 0; i < requestIds.length; i += 80) {
+      const chunk = requestIds.slice(i, i + 80);
+      const { data, error } = await supabaseAdmin
+        .from("medication_requests")
+        .select("id, user_id, medicine_id, provider_id")
+        .in("id", chunk)
+        .eq("provider_id", me);
+      if (error) throw new Error(error.message);
+      orders.push(...(data ?? []));
     }
-    const rows = (consults ?? []) as any[];
-    if (rows.length === 0) return [];
+    if (orders.length === 0) return [];
 
-    const { data: profiles } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name, dob")
-      .in("id", Array.from(new Set(rows.map((r) => r.user_id))));
+    const closedAt = new Map(closed.map((visit) => [visit.request_id, visit.closed_at]));
+    const userIds = Array.from(new Set(orders.map((row) => row.user_id).filter(Boolean)));
+    const medIds = Array.from(new Set(orders.map((row) => row.medicine_id).filter(Boolean)));
+    const [{ data: profiles }, { data: meds }] = await Promise.all([
+      userIds.length
+        ? supabaseAdmin.from("profiles").select("id, full_name, dob").in("id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+      medIds.length
+        ? supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
     const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
-    const orderByUser = new Map<string, any>();
-    for (const order of list) {
-      if (!orderByUser.has(order.user_id)) orderByUser.set(order.user_id, order);
-    }
-    const medIds = Array.from(
-      new Set([...orderByUser.values()].map((o: any) => o.medicine_id).filter(Boolean)),
-    );
-    const { data: meds } = medIds.length
-      ? await supabaseAdmin.from("medicines").select("id, name").in("id", medIds)
-      : { data: [] as any[] };
     const medMap = new Map((meds ?? []).map((m: any) => [m.id, m.name]));
 
-    return rows.map((row) => {
-      const order = orderByUser.get(row.user_id);
-      const profile = pMap.get(row.user_id) as any;
-      return {
-        id: row.id,
-        request_id: order?.id ?? null,
-        patient_name: profile?.full_name ?? "Patient",
-        patient_id: row.user_id,
-        dob: profile?.dob ?? null,
-        medicine_name: order ? (medMap.get(order.medicine_id) ?? "—") : "—",
-        started_at: row.started_at,
-        ended_at: row.ended_at,
-      };
-    });
+    return orders
+      .map((order) => {
+        const profile = pMap.get(order.user_id) as any;
+        const ended = closedAt.get(order.id) ?? null;
+        return {
+          id: order.id,
+          request_id: order.id,
+          patient_name: profile?.full_name ?? "Patient",
+          patient_id: order.user_id ?? null,
+          dob: profile?.dob ?? null,
+          medicine_name: medMap.get(order.medicine_id) ?? "—",
+          started_at: ended,
+          ended_at: ended,
+        };
+      })
+      .sort((a, b) => String(b.ended_at ?? "").localeCompare(String(a.ended_at ?? "")));
   });
 
 async function releaseUnreviewed(supabaseAdmin: any, me: string) {
