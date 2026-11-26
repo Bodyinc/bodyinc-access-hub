@@ -24,6 +24,7 @@ import {
 import { sessionForBodyIncProvider } from "@/lib/consultations/provider-agent";
 import { ageFromDob, bmiFrom } from "@/lib/format";
 import { findGroupConsultation, loadOrderLines, loadSiblingRows } from "@/lib/order-groups";
+import { listClosedVisits } from "@/lib/consultation-closed";
 
 export type ConsultationVisitStatus = "open" | "ended" | "unknown";
 
@@ -200,8 +201,8 @@ export const countPendingConsultations = createServerFn({ method: "POST" })
         .from("patient_consultations")
         .select(
           includeEndedAt
-            ? "id, user_id, qb_appointment_id, ended_at"
-            : "id, user_id, qb_appointment_id",
+            ? "id, user_id, subscription_id, qb_appointment_id, ended_at"
+            : "id, user_id, subscription_id, qb_appointment_id",
         )
         .limit(300);
       if (role === "provider") {
@@ -221,14 +222,33 @@ export const countPendingConsultations = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
 
+    const closed = await listClosedVisits(supabaseAdmin);
+    const closedSubs = new Set<string>();
+    const closedIds = closed.map((visit) => visit.request_id);
+    for (let i = 0; i < closedIds.length; i += 80) {
+      const chunk = closedIds.slice(i, i + 80);
+      const { data: closedOrders, error: closedError } = await supabaseAdmin
+        .from("medication_requests")
+        .select("subscription_id")
+        .in("id", chunk);
+      if (closedError) throw new Error(closedError.message);
+      for (const order of closedOrders ?? []) {
+        if (order.subscription_id) closedSubs.add(order.subscription_id);
+      }
+    }
+
     const consultations = (rows ?? []).map((row) => ({
+      subscription_id: String((row as { subscription_id?: string }).subscription_id ?? ""),
       qb_appointment_id: String((row as { qb_appointment_id?: string }).qb_appointment_id ?? ""),
       ended_at:
         "ended_at" in (row as object)
           ? ((row as { ended_at?: string | null }).ended_at ?? null)
           : null,
     }));
-    if (consultations.length === 0) return 0;
+    const stillOpen = consultations.filter(
+      (row) => !row.ended_at && !closedSubs.has(row.subscription_id),
+    );
+    if (stillOpen.length === 0) return 0;
 
     const extraTokens: string[] = [];
     if (role === "provider") {
@@ -240,14 +260,11 @@ export const countPendingConsultations = createServerFn({ method: "POST" })
     }
 
     const visit = await visitStatusByAppointmentId(
-      consultations.map((row) => row.qb_appointment_id),
+      stillOpen.map((row) => row.qb_appointment_id),
       extraTokens,
     );
 
-    return consultations.filter((row) => {
-      if (row.ended_at) return false;
-      return visit.status.get(row.qb_appointment_id) !== "ended";
-    }).length;
+    return stillOpen.filter((row) => visit.status.get(row.qb_appointment_id) !== "ended").length;
   });
 
 export const listConsultations = createServerFn({ method: "POST" })
